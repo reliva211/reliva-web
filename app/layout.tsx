@@ -11,7 +11,7 @@ const inter = Inter({ subsets: ["latin"] })
 export const metadata = {
   title: "Tunes and Habits",
   description: "Track your music, books, and movies all in one place",
-    generator: 'v0.dev'
+  generator: 'v0.dev'
 }
 
 export default function RootLayout({
@@ -25,11 +25,9 @@ export default function RootLayout({
         <AuthProvider>
           <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
             <div className="flex min-h-screen flex-col">
-            <AuthProvider>
               <Header />
-              {children}
+              <main className="flex-grow">{children}</main>
               <Footer />
-            </AuthProvider>
             </div>
           </ThemeProvider>
         </AuthProvider>
