@@ -1,19 +1,42 @@
-"use client"
+"use client";
 
-import type React from "react"
+import type React from "react";
 
-import { useEffect, useState } from "react"
-import Image from "next/image"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Card, CardContent } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { Search, BookOpen, Star, Plus, Check, X } from "lucide-react"
-import { useCurrentUser } from "../movies/page"
-import { db } from "@/lib/firebase"
-import { collection, doc, DocumentData, DocumentReference, getDocs, setDoc, updateDoc } from "firebase/firestore"
+import { useEffect, useState } from "react";
+import Image from "next/image";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Search, BookOpen, Star, Plus, X, Check } from "lucide-react";
+import { useCurrentUser } from "@/hooks/use-current-user";
+import { db } from "@/lib/firebase";
+import {
+  collection,
+  doc,
+  getDocs,
+  setDoc,
+  updateDoc,
+  deleteDoc,
+} from "firebase/firestore";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 // Dummy data for books
 const myBooks = [
@@ -57,10 +80,16 @@ const myBooks = [
     status: "Completed",
     progress: 100,
   },
-]
+];
 
 const recommendedBooks = [
-  { id: "1", title: "Dune", author: "Frank Herbert", cover: "/placeholder.svg?height=200&width=140", rating: 4.5 },
+  {
+    id: "1",
+    title: "Dune",
+    author: "Frank Herbert",
+    cover: "/placeholder.svg?height=200&width=140",
+    rating: 4.5,
+  },
   {
     id: "2",
     title: "The Alchemist",
@@ -68,7 +97,13 @@ const recommendedBooks = [
     cover: "/placeholder.svg?height=200&width=140",
     rating: 4.3,
   },
-  { id: "3", title: "Sapiens", author: "Yuval Noah Harari", cover: "/placeholder.svg?height=200&width=140", rating: 4.7 },
+  {
+    id: "3",
+    title: "Sapiens",
+    author: "Yuval Noah Harari",
+    cover: "/placeholder.svg?height=200&width=140",
+    rating: 4.7,
+  },
   {
     id: "4",
     title: "The Silent Patient",
@@ -90,16 +125,22 @@ const recommendedBooks = [
     cover: "/placeholder.svg?height=200&width=140",
     rating: 4.4,
   },
-]
+];
 type Book = {
-  progress: any
-  status: string
+  progress: any;
+  status: string;
   id: string;
   title: string;
   author: string;
   cover: string;
-  rating: number | string; 
+  rating: number | string;
+  collections?: string[];
 };
+
+interface Collection {
+  id: string;
+  name: string;
+}
 
 // Dummy search results
 // const searchResults = [
@@ -128,42 +169,53 @@ type Book = {
 // ]
 
 export default function BooksPage() {
-  const [searchQuery, setSearchQuery] = useState("")
-  const [isSearching, setIsSearching] = useState(false)
+  const [searchQuery, setSearchQuery] = useState("");
+  const [isSearching, setIsSearching] = useState(false);
   const [savedBooks, setSavedBooks] = useState<Book[]>([]);
-  const [savedIds, setSavedIds] = useState<(string)[]>([]);
-  const [filterStatus, setFilterStatus] = useState("all")
+  const [savedIds, setSavedIds] = useState<string[]>([]);
+  const [filterStatus, setFilterStatus] = useState("all");
   const [searchResults, setSearchResults] = useState<Book[]>([]);
-
+  const [collections, setCollections] = useState<Collection[]>([
+    { id: "1", name: "Reading" },
+    { id: "2", name: "Completed" },
+    { id: "3", name: "Want to Read" },
+  ]);
+  const [selectedCollection, setSelectedCollection] = useState<string>("all");
+  const [isCreateCollectionOpen, setCreateCollectionOpen] = useState(false);
+  const [newCollectionName, setNewCollectionName] = useState("");
 
   const handleSearch = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-  
+
     if (!searchQuery.trim()) return;
-  
+
     setIsSearching(true);
-  
+
     try {
       const res = await fetch(
-        `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(searchQuery)}`
+        `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(
+          searchQuery
+        )}`
       );
       const data = await res.json();
-  
+
       if (data.items && Array.isArray(data.items)) {
         const books: Book[] = data.items.map((item: any): Book => {
           const info = item.volumeInfo;
-  
+
           return {
             id: item.id,
             title: info.title ?? "No title",
             author: info.authors?.join(", ") ?? "Unknown author",
-            cover: info.imageLinks?.thumbnail ?? "/placeholder.svg?height=200&width=140",
+            cover:
+              info.imageLinks?.thumbnail ??
+              "/placeholder.svg?height=200&width=140",
             rating: info.averageRating ?? "N/A",
             progress: undefined,
             status: "",
           };
         });
-  
+
         setSearchResults(books);
       } else {
         setSearchResults([]);
@@ -173,12 +225,11 @@ export default function BooksPage() {
       setSearchResults([]);
     }
   };
-  
 
   const clearSearch = () => {
-    setSearchQuery("")
-    setIsSearching(false)
-  }
+    setSearchQuery("");
+    setIsSearching(false);
+  };
 
   const user = useCurrentUser();
   const userId = user?.uid;
@@ -190,9 +241,13 @@ export default function BooksPage() {
       try {
         const booksCollection = collection(db, "users", userId, "books");
         const snapshot = await getDocs(booksCollection);
-        const booksData: Book[] = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Book));
+        const booksData: Book[] = snapshot.docs.map(
+          (doc) => ({ id: doc.id, ...doc.data() } as Book)
+        );
         setSavedBooks(booksData);
-        setSavedIds(booksData.map(book => book.id));
+        setSavedIds(booksData.map((book) => book.id));
+        // Also fetch collections for the user here from firestore if they exist
+        // and set them with setCollections
       } catch (err) {
         console.error("Failed to fetch saved books:", err);
       }
@@ -203,38 +258,78 @@ export default function BooksPage() {
 
   const saveBook = async (book: any) => {
     if (!savedIds.includes(book.id)) {
-      const newBook = { ...book, status: "Want to Read", progress: 0 };
+      const newBook = {
+        ...book,
+        status: "Want to Read",
+        progress: 0,
+        collections: [],
+      };
       setSavedBooks([...savedBooks, newBook]);
       setSavedIds([...savedIds, book.id]);
-  
+
       if (userId) {
         const bookRef = doc(db, "users", userId, "books", book.id.toString());
         await setDoc(bookRef, newBook);
       }
     }
   };
-  
 
   const removeBook = async (id: string) => {
     setSavedBooks(savedBooks.filter((book) => book.id !== id));
     setSavedIds(savedIds.filter((bookId) => bookId !== id));
-  
+
     if (userId) {
       const bookRef = doc(db, "users", userId, "books", id.toString());
       await deleteDoc(bookRef);
     }
   };
-  
+
+  const handleCreateCollection = () => {
+    if (newCollectionName.trim() === "") return;
+    const newCollection = {
+      id: (collections.length + 1).toString(),
+      name: newCollectionName.trim(),
+    };
+    setCollections([...collections, newCollection]);
+    setNewCollectionName("");
+    setCreateCollectionOpen(false);
+    // You would also save the new collection to Firestore here
+  };
+
+  const addBookToCollection = async (bookId: string, collectionId: string) => {
+    const book = savedBooks.find((b) => b.id === bookId);
+    if (!book) return;
+
+    const updatedCollections = book.collections
+      ? [...book.collections, collectionId]
+      : [collectionId];
+
+    setSavedBooks(
+      savedBooks.map((b) =>
+        b.id === bookId ? { ...b, collections: updatedCollections } : b
+      )
+    );
+
+    if (userId) {
+      await updateDoc(doc(db, "users", userId, "books", bookId), {
+        collections: updatedCollections,
+      });
+    }
+  };
 
   const updateBookStatus = async (id: string, status: string) => {
     const updated = savedBooks.map((book) =>
       book.id === id
-        ? { ...book, status, progress: status === "Completed" ? 100 : book.progress }
+        ? {
+            ...book,
+            status,
+            progress: status === "Completed" ? 100 : book.progress,
+          }
         : book
     );
-  
+
     setSavedBooks(updated);
-  
+
     if (userId) {
       const bookToUpdate = updated.find((book) => book.id === id);
       if (bookToUpdate) {
@@ -246,10 +341,13 @@ export default function BooksPage() {
       }
     }
   };
-  
 
-  // Filter books based on selected status
-  const filteredBooks = filterStatus === "all" ? savedBooks : savedBooks.filter((book) => book.status === filterStatus)
+  const filteredBooks =
+    selectedCollection === "all"
+      ? savedBooks
+      : savedBooks.filter((book) =>
+          book.collections?.includes(selectedCollection)
+        );
 
   return (
     <div className="container py-8">
@@ -277,49 +375,84 @@ export default function BooksPage() {
             </div>
           </form>
 
-          <div className="space-y-2">
-            <h3 className="font-medium">My Shelves</h3>
-            <div className="space-y-1">
+          <div>
+            <h3 className="font-medium">My Collections</h3>
+            <div className="space-y-1 mt-2">
               <button
-                className={`w-full flex items-center justify-between rounded-md p-2 text-sm ${filterStatus === "all" ? "bg-accent" : "hover:bg-accent transition-colors"}`}
-                onClick={() =>  {setSearchQuery(""); setIsSearching(false); setFilterStatus("all")}}
+                className={`w-full flex items-center justify-between rounded-md p-2 text-sm ${
+                  selectedCollection === "all"
+                    ? "bg-accent"
+                    : "hover:bg-accent transition-colors"
+                }`}
+                onClick={() => setSelectedCollection("all")}
               >
                 <span>All Books</span>
-                <span className="text-xs bg-primary/20 text-primary px-2 py-0.5 rounded-full">{savedBooks.length}</span>
-              </button>
-              <button
-                className={`w-full flex items-center justify-between rounded-md p-2 text-sm ${filterStatus === "Reading" ? "bg-accent" : "hover:bg-accent transition-colors"}`}
-                onClick={() =>  {setSearchQuery(""); setIsSearching(false); setFilterStatus("Reading");}}
-              >
-                <span>Currently Reading</span>
-                <span className="text-xs bg-muted px-2 py-0.5 rounded-full">
-                  {savedBooks.filter((book) => book.status === "Reading").length}
+                <span className="text-xs bg-primary/20 text-primary px-2 py-0.5 rounded-full">
+                  {savedBooks.length}
                 </span>
               </button>
-              <button
-                className={`w-full flex items-center justify-between rounded-md p-2 text-sm ${filterStatus === "Want to Read" ? "bg-accent" : "hover:bg-accent transition-colors"}`}
-                onClick={() => { setSearchQuery(""); setIsSearching(false); setFilterStatus("Want to Read"); }}
-              >
-                <span>Want to Read</span>
-                <span className="text-xs bg-muted px-2 py-0.5 rounded-full">
-                  {savedBooks.filter((book) => book.status === "Want to Read").length}
-                </span>
-              </button>
-              <button
-                className={`w-full flex items-center justify-between rounded-md p-2 text-sm ${filterStatus === "Completed" ? "bg-accent" : "hover:bg-accent transition-colors"}`}
-                onClick={() =>  {setSearchQuery(""); setIsSearching(false); setFilterStatus("Completed");}}
-              >
-                <span>Completed</span>
-                <span className="text-xs bg-muted px-2 py-0.5 rounded-full">
-                  {savedBooks.filter((book) => book.status === "Completed").length}
-                </span>
-              </button>
+              {collections.map((collection) => (
+                <button
+                  key={collection.id}
+                  className={`w-full flex items-center justify-between rounded-md p-2 text-sm ${
+                    selectedCollection === collection.id
+                      ? "bg-accent"
+                      : "hover:bg-accent transition-colors"
+                  }`}
+                  onClick={() => setSelectedCollection(collection.id)}
+                >
+                  <span>{collection.name}</span>
+                  <span className="text-xs bg-muted px-2 py-0.5 rounded-full">
+                    {
+                      savedBooks.filter((b) =>
+                        b.collections?.includes(collection.id)
+                      ).length
+                    }
+                  </span>
+                </button>
+              ))}
             </div>
+            <Dialog
+              open={isCreateCollectionOpen}
+              onOpenChange={setCreateCollectionOpen}
+            >
+              <DialogTrigger asChild>
+                <Button variant="outline" size="sm" className="w-full mt-2">
+                  <Plus className="mr-2 h-4 w-4" /> Create Collection
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[425px]">
+                <DialogHeader>
+                  <DialogTitle>Create New Collection</DialogTitle>
+                  <DialogDescription>
+                    Enter a name for your new collection.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="grid gap-4 py-4">
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="name" className="text-right">
+                      Name
+                    </Label>
+                    <Input
+                      id="name"
+                      value={newCollectionName}
+                      onChange={(e) => setNewCollectionName(e.target.value)}
+                      className="col-span-3"
+                    />
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button type="submit" onClick={handleCreateCollection}>
+                    Save collection
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
           </div>
 
-          <div className="space-y-2">
-            <h3 className="font-medium">Categories</h3>
-            <div className="flex flex-wrap gap-2">
+          <div>
+            <h3 className="font-medium">Genres</h3>
+            <div className="flex flex-wrap gap-2 mt-2">
               <Badge variant="outline">Fiction</Badge>
               <Badge variant="outline">Non-Fiction</Badge>
               <Badge variant="outline">Science</Badge>
@@ -335,7 +468,9 @@ export default function BooksPage() {
           {isSearching ? (
             <div className="space-y-6">
               <div className="flex items-center justify-between">
-                <h2 className="text-2xl font-bold">Search Results for "{searchQuery}"</h2>
+                <h2 className="text-2xl font-bold">
+                  Search Results for "{searchQuery}"
+                </h2>
                 <Button variant="ghost" onClick={clearSearch}>
                   Clear Search
                 </Button>
@@ -346,13 +481,22 @@ export default function BooksPage() {
                   <Card key={book.id} className="overflow-hidden">
                     <CardContent className="p-0">
                       <div className="relative aspect-[2/3] w-full">
-                        <Image src={book.cover || "/placeholder.svg"} alt={book.title} fill className="object-cover" />
+                        <Image
+                          src={book.cover || "/placeholder.svg"}
+                          alt={book.title}
+                          fill
+                          className="object-cover"
+                        />
                       </div>
                       <div className="p-4 space-y-2">
                         <div className="flex justify-between items-start">
                           <div>
-                            <h3 className="font-medium line-clamp-1">{book.title}</h3>
-                            <p className="text-sm text-muted-foreground">{book.author}</p>
+                            <h3 className="font-medium line-clamp-1">
+                              {book.title}
+                            </h3>
+                            <p className="text-sm text-muted-foreground">
+                              {book.author}
+                            </p>
                           </div>
                           <div className="flex items-center">
                             <Star className="h-3 w-3 fill-primary text-primary" />
@@ -386,30 +530,34 @@ export default function BooksPage() {
             <Tabs defaultValue="my-books">
               <TabsList className="mb-4">
                 <TabsTrigger value="my-books">My Books</TabsTrigger>
-                <TabsTrigger value="recommendations">Recommendations</TabsTrigger>
+                <TabsTrigger value="recommendations">
+                  Recommendations
+                </TabsTrigger>
               </TabsList>
 
               <TabsContent value="my-books" className="space-y-6">
-                <h2 className="text-2xl font-bold">
-                  {filterStatus === "all"
-                    ? "My Books"
-                    : filterStatus === "Reading"
-                      ? "Currently Reading"
-                      : filterStatus}
-                </h2>
-
+                <h2 className="text-2xl font-bold">My Books</h2>
                 {filteredBooks.length === 0 ? (
                   <div className="text-center py-12">
                     <BookOpen className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                    <h3 className="text-lg font-medium mb-2">No books in this section</h3>
-                    <p className="text-muted-foreground mb-4">Add books to your library or change your filter</p>
-                    <Button onClick={() => setFilterStatus("all")}>View All Books</Button>
+                    <h3 className="text-lg font-medium mb-2">
+                      No books in this section
+                    </h3>
+                    <p className="text-muted-foreground mb-4">
+                      Add books to your library or change your filter
+                    </p>
+                    <Button onClick={() => setSelectedCollection("all")}>
+                      View All Books
+                    </Button>
                   </div>
                 ) : (
                   <ScrollArea className="h-[calc(100vh-16rem)]">
                     <div className="space-y-4">
                       {filteredBooks.map((book) => (
-                        <div key={book.id} className="flex border rounded-lg overflow-hidden">
+                        <div
+                          key={book.id}
+                          className="flex border rounded-lg overflow-hidden"
+                        >
                           <div className="w-24 h-36 relative flex-shrink-0">
                             <Image
                               src={book.cover || "/placeholder.svg"}
@@ -431,7 +579,9 @@ export default function BooksPage() {
                                   <X className="h-4 w-4" />
                                 </Button>
                               </div>
-                              <p className="text-sm text-muted-foreground">{book.author}</p>
+                              <p className="text-sm text-muted-foreground">
+                                {book.author}
+                              </p>
                             </div>
                             <div className="mt-2">
                               {/* if you ever decide to add the drag bar its here ! */}
@@ -450,27 +600,79 @@ export default function BooksPage() {
                               )} */}
                               <div className="flex gap-2">
                                 <Button
-                                  variant={book.status === "Want to Read" ? "default" : "outline"}
+                                  variant={
+                                    book.status === "Want to Read"
+                                      ? "default"
+                                      : "outline"
+                                  }
                                   size="sm"
-                                  onClick={() => updateBookStatus(book.id, "Want to Read")}
+                                  onClick={() =>
+                                    updateBookStatus(book.id, "Want to Read")
+                                  }
                                 >
                                   Want to Read
                                 </Button>
                                 <Button
-                                  variant={book.status === "Reading" ? "default" : "outline"}
+                                  variant={
+                                    book.status === "Reading"
+                                      ? "default"
+                                      : "outline"
+                                  }
                                   size="sm"
-                                  onClick={() => updateBookStatus(book.id, "Reading")}
+                                  onClick={() =>
+                                    updateBookStatus(book.id, "Reading")
+                                  }
                                 >
                                   Reading
                                 </Button>
                                 <Button
-                                  variant={book.status === "Completed" ? "default" : "outline"}
+                                  variant={
+                                    book.status === "Completed"
+                                      ? "default"
+                                      : "outline"
+                                  }
                                   size="sm"
-                                  onClick={() => updateBookStatus(book.id, "Completed")}
+                                  onClick={() =>
+                                    updateBookStatus(book.id, "Completed")
+                                  }
                                 >
                                   Completed
                                 </Button>
                               </div>
+                            </div>
+                            <div className="p-4 border-t flex flex-col justify-center items-center gap-2 bg-muted/40">
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button variant="outline" size="sm">
+                                    <Plus className="mr-2 h-4 w-4" /> Add to...
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent>
+                                  {collections.map((collection) => (
+                                    <DropdownMenuItem
+                                      key={collection.id}
+                                      onClick={() =>
+                                        addBookToCollection(
+                                          book.id,
+                                          collection.id
+                                        )
+                                      }
+                                      disabled={book.collections?.includes(
+                                        collection.id
+                                      )}
+                                    >
+                                      {collection.name}
+                                    </DropdownMenuItem>
+                                  ))}
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => removeBook(book.id)}
+                              >
+                                <X className="mr-1 h-4 w-4" /> Remove
+                              </Button>
                             </div>
                           </div>
                         </div>
@@ -497,12 +699,18 @@ export default function BooksPage() {
                         <div className="p-4 space-y-2">
                           <div className="flex justify-between items-start">
                             <div>
-                              <h3 className="font-medium line-clamp-1">{book.title}</h3>
-                              <p className="text-sm text-muted-foreground">{book.author}</p>
+                              <h3 className="font-medium line-clamp-1">
+                                {book.title}
+                              </h3>
+                              <p className="text-sm text-muted-foreground">
+                                {book.author}
+                              </p>
                             </div>
                             <div className="flex items-center">
                               <Star className="h-3 w-3 fill-primary text-primary" />
-                              <span className="text-xs ml-1">{book.rating}</span>
+                              <span className="text-xs ml-1">
+                                {book.rating}
+                              </span>
                             </div>
                           </div>
                           <Button
@@ -533,9 +741,5 @@ export default function BooksPage() {
         </div>
       </div>
     </div>
-  )
+  );
 }
-function deleteDoc(bookRef: DocumentReference<DocumentData, DocumentData>) {
-  throw new Error("Function not implemented.")
-}
-

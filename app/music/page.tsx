@@ -1,65 +1,101 @@
-"use client"
+"use client";
 
-import type React from "react"
+import type React from "react";
 
-import { useEffect, useState } from "react"
-import Image from "next/image"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Card, CardContent } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Search, Music, Heart, X, Disc, User, Calendar, Globe, Clock, MoreHorizontal, Filter, Play } from "lucide-react"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Separator } from "@/components/ui/separator"
-import { db } from "@/lib/firebase"
-import { collection, getDocs, doc, setDoc, deleteDoc } from "firebase/firestore"
-import { useCurrentUser } from "../movies/page"
-import { useMusicAPI } from "@/hooks/use-music-api"
-import { AudioPlayer } from "@/components/audio-player"
-import { SpotifyPlaylists } from "@/components/spotify-playlists"
+import { useEffect, useState } from "react";
+import Image from "next/image";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import {
+  Search,
+  Music,
+  Heart,
+  X,
+  Disc,
+  User,
+  Calendar,
+  Globe,
+  Clock,
+  MoreHorizontal,
+  Filter,
+  Play,
+} from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
+import { db } from "@/lib/firebase";
+import {
+  collection,
+  getDocs,
+  doc,
+  setDoc,
+  deleteDoc,
+} from "firebase/firestore";
+import { useCurrentUser } from "@/hooks/use-current-user";
+import { useMusicAPI } from "@/hooks/use-music-api";
+import { AudioPlayer } from "@/components/audio-player";
+import { SpotifyFolder } from "@/components/spotify-folder";
 
 // Types for MusicBrainz data
 type Artist = {
-  id: string
-  name: string
-  type?: string
-  country?: string
-  tags?: string[]
-  image?: string
-  isFavorite?: boolean
-}
+  id: string;
+  name: string;
+  type?: string;
+  country?: string;
+  tags?: string[];
+  image?: string;
+  isFavorite?: boolean;
+};
 
 type Release = {
-  id: string
-  title: string
-  artistName: string
-  artistId: string
-  date?: string
-  type?: string
-  coverArt?: string
-  tracks?: number
-  isFavorite?: boolean
-  tags?: string[]
-}
+  id: string;
+  title: string;
+  artistName: string;
+  artistId: string;
+  date?: string;
+  type?: string;
+  coverArt?: string;
+  tracks?: number;
+  isFavorite?: boolean;
+  tags?: string[];
+};
 
 type Track = {
-  id: string
-  title: string
-  artistName: string
-  artistId: string
-  releaseId?: string
-  releaseName?: string
-  duration?: string
-  position?: string
-  isFavorite?: boolean
-  type: "track"
-  tags?: string[]
-  preview_url?: string
-  spotify_id?: string
-}
+  id: string;
+  title: string;
+  artistName: string;
+  artistId: string;
+  releaseId?: string;
+  releaseName?: string;
+  duration?: string;
+  position?: string;
+  isFavorite?: boolean;
+  type: "track";
+  tags?: string[];
+  preview_url?: string;
+  spotify_id?: string;
+};
 
 // Tags for filtering
 const allTags = [
@@ -83,61 +119,66 @@ const allTags = [
   "experimental",
   "dance",
   "funk",
-]
+];
 
 export default function MusicPage() {
-  const [searchQuery, setSearchQuery] = useState("")
-  const [searchType, setSearchType] = useState("all")
-  const [searchResults, setSearchResults] = useState<any[]>([])
-  const [isSearching, setIsSearching] = useState(false)
-  const [selectedTags, setSelectedTags] = useState<string[]>([])
-  const [showTagDialog, setShowTagDialog] = useState(false)
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchType, setSearchType] = useState("all");
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [showTagDialog, setShowTagDialog] = useState(false);
 
   // State for favorites
-  const [favoriteArtists, setFavoriteArtists] = useState<Artist[]>([])
-  const [favoriteReleases, setFavoriteReleases] = useState<Release[]>([])
-  const [favoriteTracks, setFavoriteTracks] = useState<Track[]>([])
-  const user = useCurrentUser()
+  const [favoriteArtists, setFavoriteArtists] = useState<Artist[]>([]);
+  const [favoriteReleases, setFavoriteReleases] = useState<Release[]>([]);
+  const [favoriteTracks, setFavoriteTracks] = useState<Track[]>([]);
 
   // State for music preview
   const [currentPreview, setCurrentPreview] = useState<{
-    url: string
-    trackName: string
-    artistName: string
-  } | null>(null)
+    url: string;
+    trackName: string;
+    artistName: string;
+  } | null>(null);
 
   // MusicAPI hook
-  const { isLoading: isMusicAPILoading, error: musicAPIError, searchSpotify, getTrackPreview } = useMusicAPI()
+  const {
+    isLoading: isMusicAPILoading,
+    error: musicAPIError,
+    searchSpotify,
+    getTrackPreview,
+  } = useMusicAPI();
 
-  const userId = user?.uid
+  const user = useCurrentUser();
+  const userId = user?.uid;
 
   useEffect(() => {
-    if (!userId) return
+    if (!userId) return;
 
     async function loadFavorites() {
       if (userId) {
-        setFavoriteArtists(await fetchFavorites(userId, "artist"))
-        setFavoriteReleases(await fetchFavorites(userId, "release"))
-        setFavoriteTracks(await fetchFavorites(userId, "track"))
+        setFavoriteArtists(await fetchFavorites(userId, "artist"));
+        setFavoriteReleases(await fetchFavorites(userId, "release"));
+        setFavoriteTracks(await fetchFavorites(userId, "track"));
       }
     }
-    loadFavorites()
-  }, [userId])
+    loadFavorites();
+  }, [userId]);
 
   // Selected item for details view
-  const [selectedItem, setSelectedItem] = useState<any>(null)
-  const [detailType, setDetailType] = useState<string>("")
+  const [selectedItem, setSelectedItem] = useState<any>(null);
+  const [detailType, setDetailType] = useState<string>("");
 
   // Handle search
   const handleSearch = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!searchQuery.trim()) return
+    e.preventDefault();
+    if (!searchQuery.trim()) return;
 
-    setIsSearching(true)
-    const query = searchQuery.trim()
+    setIsSearching(true);
+    const query = searchQuery.trim();
 
     try {
-      let results: (Artist | Release | Track)[] = []
+      let results: (Artist | Release | Track)[] = [];
 
       // Helper function to map MusicBrainz artist to your Artist type
       const mapArtist = (mbArtist: any): Artist => ({
@@ -147,7 +188,7 @@ export default function MusicPage() {
         country: mbArtist.country,
         tags: mbArtist.tags?.map((t: any) => t.name) || [],
         isFavorite: false,
-      })
+      });
 
       // Helper function to map MusicBrainz release to your Release type
       const mapRelease = (mbRelease: any): Release => ({
@@ -158,7 +199,7 @@ export default function MusicPage() {
         date: mbRelease.date,
         type: mbRelease.type || "release",
         isFavorite: false,
-      })
+      });
 
       // Helper function to map MusicBrainz recording (track) to your Track type
       const mapTrack = (mbTrack: any): Track => ({
@@ -168,203 +209,210 @@ export default function MusicPage() {
         artistId: mbTrack["artist-credit"]?.[0]?.artist?.id || "",
         releaseId: mbTrack.releases?.[0]?.id,
         releaseName: mbTrack.releases?.[0]?.title,
-        duration: mbTrack.length ? formatDuration(mbTrack.length / 1000) : undefined,
+        duration: mbTrack.length
+          ? formatDuration(mbTrack.length / 1000)
+          : undefined,
         position: undefined,
         isFavorite: false,
         type: "track",
-      })
+      });
 
       // Fetch artists if requested
       if (searchType === "all" || searchType === "artist") {
         const artistResp = await fetch(
-          `https://musicbrainz.org/ws/2/artist/?query=${encodeURIComponent(query)}&fmt=json&limit=10`,
-        )
-        const artistData = await artistResp.json()
-        const artistResults = artistData.artists?.map(mapArtist) || []
-        results = [...results, ...artistResults]
+          `https://musicbrainz.org/ws/2/artist/?query=${encodeURIComponent(
+            query
+          )}&fmt=json&limit=10`
+        );
+        const artistData = await artistResp.json();
+        const artistResults = artistData.artists?.map(mapArtist) || [];
+        results = [...results, ...artistResults];
       }
 
       // Fetch releases if requested
       if (searchType === "all" || searchType === "release") {
         const releaseResp = await fetch(
-          `https://musicbrainz.org/ws/2/release/?query=${encodeURIComponent(query)}&fmt=json&limit=10`,
-        )
-        const releaseData = await releaseResp.json()
-        const releaseResults = releaseData.releases?.map(mapRelease) || []
-        results = [...results, ...releaseResults]
+          `https://musicbrainz.org/ws/2/release/?query=${encodeURIComponent(
+            query
+          )}&fmt=json&limit=10`
+        );
+        const releaseData = await releaseResp.json();
+        const releaseResults = releaseData.releases?.map(mapRelease) || [];
+        results = [...results, ...releaseResults];
       }
 
       // Fetch tracks (recordings) if requested
       if (searchType === "all" || searchType === "track") {
         const trackResp = await fetch(
-          `https://musicbrainz.org/ws/2/recording/?query=${encodeURIComponent(query)}&fmt=json&limit=10`,
-        )
-        const trackData = await trackResp.json()
-        const trackResults = trackData.recordings?.map(mapTrack) || []
+          `https://musicbrainz.org/ws/2/recording/?query=${encodeURIComponent(
+            query
+          )}&fmt=json&limit=10`
+        );
+        const trackData = await trackResp.json();
+        const trackResults = trackData.recordings?.map(mapTrack) || [];
 
         // Try to find Spotify previews for tracks
         if (trackResults.length > 0) {
           try {
-            const spotifyResults = await searchSpotify(query, "track")
-            if (spotifyResults && spotifyResults.tracks && spotifyResults.tracks.items) {
+            const spotifyResults = await searchSpotify(query, "track");
+            if (
+              spotifyResults &&
+              spotifyResults.tracks &&
+              spotifyResults.tracks.items
+            ) {
               // Match Spotify tracks with MusicBrainz tracks by name and artist
-              trackResults.forEach((track: { title: string; artistName: string; preview_url: any; spotify_id: any }) => {
-                const spotifyTrack = spotifyResults.tracks.items.find(
-                  (st: any) =>
-                    st.name.toLowerCase() === track.title.toLowerCase() &&
-                    st.artists.some((a: any) => a.name.toLowerCase() === track.artistName.toLowerCase()),
-                )
+              trackResults.forEach(
+                (track: {
+                  title: string;
+                  artistName: string;
+                  preview_url: any;
+                  spotify_id: any;
+                }) => {
+                  const spotifyTrack = spotifyResults.tracks.items.find(
+                    (st: any) =>
+                      st.name.toLowerCase() === track.title.toLowerCase() &&
+                      st.artists.some(
+                        (a: any) =>
+                          a.name.toLowerCase() ===
+                          track.artistName.toLowerCase()
+                      )
+                  );
 
-                if (spotifyTrack) {
-                  track.preview_url = spotifyTrack.preview_url
-                  track.spotify_id = spotifyTrack.id
+                  if (spotifyTrack) {
+                    track.preview_url = spotifyTrack.preview_url;
+                    track.spotify_id = spotifyTrack.id;
+                  }
                 }
-              })
+              );
             }
           } catch (error) {
-            console.error("Error fetching Spotify data:", error)
+            console.error("Error fetching Spotify data:", error);
           }
         }
 
-        results = [...results, ...trackResults]
+        results = [...results, ...trackResults];
       }
 
       // Filter by tags if selected
       if (selectedTags.length > 0) {
         results = results.filter((item) => {
           if ("tags" in item && item.tags) {
-            return item.tags.some((tag) => selectedTags.includes(tag))
+            return item.tags.some((tag) => selectedTags.includes(tag));
           }
-          return true
-        })
+          return true;
+        });
       }
 
-      setSearchResults(results)
+      setSearchResults(results);
     } catch (error) {
-      console.error("MusicBrainz API error:", error)
-      setSearchResults([])
+      console.error("MusicBrainz API error:", error);
+      setSearchResults([]);
     }
-  }
+  };
 
   // Format duration (seconds to MM:SS)
   const formatDuration = (seconds: number) => {
-    if (isNaN(seconds)) return "0:00"
-    const minutes = Math.floor(seconds / 60)
-    const remainingSeconds = Math.floor(seconds % 60)
-    return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`
-  }
+    if (isNaN(seconds)) return "0:00";
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = Math.floor(seconds % 60);
+    return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`;
+  };
 
   const clearSearch = () => {
-    setSearchQuery("")
-    setIsSearching(false)
-    setSearchResults([])
-  }
+    setSearchQuery("");
+    setIsSearching(false);
+    setSearchResults([]);
+  };
 
   // Toggle favorite status
   const toggleFavorite = async (item: any, itemType: string) => {
-    const newItem = { ...item, isFavorite: !item.isFavorite }
-
     if (!userId) {
-      alert("Login required")
-      return
+      alert("Login required");
+      return;
     }
 
-    if (newItem.isFavorite) {
-      // Add to Firebase and state
-      await addFavorite(userId, itemType as any, newItem)
-      if (itemType === "artist") setFavoriteArtists((fa) => [...fa, newItem])
-      if (itemType === "release") setFavoriteReleases((fr) => [...fr, newItem])
-      if (itemType === "track") setFavoriteTracks((ft) => [...ft, newItem])
-    } else {
-      // Remove from Firebase and state
-      await removeFavorite(userId, itemType as any, item.id)
-      if (itemType === "artist") setFavoriteArtists((fa) => fa.filter((a) => a.id !== item.id))
-      if (itemType === "release") setFavoriteReleases((fr) => fr.filter((r) => r.id !== item.id))
-      if (itemType === "track") setFavoriteTracks((ft) => ft.filter((t) => t.id !== item.id))
+    if (!userId) return;
+
+    const isFavorite = {
+      artist: favoriteArtists.some((a) => a.id === item.id),
+      release: favoriteReleases.some((r) => r.id === item.id),
+      track: favoriteTracks.some((t) => t.id === item.id),
+    }[itemType];
+
+    try {
+      if (isFavorite) {
+        await removeFavorite(userId, itemType as any, item.id);
+      } else {
+        await addFavorite(userId, itemType as any, item);
+      }
+      // Refresh favorites from Firestore
+      const updatedFavorites = await fetchFavorites(userId, itemType as any);
+      if (itemType === "artist")
+        setFavoriteArtists(updatedFavorites as Artist[]);
+      if (itemType === "release")
+        setFavoriteReleases(updatedFavorites as Release[]);
+      if (itemType === "track") setFavoriteTracks(updatedFavorites as Track[]);
+    } catch (error) {
+      console.error("Failed to toggle favorite:", error);
     }
 
     // Update searchResults if relevant
     setSearchResults((prev) =>
       prev.map((result) =>
-        result.id === item.id && result.type === itemType ? { ...result, isFavorite: newItem.isFavorite } : result,
-      ),
-    )
-  }
+        result.id === item.id && result.type === itemType
+          ? { ...result, isFavorite: !isFavorite }
+          : result
+      )
+    );
+  };
 
   // Show details for an item
   const showDetails = (item: any, type: string) => {
-    setSelectedItem(item)
-    setDetailType(type)
-  }
+    setSelectedItem(item);
+    setDetailType(type);
+  };
 
   // Toggle tag selection
   const toggleTag = (tag: string) => {
     if (selectedTags.includes(tag)) {
-      setSelectedTags(selectedTags.filter((t) => t !== tag))
+      setSelectedTags(selectedTags.filter((t) => t !== tag));
     } else {
-      setSelectedTags([...selectedTags, tag])
+      setSelectedTags([...selectedTags, tag]);
     }
-  }
+  };
 
   // Play track preview
   const playTrackPreview = async (track: Track) => {
-    // If track already has a preview URL, use it
-    if (track.preview_url) {
+    if (currentPreview?.url && currentPreview.trackName === track.title) {
+      return;
+    }
+
+    // First, try to get a preview URL from Spotify via MusicAPI
+    if (track.spotify_id) {
+      const previewData = await getTrackPreview(track.spotify_id);
+      if (previewData && previewData.preview_url) {
+        setCurrentPreview({
+          url: previewData.preview_url,
+          trackName: track.title,
+          artistName: track.artistName,
+        });
+        return;
+      }
+    }
+    // Fallback or if no spotify_id, you can search
+    const results = await searchSpotify(`${track.title} ${track.artistName}`);
+    if (results && results.tracks?.items?.[0]?.preview_url) {
       setCurrentPreview({
-        url: track.preview_url,
+        url: results.tracks.items[0].preview_url,
         trackName: track.title,
         artistName: track.artistName,
-      })
-      return
+      });
+    } else {
+      // Handle no preview found
+      alert("No preview available for this track.");
+      setCurrentPreview(null);
     }
-
-    // Otherwise, try to get preview from Spotify via MusicAPI
-    try {
-      // First, search for the track on Spotify
-      const spotifyResults = await searchSpotify(`${track.title} artist:${track.artistName}`, "track")
-
-      if (
-        spotifyResults &&
-        spotifyResults.tracks &&
-        spotifyResults.tracks.items &&
-        spotifyResults.tracks.items.length > 0
-      ) {
-        // Get the first matching track
-        const spotifyTrack = spotifyResults.tracks.items[0]
-
-        if (spotifyTrack.preview_url) {
-          // Update the track with Spotify data
-          const updatedTrack = {
-            ...track,
-            preview_url: spotifyTrack.preview_url,
-            spotify_id: spotifyTrack.id,
-          }
-
-          // Update in search results if present
-          setSearchResults((prev) =>
-            prev.map((item) => (item.id === track.id && item.type === "track" ? updatedTrack : item)),
-          )
-
-          // Update in favorites if present
-          setFavoriteTracks((prev) => prev.map((item) => (item.id === track.id ? updatedTrack : item)))
-
-          // Play the preview
-          setCurrentPreview({
-            url: spotifyTrack.preview_url,
-            trackName: track.title,
-            artistName: track.artistName,
-          })
-        } else {
-          alert("No preview available for this track")
-        }
-      } else {
-        alert("Could not find this track on Spotify")
-      }
-    } catch (error) {
-      console.error("Error getting track preview:", error)
-      alert("Error getting track preview")
-    }
-  }
+  };
 
   return (
     <div className="container py-6">
@@ -373,7 +421,11 @@ export default function MusicPage() {
         <div className="flex flex-col space-y-4">
           <div className="flex items-center justify-between">
             <h1 className="text-2xl font-bold">Music Database</h1>
-            <Button variant="outline" size="sm" onClick={() => setShowTagDialog(true)}>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowTagDialog(true)}
+            >
               <Filter className="mr-2 h-4 w-4" />
               Filter by Tags
               {selectedTags.length > 0 && (
@@ -416,15 +468,25 @@ export default function MusicPage() {
           {selectedTags.length > 0 && (
             <div className="flex flex-wrap gap-2">
               {selectedTags.map((tag) => (
-                <Badge key={tag} variant="secondary" className="flex items-center gap-1">
+                <Badge
+                  key={tag}
+                  variant="secondary"
+                  className="flex items-center gap-1"
+                >
                   {tag}
                   <X
                     className="h-3 w-3 cursor-pointer"
-                    onClick={() => setSelectedTags(selectedTags.filter((t) => t !== tag))}
+                    onClick={() =>
+                      setSelectedTags(selectedTags.filter((t) => t !== tag))
+                    }
                   />
                 </Badge>
               ))}
-              <Button variant="ghost" size="sm" onClick={() => setSelectedTags([])}>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setSelectedTags([])}
+              >
                 Clear All
               </Button>
             </div>
@@ -436,7 +498,9 @@ export default function MusicPage() {
           <DialogContent className="sm:max-w-md">
             <DialogHeader>
               <DialogTitle>Filter by Tags</DialogTitle>
-              <DialogDescription>Select tags to filter your search results</DialogDescription>
+              <DialogDescription>
+                Select tags to filter your search results
+              </DialogDescription>
             </DialogHeader>
             <div className="flex flex-wrap gap-2 py-4">
               {allTags.map((tag) => (
@@ -454,7 +518,9 @@ export default function MusicPage() {
               <Button variant="outline" onClick={() => setSelectedTags([])}>
                 Clear All
               </Button>
-              <Button onClick={() => setShowTagDialog(false)}>Apply Filters</Button>
+              <Button onClick={() => setShowTagDialog(false)}>
+                Apply Filters
+              </Button>
             </div>
           </DialogContent>
         </Dialog>
@@ -474,28 +540,37 @@ export default function MusicPage() {
         {/* Main Content */}
         {isSearching ? (
           <div className="space-y-6">
-            <h2 className="text-xl font-semibold">Search Results for "{searchQuery}"</h2>
+            <h2 className="text-xl font-semibold">
+              Search Results for "{searchQuery}"
+            </h2>
             {searchResults.length === 0 ? (
               <div className="text-center py-12">
                 <Music className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
                 <h3 className="text-lg font-medium mb-2">No results found</h3>
-                <p className="text-muted-foreground mb-4">Try a different search term or filter</p>
+                <p className="text-muted-foreground mb-4">
+                  Try a different search term or filter
+                </p>
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                 {searchResults.map((result) => (
-                  <Card key={`${result.type}-${result.id}`} className="overflow-hidden">
+                  <Card
+                    key={`${result.type}-${result.id}`}
+                    className="overflow-hidden"
+                  >
                     <CardContent className="p-0">
                       <div className="p-4">
                         <div className="flex justify-between items-start">
                           <div>
-                            <h3 className="font-medium line-clamp-1">{result.name || result.title}</h3>
+                            <h3 className="font-medium line-clamp-1">
+                              {result.name || result.title}
+                            </h3>
                             <p className="text-sm text-muted-foreground">
                               {result.type === "artist"
                                 ? result.type
                                 : result.type === "release"
-                                  ? `${result.type} by ${result.artistName}`
-                                  : `Track by ${result.artistName}`}
+                                ? `${result.type} by ${result.artistName}`
+                                : `Track by ${result.artistName}`}
                             </p>
                           </div>
                           <div className="flex items-center gap-1">
@@ -504,7 +579,9 @@ export default function MusicPage() {
                                 variant="ghost"
                                 size="icon"
                                 className="h-8 w-8"
-                                disabled={!result.preview_url && !result.spotify_id}
+                                disabled={
+                                  !result.preview_url && !result.spotify_id
+                                }
                                 onClick={() => playTrackPreview(result)}
                               >
                                 <Play className="h-5 w-5" />
@@ -514,16 +591,28 @@ export default function MusicPage() {
                               variant="ghost"
                               size="icon"
                               className="h-8 w-8"
-                              onClick={() => toggleFavorite(result, result.type)}
+                              onClick={() =>
+                                toggleFavorite(result, result.type)
+                              }
                             >
-                              <Heart className={`h-5 w-5 ${result.isFavorite ? "fill-primary text-primary" : ""}`} />
+                              <Heart
+                                className={`h-5 w-5 ${
+                                  result.isFavorite
+                                    ? "fill-primary text-primary"
+                                    : ""
+                                }`}
+                              />
                             </Button>
                           </div>
                         </div>
                         {result.type === "artist" && result.tags && (
                           <div className="flex flex-wrap gap-1 mt-2">
                             {result.tags.slice(0, 3).map((tag: string) => (
-                              <Badge key={tag} variant="secondary" className="text-xs">
+                              <Badge
+                                key={tag}
+                                variant="secondary"
+                                className="text-xs"
+                              >
                                 {tag}
                               </Badge>
                             ))}
@@ -547,7 +636,7 @@ export default function MusicPage() {
               <TabsTrigger value="artists">Favorite Artists</TabsTrigger>
               <TabsTrigger value="releases">Favorite Albums</TabsTrigger>
               <TabsTrigger value="tracks">Favorite Tracks</TabsTrigger>
-              {userId && <TabsTrigger value="spotify">Spotify Playlists</TabsTrigger>}
+              <TabsTrigger value="spotify">Spotify Library</TabsTrigger>
             </TabsList>
 
             <TabsContent value="artists" className="space-y-6">
@@ -558,8 +647,12 @@ export default function MusicPage() {
               {favoriteArtists.length === 0 ? (
                 <div className="text-center py-12">
                   <User className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                  <h3 className="text-lg font-medium mb-2">No favorite artists yet</h3>
-                  <p className="text-muted-foreground mb-4">Search for artists and add them to your favorites</p>
+                  <h3 className="text-lg font-medium mb-2">
+                    No favorite artists yet
+                  </h3>
+                  <p className="text-muted-foreground mb-4">
+                    Search for artists and add them to your favorites
+                  </p>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
@@ -571,7 +664,8 @@ export default function MusicPage() {
                             <div>
                               <h3 className="font-medium">{artist.name}</h3>
                               <p className="text-sm text-muted-foreground flex items-center gap-1">
-                                <Globe className="h-3 w-3" /> {artist.country || "Unknown"}
+                                <Globe className="h-3 w-3" />{" "}
+                                {artist.country || "Unknown"}
                               </p>
                             </div>
                             <Button
@@ -586,7 +680,11 @@ export default function MusicPage() {
                           {artist.tags && (
                             <div className="flex flex-wrap gap-1 mt-2">
                               {artist.tags.map((tag) => (
-                                <Badge key={tag} variant="secondary" className="text-xs">
+                                <Badge
+                                  key={tag}
+                                  variant="secondary"
+                                  className="text-xs"
+                                >
                                   {tag}
                                 </Badge>
                               ))}
@@ -608,8 +706,12 @@ export default function MusicPage() {
               {favoriteReleases.length === 0 ? (
                 <div className="text-center py-12">
                   <Disc className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                  <h3 className="text-lg font-medium mb-2">No favorite albums yet</h3>
-                  <p className="text-muted-foreground mb-4">Search for albums and add them to your favorites</p>
+                  <h3 className="text-lg font-medium mb-2">
+                    No favorite albums yet
+                  </h3>
+                  <p className="text-muted-foreground mb-4">
+                    Search for albums and add them to your favorites
+                  </p>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
@@ -619,8 +721,12 @@ export default function MusicPage() {
                         <div className="p-4">
                           <div className="flex justify-between items-start">
                             <div>
-                              <h3 className="font-medium line-clamp-1">{release.title}</h3>
-                              <p className="text-sm text-muted-foreground">{release.artistName}</p>
+                              <h3 className="font-medium line-clamp-1">
+                                {release.title}
+                              </h3>
+                              <p className="text-sm text-muted-foreground">
+                                {release.artistName}
+                              </p>
                             </div>
                             <Button
                               variant="ghost"
@@ -654,8 +760,12 @@ export default function MusicPage() {
               {favoriteTracks.length === 0 ? (
                 <div className="text-center py-12">
                   <Music className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                  <h3 className="text-lg font-medium mb-2">No favorite tracks yet</h3>
-                  <p className="text-muted-foreground mb-4">Search for tracks and add them to your favorites</p>
+                  <h3 className="text-lg font-medium mb-2">
+                    No favorite tracks yet
+                  </h3>
+                  <p className="text-muted-foreground mb-4">
+                    Search for tracks and add them to your favorites
+                  </p>
                 </div>
               ) : (
                 <div className="border rounded-md">
@@ -683,25 +793,42 @@ export default function MusicPage() {
                         >
                           <Play className="h-4 w-4" />
                         </Button>
-                        <div className="font-medium cursor-pointer" onClick={() => showDetails(track, "track")}>
+                        <div
+                          className="font-medium cursor-pointer"
+                          onClick={() => showDetails(track, "track")}
+                        >
                           {track.title}
                         </div>
                       </div>
-                      <div className="col-span-4 md:col-span-3 text-muted-foreground truncate">{track.artistName}</div>
-                      <div className="col-span-2 md:col-span-2 text-muted-foreground truncate">{track.releaseName}</div>
-                      <div className="hidden md:block md:col-span-1 text-muted-foreground">{track.duration}</div>
+                      <div className="col-span-4 md:col-span-3 text-muted-foreground truncate">
+                        {track.artistName}
+                      </div>
+                      <div className="col-span-2 md:col-span-2 text-muted-foreground truncate">
+                        {track.releaseName}
+                      </div>
+                      <div className="hidden md:block md:col-span-1 text-muted-foreground">
+                        {track.duration}
+                      </div>
                       <div className="col-span-1 md:col-span-1 flex justify-end">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-8 w-8">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                            >
                               <MoreHorizontal className="h-4 w-4" />
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => showDetails(track, "track")}>
+                            <DropdownMenuItem
+                              onClick={() => showDetails(track, "track")}
+                            >
                               View Details
                             </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => toggleFavorite(track, "track")}>
+                            <DropdownMenuItem
+                              onClick={() => toggleFavorite(track, "track")}
+                            >
                               Remove from Favorites
                             </DropdownMenuItem>
                           </DropdownMenuContent>
@@ -713,32 +840,33 @@ export default function MusicPage() {
               )}
             </TabsContent>
 
-            {userId && (
-              <TabsContent value="spotify" className="space-y-6">
-                <SpotifyPlaylists userId={userId} />
-              </TabsContent>
-            )}
+            <TabsContent value="spotify" className="space-y-6">
+              <SpotifyFolder />
+            </TabsContent>
           </Tabs>
         )}
 
         {/* Details Dialog */}
         {selectedItem && (
-          <Dialog open={!!selectedItem} onOpenChange={(open) => !open && setSelectedItem(null)}>
+          <Dialog
+            open={!!selectedItem}
+            onOpenChange={(open) => !open && setSelectedItem(null)}
+          >
             <DialogContent className="sm:max-w-md">
               <DialogHeader>
                 <DialogTitle>
                   {detailType === "artist"
                     ? selectedItem.name
                     : detailType === "release"
-                      ? selectedItem.title
-                      : selectedItem.title}
+                    ? selectedItem.title
+                    : selectedItem.title}
                 </DialogTitle>
                 <DialogDescription>
                   {detailType === "artist"
                     ? `Artist from ${selectedItem.country || "Unknown"}`
                     : detailType === "release"
-                      ? `Album by ${selectedItem.artistName}`
-                      : `Track by ${selectedItem.artistName}`}
+                    ? `Album by ${selectedItem.artistName}`
+                    : `Track by ${selectedItem.artistName}`}
                 </DialogDescription>
               </DialogHeader>
 
@@ -749,8 +877,8 @@ export default function MusicPage() {
                       detailType === "artist"
                         ? selectedItem.image || "/placeholder.svg"
                         : detailType === "release"
-                          ? selectedItem.coverArt || "/placeholder.svg"
-                          : "/placeholder.svg?height=300&width=300"
+                        ? selectedItem.coverArt || "/placeholder.svg"
+                        : "/placeholder.svg?height=300&width=300"
                     }
                     alt={selectedItem.name || selectedItem.title}
                     fill
@@ -848,7 +976,8 @@ export default function MusicPage() {
                 >
                   {selectedItem.isFavorite ? (
                     <>
-                      <Heart className="h-4 w-4 fill-primary-foreground" /> Remove from Favorites
+                      <Heart className="h-4 w-4 fill-primary-foreground" />{" "}
+                      Remove from Favorites
                     </>
                   ) : (
                     <>
@@ -865,33 +994,61 @@ export default function MusicPage() {
         )}
       </div>
     </div>
-  )
+  );
 }
 
-export async function fetchFavorites<T>(userId: string, type: "artist" | "release" | "track"): Promise<T[]> {
-  const colRef = collection(db, "users", userId, `favorite${capitalize(type)}s`)
-  const snapshot = await getDocs(colRef)
+async function fetchFavorites<T>(
+  userId: string,
+  type: "artist" | "release" | "track"
+): Promise<T[]> {
+  const colRef = collection(
+    db,
+    "users",
+    userId,
+    `favorite${capitalize(type)}s`
+  );
+  const snapshot = await getDocs(colRef);
 
   // Map and cast to T[], you can do minimal validation here if you want
   return snapshot.docs.map((doc) => {
-    const data = doc.data()
+    const data = doc.data();
     // Optional: add id from doc.id if needed, e.g. data.id = parseInt(doc.id)
-    return data as T
-  })
+    return data as T;
+  });
 }
 
 // Add favorite
-export async function addFavorite(userId: string, type: "artist" | "release" | "track", item: any) {
-  const docRef = doc(db, "users", userId, `favorite${capitalize(type)}s`, item.id.toString())
-  await setDoc(docRef, item)
+async function addFavorite(
+  userId: string,
+  type: "artist" | "release" | "track",
+  item: any
+) {
+  const docRef = doc(
+    db,
+    "users",
+    userId,
+    `favorite${capitalize(type)}s`,
+    item.id.toString()
+  );
+  await setDoc(docRef, item);
 }
 
 // Remove favorite
-export async function removeFavorite(userId: string, type: "artist" | "release" | "track", itemId: number) {
-  const docRef = doc(db, "users", userId, `favorite${capitalize(type)}s`, itemId.toString())
-  await deleteDoc(docRef)
+async function removeFavorite(
+  userId: string,
+  type: "artist" | "release" | "track",
+  itemId: number
+) {
+  const docRef = doc(
+    db,
+    "users",
+    userId,
+    `favorite${capitalize(type)}s`,
+    itemId.toString()
+  );
+  await deleteDoc(docRef);
 }
 
 function capitalize(s: string) {
-  return s.charAt(0).toUpperCase() + s.slice(1)
+  return s.charAt(0).toUpperCase() + s.slice(1);
 }

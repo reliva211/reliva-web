@@ -1,58 +1,84 @@
-"use client"
+"use client";
 
-import type React from "react"
-import { useState } from "react"
-import Link from "next/link"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Checkbox } from "@/components/ui/checkbox"
-import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth"
-import { auth } from "@/lib/firebase"  // Adjust the path
+import type React from "react";
+import { useState } from "react";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
+import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
+import { auth } from "@/lib/firebase"; // Adjust the path
+import { db } from "@/lib/firebase";
+import { setDoc, doc } from "firebase/firestore";
 
 export default function SignupPage() {
-  const [name, setName] = useState("")
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
-  const [isLoading, setIsLoading] = useState(false)
-  
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleEmailSignup = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsLoading(true)
-  
-    try {
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password)
-      const user = userCredential.user
-  
-      await updateProfile(user, {
-        displayName: name
-      })
-  
-      // Optional: redirect to dashboard or home
-      window.location.href = "/"
-    } catch (error: any) {
-      console.error("Signup failed:", error.message)
-      alert(error.message)
-    } finally {
-      setIsLoading(false)
-    }
-  }
+    e.preventDefault();
+    setIsLoading(true);
 
-  async function handleGoogleSignup(event: React.MouseEvent<HTMLButtonElement, MouseEvent>): Promise<void> {
+    try {
+      const userCredential = await createUserWithEmailAndPassword(
+        auth,
+        email,
+        password
+      );
+      const user = userCredential.user;
+
+      await updateProfile(user, {
+        displayName: name,
+      });
+
+      // Create Firestore user doc with empty spotify field
+      await setDoc(
+        doc(db, "users", user.uid),
+        { spotify: { connected: false } },
+        { merge: true }
+      );
+
+      window.location.href = "/";
+    } catch (error: any) {
+      console.error("Signup failed:", error.message);
+      alert(error.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  async function handleGoogleSignup(
+    event: React.MouseEvent<HTMLButtonElement, MouseEvent>
+  ): Promise<void> {
     event.preventDefault();
     setIsLoading(true);
 
     try {
-      // Assuming you have a Firebase Google Auth provider set up
-      const { GoogleAuthProvider, signInWithPopup } = await import("firebase/auth");
+      const { GoogleAuthProvider, signInWithPopup } = await import(
+        "firebase/auth"
+      );
       const provider = new GoogleAuthProvider();
       const result = await signInWithPopup(auth, provider);
-
-      // Optional: handle user data or redirect
       const user = result.user;
-      console.log("Google signup successful:", user);
+
+      // Create Firestore user doc with empty spotify field
+      await setDoc(
+        doc(db, "users", user.uid),
+        { spotify: { connected: false } },
+        { merge: true }
+      );
+
       window.location.href = "/";
     } catch (error: any) {
       console.error("Google signup failed:", error.message);
@@ -65,7 +91,9 @@ export default function SignupPage() {
     <div className="container flex items-center justify-center min-h-[calc(100vh-8rem)] py-12">
       <Card className="mx-auto max-w-lg">
         <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl font-bold">Create an account</CardTitle>
+          <CardTitle className="text-2xl font-bold">
+            Create an account
+          </CardTitle>
           <CardDescription>Choose your preferred signup method</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -101,7 +129,9 @@ export default function SignupPage() {
               <span className="w-full border-t" />
             </div>
             <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-background px-2 text-muted-foreground">Or continue with</span>
+              <span className="bg-background px-2 text-muted-foreground">
+                Or continue with
+              </span>
             </div>
           </div>
 
@@ -156,5 +186,5 @@ export default function SignupPage() {
         </CardFooter>
       </Card>
     </div>
-  )
+  );
 }
