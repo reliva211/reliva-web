@@ -1,8 +1,8 @@
-"use client"
+"use client";
 
-import { useEffect, useState } from "react"
-import Image from "next/image"
-import { useTheme } from "next-themes"
+import { useEffect, useState } from "react";
+import Image from "next/image";
+import { useTheme } from "next-themes";
 import {
   Heart,
   MessageCircle,
@@ -23,31 +23,36 @@ import {
   Instagram,
   Linkedin,
   Github,
-} from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { useProfile } from "@/hooks/use-profile"
-import { EditProfileDialog } from "@/components/edit-profile"
-import { ImageUpload, CoverImageUpload } from "@/components/image-upload"
-import { useCurrentUser } from "@/app/movies/page"
-import { db } from "@/lib/firebase"
-import { collection, getDocs } from "firebase/firestore"
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useProfile } from "@/hooks/use-profile";
+import { EditProfileDialog } from "@/components/edit-profile";
+import { ImageUpload, CoverImageUpload } from "@/components/image-upload";
+import { useCurrentUser } from "@/hooks/use-current-user";
+import { db } from "@/lib/firebase";
+import { collection, getDocs } from "firebase/firestore";
 
 // Mock user for demo - replace with your auth system
 const mockUser = {
   uid: "Lokadithya M",
   email: "lokad1thya.m@gmail.com",
-}
+};
 
 // Mock collections data
 const mockMusic = [
   { id: "1", name: "Radiohead", type: "artist", tags: ["alternative rock"] },
   { id: "2", title: "OK Computer", artistName: "Radiohead", type: "release" },
-  { id: "3", title: "Paranoid Android", artistName: "Radiohead", type: "track" },
-]
+  {
+    id: "3",
+    title: "Paranoid Android",
+    artistName: "Radiohead",
+    type: "track",
+  },
+];
 
 const mockMovies = [
   {
@@ -66,7 +71,7 @@ const mockMovies = [
     status: "Watched",
     rating: 5,
   },
-]
+];
 
 const mockBooks = [
   {
@@ -85,28 +90,36 @@ const mockBooks = [
     status: "Completed",
     progress: 100,
   },
-]
+];
 
-export async function fetchFavorites<T>(userId: string, type: "artist" | "release" | "track"): Promise<T[]> {
-  const colRef = collection(db, "users", userId, `favorite${capitalize(type)}s`)
-  const snapshot = await getDocs(colRef)
+export async function fetchFavorites<T>(
+  userId: string,
+  type: "artist" | "release" | "track"
+): Promise<T[]> {
+  const colRef = collection(
+    db,
+    "users",
+    userId,
+    `favorite${capitalize(type)}s`
+  );
+  const snapshot = await getDocs(colRef);
 
   // Map and cast to T[], you can do minimal validation here if you want
   return snapshot.docs.map((doc) => {
-    const data = doc.data()
+    const data = doc.data();
     // Optional: add id from doc.id if needed, e.g. data.id = parseInt(doc.id)
-    return data as T
-  })
+    return data as T;
+  });
 }
 
 type Book = {
-  progress: any
-  status: string
+  progress: any;
+  status: string;
   id: string;
   title: string;
   author: string;
   cover: string;
-  rating: number | string; 
+  rating: number | string;
 };
 
 interface Movie {
@@ -120,56 +133,63 @@ interface Movie {
   notes?: string;
 }
 
-export default function UserProfile() {
-  const [activeTab, setActiveTab] = useState("overview")
-  const [editDialogOpen, setEditDialogOpen] = useState(false)
-  const { theme, setTheme } = useTheme()
+interface UserProfileProps {
+  userId?: string;
+}
+
+export default function UserProfile({ userId: propUserId }: UserProfileProps) {
+  const [activeTab, setActiveTab] = useState("overview");
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const { theme, setTheme } = useTheme();
   const user = useCurrentUser();
-  const userId = user?.uid;
+  const userId = propUserId || user?.uid;
   const [mockBooks, setSavedBooks] = useState<Book[]>([]);
   const [mockMovies, setSavedMovies] = useState<Movie[]>([]);
+  const [profileError, setProfileError] = useState<string | null>(null);
 
+  const { profile, loading, saving, updateProfile, uploadImage } =
+    useProfile(userId);
 
-  const { profile, loading, saving, updateProfile, uploadImage } = useProfile(userId)
+  const fetchUserMovies = async (uid: string) => {
+    const querySnapshot = await getDocs(collection(db, `users/${uid}/movies`));
+    const movies: Movie[] = [];
+    const ids: number[] = [];
 
-    const fetchUserMovies = async (uid: string) => {
-      const querySnapshot = await getDocs(collection(db, `users/${uid}/movies`))
-      const movies: Movie[] = []
-      const ids: number[] = []
-    
-      querySnapshot.forEach((doc) => {
-        const data = doc.data()
-        movies.push(data as Movie)
-        ids.push(data.id)
-      })
-    
-      setSavedMovies(
-        movies.map((movie) => ({
-          ...movie,
-          status: movie.status || "Unknown", // Ensure status is always a string
-          rating: movie.rating || 0,        // Ensure rating is always a number
-          notes: movie.notes || "",         // Ensure notes is always a string
-        }))
-      )
-    }
+    querySnapshot.forEach((doc) => {
+      const data = doc.data();
+      movies.push(data as Movie);
+      ids.push(data.id);
+    });
 
-    useEffect(() => {
-      if (!userId) return;
-  
-      const fetchSavedBooks = async () => {
-        try {
-          const booksCollection = collection(db, "users", userId, "books");
-          const snapshot = await getDocs(booksCollection);
-          const booksData: Book[] = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Book));
-          setSavedBooks(booksData);
-          fetchUserMovies(user.uid)
-        } catch (err) {
-          console.error("Failed to fetch saved books:", err);
-        }
-      };
-  
-      fetchSavedBooks();
-    }, [userId]);
+    setSavedMovies(
+      movies.map((movie) => ({
+        ...movie,
+        status: movie.status || "Unknown", // Ensure status is always a string
+        rating: movie.rating || 0, // Ensure rating is always a number
+        notes: movie.notes || "", // Ensure notes is always a string
+      }))
+    );
+  };
+
+  useEffect(() => {
+    if (!userId) return;
+
+    const fetchSavedBooks = async () => {
+      try {
+        const booksCollection = collection(db, "users", userId, "books");
+        const snapshot = await getDocs(booksCollection);
+        const booksData: Book[] = snapshot.docs.map(
+          (doc) => ({ id: doc.id, ...doc.data() } as Book)
+        );
+        setSavedBooks(booksData);
+        if (user && user.uid) fetchUserMovies(user.uid);
+      } catch (err) {
+        console.error("Failed to fetch saved books:", err);
+      }
+    };
+
+    fetchSavedBooks();
+  }, [userId, user]);
 
   const stats = {
     music: mockMusic.length,
@@ -178,48 +198,80 @@ export default function UserProfile() {
     watchedMovies: mockMovies.filter((m) => m.status === "Watched").length,
     readBooks: mockBooks.filter((b) => b.status === "Completed").length,
     currentlyReading: mockBooks.filter((b) => b.status === "Reading").length,
-  }
+  };
 
-const handleCoverUpload = async (file: File) => {
-  const url = await uploadImage(file, "cover")
-  await updateProfile({ coverImageUrl: url })
-}
-
+  const handleCoverUpload = async (file: File) => {
+    const url = await uploadImage(file, "cover");
+    await updateProfile({ coverImageUrl: url });
+  };
 
   const getSocialIcon = (platform: string) => {
     switch (platform) {
       case "twitter":
-        return <Twitter className="h-4 w-4" />
+        return <Twitter className="h-4 w-4" />;
       case "instagram":
-        return <Instagram className="h-4 w-4" />
+        return <Instagram className="h-4 w-4" />;
       case "linkedin":
-        return <Linkedin className="h-4 w-4" />
+        return <Linkedin className="h-4 w-4" />;
       case "github":
-        return <Github className="h-4 w-4" />
+        return <Github className="h-4 w-4" />;
       default:
-        return <ExternalLink className="h-4 w-4" />
+        return <ExternalLink className="h-4 w-4" />;
     }
-  }
+  };
 
-  if (loading) {
+  if (!userId) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Loading your profile...</p>
+          <p className="text-muted-foreground">
+            Please log in to view your profile.
+          </p>
         </div>
       </div>
-    )
+    );
   }
 
   if (!profile) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">
-          <p className="text-muted-foreground">Profile not found</p>
+          <h1 className="text-3xl font-bold mb-2">
+            {user?.displayName || "Your Name"}
+          </h1>
+          <p className="text-muted-foreground text-lg">
+            {user?.email || "your@email.com"}
+          </p>
+          <p className="text-muted-foreground text-lg">@username</p>
+          <p className="mt-1 text-sm font-medium text-primary">
+            Add a tagline to your profile!
+          </p>
+          <p className="mt-2 max-w-md mx-auto">
+            Add your bio to let others know more about you!
+          </p>
+          <div className="flex flex-wrap items-center gap-4 mt-3 text-sm text-muted-foreground justify-center">
+            <div className="flex items-center gap-1 opacity-60">
+              <MapPin className="h-4 w-4" />
+              No location set
+            </div>
+            <div className="flex items-center gap-1 opacity-60">
+              <LinkIcon className="h-4 w-4" />
+              No website set
+            </div>
+            <div className="flex items-center gap-1">
+              <Calendar className="h-4 w-4" />
+              Joined recently
+            </div>
+          </div>
+          <div className="mt-3 text-muted-foreground opacity-60 text-sm">
+            No social links added yet
+          </div>
+          {profileError && (
+            <div className="mt-4 text-red-500">{profileError}</div>
+          )}
         </div>
       </div>
-    )
+    );
   }
 
   return (
@@ -228,7 +280,12 @@ const handleCoverUpload = async (file: File) => {
       <div className="relative h-48 md:h-64 bg-gradient-to-r from-primary/20 to-secondary/20">
         <CoverImageUpload onUpload={handleCoverUpload}>
           {profile.coverImageUrl ? (
-            <Image src={profile.coverImageUrl || "/placeholder.svg"} alt="Cover" fill className="object-cover" />
+            <Image
+              src={profile.coverImageUrl || "/placeholder.svg"}
+              alt="Cover"
+              fill
+              className="object-cover"
+            />
           ) : (
             <div className="w-full h-full bg-gradient-to-r from-primary/20 to-secondary/20" />
           )}
@@ -241,7 +298,11 @@ const handleCoverUpload = async (file: File) => {
             onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
             className="bg-background/80 backdrop-blur-sm"
           >
-            {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+            {theme === "dark" ? (
+              <Sun className="h-4 w-4" />
+            ) : (
+              <Moon className="h-4 w-4" />
+            )}
           </Button>
           <Button
             variant="outline"
@@ -259,7 +320,10 @@ const handleCoverUpload = async (file: File) => {
         <div className="flex flex-col md:flex-row gap-6 mb-8">
           <ImageUpload onUpload={handleCoverUpload} className="w-32 h-32">
             <Avatar className="w-32 h-32 border-4 border-background shadow-lg">
-              <AvatarImage src={profile.avatarUrl || "/placeholder.svg"} alt={profile.displayName} />
+              <AvatarImage
+                src={profile.avatarUrl || "/placeholder.svg"}
+                alt={profile.displayName}
+              />
               <AvatarFallback className="text-2xl">
                 <User className="h-12 w-12" />
               </AvatarFallback>
@@ -269,23 +333,44 @@ const handleCoverUpload = async (file: File) => {
           <div className="flex-1 md:mt-16">
             <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
               <div>
-                <h1 className="text-3xl font-bold">{profile.displayName}</h1>
-                <p className="text-muted-foreground text-lg">@{profile.username}</p>
-                <p className="mt-1 text-sm font-medium text-primary">{profile.tagline}</p>
-                <p className="mt-2 max-w-md">{profile.bio}</p>
+                <h1 className="text-3xl font-bold">
+                  {profile.displayName || user?.displayName || "Your Name"}
+                </h1>
+                <p className="text-muted-foreground text-lg">
+                  {user?.email || "your@email.com"}
+                </p>
+                <p className="text-muted-foreground text-lg">
+                  @{profile.username || "username"}
+                </p>
+                <p className="mt-1 text-sm font-medium text-primary">
+                  {profile.tagline || "Add a tagline to your profile!"}
+                </p>
+                <p className="mt-2 max-w-md">
+                  {profile.bio ||
+                    "Add your bio to let others know more about you!"}
+                </p>
 
                 <div className="flex flex-wrap items-center gap-4 mt-3 text-sm text-muted-foreground">
-                  {profile.location && (
+                  {profile.location ? (
                     <div className="flex items-center gap-1">
                       <MapPin className="h-4 w-4" />
                       {profile.location}
                     </div>
+                  ) : (
+                    <div className="flex items-center gap-1 opacity-60">
+                      <MapPin className="h-4 w-4" />
+                      No location set
+                    </div>
                   )}
-                  {profile.website && (
+                  {profile.website ? (
                     <div className="flex items-center gap-1">
                       <LinkIcon className="h-4 w-4" />
                       <a
-                        href={profile.website.startsWith("http") ? profile.website : `https://${profile.website}`}
+                        href={
+                          profile.website.startsWith("http")
+                            ? profile.website
+                            : `https://${profile.website}`
+                        }
                         target="_blank"
                         rel="noopener noreferrer"
                         className="hover:text-primary transition-colors"
@@ -293,38 +378,67 @@ const handleCoverUpload = async (file: File) => {
                         {profile.website}
                       </a>
                     </div>
+                  ) : (
+                    <div className="flex items-center gap-1 opacity-60">
+                      <LinkIcon className="h-4 w-4" />
+                      No website set
+                    </div>
                   )}
                   <div className="flex items-center gap-1">
                     <Calendar className="h-4 w-4" />
-                    Joined {new Date(profile.joinDate).toLocaleDateString("en-US", { month: "long", year: "numeric" })}
+                    Joined{" "}
+                    {profile.joinDate
+                      ? new Date(profile.joinDate).toLocaleDateString("en-US", {
+                          month: "long",
+                          year: "numeric",
+                        })
+                      : "recently"}
                   </div>
                 </div>
 
                 {/* Social Links */}
-                {Object.keys(profile.socialLinks).length > 0 && (
+                {Object.keys(profile.socialLinks).length > 0 ? (
                   <div className="flex gap-2 mt-3">
-                    {Object.entries(profile.socialLinks).map(([platform, url]) => (
-                      <Button key={platform} variant="outline" size="icon" className="h-8 w-8" asChild>
-                        <a
-                          href={url.startsWith("http") ? url : `https://${url}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
+                    {Object.entries(profile.socialLinks).map(
+                      ([platform, url]) => (
+                        <Button
+                          key={platform}
+                          variant="outline"
+                          size="icon"
+                          className="h-8 w-8"
+                          asChild
                         >
-                          {getSocialIcon(platform)}
-                        </a>
-                      </Button>
-                    ))}
+                          <a
+                            href={
+                              url.startsWith("http") ? url : `https://${url}`
+                            }
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            {getSocialIcon(platform)}
+                          </a>
+                        </Button>
+                      )
+                    )}
+                  </div>
+                ) : (
+                  <div className="mt-3 text-muted-foreground opacity-60 text-sm">
+                    No social links added yet
                   </div>
                 )}
 
                 <div className="flex gap-6 mt-4">
                   <div className="text-center">
                     <div className="font-bold text-lg">1.2K</div>
-                    <div className="text-sm text-muted-foreground">Followers</div>
+                    <div className="text-sm text-muted-foreground">
+                      Followers
+                    </div>
                   </div>
                   <div className="text-center">
                     <div className="font-bold text-lg">567</div>
-                    <div className="text-sm text-muted-foreground">Following</div>
+                    <div className="text-sm text-muted-foreground">
+                      Following
+                    </div>
                   </div>
                   <div className="text-center">
                     <div className="font-bold text-lg">89</div>
@@ -423,13 +537,15 @@ const handleCoverUpload = async (file: File) => {
                         <Music className="h-4 w-4" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="font-medium truncate">{item.name || item.title}</p>
+                        <p className="font-medium truncate">
+                          {item.name || item.title}
+                        </p>
                         <p className="text-sm text-muted-foreground">
                           {item.type === "artist"
                             ? "Artist"
                             : item.type === "release"
-                              ? `Album by ${item.artistName}`
-                              : `Track by ${item.artistName}`}
+                            ? `Album by ${item.artistName}`
+                            : `Track by ${item.artistName}`}
                         </p>
                       </div>
                       {item.type === "track" && (
@@ -458,7 +574,9 @@ const handleCoverUpload = async (file: File) => {
                     >
                       <div className="w-10 h-10 relative rounded overflow-hidden">
                         <Image
-                          src={movie.cover || "/placeholder.svg?height=40&width=40"}
+                          src={
+                            movie.cover || "/placeholder.svg?height=40&width=40"
+                          }
                           alt={movie.title}
                           fill
                           className="object-cover"
@@ -499,7 +617,9 @@ const handleCoverUpload = async (file: File) => {
                     >
                       <div className="w-10 h-10 relative rounded overflow-hidden">
                         <Image
-                          src={book.cover || "/placeholder.svg?height=40&width=40"}
+                          src={
+                            book.cover || "/placeholder.svg?height=40&width=40"
+                          }
                           alt={book.title}
                           fill
                           className="object-cover"
@@ -511,9 +631,13 @@ const handleCoverUpload = async (file: File) => {
                           <Badge variant="secondary" className="text-xs">
                             {book.status}
                           </Badge>
-                          {book.progress && book.progress > 0 && book.status === "Reading" && (
-                            <span className="text-xs text-muted-foreground">{book.progress}%</span>
-                          )}
+                          {book.progress &&
+                            book.progress > 0 &&
+                            book.status === "Reading" && (
+                              <span className="text-xs text-muted-foreground">
+                                {book.progress}%
+                              </span>
+                            )}
                         </div>
                       </div>
                     </div>
@@ -528,114 +652,128 @@ const handleCoverUpload = async (file: File) => {
             <div className="text-center py-12">
               <Music className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
               <h3 className="text-lg font-medium mb-2">Music Collection</h3>
-              <p className="text-muted-foreground">Your music collection will appear here</p>
+              <p className="text-muted-foreground">
+                Your music collection will appear here
+              </p>
             </div>
           </TabsContent>
 
-<TabsContent value="movies" className="mt-6">
-  {mockMovies.length === 0 ? (
-    <div className="text-center py-12">
-      <Film className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-      <h3 className="text-lg font-medium mb-2">Movie Collection</h3>
-      <p className="text-muted-foreground">Your movie collection will appear here</p>
-    </div>
-  ) : (
-    <>
-      {/* Recent Movies */}
-      <Card className="hover:shadow-md transition-shadow">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Film className="h-5 w-5" />
-            Movies Collection
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          {mockMovies.slice(0, 5).map((movie) => (
-            <div
-              key={movie.id}
-              className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors"
-            >
-              <div className="w-10 h-10 relative rounded overflow-hidden">
-                <Image
-                  src={movie.cover || "/placeholder.svg?height=40&width=40"}
-                  alt={movie.title}
-                  fill
-                  className="object-cover"
-                />
+          <TabsContent value="movies" className="mt-6">
+            {mockMovies.length === 0 ? (
+              <div className="text-center py-12">
+                <Film className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                <h3 className="text-lg font-medium mb-2">Movie Collection</h3>
+                <p className="text-muted-foreground">
+                  Your movie collection will appear here
+                </p>
               </div>
-              <div className="flex-1 min-w-0">
-                <p className="font-medium truncate">{movie.title}</p>
-                <div className="flex items-center gap-2">
-                  <Badge variant="secondary" className="text-xs">
-                    {movie.status}
-                  </Badge>
-                  {movie.rating && movie.rating > 0 && (
-                    <div className="flex items-center gap-1">
-                      <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-                      <span className="text-xs">{movie.rating}</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          ))}
-        </CardContent>
-      </Card>
-    </>
-  )}
-</TabsContent>
+            ) : (
+              <>
+                {/* Recent Movies */}
+                <Card className="hover:shadow-md transition-shadow">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Film className="h-5 w-5" />
+                      Movies Collection
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    {mockMovies.slice(0, 5).map((movie) => (
+                      <div
+                        key={movie.id}
+                        className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors"
+                      >
+                        <div className="w-10 h-10 relative rounded overflow-hidden">
+                          <Image
+                            src={
+                              movie.cover ||
+                              "/placeholder.svg?height=40&width=40"
+                            }
+                            alt={movie.title}
+                            fill
+                            className="object-cover"
+                          />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium truncate">{movie.title}</p>
+                          <div className="flex items-center gap-2">
+                            <Badge variant="secondary" className="text-xs">
+                              {movie.status}
+                            </Badge>
+                            {movie.rating && movie.rating > 0 && (
+                              <div className="flex items-center gap-1">
+                                <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+                                <span className="text-xs">{movie.rating}</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </CardContent>
+                </Card>
+              </>
+            )}
+          </TabsContent>
 
-
-<TabsContent value="books" className="mt-6">
-  {mockBooks.length === 0 ? (
-    <div className="text-center py-12">
-      <BookOpen className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-      <h3 className="text-lg font-medium mb-2">Book Collection</h3>
-      <p className="text-muted-foreground">Your book collection will appear here</p>
-    </div>
-  ) : (
-    <>
-      {/* Recent Books */}
-      <Card className="hover:shadow-md transition-shadow">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <BookOpen className="h-5 w-5" />
-            Books Collection
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          {mockBooks.slice(0, 5).map((book) => (
-            <div
-              key={book.id}
-              className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors"
-            >
-              <div className="w-10 h-10 relative rounded overflow-hidden">
-                <Image
-                  src={book.cover || "/placeholder.svg?height=40&width=40"}
-                  alt={book.title}
-                  fill
-                  className="object-cover"
-                />
+          <TabsContent value="books" className="mt-6">
+            {mockBooks.length === 0 ? (
+              <div className="text-center py-12">
+                <BookOpen className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                <h3 className="text-lg font-medium mb-2">Book Collection</h3>
+                <p className="text-muted-foreground">
+                  Your book collection will appear here
+                </p>
               </div>
-              <div className="flex-1 min-w-0">
-                <p className="font-medium truncate">{book.title}</p>
-                <div className="flex items-center gap-2">
-                  <Badge variant="secondary" className="text-xs">
-                    {book.status}
-                  </Badge>
-                  {book.progress && book.progress > 0 && book.status === "Reading" && (
-                    <span className="text-xs text-muted-foreground">{book.progress}%</span>
-                  )}
-                </div>
-              </div>
-            </div>
-          ))}
-        </CardContent>
-      </Card>
-    </>
-  )}
-</TabsContent>
-
+            ) : (
+              <>
+                {/* Recent Books */}
+                <Card className="hover:shadow-md transition-shadow">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <BookOpen className="h-5 w-5" />
+                      Books Collection
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    {mockBooks.slice(0, 5).map((book) => (
+                      <div
+                        key={book.id}
+                        className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors"
+                      >
+                        <div className="w-10 h-10 relative rounded overflow-hidden">
+                          <Image
+                            src={
+                              book.cover ||
+                              "/placeholder.svg?height=40&width=40"
+                            }
+                            alt={book.title}
+                            fill
+                            className="object-cover"
+                          />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium truncate">{book.title}</p>
+                          <div className="flex items-center gap-2">
+                            <Badge variant="secondary" className="text-xs">
+                              {book.status}
+                            </Badge>
+                            {book.progress &&
+                              book.progress > 0 &&
+                              book.status === "Reading" && (
+                                <span className="text-xs text-muted-foreground">
+                                  {book.progress}%
+                                </span>
+                              )}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </CardContent>
+                </Card>
+              </>
+            )}
+          </TabsContent>
         </Tabs>
       </div>
 
@@ -650,9 +788,8 @@ const handleCoverUpload = async (file: File) => {
         />
       )}
     </div>
-  )
+  );
 }
 function capitalize(type: string) {
-  throw new Error("Function not implemented.")
+  throw new Error("Function not implemented.");
 }
-

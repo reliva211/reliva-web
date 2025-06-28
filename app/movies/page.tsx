@@ -393,12 +393,15 @@ export default function MoviesPage() {
       <div className="flex flex-col md:flex-row gap-8">
         {/* Sidebar */}
         <div className="w-full md:w-64 space-y-6">
-          <form onSubmit={handleSearch}>
-            <div className="relative">
+          <form
+            onSubmit={handleSearch}
+            className="flex flex-col gap-2 w-full sm:flex-row sm:items-center sm:gap-2"
+          >
+            <div className="relative w-full">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Search for movies"
-                className="pl-10 pr-10"
+                className="pl-10 pr-10 w-full"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />

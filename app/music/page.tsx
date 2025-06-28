@@ -436,33 +436,44 @@ export default function MusicPage() {
             </Button>
           </div>
 
-          <form onSubmit={handleSearch} className="flex gap-2">
-            <div className="relative flex-1">
+          <form
+            onSubmit={handleSearch}
+            className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-2 w-full"
+          >
+            <div className="relative flex-1 w-full">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Search for artists, albums, or tracks"
-                className="pl-10 pr-4"
+                className="pl-10 pr-4 w-full"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
-            <Select value={searchType} onValueChange={setSearchType}>
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Search type" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All</SelectItem>
-                <SelectItem value="artist">Artists</SelectItem>
-                <SelectItem value="release">Albums</SelectItem>
-                <SelectItem value="track">Tracks</SelectItem>
-              </SelectContent>
-            </Select>
-            <Button type="submit">Search</Button>
-            {isSearching && (
-              <Button variant="ghost" onClick={clearSearch}>
-                Clear
+            <div className="flex flex-col gap-2 w-full sm:flex-row sm:w-auto">
+              <Select value={searchType} onValueChange={setSearchType}>
+                <SelectTrigger className="w-full sm:w-[180px]">
+                  <SelectValue placeholder="Search type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All</SelectItem>
+                  <SelectItem value="artist">Artists</SelectItem>
+                  <SelectItem value="release">Albums</SelectItem>
+                  <SelectItem value="track">Tracks</SelectItem>
+                </SelectContent>
+              </Select>
+              <Button type="submit" className="w-full sm:w-auto">
+                Search
               </Button>
-            )}
+              {isSearching && (
+                <Button
+                  variant="ghost"
+                  onClick={clearSearch}
+                  className="w-full sm:w-auto"
+                >
+                  Clear
+                </Button>
+              )}
+            </div>
           </form>
 
           {selectedTags.length > 0 && (

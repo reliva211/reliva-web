@@ -20,6 +20,7 @@ import {
   setDoc,
   updateDoc,
   deleteDoc,
+  addDoc,
 } from "firebase/firestore";
 import {
   Dialog,
@@ -37,6 +38,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Select } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 
 // Dummy data for books
 const myBooks = [
@@ -183,6 +186,11 @@ export default function BooksPage() {
   const [selectedCollection, setSelectedCollection] = useState<string>("all");
   const [isCreateCollectionOpen, setCreateCollectionOpen] = useState(false);
   const [newCollectionName, setNewCollectionName] = useState("");
+  const [selectedBooks, setSelectedBooks] = useState<string[]>([]);
+  const [isBatchModalOpen, setBatchModalOpen] = useState(false);
+  const [batchCollectionId, setBatchCollectionId] = useState<string>("");
+  const [batchNewCollection, setBatchNewCollection] = useState("");
+  const [batchLoading, setBatchLoading] = useState(false);
 
   const handleSearch = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -349,17 +357,74 @@ export default function BooksPage() {
           book.collections?.includes(selectedCollection)
         );
 
+  // Multi-select handlers
+  const toggleBookSelect = (id: string) => {
+    setSelectedBooks((prev) =>
+      prev.includes(id) ? prev.filter((bid) => bid !== id) : [...prev, id]
+    );
+  };
+  const selectAllBooks = () => {
+    setSelectedBooks(searchResults.map((b) => b.id));
+  };
+  const clearSelectedBooks = () => {
+    setSelectedBooks([]);
+  };
+  const allSelected =
+    selectedBooks.length === searchResults.length && searchResults.length > 0;
+
+  // Batch add handler
+  const handleBatchAdd = async () => {
+    if (!userId) {
+      setBatchLoading(false);
+      return;
+    }
+    setBatchLoading(true);
+    let collectionId = batchCollectionId;
+    // Create new collection if needed
+    if (batchNewCollection.trim()) {
+      // Save to Firestore (collections) and get auto-id
+      const newCol = { name: batchNewCollection.trim(), userId };
+      const colRef = await addDoc(
+        collection(db, "users", userId, "collections"),
+        newCol
+      );
+      collectionId = colRef.id;
+    }
+    // Add all selected books to Firestore under the chosen collection
+    for (const bookId of selectedBooks) {
+      const book = searchResults.find((b) => b.id === bookId);
+      if (!book) continue;
+      const newBook = {
+        ...book,
+        status: "Want to Read",
+        progress: 0,
+        collections: [collectionId],
+      };
+      await setDoc(
+        doc(db, "users", userId, "books", book.id.toString()),
+        newBook
+      );
+    }
+    setBatchLoading(false);
+    setBatchModalOpen(false);
+    clearSelectedBooks();
+    // Optionally, refetch savedBooks and collections here
+  };
+
   return (
     <div className="container py-8">
       <div className="flex flex-col md:flex-row gap-8">
         {/* Sidebar */}
         <div className="w-full md:w-64 space-y-6">
-          <form onSubmit={handleSearch}>
-            <div className="relative">
+          <form
+            onSubmit={handleSearch}
+            className="flex flex-col gap-2 w-full sm:flex-row sm:items-center sm:gap-2"
+          >
+            <div className="relative w-full">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Search for books"
-                className="pl-10 pr-10"
+                className="pl-10 pr-10 w-full"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
@@ -475,10 +540,38 @@ export default function BooksPage() {
                   Clear Search
                 </Button>
               </div>
-
+              {/* Multi-select controls */}
+              <div className="flex items-center gap-4 mb-2">
+                <Checkbox
+                  checked={allSelected}
+                  onCheckedChange={
+                    allSelected ? clearSelectedBooks : selectAllBooks
+                  }
+                />
+                <span>Select All</span>
+                {selectedBooks.length > 0 && (
+                  <Button size="sm" onClick={() => setBatchModalOpen(true)}>
+                    Add Selected to Collection
+                  </Button>
+                )}
+                {selectedBooks.length > 0 && (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={clearSelectedBooks}
+                  >
+                    Clear Selection
+                  </Button>
+                )}
+              </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                 {searchResults.map((book) => (
-                  <Card key={book.id} className="overflow-hidden">
+                  <Card key={book.id} className="overflow-hidden relative">
+                    <Checkbox
+                      className="absolute top-2 left-2 z-10 bg-white rounded"
+                      checked={selectedBooks.includes(book.id)}
+                      onCheckedChange={() => toggleBookSelect(book.id)}
+                    />
                     <CardContent className="p-0">
                       <div className="relative aspect-[2/3] w-full">
                         <Image
@@ -525,6 +618,51 @@ export default function BooksPage() {
                   </Card>
                 ))}
               </div>
+              {/* Batch Add Modal */}
+              <Dialog open={isBatchModalOpen} onOpenChange={setBatchModalOpen}>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Add Selected Books to Collection</DialogTitle>
+                  </DialogHeader>
+                  <div className="mb-4">
+                    <label className="block mb-2">Select Collection</label>
+                    <select
+                      className="w-full p-2 rounded bg-gray-800 text-white"
+                      value={batchCollectionId}
+                      onChange={(e) => setBatchCollectionId(e.target.value)}
+                    >
+                      <option value="">-- Select --</option>
+                      {collections.map((col) => (
+                        <option key={col.id} value={col.id}>
+                          {col.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="mb-4 text-center">or</div>
+                  <div className="mb-4">
+                    <label className="block mb-2">Create New Collection</label>
+                    <input
+                      className="w-full p-2 rounded bg-gray-800 text-white"
+                      placeholder="New collection name"
+                      value={batchNewCollection}
+                      onChange={(e) => setBatchNewCollection(e.target.value)}
+                    />
+                  </div>
+                  <DialogFooter>
+                    <Button
+                      onClick={handleBatchAdd}
+                      disabled={
+                        batchLoading ||
+                        (!batchCollectionId && !batchNewCollection) ||
+                        selectedBooks.length === 0
+                      }
+                    >
+                      {batchLoading ? "Adding..." : "Add Books"}
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
             </div>
           ) : (
             <Tabs defaultValue="my-books">
