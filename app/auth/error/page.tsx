@@ -1,3 +1,5 @@
+// app/auth/error/page.tsx
+
 "use client";
 
 import { useSearchParams } from "next/navigation";
@@ -5,8 +7,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AlertTriangle, ArrowLeft } from "lucide-react";
 import Link from "next/link";
+import { Suspense } from "react";
 
-export default function AuthError() {
+export const dynamic = "force-dynamic"; // Prevent static pre-rendering
+
+function AuthErrorContent() {
   const searchParams = useSearchParams();
   const error = searchParams.get("error");
 
@@ -57,7 +62,6 @@ export default function AuthError() {
               Please try again or contact support if the problem persists.
             </p>
           </div>
-
           <div className="flex gap-2">
             <Button asChild variant="outline" className="flex-1">
               <Link href="/music">
@@ -72,5 +76,13 @@ export default function AuthError() {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+export default function AuthError() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading error page...</div>}>
+      <AuthErrorContent />
+    </Suspense>
   );
 }
