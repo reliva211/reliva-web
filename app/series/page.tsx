@@ -637,53 +637,50 @@ export default function SeriesPage() {
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                 {searchResults.map((series) => (
-                  <Card
-                    key={series.id}
-                    className="overflow-hidden cursor-pointer"
-                    onClick={() => {
-                      setSelectedSeriesOverview(series);
-                      setOverviewOpen(true);
-                    }}
-                  >
-                    <CardContent className="p-0">
-                      <div className="relative aspect-[2/3] w-full">
-                        <Image
-                          src={series.cover || "/placeholder.svg"}
-                          alt={series.title}
-                          fill
-                          className="object-cover"
-                        />
-                      </div>
-                      <div className="p-4 space-y-2">
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <h3 className="font-medium line-clamp-1">
-                              {series.title}
-                            </h3>
-                            <p className="text-sm text-muted-foreground">
-                              {series.year}
-                            </p>
-                          </div>
-                          <div className="flex items-center">
-                            <Star className="h-3 w-3 fill-primary text-primary" />
-                            <span className="text-xs ml-1">
-                              {series.rating}
-                            </span>
+                  <Card key={series.id} className="overflow-hidden">
+                    <Link href={`/series/${series.id}`} className="block">
+                      <CardContent className="p-0">
+                        <div className="relative aspect-[2/3] w-full">
+                          <Image
+                            src={series.cover || "/placeholder.svg"}
+                            alt={series.title}
+                            fill
+                            className="object-cover"
+                          />
+                        </div>
+                        <div className="p-4 space-y-2">
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <h3 className="font-medium line-clamp-1">
+                                {series.title}
+                              </h3>
+                              <p className="text-sm text-muted-foreground">
+                                {series.year}
+                              </p>
+                            </div>
+                            <div className="flex items-center">
+                              <Star className="h-3 w-3 fill-primary text-primary" />
+                              <span className="text-xs ml-1">
+                                {series.rating}
+                              </span>
+                            </div>
                           </div>
                         </div>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="w-full"
-                          onClick={() => {
-                            setAddToListSeries(series);
-                            setAddToListOpen(true);
-                          }}
-                        >
-                          <Plus className="mr-1 h-4 w-4" /> Add to List
-                        </Button>
-                      </div>
-                    </CardContent>
+                      </CardContent>
+                    </Link>
+                    <div className="px-4 pb-4">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full"
+                        onClick={() => {
+                          setAddToListSeries(series);
+                          setAddToListOpen(true);
+                        }}
+                      >
+                        <Plus className="mr-1 h-4 w-4" /> Add to List
+                      </Button>
+                    </div>
                   </Card>
                 ))}
               </div>
@@ -702,14 +699,8 @@ export default function SeriesPage() {
                       key={series.listId + "-" + series.id}
                       className="overflow-hidden"
                     >
-                      <div
-                        className="cursor-pointer"
-                        onClick={() => {
-                          setSelectedSeriesOverview(series);
-                          setOverviewOpen(true);
-                        }}
-                      >
-                        <CardContent className="p-0">
+                      <Link href={`/series/${series.id}`} className="block">
+                        <div className="bg-card rounded-lg shadow-md overflow-hidden flex flex-col h-full cursor-pointer transition-transform hover:scale-[1.03]">
                           <div className="relative aspect-[2/3] w-full">
                             <Image
                               src={series.cover || "/placeholder.svg"}
@@ -736,8 +727,8 @@ export default function SeriesPage() {
                               </div>
                             </div>
                           </div>
-                        </CardContent>
-                      </div>
+                        </div>
+                      </Link>
                       <div className="px-4 pb-4">
                         <Button
                           variant="outline"

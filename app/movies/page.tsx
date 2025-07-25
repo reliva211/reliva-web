@@ -58,6 +58,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import Link from "next/link";
 
 interface Movie {
   id: number;
@@ -700,14 +701,8 @@ export default function MoviesPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                 {searchResults.map((movie) => (
                   <Card key={movie.id} className="overflow-hidden">
-                    <div
-                      className="cursor-pointer"
-                      onClick={() => {
-                        setSelectedMovieOverview(movie);
-                        setOverviewOpen(true);
-                      }}
-                    >
-                      <CardContent className="p-0">
+                    <Link href={`/movies/${movie.id}`} className="block">
+                      <div className="bg-card rounded-lg shadow-md overflow-hidden flex flex-col h-full cursor-pointer transition-transform hover:scale-[1.03]">
                         <div className="relative aspect-[2/3] w-full">
                           <Image
                             src={movie.cover || "/placeholder.svg"}
@@ -734,8 +729,8 @@ export default function MoviesPage() {
                             </div>
                           </div>
                         </div>
-                      </CardContent>
-                    </div>
+                      </div>
+                    </Link>
                     <div className="px-4 pb-4">
                       <Button
                         variant="outline"
@@ -789,14 +784,8 @@ export default function MoviesPage() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                     {searchResults.map((movie) => (
                       <Card key={movie.id} className="overflow-hidden">
-                        <div
-                          className="cursor-pointer"
-                          onClick={() => {
-                            setSelectedMovieOverview(movie);
-                            setOverviewOpen(true);
-                          }}
-                        >
-                          <CardContent className="p-0">
+                        <Link href={`/movies/${movie.id}`} className="block">
+                          <div className="bg-card rounded-lg shadow-md overflow-hidden flex flex-col h-full cursor-pointer transition-transform hover:scale-[1.03]">
                             <div className="relative aspect-[2/3] w-full">
                               <Image
                                 src={movie.cover || "/placeholder.svg"}
@@ -823,8 +812,8 @@ export default function MoviesPage() {
                                 </div>
                               </div>
                             </div>
-                          </CardContent>
-                        </div>
+                          </div>
+                        </Link>
                         <div className="px-4 pb-4">
                           <Button
                             variant="outline"
@@ -889,14 +878,8 @@ export default function MoviesPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6">
                   {recommendedMovies.map((movie) => (
                     <Card key={movie.id} className="overflow-hidden">
-                      <div
-                        className="cursor-pointer"
-                        onClick={() => {
-                          setSelectedMovieOverview(movie);
-                          setOverviewOpen(true);
-                        }}
-                      >
-                        <CardContent className="p-0">
+                      <Link href={`/movies/${movie.id}`} className="block">
+                        <div className="bg-card rounded-lg shadow-md overflow-hidden flex flex-col h-full cursor-pointer transition-transform hover:scale-[1.03]">
                           <div className="relative aspect-[2/3] w-full">
                             <Image
                               src={movie.cover || "/placeholder.svg"}
@@ -923,8 +906,8 @@ export default function MoviesPage() {
                               </div>
                             </div>
                           </div>
-                        </CardContent>
-                      </div>
+                        </div>
+                      </Link>
                       <div className="px-4 pb-4">
                         <Button
                           variant="outline"
