@@ -191,6 +191,8 @@ export default function BooksPage() {
   const [addToListDropdownOpen, setAddToListDropdownOpen] = useState<
     string | null
   >(null);
+  const [selectedBook, setSelectedBook] = useState<Book | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const handleSearch = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -208,21 +210,23 @@ export default function BooksPage() {
       const data = await res.json();
 
       if (data.items && Array.isArray(data.items)) {
-        const books: Book[] = data.items.map((item: any): Book => {
-          const info = item.volumeInfo;
+        const books: Book[] = data.items.map(
+          (item: any, index: number): Book => {
+            const info = item.volumeInfo;
 
-          return {
-            id: item.id,
-            title: info.title ?? "No title",
-            author: info.authors?.join(", ") ?? "Unknown author",
-            cover:
-              info.imageLinks?.thumbnail ??
-              "/placeholder.svg?height=200&width=140",
-            rating: info.averageRating ?? "N/A",
-            progress: undefined,
-            status: "",
-          };
-        });
+            return {
+              id: item.id,
+              title: info.title ?? "No title",
+              author: info.authors?.join(", ") ?? "Unknown author",
+              cover:
+                info.imageLinks?.thumbnail ??
+                "/placeholder.svg?height=200&width=140",
+              rating: info.averageRating ?? "N/A",
+              progress: undefined,
+              status: "",
+            };
+          }
+        );
 
         setSearchResults(books);
       } else {
@@ -635,15 +639,45 @@ export default function BooksPage() {
                 )}
               </div>
               <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-6">
-                {searchResults.map((book) => (
+                {searchResults.map((book, index) => (
                   <Card
-                    key={book.id}
-                    className="overflow-hidden relative w-full h-full flex flex-col"
+                    key={`${book.id}-${index}`}
+                    className="overflow-hidden relative w-full h-full flex flex-col group"
+                    onClick={(e) => {
+                      // Only open modal if not clicking on a button or input
+                      if (
+                        (e.target as HTMLElement).tagName === "BUTTON" ||
+                        (e.target as HTMLElement).tagName === "INPUT" ||
+                        (e.target as HTMLElement).closest("button") ||
+                        (e.target as HTMLElement).closest("input")
+                      ) {
+                        return;
+                      }
+                      setSelectedBook(book);
+                      setIsModalOpen(true);
+                    }}
                   >
+                    <div
+                      className="absolute inset-0 z-10 cursor-pointer"
+                      onClick={(e) => {
+                        // Only open modal if not clicking on a button or input
+                        if (
+                          (e.target as HTMLElement).tagName === "BUTTON" ||
+                          (e.target as HTMLElement).tagName === "INPUT" ||
+                          (e.target as HTMLElement).closest("button") ||
+                          (e.target as HTMLElement).closest("input")
+                        ) {
+                          return;
+                        }
+                        setSelectedBook(book);
+                        setIsModalOpen(true);
+                      }}
+                    />
                     <Checkbox
-                      className="absolute top-2 left-2 z-10 bg-white rounded"
+                      className="absolute top-2 left-2 z-20 bg-white rounded"
                       checked={selectedBooks.includes(book.id)}
                       onCheckedChange={() => toggleBookSelect(book.id)}
+                      onClick={(e) => e.stopPropagation()}
                     />
                     <CardContent className="p-0">
                       <div className="relative aspect-[2/3] w-full">
@@ -807,7 +841,11 @@ export default function BooksPage() {
                       {filteredBooks.map((book) => (
                         <div
                           key={book.id}
-                          className="flex flex-col sm:flex-row bg-card border border-border rounded-xl shadow-md overflow-hidden mb-4 w-full"
+                          className="flex flex-col sm:flex-row bg-card border border-border rounded-xl shadow-md overflow-hidden mb-4 w-full cursor-pointer"
+                          onClick={() => {
+                            setSelectedBook(book);
+                            setIsModalOpen(true);
+                          }}
                         >
                           <div className="w-full sm:w-24 h-48 sm:h-36 relative flex-shrink-0">
                             <Image
@@ -976,6 +1014,92 @@ export default function BooksPage() {
           )}
         </div>
       </div>
+      {/* Modal for Book Overview */}
+      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>{selectedBook?.title || "Book Details"}</DialogTitle>
+          </DialogHeader>
+          {selectedBook && (
+            <div className="flex flex-col md:flex-row gap-6">
+              {/* Book Cover */}
+              <div className="flex-shrink-0 flex justify-center md:block">
+                <Image
+                  src={selectedBook.cover || "/placeholder.svg"}
+                  alt={selectedBook.title}
+                  width={180}
+                  height={260}
+                  className="rounded-lg shadow-md mb-2 md:mb-0"
+                />
+              </div>
+              {/* Book Details */}
+              <div className="flex-1 min-w-0">
+                <h2 className="text-2xl font-bold mb-2">
+                  {selectedBook.title}
+                </h2>
+                <div className="text-lg font-semibold mb-2 text-emerald-400">
+                  {selectedBook.author}
+                </div>
+                <div className="flex items-center gap-3 mb-3">
+                  {/* Rating */}
+                  <span className="flex items-center gap-1">
+                    <span className="text-emerald-400 font-bold">
+                      {selectedBook.rating && selectedBook.rating !== "N/A"
+                        ? selectedBook.rating
+                        : "N/A"}
+                    </span>
+                    <svg
+                      className="h-5 w-5 text-yellow-400"
+                      fill="currentColor"
+                      viewBox="0 0 20 20"
+                    >
+                      <polygon points="9.9,1.1 7.6,6.6 1.6,7.6 6,11.9 4.9,17.9 9.9,15.1 14.9,17.9 13.8,11.9 18.2,7.6 12.2,6.6 " />
+                    </svg>
+                  </span>
+                  {/* Status */}
+                  {selectedBook.status && (
+                    <span className="px-2 py-1 rounded bg-muted text-xs font-semibold">
+                      {selectedBook.status}
+                    </span>
+                  )}
+                  {/* Progress */}
+                  {selectedBook.progress &&
+                    selectedBook.status === "Reading" && (
+                      <span className="text-xs text-muted-foreground">
+                        {selectedBook.progress}% read
+                      </span>
+                    )}
+                </div>
+                {/* Collections */}
+                {selectedBook.collections &&
+                  selectedBook.collections.length > 0 && (
+                    <div className="mb-2 text-sm text-muted-foreground flex flex-wrap gap-2">
+                      {selectedBook.collections.map((col) => (
+                        <span
+                          key={col}
+                          className="bg-emerald-900/30 text-emerald-300 px-2 py-1 rounded text-xs font-medium"
+                        >
+                          {col}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                {/* Description/Summary */}
+                <div className="mt-3 text-base text-gray-300 leading-relaxed">
+                  {typeof (selectedBook as any).description === "string" &&
+                  (selectedBook as any).description ? (
+                    (selectedBook as any).description
+                  ) : (
+                    <span className="text-muted-foreground">
+                      No description available.
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
