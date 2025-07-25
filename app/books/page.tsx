@@ -40,6 +40,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Select } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
+import { useRef } from "react";
 
 // Dummy data for books
 const myBooks = [
@@ -178,11 +179,7 @@ export default function BooksPage() {
   const [savedIds, setSavedIds] = useState<string[]>([]);
   const [filterStatus, setFilterStatus] = useState("all");
   const [searchResults, setSearchResults] = useState<Book[]>([]);
-  const [collections, setCollections] = useState<Collection[]>([
-    { id: "1", name: "Reading" },
-    { id: "2", name: "Completed" },
-    { id: "3", name: "Want to Read" },
-  ]);
+  const [collections, setCollections] = useState<Collection[]>([]);
   const [selectedCollection, setSelectedCollection] = useState<string>("all");
   const [isCreateCollectionOpen, setCreateCollectionOpen] = useState(false);
   const [newCollectionName, setNewCollectionName] = useState("");
@@ -191,6 +188,9 @@ export default function BooksPage() {
   const [batchCollectionId, setBatchCollectionId] = useState<string>("");
   const [batchNewCollection, setBatchNewCollection] = useState("");
   const [batchLoading, setBatchLoading] = useState(false);
+  const [addToListDropdownOpen, setAddToListDropdownOpen] = useState<
+    string | null
+  >(null);
 
   const handleSearch = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -264,6 +264,24 @@ export default function BooksPage() {
     fetchSavedBooks();
   }, [userId]);
 
+  // Fetch collections from Firestore on mount and when userId changes
+  useEffect(() => {
+    if (!userId) return;
+    const fetchCollections = async () => {
+      try {
+        const colRef = collection(db, "users", userId, "collections");
+        const snapshot = await getDocs(colRef);
+        const fetchedCollections: Collection[] = snapshot.docs.map(
+          (doc) => ({ id: doc.id, ...doc.data() } as Collection)
+        );
+        setCollections(fetchedCollections);
+      } catch (err) {
+        console.error("Failed to fetch collections:", err);
+      }
+    };
+    fetchCollections();
+  }, [userId]);
+
   const saveBook = async (book: any) => {
     if (!savedIds.includes(book.id)) {
       const newBook = {
@@ -292,36 +310,62 @@ export default function BooksPage() {
     }
   };
 
-  const handleCreateCollection = () => {
-    if (newCollectionName.trim() === "") return;
-    const newCollection = {
-      id: (collections.length + 1).toString(),
-      name: newCollectionName.trim(),
-    };
-    setCollections([...collections, newCollection]);
-    setNewCollectionName("");
-    setCreateCollectionOpen(false);
-    // You would also save the new collection to Firestore here
+  // Create a new collection in Firestore
+  const handleCreateCollection = async () => {
+    if (newCollectionName.trim() === "" || !userId) return;
+    try {
+      const colRef = await addDoc(
+        collection(db, "users", userId, "collections"),
+        {
+          name: newCollectionName.trim(),
+        }
+      );
+      const newCollection = { id: colRef.id, name: newCollectionName.trim() };
+      setCollections([...collections, newCollection]);
+      setNewCollectionName("");
+      setCreateCollectionOpen(false);
+    } catch (err) {
+      console.error("Failed to create collection:", err);
+    }
   };
 
   const addBookToCollection = async (bookId: string, collectionId: string) => {
-    const book = savedBooks.find((b) => b.id === bookId);
+    const book =
+      searchResults.find((b) => b.id === bookId) ||
+      savedBooks.find((b) => b.id === bookId);
     if (!book) return;
 
-    const updatedCollections = book.collections
-      ? [...book.collections, collectionId]
-      : [collectionId];
-
-    setSavedBooks(
-      savedBooks.map((b) =>
-        b.id === bookId ? { ...b, collections: updatedCollections } : b
-      )
-    );
-
-    if (userId) {
-      await updateDoc(doc(db, "users", userId, "books", bookId), {
-        collections: updatedCollections,
-      });
+    // Check if book is already in savedBooks
+    const existingBook = savedBooks.find((b) => b.id === bookId);
+    let updatedCollections: string[] = [];
+    if (existingBook) {
+      // Add collectionId if not already present
+      updatedCollections = existingBook.collections
+        ? Array.from(new Set([...existingBook.collections, collectionId]))
+        : [collectionId];
+      setSavedBooks(
+        savedBooks.map((b) =>
+          b.id === bookId ? { ...b, collections: updatedCollections } : b
+        )
+      );
+      if (userId) {
+        await updateDoc(doc(db, "users", userId, "books", bookId), {
+          collections: updatedCollections,
+        });
+      }
+    } else {
+      // Book not in library, add it with the collection
+      const newBook = {
+        ...book,
+        status: "Want to Read",
+        progress: 0,
+        collections: [collectionId],
+      };
+      setSavedBooks([...savedBooks, newBook]);
+      setSavedIds([...savedIds, bookId]);
+      if (userId) {
+        await setDoc(doc(db, "users", userId, "books", bookId), newBook);
+      }
     }
   };
 
@@ -372,7 +416,7 @@ export default function BooksPage() {
   const allSelected =
     selectedBooks.length === searchResults.length && searchResults.length > 0;
 
-  // Batch add handler
+  // Batch add handler (add books to Firestore under the chosen or new collection)
   const handleBatchAdd = async () => {
     if (!userId) {
       setBatchLoading(false);
@@ -380,15 +424,25 @@ export default function BooksPage() {
     }
     setBatchLoading(true);
     let collectionId = batchCollectionId;
-    // Create new collection if needed
+    // Create new collection in Firestore if needed
     if (batchNewCollection.trim()) {
-      // Save to Firestore (collections) and get auto-id
-      const newCol = { name: batchNewCollection.trim(), userId };
-      const colRef = await addDoc(
-        collection(db, "users", userId, "collections"),
-        newCol
-      );
-      collectionId = colRef.id;
+      try {
+        const colRef = await addDoc(
+          collection(db, "users", userId, "collections"),
+          {
+            name: batchNewCollection.trim(),
+          }
+        );
+        collectionId = colRef.id;
+        setCollections([
+          ...collections,
+          { id: colRef.id, name: batchNewCollection.trim() },
+        ]);
+      } catch (err) {
+        console.error("Failed to create batch collection:", err);
+        setBatchLoading(false);
+        return;
+      }
     }
     // Add all selected books to Firestore under the chosen collection
     for (const bookId of selectedBooks) {
@@ -408,14 +462,30 @@ export default function BooksPage() {
     setBatchLoading(false);
     setBatchModalOpen(false);
     clearSelectedBooks();
-    // Optionally, refetch savedBooks and collections here
+    // Refetch savedBooks and collections
+    if (userId) {
+      const booksCollection = collection(db, "users", userId, "books");
+      const snapshot = await getDocs(booksCollection);
+      const booksData: Book[] = snapshot.docs.map(
+        (doc) => ({ id: doc.id, ...doc.data() } as Book)
+      );
+      setSavedBooks(booksData);
+      setSavedIds(booksData.map((book) => book.id));
+      // Refetch collections
+      const colRef = collection(db, "users", userId, "collections");
+      const colSnap = await getDocs(colRef);
+      const fetchedCollections: Collection[] = colSnap.docs.map(
+        (doc) => ({ id: doc.id, ...doc.data() } as Collection)
+      );
+      setCollections(fetchedCollections);
+    }
   };
 
   return (
-    <div className="container py-8">
+    <div className="container max-w-6xl mx-auto px-2 sm:px-4 py-8">
       <div className="flex flex-col md:flex-row gap-8">
         {/* Sidebar */}
-        <div className="w-full md:w-64 space-y-6">
+        <div className="w-full md:w-64 space-y-6 flex-shrink-0">
           <form
             onSubmit={handleSearch}
             className="flex flex-col gap-2 w-full sm:flex-row sm:items-center sm:gap-2"
@@ -529,7 +599,7 @@ export default function BooksPage() {
         </div>
 
         {/* Main Content */}
-        <div className="flex-1">
+        <div className="flex-1 min-w-0">
           {isSearching ? (
             <div className="space-y-6">
               <div className="flex items-center justify-between">
@@ -564,9 +634,12 @@ export default function BooksPage() {
                   </Button>
                 )}
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-6">
                 {searchResults.map((book) => (
-                  <Card key={book.id} className="overflow-hidden relative">
+                  <Card
+                    key={book.id}
+                    className="overflow-hidden relative w-full h-full flex flex-col"
+                  >
                     <Checkbox
                       className="absolute top-2 left-2 z-10 bg-white rounded"
                       checked={selectedBooks.includes(book.id)}
@@ -596,23 +669,63 @@ export default function BooksPage() {
                             <span className="text-xs ml-1">{book.rating}</span>
                           </div>
                         </div>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="w-full"
-                          onClick={() => saveBook(book)}
-                          disabled={savedIds.includes(book.id)}
+                        <DropdownMenu
+                          open={addToListDropdownOpen === book.id}
+                          onOpenChange={(open) =>
+                            setAddToListDropdownOpen(open ? book.id : null)
+                          }
                         >
-                          {savedIds.includes(book.id) ? (
-                            <>
-                              <Check className="mr-1 h-4 w-4" /> Saved
-                            </>
-                          ) : (
-                            <>
-                              <Plus className="mr-1 h-4 w-4" /> Add to Library
-                            </>
-                          )}
-                        </Button>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              variant="default"
+                              size="sm"
+                              className="w-full"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                setAddToListDropdownOpen(book.id);
+                              }}
+                              disabled={savedIds.includes(book.id)}
+                            >
+                              {savedIds.includes(book.id) ? (
+                                <>
+                                  <Check className="mr-1 h-4 w-4" /> Saved
+                                </>
+                              ) : (
+                                <>
+                                  <Plus className="mr-1 h-4 w-4" /> Add to List
+                                </>
+                              )}
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="start">
+                            {collections.length === 0 ? (
+                              <DropdownMenuItem disabled>
+                                No lists found
+                              </DropdownMenuItem>
+                            ) : (
+                              collections.map((collection) => (
+                                <DropdownMenuItem
+                                  key={collection.id}
+                                  onClick={async () => {
+                                    await addBookToCollection(
+                                      book.id,
+                                      collection.id
+                                    );
+                                    setAddToListDropdownOpen(null);
+                                  }}
+                                  disabled={
+                                    savedIds.includes(book.id) &&
+                                    savedBooks
+                                      .find((b) => b.id === book.id)
+                                      ?.collections?.includes(collection.id)
+                                  }
+                                >
+                                  {collection.name}
+                                </DropdownMenuItem>
+                              ))
+                            )}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </div>
                     </CardContent>
                   </Card>
@@ -666,7 +779,7 @@ export default function BooksPage() {
             </div>
           ) : (
             <Tabs defaultValue="my-books">
-              <TabsList className="mb-4">
+              <TabsList className="mb-4 flex flex-wrap gap-2">
                 <TabsTrigger value="my-books">My Books</TabsTrigger>
                 <TabsTrigger value="recommendations">
                   Recommendations
@@ -689,54 +802,34 @@ export default function BooksPage() {
                     </Button>
                   </div>
                 ) : (
-                  <ScrollArea className="h-[calc(100vh-16rem)]">
+                  <ScrollArea className="h-[calc(100vh-16rem)] pr-2">
                     <div className="space-y-4">
                       {filteredBooks.map((book) => (
                         <div
                           key={book.id}
-                          className="flex border rounded-lg overflow-hidden"
+                          className="flex flex-col sm:flex-row bg-card border border-border rounded-xl shadow-md overflow-hidden mb-4 w-full"
                         >
-                          <div className="w-24 h-36 relative flex-shrink-0">
+                          <div className="w-full sm:w-24 h-48 sm:h-36 relative flex-shrink-0">
                             <Image
                               src={book.cover || "/placeholder.svg"}
                               alt={book.title}
                               fill
-                              className="object-cover"
+                              className="object-cover rounded-t-xl sm:rounded-l-xl sm:rounded-tr-none"
                             />
                           </div>
-                          <div className="flex-1 p-4 flex flex-col justify-between">
+                          <div className="flex-1 p-4 sm:p-6 flex flex-col justify-between min-w-0">
                             <div>
-                              <div className="flex justify-between">
-                                <h3 className="font-medium">{book.title}</h3>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-8 w-8"
-                                  onClick={() => removeBook(book.id)}
-                                >
-                                  <X className="h-4 w-4" />
-                                </Button>
-                              </div>
-                              <p className="text-sm text-muted-foreground">
-                                {book.author}
-                              </p>
-                            </div>
-                            <div className="mt-2">
-                              {/* if you ever decide to add the drag bar its here ! */}
-                              {/* <div className="flex items-center justify-between mb-1">
-                                <span className="text-sm font-medium">
-                                  {book.status === "Reading" ? `${book.progress}% complete` : book.status}
-                                </span>
-                              </div>
-                              {book.status === "Reading" && (
-                                <div className="w-full bg-muted rounded-full h-2 mb-3">
-                                  <div
-                                    className="bg-primary h-2 rounded-full"
-                                    style={{ width: `${book.progress}%` }}
-                                  ></div>
+                              <div className="flex justify-between items-start mb-2">
+                                <div>
+                                  <h3 className="text-lg font-semibold leading-tight mb-1">
+                                    {book.title}
+                                  </h3>
+                                  <p className="text-sm text-muted-foreground font-medium">
+                                    {book.author}
+                                  </p>
                                 </div>
-                              )} */}
-                              <div className="flex gap-2">
+                              </div>
+                              <div className="flex gap-2 mb-4">
                                 <Button
                                   variant={
                                     book.status === "Want to Read"
@@ -744,6 +837,7 @@ export default function BooksPage() {
                                       : "outline"
                                   }
                                   size="sm"
+                                  className="rounded-full px-4"
                                   onClick={() =>
                                     updateBookStatus(book.id, "Want to Read")
                                   }
@@ -757,6 +851,7 @@ export default function BooksPage() {
                                       : "outline"
                                   }
                                   size="sm"
+                                  className="rounded-full px-4"
                                   onClick={() =>
                                     updateBookStatus(book.id, "Reading")
                                   }
@@ -770,6 +865,7 @@ export default function BooksPage() {
                                       : "outline"
                                   }
                                   size="sm"
+                                  className="rounded-full px-4"
                                   onClick={() =>
                                     updateBookStatus(book.id, "Completed")
                                   }
@@ -777,40 +873,39 @@ export default function BooksPage() {
                                   Completed
                                 </Button>
                               </div>
-                            </div>
-                            <div className="p-4 border-t flex flex-col justify-center items-center gap-2 bg-muted/40">
-                              <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                  <Button variant="outline" size="sm">
-                                    <Plus className="mr-2 h-4 w-4" /> Add to...
-                                  </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent>
-                                  {collections.map((collection) => (
-                                    <DropdownMenuItem
-                                      key={collection.id}
-                                      onClick={() =>
-                                        addBookToCollection(
-                                          book.id,
-                                          collection.id
-                                        )
-                                      }
-                                      disabled={book.collections?.includes(
-                                        collection.id
-                                      )}
+                              <div className="border-t border-border my-3" />
+                              <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                    <Button
+                                      variant="secondary"
+                                      size="sm"
+                                      className="rounded-md px-4"
                                     >
-                                      {collection.name}
-                                    </DropdownMenuItem>
-                                  ))}
-                                </DropdownMenuContent>
-                              </DropdownMenu>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => removeBook(book.id)}
-                              >
-                                <X className="mr-1 h-4 w-4" /> Remove
-                              </Button>
+                                      <Plus className="mr-2 h-4 w-4" /> Add
+                                      to...
+                                    </Button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent>
+                                    {collections.map((collection) => (
+                                      <DropdownMenuItem
+                                        key={collection.id}
+                                        onClick={() =>
+                                          addBookToCollection(
+                                            book.id,
+                                            collection.id
+                                          )
+                                        }
+                                        disabled={book.collections?.includes(
+                                          collection.id
+                                        )}
+                                      >
+                                        {collection.name}
+                                      </DropdownMenuItem>
+                                    ))}
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
+                              </div>
                             </div>
                           </div>
                         </div>
@@ -822,9 +917,12 @@ export default function BooksPage() {
 
               <TabsContent value="recommendations" className="space-y-6">
                 <h2 className="text-2xl font-bold">Recommended for You</h2>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6">
+                <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4 sm:gap-6">
                   {recommendedBooks.map((book) => (
-                    <Card key={book.id} className="overflow-hidden">
+                    <Card
+                      key={book.id}
+                      className="overflow-hidden w-full h-full flex flex-col"
+                    >
                       <CardContent className="p-0">
                         <div className="relative aspect-[2/3] w-full">
                           <Image

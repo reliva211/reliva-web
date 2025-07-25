@@ -48,6 +48,7 @@ import {
   updateDoc,
   collection,
   getDocs,
+  addDoc,
 } from "firebase/firestore";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { Label } from "@/components/ui/label";
@@ -229,6 +230,24 @@ export default function MoviesPage() {
   const [selectedCollection, setSelectedCollection] = useState<string>("all");
   const [isCreateCollectionOpen, setCreateCollectionOpen] = useState(false);
   const [newCollectionName, setNewCollectionName] = useState("");
+  const [userMovieLists, setUserMovieLists] = useState<
+    { id: string; name: string }[]
+  >([]);
+  const [selectedListSidebar, setSelectedListSidebar] = useState<string>("all");
+  const [listMovieCounts, setListMovieCounts] = useState<{
+    [listId: string]: number;
+  }>({});
+  const [allMoviesFromLists, setAllMoviesFromLists] = useState<any[]>([]);
+  const [addToListOpen, setAddToListOpen] = useState(false);
+  const [addToListMovie, setAddToListMovie] = useState<any>(null);
+  const [selectedListId, setSelectedListId] = useState<string>("");
+  const [newListName, setNewListName] = useState("");
+  const [isSavingToList, setIsSavingToList] = useState(false);
+  const [overviewOpen, setOverviewOpen] = useState(false);
+  const [selectedMovieOverview, setSelectedMovieOverview] = useState<any>(null);
+  const [tmdbDetails, setTmdbDetails] = useState<any>(null);
+  const [tmdbLoading, setTmdbLoading] = useState(false);
+  const [tmdbError, setTmdbError] = useState<string | null>(null);
 
   const user = useCurrentUser();
 
@@ -260,6 +279,80 @@ export default function MoviesPage() {
       fetchUserMovies(user.uid);
     }
   }, [user]);
+
+  // Fetch user movie lists from Firestore on mount and whenever user changes
+  useEffect(() => {
+    const fetchLists = async () => {
+      if (!user?.uid) return;
+      const listsRef = collection(db, "users", user.uid, "movieLists");
+      const snapshot = await getDocs(listsRef);
+      setUserMovieLists(
+        snapshot.docs.map(
+          (doc) =>
+            ({ id: doc.id, ...doc.data() } as { id: string; name: string })
+        )
+      );
+    };
+    fetchLists();
+  }, [user]);
+
+  // Fetch movies for each list and deduplicate
+  useEffect(() => {
+    const fetchMovies = async () => {
+      if (!user?.uid) return;
+      const counts: { [listId: string]: number } = {};
+      let allMovies: any[] = [];
+      for (const list of userMovieLists) {
+        const moviesColRef = collection(
+          db,
+          "users",
+          user.uid,
+          "movieLists",
+          list.id,
+          "movies"
+        );
+        const snapshot = await getDocs(moviesColRef);
+        counts[list.id] = snapshot.size;
+        allMovies = allMovies.concat(
+          snapshot.docs.map((doc) => ({
+            id: doc.id,
+            ...doc.data(),
+            listId: list.id,
+          }))
+        );
+      }
+      setListMovieCounts(counts);
+      setAllMoviesFromLists(allMovies);
+    };
+    fetchMovies();
+  }, [user, userMovieLists]);
+
+  // Deduplicate allMoviesFromLists before rendering
+  const uniqueAllMovies = [];
+  const seenAll = new Set();
+  for (const m of allMoviesFromLists) {
+    const key = m.listId + "-" + m.id;
+    if (!seenAll.has(key)) {
+      uniqueAllMovies.push(m);
+      seenAll.add(key);
+    }
+  }
+  // Filter by selected list
+  let displayedMovies = uniqueAllMovies;
+  if (selectedListSidebar !== "all") {
+    displayedMovies = uniqueAllMovies.filter(
+      (m) => m.listId === selectedListSidebar
+    );
+  }
+  const uniqueDisplayedMovies = [];
+  const seenDisplayed = new Set();
+  for (const m of displayedMovies) {
+    const key = m.listId + "-" + m.id;
+    if (!seenDisplayed.has(key)) {
+      uniqueDisplayedMovies.push(m);
+      seenDisplayed.add(key);
+    }
+  }
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -388,6 +481,73 @@ export default function MoviesPage() {
           movie.collections?.includes(selectedCollection)
         );
 
+  // Add to List modal logic
+  const handleAddToList = async () => {
+    if (
+      !user?.uid ||
+      !addToListMovie ||
+      (!selectedListId && !newListName.trim())
+    )
+      return;
+    setIsSavingToList(true);
+    let listId = selectedListId;
+    try {
+      // Create new list if needed
+      if (!listId && newListName.trim()) {
+        const listsRef = collection(db, "users", user.uid, "movieLists");
+        const newListDoc = await addDoc(listsRef, { name: newListName.trim() });
+        listId = newListDoc.id;
+        setUserMovieLists((prev) => [
+          ...prev,
+          { id: listId, name: newListName.trim() },
+        ]);
+        setSelectedListId(listId); // auto-select new list
+      }
+      // Save movie under the list
+      if (listId) {
+        const listDocRef = doc(db, "users", user.uid, "movieLists", listId);
+        const moviesColRef = collection(listDocRef, "movies");
+        const movieDocRef = doc(moviesColRef, String(addToListMovie.id));
+        await setDoc(movieDocRef, { ...addToListMovie, listId });
+      }
+      setIsSavingToList(false);
+      setAddToListOpen(false);
+      setAddToListMovie(null);
+      setSelectedListId("");
+      setNewListName("");
+    } catch (err) {
+      setIsSavingToList(false);
+      alert("Failed to add movie to list. Please try again.");
+    }
+  };
+
+  // Fetch richer TMDB details when modal opens and a movie is selected
+  useEffect(() => {
+    const fetchDetails = async () => {
+      if (!overviewOpen || !selectedMovieOverview?.id) {
+        setTmdbDetails(null);
+        setTmdbError(null);
+        return;
+      }
+      setTmdbLoading(true);
+      setTmdbError(null);
+      try {
+        const res = await fetch(
+          `https://api.themoviedb.org/3/movie/${selectedMovieOverview.id}?api_key=${process.env.NEXT_PUBLIC_TMDB_API_KEY}&language=en-US`
+        );
+        if (!res.ok) throw new Error("Failed to fetch details");
+        const data = await res.json();
+        setTmdbDetails(data);
+      } catch (err: any) {
+        setTmdbError("Could not load movie details.");
+        setTmdbDetails(null);
+      } finally {
+        setTmdbLoading(false);
+      }
+    };
+    fetchDetails();
+  }, [overviewOpen, selectedMovieOverview]);
+
   return (
     <div className="container py-8">
       <div className="flex flex-col md:flex-row gap-8">
@@ -422,34 +582,30 @@ export default function MoviesPage() {
             <div className="space-y-1">
               <button
                 className={`w-full flex items-center justify-between rounded-md p-2 text-sm ${
-                  selectedCollection === "all"
+                  selectedListSidebar === "all"
                     ? "bg-accent"
                     : "hover:bg-accent transition-colors"
                 }`}
-                onClick={() => setSelectedCollection("all")}
+                onClick={() => setSelectedListSidebar("all")}
               >
                 <span>All Movies</span>
                 <span className="text-xs bg-primary/20 text-primary px-2 py-0.5 rounded-full">
-                  {savedMovies.length}
+                  {uniqueAllMovies.length}
                 </span>
               </button>
-              {collections.map((collection) => (
+              {userMovieLists.map((list) => (
                 <button
-                  key={collection.id}
+                  key={list.id}
                   className={`w-full flex items-center justify-between rounded-md p-2 text-sm ${
-                    selectedCollection === collection.id
+                    selectedListSidebar === list.id
                       ? "bg-accent"
                       : "hover:bg-accent transition-colors"
                   }`}
-                  onClick={() => setSelectedCollection(collection.id)}
+                  onClick={() => setSelectedListSidebar(list.id)}
                 >
-                  <span>{collection.name}</span>
+                  <span>{list.name}</span>
                   <span className="text-xs bg-muted px-2 py-0.5 rounded-full">
-                    {
-                      savedMovies.filter((m) =>
-                        m.collections?.includes(collection.id)
-                      ).length
-                    }
+                    {listMovieCounts[list.id] || 0}
                   </span>
                 </button>
               ))}
@@ -475,12 +631,35 @@ export default function MoviesPage() {
                     <Label htmlFor="name" className="text-right">
                       Name
                     </Label>
-                    <Input
-                      id="name"
-                      value={newCollectionName}
-                      onChange={(e) => setNewCollectionName(e.target.value)}
-                      className="col-span-3"
-                    />
+                    <form
+                      onSubmit={async (e) => {
+                        e.preventDefault();
+                        if (!newCollectionName.trim() || !user?.uid) return;
+                        const listsRef = collection(
+                          db,
+                          "users",
+                          user.uid,
+                          "movieLists"
+                        );
+                        const newListDoc = await addDoc(listsRef, {
+                          name: newCollectionName.trim(),
+                        });
+                        setUserMovieLists((prev) => [
+                          ...prev,
+                          { id: newListDoc.id, name: newCollectionName.trim() },
+                        ]);
+                        setSelectedListId(newListDoc.id); // auto-select new list
+                        setNewCollectionName("");
+                        setCreateCollectionOpen(false);
+                      }}
+                    >
+                      <Input
+                        id="name"
+                        value={newCollectionName}
+                        onChange={(e) => setNewCollectionName(e.target.value)}
+                        className="col-span-3"
+                      />
+                    </form>
                   </div>
                 </div>
                 <DialogFooter>
@@ -521,49 +700,56 @@ export default function MoviesPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                 {searchResults.map((movie) => (
                   <Card key={movie.id} className="overflow-hidden">
-                    <CardContent className="p-0">
-                      <div className="relative aspect-[2/3] w-full">
-                        <Image
-                          src={movie.cover || "/placeholder.svg"}
-                          alt={movie.title}
-                          fill
-                          className="object-cover"
-                        />
-                      </div>
-                      <div className="p-4 space-y-2">
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <h3 className="font-medium line-clamp-1">
-                              {movie.title}
-                            </h3>
-                            <p className="text-sm text-muted-foreground">
-                              {movie.year}
-                            </p>
-                          </div>
-                          <div className="flex items-center">
-                            <Star className="h-3 w-3 fill-primary text-primary" />
-                            <span className="text-xs ml-1">{movie.rating}</span>
+                    <div
+                      className="cursor-pointer"
+                      onClick={() => {
+                        setSelectedMovieOverview(movie);
+                        setOverviewOpen(true);
+                      }}
+                    >
+                      <CardContent className="p-0">
+                        <div className="relative aspect-[2/3] w-full">
+                          <Image
+                            src={movie.cover || "/placeholder.svg"}
+                            alt={movie.title}
+                            fill
+                            className="object-cover"
+                          />
+                        </div>
+                        <div className="p-4 space-y-2">
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <h3 className="font-medium line-clamp-1">
+                                {movie.title}
+                              </h3>
+                              <p className="text-sm text-muted-foreground">
+                                {movie.year}
+                              </p>
+                            </div>
+                            <div className="flex items-center">
+                              <Star className="h-3 w-3 fill-primary text-primary" />
+                              <span className="text-xs ml-1">
+                                {movie.rating}
+                              </span>
+                            </div>
                           </div>
                         </div>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="w-full"
-                          onClick={() => saveMovie(movie)}
-                          disabled={savedIds.includes(movie.id)}
-                        >
-                          {savedIds.includes(movie.id) ? (
-                            <>
-                              <Check className="mr-1 h-4 w-4" /> Saved
-                            </>
-                          ) : (
-                            <>
-                              <Plus className="mr-1 h-4 w-4" /> Add to Watchlist
-                            </>
-                          )}
-                        </Button>
-                      </div>
-                    </CardContent>
+                      </CardContent>
+                    </div>
+                    <div className="px-4 pb-4">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setAddToListMovie(movie);
+                          setAddToListOpen(true);
+                        }}
+                      >
+                        <Plus className="mr-1 h-4 w-4" /> Add to List
+                      </Button>
+                    </div>
                   </Card>
                 ))}
               </div>
@@ -596,207 +782,99 @@ export default function MoviesPage() {
                   </div>
                 </div>
 
-                {filteredMovies.length === 0 ? (
-                  <div className="text-center py-12">
-                    <Film className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                    <h3 className="text-lg font-medium mb-2">
-                      Your movie collection is empty
-                    </h3>
-                    <p className="text-muted-foreground mb-4">
-                      Search for movies to add to your collection
-                    </p>
-                    <Button>Explore Movies</Button>
+                {selectedListSidebar === "all" &&
+                searchQuery &&
+                searchResults.length > 0 ? (
+                  // Show search results (to be refactored in next steps)
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                    {searchResults.map((movie) => (
+                      <Card key={movie.id} className="overflow-hidden">
+                        <div
+                          className="cursor-pointer"
+                          onClick={() => {
+                            setSelectedMovieOverview(movie);
+                            setOverviewOpen(true);
+                          }}
+                        >
+                          <CardContent className="p-0">
+                            <div className="relative aspect-[2/3] w-full">
+                              <Image
+                                src={movie.cover || "/placeholder.svg"}
+                                alt={movie.title}
+                                fill
+                                className="object-cover"
+                              />
+                            </div>
+                            <div className="p-4 space-y-2">
+                              <div className="flex justify-between items-start">
+                                <div>
+                                  <h3 className="font-medium line-clamp-1">
+                                    {movie.title}
+                                  </h3>
+                                  <p className="text-sm text-muted-foreground">
+                                    {movie.year}
+                                  </p>
+                                </div>
+                                <div className="flex items-center">
+                                  <Star className="h-3 w-3 fill-primary text-primary" />
+                                  <span className="text-xs ml-1">
+                                    {movie.rating}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          </CardContent>
+                        </div>
+                        <div className="px-4 pb-4">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="w-full"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setAddToListMovie(movie);
+                              setAddToListOpen(true);
+                            }}
+                          >
+                            <Plus className="mr-1 h-4 w-4" /> Add to List
+                          </Button>
+                        </div>
+                      </Card>
+                    ))}
                   </div>
                 ) : (
+                  // Show uniqueDisplayedMovies (filtered by collection)
                   <ScrollArea className="h-[calc(100vh-16rem)]">
                     <div className="space-y-4">
-                      {filteredMovies.map((movie) => (
+                      {uniqueDisplayedMovies.map((movie) => (
                         <div
-                          key={movie.id}
-                          className="flex border rounded-lg overflow-hidden"
+                          key={movie.listId + "-" + movie.id}
+                          className="flex bg-card border border-border rounded-xl shadow-md overflow-hidden mb-4"
                         >
                           <div className="w-24 h-36 relative flex-shrink-0">
                             <Image
                               src={movie.cover || "/placeholder.svg"}
                               alt={movie.title}
                               fill
-                              className="object-cover"
+                              className="object-cover rounded-l-xl"
                             />
                           </div>
-                          <div className="flex-1 p-4 flex flex-col justify-between">
-                            <div>
-                              <div className="flex justify-between">
-                                <div>
-                                  <h3 className="font-medium">{movie.title}</h3>
-                                  <p className="text-sm text-muted-foreground flex items-center gap-1">
-                                    <Calendar className="h-3 w-3" />{" "}
-                                    {movie.year}
-                                  </p>
-                                </div>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-8 w-8"
-                                  onClick={() => removeMovie(movie.id)}
-                                >
-                                  <X className="h-4 w-4" />
-                                </Button>
-                              </div>
-                              {movie.status === "Watched" &&
-                                (movie.rating ?? 0) > 0 && (
-                                  <div className="flex items-center mt-1">
-                                    {Array.from({ length: 5 }).map((_, i) => (
-                                      <Star
-                                        key={i}
-                                        className={`h-4 w-4 ${
-                                          i < (movie.rating ?? 0)
-                                            ? "fill-primary text-primary"
-                                            : "text-muted"
-                                        }`}
-                                      />
-                                    ))}
-                                  </div>
-                                )}
-                              {movie.notes && (
-                                <p className="text-sm mt-2 line-clamp-2">
-                                  {movie.notes}
+                          <div className="flex-1 p-6 flex flex-col justify-center">
+                            <div className="flex justify-between items-start mb-2">
+                              <div>
+                                <h3 className="text-lg font-semibold leading-tight mb-1">
+                                  {movie.title}
+                                </h3>
+                                <p className="text-sm text-muted-foreground font-medium flex items-center gap-1">
+                                  <Calendar className="h-3 w-3" /> {movie.year}
                                 </p>
-                              )}
-                            </div>
-                            <div className="mt-2 flex gap-2">
-                              <Button
-                                variant={
-                                  movie.status === "Watchlist"
-                                    ? "default"
-                                    : "outline"
-                                }
-                                size="sm"
-                                onClick={() =>
-                                  updateMovieStatus(movie.id, "Watchlist")
-                                }
-                              >
-                                <EyeOff className="mr-1 h-4 w-4" /> Watchlist
-                              </Button>
-                              <Button
-                                variant={
-                                  movie.status === "Watched"
-                                    ? "default"
-                                    : "outline"
-                                }
-                                size="sm"
-                                onClick={() =>
-                                  updateMovieStatus(movie.id, "Watched")
-                                }
-                              >
-                                <Eye className="mr-1 h-4 w-4" /> Watched
-                              </Button>
-                              <Dialog>
-                                <DialogTrigger asChild>
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => openMovieDetails(movie)}
-                                  >
-                                    {movie.notes ? "Edit Notes" : "Add Notes"}
-                                  </Button>
-                                </DialogTrigger>
-                                <DialogContent>
-                                  <DialogHeader>
-                                    <DialogTitle>
-                                      Notes for {selectedMovie?.title}
-                                    </DialogTitle>
-                                    <DialogDescription>
-                                      Add your rating and notes for this movie.
-                                    </DialogDescription>
-                                  </DialogHeader>
-                                  <div className="space-y-4 py-4">
-                                    <div className="space-y-2">
-                                      <h4 className="text-sm font-medium">
-                                        Your Rating
-                                      </h4>
-                                      <div className="flex gap-1">
-                                        {Array.from({ length: 5 }).map(
-                                          (_, i) => (
-                                            <Button
-                                              key={i}
-                                              variant="ghost"
-                                              size="icon"
-                                              className="h-8 w-8"
-                                              onClick={() =>
-                                                setMovieRating(i + 1)
-                                              }
-                                            >
-                                              <Star
-                                                className={`h-6 w-6 ${
-                                                  i < movieRating
-                                                    ? "fill-primary text-primary"
-                                                    : "text-muted-foreground"
-                                                }`}
-                                              />
-                                            </Button>
-                                          )
-                                        )}
-                                      </div>
-                                    </div>
-                                    <div className="space-y-2">
-                                      <h4 className="text-sm font-medium">
-                                        Your Notes
-                                      </h4>
-                                      <Textarea
-                                        placeholder="Write your thoughts about this movie..."
-                                        value={movieNotes}
-                                        onChange={(e) =>
-                                          setMovieNotes(e.target.value)
-                                        }
-                                        rows={4}
-                                      />
-                                    </div>
-                                    <div className="flex justify-end gap-2">
-                                      <Button
-                                        variant="outline"
-                                        onClick={() => setIsAddingNotes(false)}
-                                      >
-                                        Cancel
-                                      </Button>
-                                      <Button onClick={saveMovieDetails}>
-                                        Save
-                                      </Button>
-                                    </div>
-                                  </div>
-                                </DialogContent>
-                              </Dialog>
-                              <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                  <Button variant="outline" size="sm">
-                                    <Plus className="mr-2 h-4 w-4" /> Add to...
-                                  </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent>
-                                  {collections.map((collection) => (
-                                    <DropdownMenuItem
-                                      key={collection.id}
-                                      onClick={() =>
-                                        addMovieToCollection(
-                                          movie.id,
-                                          collection.id
-                                        )
-                                      }
-                                      disabled={movie.collections?.includes(
-                                        collection.id
-                                      )}
-                                    >
-                                      {collection.name}
-                                    </DropdownMenuItem>
-                                  ))}
-                                </DropdownMenuContent>
-                              </DropdownMenu>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => removeMovie(movie.id)}
-                              >
-                                <X className="mr-1 h-4 w-4" /> Remove
-                              </Button>
+                              </div>
+                              <div className="flex items-center">
+                                <Star className="h-4 w-4 fill-primary text-primary" />
+                                <span className="text-base ml-1">
+                                  {movie.rating}
+                                </span>
+                              </div>
                             </div>
                           </div>
                         </div>
@@ -811,52 +889,64 @@ export default function MoviesPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6">
                   {recommendedMovies.map((movie) => (
                     <Card key={movie.id} className="overflow-hidden">
-                      <CardContent className="p-0">
-                        <div className="relative aspect-[2/3] w-full">
-                          <Image
-                            src={movie.cover || "/placeholder.svg"}
-                            alt={movie.title}
-                            fill
-                            className="object-cover"
-                          />
-                        </div>
-                        <div className="p-4 space-y-2">
-                          <div className="flex justify-between items-start">
-                            <div>
-                              <h3 className="font-medium line-clamp-1">
-                                {movie.title}
-                              </h3>
-                              <p className="text-sm text-muted-foreground">
-                                {movie.director}, {movie.year}
-                              </p>
-                            </div>
-                            <div className="flex items-center">
-                              <Star className="h-3 w-3 fill-primary text-primary" />
-                              <span className="text-xs ml-1">
-                                {movie.rating}
-                              </span>
+                      <div
+                        className="cursor-pointer"
+                        onClick={() => {
+                          setSelectedMovieOverview(movie);
+                          setOverviewOpen(true);
+                        }}
+                      >
+                        <CardContent className="p-0">
+                          <div className="relative aspect-[2/3] w-full">
+                            <Image
+                              src={movie.cover || "/placeholder.svg"}
+                              alt={movie.title}
+                              fill
+                              className="object-cover"
+                            />
+                          </div>
+                          <div className="p-4 space-y-2">
+                            <div className="flex justify-between items-start">
+                              <div>
+                                <h3 className="font-medium line-clamp-1">
+                                  {movie.title}
+                                </h3>
+                                <p className="text-sm text-muted-foreground">
+                                  {movie.director}, {movie.year}
+                                </p>
+                              </div>
+                              <div className="flex items-center">
+                                <Star className="h-3 w-3 fill-primary text-primary" />
+                                <span className="text-xs ml-1">
+                                  {movie.rating}
+                                </span>
+                              </div>
                             </div>
                           </div>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="w-full"
-                            onClick={() => saveMovie(movie)}
-                            disabled={savedIds.includes(movie.id)}
-                          >
-                            {savedIds.includes(movie.id) ? (
-                              <>
-                                <Check className="mr-1 h-4 w-4" /> Saved
-                              </>
-                            ) : (
-                              <>
-                                <Plus className="mr-1 h-4 w-4" /> Add to
-                                Watchlist
-                              </>
-                            )}
-                          </Button>
-                        </div>
-                      </CardContent>
+                        </CardContent>
+                      </div>
+                      <div className="px-4 pb-4">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="w-full"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            saveMovie(movie);
+                          }}
+                          disabled={savedIds.includes(movie.id)}
+                        >
+                          {savedIds.includes(movie.id) ? (
+                            <>
+                              <Check className="mr-1 h-4 w-4" /> Saved
+                            </>
+                          ) : (
+                            <>
+                              <Plus className="mr-1 h-4 w-4" /> Add to Watchlist
+                            </>
+                          )}
+                        </Button>
+                      </div>
                     </Card>
                   ))}
                 </div>
@@ -865,6 +955,204 @@ export default function MoviesPage() {
           )}
         </div>
       </div>
+      <Dialog open={addToListOpen} onOpenChange={setAddToListOpen}>
+        <DialogContent>
+          <DialogTitle>Add to List</DialogTitle>
+          <DialogDescription>
+            Choose a list or create a new one to add{" "}
+            <b>{addToListMovie?.title}</b>.
+          </DialogDescription>
+          <div className="space-y-4">
+            <div>
+              <div className="font-medium mb-2">Your Lists</div>
+              {userMovieLists.length > 0 ? (
+                <div className="space-y-2">
+                  {userMovieLists.map((list) => (
+                    <label
+                      key={list.id}
+                      className="flex items-center gap-2 cursor-pointer"
+                    >
+                      <input
+                        type="radio"
+                        name="movie-list"
+                        value={list.id}
+                        checked={selectedListId === list.id}
+                        onChange={() => setSelectedListId(list.id)}
+                      />
+                      <span>{list.name}</span>
+                    </label>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-muted-foreground text-sm">
+                  No lists yet.
+                </div>
+              )}
+            </div>
+            <div>
+              <div className="font-medium mb-1">Create New List</div>
+              <form
+                onSubmit={async (e) => {
+                  e.preventDefault();
+                  if (!newListName.trim() || !user?.uid) return;
+                  const listsRef = collection(
+                    db,
+                    "users",
+                    user.uid,
+                    "movieLists"
+                  );
+                  const newListDoc = await addDoc(listsRef, {
+                    name: newListName.trim(),
+                  });
+                  setUserMovieLists((prev) => [
+                    ...prev,
+                    { id: newListDoc.id, name: newListName.trim() },
+                  ]);
+                  setSelectedListId(newListDoc.id); // auto-select new list
+                  setNewListName("");
+                }}
+              >
+                <Input
+                  placeholder="New list name"
+                  value={newListName}
+                  onChange={(e) => {
+                    setNewListName(e.target.value);
+                    setSelectedListId("");
+                  }}
+                />
+              </form>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              onClick={handleAddToList}
+              disabled={
+                isSavingToList || (!selectedListId && !newListName.trim())
+              }
+            >
+              {isSavingToList ? "Saving..." : "Add to List"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      <Dialog open={overviewOpen} onOpenChange={setOverviewOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogTitle>
+            {tmdbDetails?.title ||
+              selectedMovieOverview?.title ||
+              "Movie Overview"}
+          </DialogTitle>
+          {tmdbLoading ? (
+            <div className="py-12 text-center text-muted-foreground">
+              Loading details...
+            </div>
+          ) : tmdbError ? (
+            <div className="py-12 text-center text-destructive">
+              {tmdbError}
+            </div>
+          ) : tmdbDetails ? (
+            <div className="flex flex-col md:flex-row gap-6">
+              <div className="flex-shrink-0">
+                <Image
+                  src={
+                    tmdbDetails.poster_path
+                      ? `https://image.tmdb.org/t/p/w300${tmdbDetails.poster_path}`
+                      : selectedMovieOverview.cover || "/placeholder.svg"
+                  }
+                  alt={tmdbDetails.title || selectedMovieOverview.title}
+                  width={200}
+                  height={300}
+                  className="rounded-lg"
+                />
+              </div>
+              <div className="flex-1 space-y-2">
+                <h2 className="text-2xl font-bold">
+                  {tmdbDetails.title || selectedMovieOverview.title}
+                </h2>
+                <div className="flex items-center gap-4 text-muted-foreground">
+                  <span>
+                    {tmdbDetails.release_date
+                      ? tmdbDetails.release_date.slice(0, 4)
+                      : selectedMovieOverview.year}
+                  </span>
+                  <div className="flex items-center gap-1">
+                    <Star className="w-4 h-4 fill-primary text-primary" />
+                    <span>
+                      {tmdbDetails.vote_average?.toFixed(2) ??
+                        selectedMovieOverview.rating}
+                    </span>
+                  </div>
+                </div>
+                {tmdbDetails.genres && tmdbDetails.genres.length > 0 && (
+                  <div className="flex flex-wrap gap-2">
+                    {tmdbDetails.genres.map((genre: any) => (
+                      <Badge key={genre.id} variant="secondary">
+                        {genre.name}
+                      </Badge>
+                    ))}
+                  </div>
+                )}
+                {tmdbDetails.overview && (
+                  <p className="text-base mt-2">{tmdbDetails.overview}</p>
+                )}
+                <div className="text-sm mt-2 space-y-1">
+                  {tmdbDetails.release_date && (
+                    <div>
+                      <b>Release Date:</b> {tmdbDetails.release_date}
+                    </div>
+                  )}
+                  {tmdbDetails.status && (
+                    <div>
+                      <b>Status:</b> {tmdbDetails.status}
+                    </div>
+                  )}
+                  {typeof tmdbDetails.runtime === "number" && (
+                    <div>
+                      <b>Runtime:</b> {tmdbDetails.runtime} min
+                    </div>
+                  )}
+                  {typeof tmdbDetails.budget === "number" &&
+                    tmdbDetails.budget > 0 && (
+                      <div>
+                        <b>Budget:</b> ${tmdbDetails.budget.toLocaleString()}
+                      </div>
+                    )}
+                  {typeof tmdbDetails.revenue === "number" &&
+                    tmdbDetails.revenue > 0 && (
+                      <div>
+                        <b>Revenue:</b> ${tmdbDetails.revenue.toLocaleString()}
+                      </div>
+                    )}
+                </div>
+              </div>
+            </div>
+          ) : selectedMovieOverview ? (
+            <div className="flex flex-col md:flex-row gap-6">
+              <div className="flex-shrink-0">
+                <Image
+                  src={selectedMovieOverview.cover || "/placeholder.svg"}
+                  alt={selectedMovieOverview.title}
+                  width={200}
+                  height={300}
+                  className="rounded-lg"
+                />
+              </div>
+              <div className="flex-1 space-y-2">
+                <h2 className="text-2xl font-bold">
+                  {selectedMovieOverview.title}
+                </h2>
+                <div className="flex items-center gap-4 text-muted-foreground">
+                  <span>{selectedMovieOverview.year}</span>
+                  <div className="flex items-center gap-1">
+                    <Star className="w-4 h-4 fill-primary text-primary" />
+                    <span>{selectedMovieOverview.rating}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : null}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

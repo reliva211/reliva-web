@@ -24,14 +24,25 @@ export async function searchMovies(query: string) {
 }
 
 export async function searchSeries(query: string) {
-  const res = await fetch(
-    `https://api.themoviedb.org/3/search/tv?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(
-      query
-    )}`
-  );
-  const data = await res.json();
-
-  return data.results.map((series: any) => ({
+  const TMDB_API_KEY = process.env.NEXT_PUBLIC_TMDB_API_KEY || "";
+  let allResults: any[] = [];
+  let totalPages = 1;
+  let page = 1;
+  // Fetch up to 3 pages for broader results
+  while (page <= 3 && page <= totalPages) {
+    const res = await fetch(
+      `https://api.themoviedb.org/3/search/tv?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(
+        query
+      )}&page=${page}`
+    );
+    const data = await res.json();
+    if (page === 1 && data.total_pages) {
+      totalPages = data.total_pages;
+    }
+    allResults = allResults.concat(data.results || []);
+    page++;
+  }
+  return allResults.map((series: any) => ({
     id: series.id,
     title: series.name,
     year: parseInt(series.first_air_date?.split("-")[0] || "0000", 10),
