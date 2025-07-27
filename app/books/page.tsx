@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -41,6 +41,7 @@ import {
 import { Select } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useRef } from "react";
+import Link from "next/link";
 
 // Dummy data for books
 const myBooks = [
@@ -86,50 +87,6 @@ const myBooks = [
   },
 ];
 
-const recommendedBooks = [
-  {
-    id: "1",
-    title: "Dune",
-    author: "Frank Herbert",
-    cover: "/placeholder.svg?height=200&width=140",
-    rating: 4.5,
-  },
-  {
-    id: "2",
-    title: "The Alchemist",
-    author: "Paulo Coelho",
-    cover: "/placeholder.svg?height=200&width=140",
-    rating: 4.3,
-  },
-  {
-    id: "3",
-    title: "Sapiens",
-    author: "Yuval Noah Harari",
-    cover: "/placeholder.svg?height=200&width=140",
-    rating: 4.7,
-  },
-  {
-    id: "4",
-    title: "The Silent Patient",
-    author: "Alex Michaelides",
-    cover: "/placeholder.svg?height=200&width=140",
-    rating: 4.2,
-  },
-  {
-    id: "5",
-    title: "Where the Crawdads Sing",
-    author: "Delia Owens",
-    cover: "/placeholder.svg?height=200&width=140",
-    rating: 4.6,
-  },
-  {
-    id: "6",
-    title: "The Four Winds",
-    author: "Kristin Hannah",
-    cover: "/placeholder.svg?height=200&width=140",
-    rating: 4.4,
-  },
-];
 type Book = {
   progress: any;
   status: string;
@@ -193,6 +150,12 @@ export default function BooksPage() {
   >(null);
   const [selectedBook, setSelectedBook] = useState<Book | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [addToListBook, setAddToListBook] = useState<any>(null);
+  const [addToListOpen, setAddToListOpen] = useState(false);
+  const [newModalCollectionName, setNewModalCollectionName] = useState("");
+  const [creatingModalCollection, setCreatingModalCollection] = useState(false);
+  const [selectedModalCollectionId, setSelectedModalCollectionId] =
+    useState("");
 
   const handleSearch = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -616,13 +579,6 @@ export default function BooksPage() {
               </div>
               {/* Multi-select controls */}
               <div className="flex items-center gap-4 mb-2">
-                <Checkbox
-                  checked={allSelected}
-                  onCheckedChange={
-                    allSelected ? clearSelectedBooks : selectAllBooks
-                  }
-                />
-                <span>Select All</span>
                 {selectedBooks.length > 0 && (
                   <Button size="sm" onClick={() => setBatchModalOpen(true)}>
                     Add Selected to Collection
@@ -644,7 +600,7 @@ export default function BooksPage() {
                     key={`${book.id}-${index}`}
                     className="overflow-hidden relative w-full h-full flex flex-col group"
                     onClick={(e) => {
-                      // Only open modal if not clicking on a button or input
+                      // Only open Add to List if not clicking on a button or input (e.g., checkbox)
                       if (
                         (e.target as HTMLElement).tagName === "BUTTON" ||
                         (e.target as HTMLElement).tagName === "INPUT" ||
@@ -653,32 +609,11 @@ export default function BooksPage() {
                       ) {
                         return;
                       }
-                      setSelectedBook(book);
-                      setIsModalOpen(true);
+                      setAddToListBook(book);
+                      setAddToListOpen(true);
                     }}
                   >
-                    <div
-                      className="absolute inset-0 z-10 cursor-pointer"
-                      onClick={(e) => {
-                        // Only open modal if not clicking on a button or input
-                        if (
-                          (e.target as HTMLElement).tagName === "BUTTON" ||
-                          (e.target as HTMLElement).tagName === "INPUT" ||
-                          (e.target as HTMLElement).closest("button") ||
-                          (e.target as HTMLElement).closest("input")
-                        ) {
-                          return;
-                        }
-                        setSelectedBook(book);
-                        setIsModalOpen(true);
-                      }}
-                    />
-                    <Checkbox
-                      className="absolute top-2 left-2 z-20 bg-white rounded"
-                      checked={selectedBooks.includes(book.id)}
-                      onCheckedChange={() => toggleBookSelect(book.id)}
-                      onClick={(e) => e.stopPropagation()}
-                    />
+                    <div className="absolute inset-0 z-10 cursor-pointer" />
                     <CardContent className="p-0">
                       <div className="relative aspect-[2/3] w-full">
                         <Image
@@ -703,65 +638,21 @@ export default function BooksPage() {
                             <span className="text-xs ml-1">{book.rating}</span>
                           </div>
                         </div>
-                        <DropdownMenu
-                          open={addToListDropdownOpen === book.id}
-                          onOpenChange={(open) =>
-                            setAddToListDropdownOpen(open ? book.id : null)
-                          }
-                        >
-                          <DropdownMenuTrigger asChild>
-                            <Button
-                              variant="default"
-                              size="sm"
-                              className="w-full"
-                              onClick={(e) => {
-                                e.preventDefault();
-                                setAddToListDropdownOpen(book.id);
-                              }}
-                              disabled={savedIds.includes(book.id)}
-                            >
-                              {savedIds.includes(book.id) ? (
-                                <>
-                                  <Check className="mr-1 h-4 w-4" /> Saved
-                                </>
-                              ) : (
-                                <>
-                                  <Plus className="mr-1 h-4 w-4" /> Add to List
-                                </>
-                              )}
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="start">
-                            {collections.length === 0 ? (
-                              <DropdownMenuItem disabled>
-                                No lists found
-                              </DropdownMenuItem>
-                            ) : (
-                              collections.map((collection) => (
-                                <DropdownMenuItem
-                                  key={collection.id}
-                                  onClick={async () => {
-                                    await addBookToCollection(
-                                      book.id,
-                                      collection.id
-                                    );
-                                    setAddToListDropdownOpen(null);
-                                  }}
-                                  disabled={
-                                    savedIds.includes(book.id) &&
-                                    savedBooks
-                                      .find((b) => b.id === book.id)
-                                      ?.collections?.includes(collection.id)
-                                  }
-                                >
-                                  {collection.name}
-                                </DropdownMenuItem>
-                              ))
-                            )}
-                          </DropdownMenuContent>
-                        </DropdownMenu>
                       </div>
                     </CardContent>
+                    <div className="px-4 pb-4">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full"
+                        onClick={() => {
+                          setAddToListBook(book);
+                          setAddToListOpen(true);
+                        }}
+                      >
+                        <Plus className="mr-1 h-4 w-4" /> Add to List
+                      </Button>
+                    </div>
                   </Card>
                 ))}
               </div>
@@ -812,292 +703,146 @@ export default function BooksPage() {
               </Dialog>
             </div>
           ) : (
-            <Tabs defaultValue="my-books">
-              <TabsList className="mb-4 flex flex-wrap gap-2">
-                <TabsTrigger value="my-books">My Books</TabsTrigger>
-                <TabsTrigger value="recommendations">
-                  Recommendations
-                </TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="my-books" className="space-y-6">
-                <h2 className="text-2xl font-bold">My Books</h2>
-                {filteredBooks.length === 0 ? (
-                  <div className="text-center py-12">
-                    <BookOpen className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                    <h3 className="text-lg font-medium mb-2">
-                      No books in this section
-                    </h3>
-                    <p className="text-muted-foreground mb-4">
-                      Add books to your library or change your filter
-                    </p>
-                    <Button onClick={() => setSelectedCollection("all")}>
-                      View All Books
-                    </Button>
-                  </div>
-                ) : (
-                  <ScrollArea className="h-[calc(100vh-16rem)] pr-2">
-                    <div className="space-y-4">
-                      {filteredBooks.map((book) => (
-                        <div
-                          key={book.id}
-                          className="flex flex-col sm:flex-row bg-card border border-border rounded-xl shadow-md overflow-hidden mb-4 w-full cursor-pointer"
-                          onClick={() => {
-                            setSelectedBook(book);
-                            setIsModalOpen(true);
-                          }}
-                        >
-                          <div className="w-full sm:w-24 h-48 sm:h-36 relative flex-shrink-0">
-                            <Image
-                              src={book.cover || "/placeholder.svg"}
-                              alt={book.title}
-                              fill
-                              className="object-cover rounded-t-xl sm:rounded-l-xl sm:rounded-tr-none"
-                            />
-                          </div>
-                          <div className="flex-1 p-4 sm:p-6 flex flex-col justify-between min-w-0">
-                            <div>
-                              <div className="flex justify-between items-start mb-2">
-                                <div>
-                                  <h3 className="text-lg font-semibold leading-tight mb-1">
-                                    {book.title}
-                                  </h3>
-                                  <p className="text-sm text-muted-foreground font-medium">
-                                    {book.author}
-                                  </p>
-                                </div>
-                              </div>
-                              <div className="flex gap-2 mb-4">
-                                <Button
-                                  variant={
-                                    book.status === "Want to Read"
-                                      ? "default"
-                                      : "outline"
-                                  }
-                                  size="sm"
-                                  className="rounded-full px-4"
-                                  onClick={() =>
-                                    updateBookStatus(book.id, "Want to Read")
-                                  }
-                                >
-                                  Want to Read
-                                </Button>
-                                <Button
-                                  variant={
-                                    book.status === "Reading"
-                                      ? "default"
-                                      : "outline"
-                                  }
-                                  size="sm"
-                                  className="rounded-full px-4"
-                                  onClick={() =>
-                                    updateBookStatus(book.id, "Reading")
-                                  }
-                                >
-                                  Reading
-                                </Button>
-                                <Button
-                                  variant={
-                                    book.status === "Completed"
-                                      ? "default"
-                                      : "outline"
-                                  }
-                                  size="sm"
-                                  className="rounded-full px-4"
-                                  onClick={() =>
-                                    updateBookStatus(book.id, "Completed")
-                                  }
-                                >
-                                  Completed
-                                </Button>
-                              </div>
-                              <div className="border-t border-border my-3" />
-                              <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-                                <DropdownMenu>
-                                  <DropdownMenuTrigger asChild>
-                                    <Button
-                                      variant="secondary"
-                                      size="sm"
-                                      className="rounded-md px-4"
-                                    >
-                                      <Plus className="mr-2 h-4 w-4" /> Add
-                                      to...
-                                    </Button>
-                                  </DropdownMenuTrigger>
-                                  <DropdownMenuContent>
-                                    {collections.map((collection) => (
-                                      <DropdownMenuItem
-                                        key={collection.id}
-                                        onClick={() =>
-                                          addBookToCollection(
-                                            book.id,
-                                            collection.id
-                                          )
-                                        }
-                                        disabled={book.collections?.includes(
-                                          collection.id
-                                        )}
-                                      >
-                                        {collection.name}
-                                      </DropdownMenuItem>
-                                    ))}
-                                  </DropdownMenuContent>
-                                </DropdownMenu>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </ScrollArea>
-                )}
-              </TabsContent>
-
-              <TabsContent value="recommendations" className="space-y-6">
-                <h2 className="text-2xl font-bold">Recommended for You</h2>
-                <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4 sm:gap-6">
-                  {recommendedBooks.map((book) => (
-                    <Card
-                      key={book.id}
-                      className="overflow-hidden w-full h-full flex flex-col"
-                    >
-                      <CardContent className="p-0">
-                        <div className="relative aspect-[2/3] w-full">
-                          <Image
-                            src={book.cover || "/placeholder.svg"}
-                            alt={book.title}
-                            fill
-                            className="object-cover"
-                          />
-                        </div>
-                        <div className="p-4 space-y-2">
-                          <div className="flex justify-between items-start">
-                            <div>
-                              <h3 className="font-medium line-clamp-1">
-                                {book.title}
-                              </h3>
-                              <p className="text-sm text-muted-foreground">
-                                {book.author}
-                              </p>
-                            </div>
-                            <div className="flex items-center">
-                              <Star className="h-3 w-3 fill-primary text-primary" />
-                              <span className="text-xs ml-1">
-                                {book.rating}
-                              </span>
-                            </div>
-                          </div>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="w-full"
-                            onClick={() => saveBook(book)}
-                            disabled={savedIds.includes(book.id)}
-                          >
-                            {savedIds.includes(book.id) ? (
-                              <>
-                                <Check className="mr-1 h-4 w-4" /> Saved
-                              </>
-                            ) : (
-                              <>
-                                <Plus className="mr-1 h-4 w-4" /> Add to Library
-                              </>
-                            )}
-                          </Button>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
+            <div className="space-y-6">
+              <h2 className="text-2xl font-bold">
+                {selectedCollection === "all"
+                  ? "My Books"
+                  : collections.find((c) => c.id === selectedCollection)
+                      ?.name || "My Books"}
+              </h2>
+              {filteredBooks.length === 0 ? (
+                <div className="text-center py-12">
+                  <BookOpen className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                  <h3 className="text-lg font-medium mb-2">
+                    No books in this section
+                  </h3>
+                  <p className="text-muted-foreground mb-4">
+                    Add books to your library or change your filter
+                  </p>
+                  <Button onClick={() => setSelectedCollection("all")}>
+                    View All Books
+                  </Button>
                 </div>
-              </TabsContent>
-            </Tabs>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6">
+                  {filteredBooks.length === 0 ? (
+                    <div className="col-span-full text-center text-muted-foreground py-12">
+                      No books in your collections yet.
+                    </div>
+                  ) : (
+                    filteredBooks.map((book) => (
+                      <Card key={book.id} className="overflow-hidden">
+                        <Link href={`/books/${book.id}`} className="block">
+                          <div className="bg-card rounded-lg shadow-md overflow-hidden flex flex-col h-full cursor-pointer transition-transform hover:scale-[1.03]">
+                            <div className="relative aspect-[2/3] w-full">
+                              <Image
+                                src={book.cover || "/placeholder.svg"}
+                                alt={book.title}
+                                fill
+                                className="object-cover"
+                              />
+                            </div>
+                          </div>
+                        </Link>
+                      </Card>
+                    ))
+                  )}
+                </div>
+              )}
+            </div>
           )}
         </div>
       </div>
-      {/* Modal for Book Overview */}
-      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="max-w-2xl">
+      {/* Dialog for Add to List */}
+      <Dialog open={addToListOpen} onOpenChange={setAddToListOpen}>
+        <DialogContent>
           <DialogHeader>
-            <DialogTitle>{selectedBook?.title || "Book Details"}</DialogTitle>
+            <DialogTitle>Add to List</DialogTitle>
+            <DialogDescription>
+              Choose a list or create a new one to add{" "}
+              <b>{addToListBook?.title}</b>.
+            </DialogDescription>
           </DialogHeader>
-          {selectedBook && (
-            <div className="flex flex-col md:flex-row gap-6">
-              {/* Book Cover */}
-              <div className="flex-shrink-0 flex justify-center md:block">
-                <Image
-                  src={selectedBook.cover || "/placeholder.svg"}
-                  alt={selectedBook.title}
-                  width={180}
-                  height={260}
-                  className="rounded-lg shadow-md mb-2 md:mb-0"
-                />
-              </div>
-              {/* Book Details */}
-              <div className="flex-1 min-w-0">
-                <h2 className="text-2xl font-bold mb-2">
-                  {selectedBook.title}
-                </h2>
-                <div className="text-lg font-semibold mb-2 text-emerald-400">
-                  {selectedBook.author}
-                </div>
-                <div className="flex items-center gap-3 mb-3">
-                  {/* Rating */}
-                  <span className="flex items-center gap-1">
-                    <span className="text-emerald-400 font-bold">
-                      {selectedBook.rating && selectedBook.rating !== "N/A"
-                        ? selectedBook.rating
-                        : "N/A"}
-                    </span>
-                    <svg
-                      className="h-5 w-5 text-yellow-400"
-                      fill="currentColor"
-                      viewBox="0 0 20 20"
+          <div className="space-y-4">
+            {collections.length > 0 && (
+              <div>
+                <div className="mb-2 font-medium">Your Lists</div>
+                <div className="space-y-2">
+                  {collections.map((collection) => (
+                    <label
+                      key={collection.id}
+                      className="flex items-center gap-2 cursor-pointer"
                     >
-                      <polygon points="9.9,1.1 7.6,6.6 1.6,7.6 6,11.9 4.9,17.9 9.9,15.1 14.9,17.9 13.8,11.9 18.2,7.6 12.2,6.6 " />
-                    </svg>
-                  </span>
-                  {/* Status */}
-                  {selectedBook.status && (
-                    <span className="px-2 py-1 rounded bg-muted text-xs font-semibold">
-                      {selectedBook.status}
-                    </span>
-                  )}
-                  {/* Progress */}
-                  {selectedBook.progress &&
-                    selectedBook.status === "Reading" && (
-                      <span className="text-xs text-muted-foreground">
-                        {selectedBook.progress}% read
-                      </span>
-                    )}
-                </div>
-                {/* Collections */}
-                {selectedBook.collections &&
-                  selectedBook.collections.length > 0 && (
-                    <div className="mb-2 text-sm text-muted-foreground flex flex-wrap gap-2">
-                      {selectedBook.collections.map((col) => (
-                        <span
-                          key={col}
-                          className="bg-emerald-900/30 text-emerald-300 px-2 py-1 rounded text-xs font-medium"
-                        >
-                          {col}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                {/* Description/Summary */}
-                <div className="mt-3 text-base text-gray-300 leading-relaxed">
-                  {typeof (selectedBook as any).description === "string" &&
-                  (selectedBook as any).description ? (
-                    (selectedBook as any).description
-                  ) : (
-                    <span className="text-muted-foreground">
-                      No description available.
-                    </span>
-                  )}
+                      <input
+                        type="radio"
+                        name="modal-collection"
+                        value={collection.id}
+                        checked={selectedModalCollectionId === collection.id}
+                        onChange={() =>
+                          setSelectedModalCollectionId(collection.id)
+                        }
+                      />
+                      <span>{collection.name}</span>
+                    </label>
+                  ))}
                 </div>
               </div>
+            )}
+            <div>
+              <div className="mb-1 font-medium">Create New List</div>
+              <input
+                className="w-full p-2 rounded bg-gray-800 text-white mb-2"
+                placeholder="New list name"
+                value={newModalCollectionName}
+                onChange={(e) => setNewModalCollectionName(e.target.value)}
+                disabled={creatingModalCollection}
+              />
+              <Button
+                className="w-full mb-2"
+                onClick={async () => {
+                  if (!newModalCollectionName.trim() || !user?.uid) return;
+                  setCreatingModalCollection(true);
+                  const listsRef = collection(
+                    db,
+                    "users",
+                    user.uid,
+                    "collections"
+                  );
+                  const newListDoc = await addDoc(listsRef, {
+                    name: newModalCollectionName.trim(),
+                  });
+                  const newCol = {
+                    id: newListDoc.id,
+                    name: newModalCollectionName.trim(),
+                  };
+                  setCollections((prev) => [...prev, newCol]);
+                  setSelectedModalCollectionId(newCol.id); // auto-select new list
+                  setNewModalCollectionName("");
+                  setCreatingModalCollection(false);
+                }}
+                disabled={
+                  creatingModalCollection || !newModalCollectionName.trim()
+                }
+              >
+                {creatingModalCollection ? "Creating..." : "Create List"}
+              </Button>
             </div>
-          )}
+            <Button
+              className="w-full"
+              onClick={async () => {
+                if (!selectedModalCollectionId || !addToListBook) return;
+                await addBookToCollection(
+                  addToListBook.id,
+                  selectedModalCollectionId
+                );
+                setAddToListOpen(false);
+                setSelectedModalCollectionId("");
+              }}
+              disabled={!selectedModalCollectionId}
+            >
+              Add to List
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

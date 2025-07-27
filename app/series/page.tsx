@@ -648,24 +648,6 @@ export default function SeriesPage() {
                             className="object-cover"
                           />
                         </div>
-                        <div className="p-4 space-y-2">
-                          <div className="flex justify-between items-start">
-                            <div>
-                              <h3 className="font-medium line-clamp-1">
-                                {series.title}
-                              </h3>
-                              <p className="text-sm text-muted-foreground">
-                                {series.year}
-                              </p>
-                            </div>
-                            <div className="flex items-center">
-                              <Star className="h-3 w-3 fill-primary text-primary" />
-                              <span className="text-xs ml-1">
-                                {series.rating}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
                       </CardContent>
                     </Link>
                     <div className="px-4 pb-4">
@@ -709,40 +691,8 @@ export default function SeriesPage() {
                               className="object-cover"
                             />
                           </div>
-                          <div className="p-4 space-y-2">
-                            <div className="flex justify-between items-start">
-                              <div>
-                                <h3 className="font-medium line-clamp-1">
-                                  {series.title}
-                                </h3>
-                                <p className="text-sm text-muted-foreground">
-                                  {series.year}
-                                </p>
-                              </div>
-                              <div className="flex items-center">
-                                <Star className="h-3 w-3 fill-primary text-primary" />
-                                <span className="text-xs ml-1">
-                                  {series.rating}
-                                </span>
-                              </div>
-                            </div>
-                          </div>
                         </div>
                       </Link>
-                      <div className="px-4 pb-4">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="w-full"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setAddToListSeries(series);
-                            setAddToListOpen(true);
-                          }}
-                        >
-                          <Plus className="mr-1 h-4 w-4" /> Add to List
-                        </Button>
-                      </div>
                     </Card>
                   ))
                 )}
@@ -775,35 +725,6 @@ export default function SeriesPage() {
                           fill
                           className="object-cover"
                         />
-                      </div>
-                      <div className="p-4 space-y-2">
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <h3 className="font-medium line-clamp-1">
-                              {series.title}
-                            </h3>
-                            <p className="text-sm text-muted-foreground">
-                              {series.year}
-                            </p>
-                          </div>
-                          <div className="flex items-center">
-                            <Star className="h-3 w-3 fill-primary text-primary" />
-                            <span className="text-xs ml-1">
-                              {series.rating}
-                            </span>
-                          </div>
-                        </div>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="w-full"
-                          onClick={() => {
-                            setAddToListSeries(series);
-                            setAddToListOpen(true);
-                          }}
-                        >
-                          <Plus className="mr-1 h-4 w-4" /> Add to List
-                        </Button>
                       </div>
                     </CardContent>
                   </Card>

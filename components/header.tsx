@@ -32,8 +32,14 @@ import { auth } from "@/lib/firebase";
 import { signOut, User as FirebaseUser } from "firebase/auth";
 import { Input } from "@/components/ui/input";
 
-export default function Header() {
+interface HeaderProps {
+  isLandingPage?: boolean;
+}
+
+export default function Header({ isLandingPage = false }: HeaderProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isVisible, setIsVisible] = useState(!isLandingPage);
+  const [lastScrollY, setLastScrollY] = useState(0);
   const pathname = usePathname();
 
   const [user, setUser] = useState<FirebaseUser | null>(null);
@@ -45,6 +51,27 @@ export default function Header() {
 
     return () => unsubscribe();
   }, []);
+
+  // Scroll detection for header visibility (only on landing page)
+  useEffect(() => {
+    if (!isLandingPage) return;
+
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+
+      // Show header when scrolling down, hide when at top
+      if (currentScrollY > 100) {
+        setIsVisible(true);
+      } else {
+        setIsVisible(false);
+      }
+
+      setLastScrollY(currentScrollY);
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, [lastScrollY, isLandingPage]);
 
   const routes = [
     { href: "/music", label: "Music", icon: Music },
@@ -75,11 +102,20 @@ export default function Header() {
   };
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <header
+      className={cn(
+        "fixed top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 transition-all duration-300 ease-in-out",
+        isLandingPage
+          ? isVisible
+            ? "translate-y-0 opacity-100"
+            : "-translate-y-full opacity-0"
+          : "translate-y-0 opacity-100"
+      )}
+    >
       <div className="container flex h-16 items-center justify-between">
         <div className="flex items-center gap-2">
           <Link href="/" className="flex items-center space-x-2">
-            <span className="text-xl font-bold">Tunes & Habits</span>
+            <span className="text-xl font-bold">reliva</span>
           </Link>
         </div>
 

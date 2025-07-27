@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -75,105 +75,6 @@ interface Collection {
   id: string;
   name: string;
 }
-
-const myMovies = [
-  {
-    id: 1,
-    title: "Inception",
-    year: 2010,
-    cover: "/placeholder.svg?height=300&width=200",
-    status: "Watched",
-    rating: 5,
-    notes: "Mind-bending thriller with amazing visuals.",
-  },
-  {
-    id: 2,
-    title: "The Shawshank Redemption",
-    year: 1994,
-    cover: "/placeholder.svg?height=300&width=200",
-    status: "Watched",
-    rating: 5,
-    notes: "One of the best movies ever made.",
-  },
-  {
-    id: 3,
-    title: "Dune",
-    year: 2021,
-    cover: "/placeholder.svg?height=300&width=200",
-    status: "Watchlist",
-    rating: 0,
-    notes: "",
-  },
-  {
-    id: 4,
-    title: "The Godfather",
-    year: 1972,
-    cover: "/placeholder.svg?height=300&width=200",
-    status: "Watched",
-    rating: 5,
-    notes: "A classic masterpiece.",
-  },
-  {
-    id: 5,
-    title: "Parasite",
-    year: 2019,
-    cover: "/placeholder.svg?height=300&width=200",
-    status: "Watched",
-    rating: 4,
-    notes: "Brilliant social commentary.",
-  },
-];
-
-const recommendedMovies = [
-  {
-    id: 1,
-    title: "The Dark Knight",
-    director: "Christopher Nolan",
-    year: 2008,
-    cover: "/placeholder.svg?height=300&width=200",
-    rating: 4.9,
-  },
-  {
-    id: 2,
-    title: "Pulp Fiction",
-    director: "Quentin Tarantino",
-    year: 1994,
-    cover: "/placeholder.svg?height=300&width=200",
-    rating: 4.8,
-  },
-  {
-    id: 3,
-    title: "The Lord of the Rings: The Fellowship of the Ring",
-    director: "Peter Jackson",
-    year: 2001,
-    cover: "/placeholder.svg?height=300&width=200",
-    rating: 4.8,
-  },
-  {
-    id: 4,
-    title: "Goodfellas",
-    director: "Martin Scorsese",
-    year: 1990,
-    cover: "/placeholder.svg?height=300&width=200",
-    rating: 4.7,
-  },
-  {
-    id: 5,
-    title: "Fight Club",
-    director: "David Fincher",
-    year: 1999,
-    cover: "/placeholder.svg?height=300&width=200",
-    rating: 4.7,
-  },
-  {
-    id: 6,
-    title: "Interstellar",
-    director: "Christopher Nolan",
-    year: 2014,
-    cover: "/placeholder.svg?height=300&width=200",
-    rating: 4.6,
-  },
-];
 
 // Dummy search results
 const searchdummy = [
@@ -736,8 +637,7 @@ export default function MoviesPage() {
                         variant="outline"
                         size="sm"
                         className="w-full"
-                        onClick={(e) => {
-                          e.stopPropagation();
+                        onClick={() => {
                           setAddToListMovie(movie);
                           setAddToListOpen(true);
                         }}
@@ -750,133 +650,31 @@ export default function MoviesPage() {
               </div>
             </div>
           ) : (
-            <Tabs defaultValue="my-movies">
-              <TabsList className="mb-4">
-                <TabsTrigger value="my-movies">My Movies</TabsTrigger>
-                <TabsTrigger value="recommendations">
-                  Recommendations
-                </TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="my-movies" className="space-y-6">
-                <div className="flex items-center justify-between">
-                  <h2 className="text-2xl font-bold">My Movies</h2>
-                  <div className="flex items-center gap-2">
-                    <Select defaultValue="newest">
-                      <SelectTrigger className="w-[180px]">
-                        <ListFilter className="h-4 w-4 mr-2" />
-                        <SelectValue placeholder="Sort by" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="newest">Newest First</SelectItem>
-                        <SelectItem value="oldest">Oldest First</SelectItem>
-                        <SelectItem value="rating">Highest Rated</SelectItem>
-                        <SelectItem value="title">Title (A-Z)</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <h2 className="text-2xl font-bold">My Movies</h2>
+                <div className="flex items-center gap-2">
+                  <Select defaultValue="newest">
+                    <SelectTrigger className="w-[180px]">
+                      <ListFilter className="h-4 w-4 mr-2" />
+                      <SelectValue placeholder="Sort by" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="newest">Newest First</SelectItem>
+                      <SelectItem value="oldest">Oldest First</SelectItem>
+                      <SelectItem value="rating">Highest Rated</SelectItem>
+                      <SelectItem value="title">Title (A-Z)</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
+              </div>
 
-                {selectedListSidebar === "all" &&
-                searchQuery &&
-                searchResults.length > 0 ? (
-                  // Show search results (to be refactored in next steps)
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                    {searchResults.map((movie) => (
-                      <Card key={movie.id} className="overflow-hidden">
-                        <Link href={`/movies/${movie.id}`} className="block">
-                          <div className="bg-card rounded-lg shadow-md overflow-hidden flex flex-col h-full cursor-pointer transition-transform hover:scale-[1.03]">
-                            <div className="relative aspect-[2/3] w-full">
-                              <Image
-                                src={movie.cover || "/placeholder.svg"}
-                                alt={movie.title}
-                                fill
-                                className="object-cover"
-                              />
-                            </div>
-                            <div className="p-4 space-y-2">
-                              <div className="flex justify-between items-start">
-                                <div>
-                                  <h3 className="font-medium line-clamp-1">
-                                    {movie.title}
-                                  </h3>
-                                  <p className="text-sm text-muted-foreground">
-                                    {movie.year}
-                                  </p>
-                                </div>
-                                <div className="flex items-center">
-                                  <Star className="h-3 w-3 fill-primary text-primary" />
-                                  <span className="text-xs ml-1">
-                                    {movie.rating}
-                                  </span>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        </Link>
-                        <div className="px-4 pb-4">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="w-full"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setAddToListMovie(movie);
-                              setAddToListOpen(true);
-                            }}
-                          >
-                            <Plus className="mr-1 h-4 w-4" /> Add to List
-                          </Button>
-                        </div>
-                      </Card>
-                    ))}
-                  </div>
-                ) : (
-                  // Show uniqueDisplayedMovies (filtered by collection)
-                  <ScrollArea className="h-[calc(100vh-16rem)]">
-                    <div className="space-y-4">
-                      {uniqueDisplayedMovies.map((movie) => (
-                        <div
-                          key={movie.listId + "-" + movie.id}
-                          className="flex bg-card border border-border rounded-xl shadow-md overflow-hidden mb-4"
-                        >
-                          <div className="w-24 h-36 relative flex-shrink-0">
-                            <Image
-                              src={movie.cover || "/placeholder.svg"}
-                              alt={movie.title}
-                              fill
-                              className="object-cover rounded-l-xl"
-                            />
-                          </div>
-                          <div className="flex-1 p-6 flex flex-col justify-center">
-                            <div className="flex justify-between items-start mb-2">
-                              <div>
-                                <h3 className="text-lg font-semibold leading-tight mb-1">
-                                  {movie.title}
-                                </h3>
-                                <p className="text-sm text-muted-foreground font-medium flex items-center gap-1">
-                                  <Calendar className="h-3 w-3" /> {movie.year}
-                                </p>
-                              </div>
-                              <div className="flex items-center">
-                                <Star className="h-4 w-4 fill-primary text-primary" />
-                                <span className="text-base ml-1">
-                                  {movie.rating}
-                                </span>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </ScrollArea>
-                )}
-              </TabsContent>
-
-              <TabsContent value="recommendations" className="space-y-6">
-                <h2 className="text-2xl font-bold">Recommended for You</h2>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6">
-                  {recommendedMovies.map((movie) => (
+              {selectedListSidebar === "all" &&
+              searchQuery &&
+              searchResults.length > 0 ? (
+                // Show search results (to be refactored in next steps)
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                  {searchResults.map((movie) => (
                     <Card key={movie.id} className="overflow-hidden">
                       <Link href={`/movies/${movie.id}`} className="block">
                         <div className="bg-card rounded-lg shadow-md overflow-hidden flex flex-col h-full cursor-pointer transition-transform hover:scale-[1.03]">
@@ -895,7 +693,7 @@ export default function MoviesPage() {
                                   {movie.title}
                                 </h3>
                                 <p className="text-sm text-muted-foreground">
-                                  {movie.director}, {movie.year}
+                                  {movie.year}
                                 </p>
                               </div>
                               <div className="flex items-center">
@@ -913,28 +711,48 @@ export default function MoviesPage() {
                           variant="outline"
                           size="sm"
                           className="w-full"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            saveMovie(movie);
+                          onClick={() => {
+                            setAddToListMovie(movie);
+                            setAddToListOpen(true);
                           }}
-                          disabled={savedIds.includes(movie.id)}
                         >
-                          {savedIds.includes(movie.id) ? (
-                            <>
-                              <Check className="mr-1 h-4 w-4" /> Saved
-                            </>
-                          ) : (
-                            <>
-                              <Plus className="mr-1 h-4 w-4" /> Add to Watchlist
-                            </>
-                          )}
+                          <Plus className="mr-1 h-4 w-4" /> Add to List
                         </Button>
                       </div>
                     </Card>
                   ))}
                 </div>
-              </TabsContent>
-            </Tabs>
+              ) : (
+                // Show uniqueDisplayedMovies (filtered by collection)
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6">
+                  {uniqueDisplayedMovies.length === 0 ? (
+                    <div className="col-span-full text-center text-muted-foreground py-12">
+                      No movies in your collections yet.
+                    </div>
+                  ) : (
+                    uniqueDisplayedMovies.map((movie) => (
+                      <Card
+                        key={movie.listId + "-" + movie.id}
+                        className="overflow-hidden"
+                      >
+                        <Link href={`/movies/${movie.id}`} className="block">
+                          <div className="bg-card rounded-lg shadow-md overflow-hidden flex flex-col h-full cursor-pointer transition-transform hover:scale-[1.03]">
+                            <div className="relative aspect-[2/3] w-full">
+                              <Image
+                                src={movie.cover || "/placeholder.svg"}
+                                alt={movie.title}
+                                fill
+                                className="object-cover"
+                              />
+                            </div>
+                          </div>
+                        </Link>
+                      </Card>
+                    ))
+                  )}
+                </div>
+              )}
+            </div>
           )}
         </div>
       </div>
