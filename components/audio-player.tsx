@@ -5,22 +5,46 @@ import { Play, Pause, SkipBack, SkipForward, Volume2, VolumeX } from "lucide-rea
 import { Button } from "@/components/ui/button"
 import { Slider } from "@/components/ui/slider"
 import { cn } from "@/lib/utils"
+import Image from "next/image"
 
 interface AudioPlayerProps {
-  previewUrl: string
-  trackName: string
-  artistName: string
+  // New interface for Saavn integration
+  src?: string
+  title?: string
+  artist?: string
+  image?: string
+  
+  // Old interface for backwards compatibility
+  previewUrl?: string
+  trackName?: string
+  artistName?: string
+  
   onEnded?: () => void
   className?: string
 }
 
-export function AudioPlayer({ previewUrl, trackName, artistName, onEnded, className }: AudioPlayerProps) {
+export function AudioPlayer({ 
+  src, 
+  title, 
+  artist, 
+  image,
+  previewUrl, 
+  trackName, 
+  artistName, 
+  onEnded, 
+  className 
+}: AudioPlayerProps) {
   const [isPlaying, setIsPlaying] = useState(false)
   const [currentTime, setCurrentTime] = useState(0)
   const [duration, setDuration] = useState(0)
   const [volume, setVolume] = useState(0.7)
   const [isMuted, setIsMuted] = useState(false)
   const audioRef = useRef<HTMLAudioElement>(null)
+
+  // Use new interface if available, fallback to old interface
+  const audioSrc = src || previewUrl || ""
+  const displayTitle = title || trackName || "Unknown Track"
+  const displayArtist = artist || artistName || "Unknown Artist"
 
   // Load audio
   useEffect(() => {
@@ -31,7 +55,7 @@ export function AudioPlayer({ previewUrl, trackName, artistName, onEnded, classN
       setIsPlaying(false)
       setCurrentTime(0)
     }
-  }, [previewUrl, volume])
+  }, [audioSrc, volume])
 
   // Update time
   useEffect(() => {
@@ -118,11 +142,22 @@ export function AudioPlayer({ previewUrl, trackName, artistName, onEnded, classN
 
   return (
     <div className={cn("p-4 rounded-md bg-background border", className)}>
-      <audio ref={audioRef} src={previewUrl} preload="metadata" />
+      <audio ref={audioRef} src={audioSrc} preload="metadata" />
 
-      <div className="mb-2">
-        <h3 className="font-medium text-sm truncate">{trackName}</h3>
-        <p className="text-xs text-muted-foreground truncate">{artistName}</p>
+      <div className="flex items-center space-x-4 mb-2">
+        {image && (
+          <Image
+            src={image}
+            alt={displayTitle}
+            width={48}
+            height={48}
+            className="rounded object-cover"
+          />
+        )}
+        <div className="flex-1 min-w-0">
+          <h3 className="font-medium text-sm truncate">{displayTitle}</h3>
+          <p className="text-xs text-muted-foreground truncate">{displayArtist}</p>
+        </div>
       </div>
 
       <div className="space-y-2">
