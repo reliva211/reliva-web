@@ -6,6 +6,7 @@ import {
   onAuthStateChanged,
   User as FirebaseUser,
 } from "firebase/auth";
+import { auth } from "@/lib/firebase";
 
 interface User extends FirebaseUser {
   id: string;
@@ -13,9 +14,13 @@ interface User extends FirebaseUser {
 
 export const useCurrentUser = () => {
   const [user, setUser] = useState<User | null>(null);
-  const auth = getAuth();
 
   useEffect(() => {
+    // Only set up auth listener if Firebase is configured
+    if (!auth) {
+      return;
+    }
+
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
       if (firebaseUser) {
         setUser({
@@ -28,7 +33,7 @@ export const useCurrentUser = () => {
     });
 
     return () => unsubscribe();
-  }, [auth]);
+  }, []);
 
   return user;
 };
