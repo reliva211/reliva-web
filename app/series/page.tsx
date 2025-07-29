@@ -171,8 +171,10 @@ export default function SeriesPage() {
   const [tmdbDetails, setTmdbDetails] = useState<any>(null);
   const [tmdbLoading, setTmdbLoading] = useState(false);
   const [tmdbError, setTmdbError] = useState<string | null>(null);
+  const [selectedGenre, setSelectedGenre] = useState<string>("");
+  const [isGenreSearching, setIsGenreSearching] = useState(false);
 
-  const user = useCurrentUser();
+  const { user } = useCurrentUser();
 
   useEffect(() => {
     // Fetch trending series on initial load
@@ -265,6 +267,7 @@ export default function SeriesPage() {
     if (!searchQuery.trim()) return;
     setIsSearching(true);
     setError(null);
+    setSelectedGenre(""); // Clear genre selection when doing text search
     try {
       const results = await searchSeries(searchQuery);
       setSearchResults(results);
@@ -281,6 +284,145 @@ export default function SeriesPage() {
     setIsSearching(false);
     setSearchResults([]);
     setError(null);
+    setSelectedGenre("");
+    setIsGenreSearching(false);
+  };
+
+  const handleGenreSearch = async (genre: string) => {
+    if (selectedGenre === genre) {
+      // If clicking the same genre, deselect it
+      setSelectedGenre("");
+      setSearchResults([]);
+      setIsGenreSearching(false);
+      return;
+    }
+
+    setSelectedGenre(genre);
+    setIsGenreSearching(true);
+    setSearchQuery(""); // Clear text search when doing genre search
+
+    try {
+      // Get genre ID from TMDB
+      const genreMap: { [key: string]: number } = {
+        Drama: 18,
+        Comedy: 35,
+        "Sci-Fi": 878,
+        Crime: 80,
+        Fantasy: 14,
+        Animation: 16,
+        Action: 28,
+        Thriller: 53,
+        Horror: 27,
+        Romance: 10749,
+        Adventure: 12,
+        Documentary: 99,
+        Family: 10751,
+        History: 36,
+        Music: 10402,
+        Mystery: 9648,
+        War: 10752,
+        Western: 37,
+      };
+
+      const genreId = genreMap[genre];
+      if (!genreId) {
+        console.error(`Genre "${genre}" not found in TMDB genre map`);
+        setSearchResults([]);
+        return;
+      }
+
+      // Use TMDB API to search by genre for TV series
+      // Try multiple approaches for better results
+      let apiUrl = `https://api.themoviedb.org/3/discover/tv?api_key=${process.env.NEXT_PUBLIC_TMDB_API_KEY}&with_genres=${genreId}&sort_by=popularity.desc&page=1`;
+      console.log(`API URL for "${genre}":`, apiUrl); // Debug log
+
+      let res = await fetch(apiUrl);
+
+      if (!res.ok) {
+        throw new Error(`API request failed: ${res.status} ${res.statusText}`);
+      }
+
+      let data = await res.json();
+
+      console.log(`Genre search for "${genre}":`, data); // Debug log
+      console.log(`Total items found:`, data.total_results || 0); // Debug log
+
+      // If no results, try alternative approach for Sci-Fi and Fantasy
+      if (
+        (!data.results || data.results.length === 0) &&
+        (genre === "Sci-Fi" || genre === "Fantasy")
+      ) {
+        console.log(`No results for ${genre}, trying alternative search...`);
+
+        // Try searching by keywords instead of genre ID
+        const keywordMap: { [key: string]: string } = {
+          "Sci-Fi": "science fiction",
+          Fantasy: "fantasy",
+        };
+
+        const keyword = keywordMap[genre];
+        if (keyword) {
+          apiUrl = `https://api.themoviedb.org/3/search/tv?api_key=${
+            process.env.NEXT_PUBLIC_TMDB_API_KEY
+          }&query=${encodeURIComponent(
+            keyword
+          )}&sort_by=popularity.desc&page=1`;
+          console.log(`Alternative API URL for "${genre}":`, apiUrl);
+
+          res = await fetch(apiUrl);
+
+          if (!res.ok) {
+            console.error(
+              `Alternative API request failed: ${res.status} ${res.statusText}`
+            );
+          } else {
+            data = await res.json();
+
+            console.log(`Alternative search for "${genre}":`, data);
+            console.log(
+              `Alternative total items found:`,
+              data.total_results || 0
+            );
+          }
+        }
+      }
+
+      if (
+        data.results &&
+        Array.isArray(data.results) &&
+        data.results.length > 0
+      ) {
+        const series = data.results.map((series: any) => ({
+          id: series.id,
+          title: series.name,
+          year: new Date(series.first_air_date).getFullYear(),
+          cover: series.poster_path
+            ? `https://image.tmdb.org/t/p/w500${series.poster_path}`
+            : "/placeholder.svg",
+          rating: series.vote_average,
+          overview: series.overview,
+          first_air_date: series.first_air_date,
+        }));
+
+        setSearchResults(series);
+        console.log(
+          `Successfully found ${series.length} series for "${genre}"`
+        );
+      } else {
+        console.log(`No results found for "${genre}"`);
+        setSearchResults([]);
+      }
+    } catch (err) {
+      console.error("Genre search failed:", err);
+      setSearchResults([]);
+      setError(
+        `Failed to search for ${genre} series: ${
+          err instanceof Error ? err.message : "Unknown error"
+        }`
+      );
+    } finally {
+      setIsGenreSearching(false);
+    }
   };
 
   const saveSeries = async (series: Series) => {
@@ -594,12 +736,22 @@ export default function SeriesPage() {
 
           <h3 className="font-medium">Genres</h3>
           <div className="flex flex-wrap gap-2">
-            <Badge variant="outline">Drama</Badge>
-            <Badge variant="outline">Comedy</Badge>
-            <Badge variant="outline">Sci-Fi</Badge>
-            <Badge variant="outline">Crime</Badge>
-            <Badge variant="outline">Fantasy</Badge>
-            <Badge variant="outline">Animation</Badge>
+            {["Drama", "Comedy", "Sci-Fi", "Crime", "Fantasy", "Animation"].map(
+              (genre) => (
+                <Badge
+                  key={genre}
+                  variant={selectedGenre === genre ? "default" : "outline"}
+                  className={`cursor-pointer transition-colors hover:bg-primary hover:text-primary-foreground ${
+                    selectedGenre === genre
+                      ? "bg-primary text-primary-foreground"
+                      : ""
+                  }`}
+                  onClick={() => handleGenreSearch(genre)}
+                >
+                  {genre}
+                </Badge>
+              )
+            )}
           </div>
         </div>
 
@@ -622,52 +774,63 @@ export default function SeriesPage() {
               </p>
               <Button onClick={() => window.location.reload()}>Retry</Button>
             </div>
-          ) : selectedListSidebar === "all" &&
-            searchQuery &&
-            searchResults.length > 0 ? (
+          ) : isSearching || isGenreSearching || searchResults.length > 0 ? (
             // Show search results
             <div className="space-y-6">
               <div className="flex items-center justify-between">
                 <h2 className="text-2xl font-bold">
-                  Search Results for "{searchQuery}"
+                  {isSearching
+                    ? `Search Results for "${searchQuery}"`
+                    : `Series in ${selectedGenre}`}
                 </h2>
                 <Button variant="ghost" onClick={clearSearch}>
                   Clear Search
                 </Button>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {searchResults.map((series) => (
-                  <Card key={series.id} className="overflow-hidden">
-                    <Link href={`/series/${series.id}`} className="block">
-                      <CardContent className="p-0">
-                        <div className="relative aspect-[2/3] w-full">
-                          <Image
-                            src={series.cover || "/placeholder.svg"}
-                            alt={series.title}
-                            fill
-                            className="object-cover"
-                          />
-                        </div>
-                      </CardContent>
-                    </Link>
-                    <div className="px-4 pb-4">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="w-full"
-                        onClick={() => {
-                          setAddToListSeries(series);
-                          setAddToListOpen(true);
-                        }}
-                      >
-                        <Plus className="mr-1 h-4 w-4" /> Add to List
-                      </Button>
-                    </div>
-                  </Card>
-                ))}
-              </div>
+              {isGenreSearching ? (
+                <div className="text-center py-12">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+                  <p className="text-muted-foreground">
+                    Loading {selectedGenre} series...
+                  </p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                  {searchResults.map((series) => (
+                    <Card key={series.id} className="overflow-hidden">
+                      <Link href={`/series/${series.id}`} className="block">
+                        <CardContent className="p-0">
+                          <div className="relative aspect-[2/3] w-full">
+                            <Image
+                              src={series.cover || "/placeholder.svg"}
+                              alt={series.title}
+                              fill
+                              className="object-cover"
+                            />
+                          </div>
+                        </CardContent>
+                      </Link>
+                      <div className="px-4 pb-4">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="w-full"
+                          onClick={() => {
+                            setAddToListSeries(series);
+                            setAddToListOpen(true);
+                          }}
+                        >
+                          <Plus className="mr-1 h-4 w-4" /> Add to List
+                        </Button>
+                      </div>
+                    </Card>
+                  ))}
+                </div>
+              )}
             </div>
-          ) : selectedListSidebar === "all" && !searchQuery ? (
+          ) : selectedListSidebar === "all" &&
+            !searchQuery &&
+            !selectedGenre ? (
             <>
               <h2 className="text-2xl font-bold">All My Series</h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6">

@@ -13,17 +13,12 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Play, Zap } from "lucide-react";
+import { RatingStars } from "@/components/rating-stars";
 
 export default function LandingPage() {
-  const user = useCurrentUser();
+  const { user, loading } = useCurrentUser();
   const [trendingMovies, setTrendingMovies] = useState<any[]>([]);
   const [trendingSeries, setTrendingSeries] = useState<any[]>([]);
-  const [authChecked, setAuthChecked] = useState(false);
-
-  useEffect(() => {
-    // Wait for user state to resolve (either user or null)
-    setAuthChecked(true);
-  }, [user]);
 
   useEffect(() => {
     if (!user) return;
@@ -44,7 +39,7 @@ export default function LandingPage() {
   }, [user]);
 
   // Show spinner while auth state is loading
-  if (!authChecked) {
+  if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-emerald-500 dark:border-emerald-400"></div>
@@ -56,77 +51,101 @@ export default function LandingPage() {
     // Show trending sections for signed-in users
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 dark:from-gray-900 dark:via-black dark:to-gray-900 text-gray-900 dark:text-white relative scroll-smooth">
-        <div className="relative z-10 py-20 px-4">
+        <div className="relative z-10 py-8 px-4">
           <div className="max-w-7xl mx-auto w-full space-y-16">
             {/* Trending Movies */}
             <div>
               <h2 className="text-3xl md:text-4xl font-bold mb-6 text-gray-900 dark:text-white">
                 Trending Movies
               </h2>
-              <Carousel className="w-full">
-                <CarouselContent>
-                  {trendingMovies.map((movie) => (
-                    <CarouselItem
-                      key={movie.id}
-                      className="basis-1/2 sm:basis-1/4 md:basis-1/6"
-                    >
-                      <div className="bg-card rounded-xl shadow-md overflow-hidden flex flex-col items-center p-2 hover:scale-105 transition-transform">
-                        <Image
-                          src={
-                            movie.poster_path
-                              ? `https://image.tmdb.org/t/p/w300${movie.poster_path}`
-                              : "/placeholder.svg"
-                          }
-                          alt={movie.title}
-                          width={160}
-                          height={240}
-                          className="rounded-lg object-cover mb-2"
-                        />
-                        <div className="text-center text-sm font-medium line-clamp-2 text-gray-900 dark:text-white">
-                          {movie.title}
+              <div className="relative">
+                <Carousel className="w-full">
+                  <CarouselContent>
+                    {trendingMovies.map((movie) => (
+                      <CarouselItem
+                        key={movie.id}
+                        className="basis-1/2 sm:basis-1/4 md:basis-1/6"
+                      >
+                        <div className="bg-card rounded-xl shadow-md overflow-hidden flex flex-col items-center p-2 hover:scale-105 transition-transform">
+                          <div className="relative w-full aspect-[2/3] mb-2">
+                            <Image
+                              src={
+                                movie.poster_path
+                                  ? `https://image.tmdb.org/t/p/w300${movie.poster_path}`
+                                  : "/placeholder.svg"
+                              }
+                              alt={movie.title}
+                              fill
+                              className="rounded-lg object-cover"
+                            />
+                          </div>
+                          <RatingStars
+                            mediaId={movie.id}
+                            mediaType="movie"
+                            mediaTitle={movie.title}
+                            mediaCover={
+                              movie.poster_path
+                                ? `https://image.tmdb.org/t/p/w300${movie.poster_path}`
+                                : undefined
+                            }
+                            size="sm"
+                            className="mb-1"
+                          />
                         </div>
-                      </div>
-                    </CarouselItem>
-                  ))}
-                </CarouselContent>
-                <CarouselPrevious />
-                <CarouselNext />
-              </Carousel>
+                      </CarouselItem>
+                    ))}
+                  </CarouselContent>
+                  <CarouselPrevious className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-background/80 backdrop-blur-sm border shadow-lg" />
+                  <CarouselNext className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-background/80 backdrop-blur-sm border shadow-lg" />
+                </Carousel>
+              </div>
             </div>
             {/* Trending Series */}
             <div>
               <h2 className="text-3xl md:text-4xl font-bold mb-6 text-gray-900 dark:text-white">
                 Trending Series
               </h2>
-              <Carousel className="w-full">
-                <CarouselContent>
-                  {trendingSeries.map((series) => (
-                    <CarouselItem
-                      key={series.id}
-                      className="basis-1/2 sm:basis-1/4 md:basis-1/6"
-                    >
-                      <div className="bg-card rounded-xl shadow-md overflow-hidden flex flex-col items-center p-2 hover:scale-105 transition-transform">
-                        <Image
-                          src={
-                            series.poster_path
-                              ? `https://image.tmdb.org/t/p/w300${series.poster_path}`
-                              : "/placeholder.svg"
-                          }
-                          alt={series.name}
-                          width={160}
-                          height={240}
-                          className="rounded-lg object-cover mb-2"
-                        />
-                        <div className="text-center text-sm font-medium line-clamp-2 text-gray-900 dark:text-white">
-                          {series.name}
+              <div className="relative">
+                <Carousel className="w-full">
+                  <CarouselContent>
+                    {trendingSeries.map((series) => (
+                      <CarouselItem
+                        key={series.id}
+                        className="basis-1/2 sm:basis-1/4 md:basis-1/6"
+                      >
+                        <div className="bg-card rounded-xl shadow-md overflow-hidden flex flex-col items-center p-2 hover:scale-105 transition-transform">
+                          <div className="relative w-full aspect-[2/3] mb-2">
+                            <Image
+                              src={
+                                series.poster_path
+                                  ? `https://image.tmdb.org/t/p/w300${series.poster_path}`
+                                  : "/placeholder.svg"
+                              }
+                              alt={series.name}
+                              fill
+                              className="rounded-lg object-cover"
+                            />
+                          </div>
+                          <RatingStars
+                            mediaId={series.id}
+                            mediaType="series"
+                            mediaTitle={series.name}
+                            mediaCover={
+                              series.poster_path
+                                ? `https://image.tmdb.org/t/p/w300${series.poster_path}`
+                                : undefined
+                            }
+                            size="sm"
+                            className="mb-1"
+                          />
                         </div>
-                      </div>
-                    </CarouselItem>
-                  ))}
-                </CarouselContent>
-                <CarouselPrevious />
-                <CarouselNext />
-              </Carousel>
+                      </CarouselItem>
+                    ))}
+                  </CarouselContent>
+                  <CarouselPrevious className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-background/80 backdrop-blur-sm border shadow-lg" />
+                  <CarouselNext className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-background/80 backdrop-blur-sm border shadow-lg" />
+                </Carousel>
+              </div>
             </div>
           </div>
         </div>
@@ -134,7 +153,7 @@ export default function LandingPage() {
     );
   }
 
-  // Show original landing/marketing content for visitors
+  // Show landing page for non-authenticated users
   return (
     <>
       {/* Animated Background Elements */}
@@ -147,10 +166,10 @@ export default function LandingPage() {
       {/* Hero Section */}
       <section className="relative z-10 min-h-screen flex items-center px-4">
         <div className="max-w-7xl mx-auto w-full">
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
+          <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
             {/* Left Side - Title */}
             <div className="text-left">
-              <h1 className="text-7xl md:text-8xl lg:text-9xl font-light tracking-tight leading-none mb-8 text-gray-900 dark:text-white">
+              <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl xl:text-9xl font-light tracking-tight leading-none mb-8 text-gray-900 dark:text-white">
                 What's
                 <br />
                 <span className="bg-gradient-to-r from-emerald-600 via-blue-600 to-purple-600 dark:from-emerald-400 dark:via-blue-400 dark:to-purple-400 bg-clip-text text-transparent">
@@ -159,7 +178,7 @@ export default function LandingPage() {
                 <br />
                 Reliva?
               </h1>
-              <p className="text-xl md:text-2xl text-gray-600 dark:text-gray-300 max-w-lg leading-relaxed mb-8">
+              <p className="text-lg sm:text-xl md:text-2xl text-gray-600 dark:text-gray-300 max-w-lg leading-relaxed mb-8">
                 The ultimate platform for sharing what you love. No gatekeeping,
                 just pure media discovery.
               </p>
@@ -188,7 +207,7 @@ export default function LandingPage() {
 
             {/* Right Side - Preview */}
             <div className="relative">
-              <div className="bg-white/80 dark:bg-gray-800/90 backdrop-blur-sm rounded-3xl p-8 border border-gray-200 dark:border-gray-700 shadow-2xl">
+              <div className="bg-white/80 dark:bg-gray-800/90 backdrop-blur-sm rounded-3xl p-4 sm:p-6 lg:p-8 border border-gray-200 dark:border-gray-700 shadow-2xl">
                 <div className="space-y-6">
                   {/* Header */}
                   <div className="flex items-center justify-between">

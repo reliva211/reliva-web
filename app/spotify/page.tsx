@@ -31,7 +31,7 @@ interface SpotifyPlaylist {
 }
 
 export default function SpotifyPage() {
-  const user = useCurrentUser();
+  const { user } = useCurrentUser();
   const [playlists, setPlaylists] = useState<SpotifyPlaylist[]>([]);
   const [loading, setLoading] = useState(true);
 

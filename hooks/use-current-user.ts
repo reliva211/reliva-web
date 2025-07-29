@@ -13,6 +13,7 @@ interface User extends FirebaseUser {
 
 export const useCurrentUser = () => {
   const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
   const auth = getAuth();
 
   useEffect(() => {
@@ -25,10 +26,11 @@ export const useCurrentUser = () => {
       } else {
         setUser(null);
       }
+      setLoading(false);
     });
 
     return () => unsubscribe();
   }, [auth]);
 
-  return user;
+  return { user, loading };
 };

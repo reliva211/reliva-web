@@ -1,8 +1,9 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import Header from "@/components/header";
+import Sidebar from "@/components/header";
 import Footer from "@/components/footer";
+import { useCurrentUser } from "@/hooks/use-current-user";
 
 interface LayoutWrapperProps {
   children: React.ReactNode;
@@ -11,12 +12,18 @@ interface LayoutWrapperProps {
 export default function LayoutWrapper({ children }: LayoutWrapperProps) {
   const pathname = usePathname();
   const isLandingPage = pathname === "/";
+  const { user } = useCurrentUser();
+
+  // Don't show footer for authenticated users
+  const shouldShowFooter = !user;
 
   return (
-    <div className="flex min-h-screen flex-col">
-      <Header isLandingPage={isLandingPage} />
-      <main className="flex-grow pt-16">{children}</main>
-      <Footer />
+    <div className="flex min-h-screen">
+      <Sidebar isLandingPage={isLandingPage} />
+      <div className="flex-1 flex flex-col">
+        <main className="flex-1">{children}</main>
+        {shouldShowFooter && <Footer />}
+      </div>
     </div>
   );
 }

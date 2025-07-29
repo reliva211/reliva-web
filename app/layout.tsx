@@ -8,7 +8,7 @@ import LayoutWrapper from "@/components/layout-wrapper";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata = {
-  title: "Tunes and Habits",
+  title: "Reliva",
   description: "Track your music, books, and movies all in one place",
   generator: "v0.dev",
 };

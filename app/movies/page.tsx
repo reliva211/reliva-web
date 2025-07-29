@@ -150,8 +150,10 @@ export default function MoviesPage() {
   const [tmdbDetails, setTmdbDetails] = useState<any>(null);
   const [tmdbLoading, setTmdbLoading] = useState(false);
   const [tmdbError, setTmdbError] = useState<string | null>(null);
+  const [selectedGenre, setSelectedGenre] = useState<string>("");
+  const [isGenreSearching, setIsGenreSearching] = useState(false);
 
-  const user = useCurrentUser();
+  const { user } = useCurrentUser();
 
   const fetchUserMovies = async (uid: string) => {
     const querySnapshot = await getDocs(collection(db, `users/${uid}/movies`));
@@ -160,8 +162,18 @@ export default function MoviesPage() {
 
     querySnapshot.forEach((doc) => {
       const data = doc.data();
-      movies.push(data as Movie);
-      ids.push(data.id);
+      const movie: Movie = {
+        id: data.id || Number(doc.id),
+        title: data.title || "",
+        year: data.year || 0,
+        cover: data.cover || "",
+        status: data.status || "Unknown",
+        rating: data.rating || 0,
+        notes: data.notes || "",
+        collections: data.collections || [],
+      };
+      movies.push(movie);
+      ids.push(movie.id);
     });
 
     setSavedMovies(
@@ -262,6 +274,7 @@ export default function MoviesPage() {
     if (!searchQuery.trim()) return;
 
     setIsSearching(true);
+    setSelectedGenre(""); // Clear genre selection when doing text search
 
     try {
       const results = await searchMovies(searchQuery);
@@ -273,6 +286,95 @@ export default function MoviesPage() {
   const clearSearch = () => {
     setSearchQuery("");
     setIsSearching(false);
+    setSelectedGenre("");
+    setSearchResults([]);
+    setIsGenreSearching(false);
+  };
+
+  const handleGenreSearch = async (genre: string) => {
+    if (selectedGenre === genre) {
+      // If clicking the same genre, deselect it
+      setSelectedGenre("");
+      setSearchResults([]);
+      setIsGenreSearching(false);
+      return;
+    }
+
+    setSelectedGenre(genre);
+    setIsGenreSearching(true);
+    setSearchQuery(""); // Clear text search when doing genre search
+
+    try {
+      // Get genre ID from TMDB
+      const genreMap: { [key: string]: number } = {
+        Action: 28,
+        Drama: 18,
+        "Sci-Fi": 878,
+        Comedy: 35,
+        Thriller: 53,
+        Horror: 27,
+        Romance: 10749,
+        Adventure: 12,
+        Fantasy: 14,
+        Animation: 16,
+        Crime: 80,
+        Documentary: 99,
+        Family: 10751,
+        History: 36,
+        Music: 10402,
+        Mystery: 9648,
+        War: 10752,
+        Western: 37,
+      };
+
+      const genreId = genreMap[genre];
+      if (!genreId) {
+        console.error(`Genre "${genre}" not found in TMDB genre map`);
+        setSearchResults([]);
+        return;
+      }
+
+      // Use TMDB API to search by genre
+      const apiUrl = `https://api.themoviedb.org/3/discover/movie?api_key=${process.env.NEXT_PUBLIC_TMDB_API_KEY}&with_genres=${genreId}&sort_by=popularity.desc&page=1`;
+      console.log(`API URL for "${genre}":`, apiUrl); // Debug log
+
+      const res = await fetch(apiUrl);
+      const data = await res.json();
+
+      console.log(`Genre search for "${genre}":`, data); // Debug log
+      console.log(`Total items found:`, data.total_results || 0); // Debug log
+
+      if (
+        data.results &&
+        Array.isArray(data.results) &&
+        data.results.length > 0
+      ) {
+        const movies = data.results.map((movie: any) => ({
+          id: movie.id,
+          title: movie.title,
+          year: new Date(movie.release_date).getFullYear(),
+          cover: movie.poster_path
+            ? `https://image.tmdb.org/t/p/w500${movie.poster_path}`
+            : "/placeholder.svg",
+          rating: movie.vote_average,
+          overview: movie.overview,
+          release_date: movie.release_date,
+        }));
+
+        setSearchResults(movies);
+        console.log(
+          `Successfully found ${movies.length} movies for "${genre}"`
+        );
+      } else {
+        console.log(`No results found for "${genre}"`);
+        setSearchResults([]);
+      }
+    } catch (err) {
+      console.error("Genre search failed:", err);
+      setSearchResults([]);
+    } finally {
+      setIsGenreSearching(false);
+    }
   };
 
   const uid = user?.uid;
@@ -576,78 +678,104 @@ export default function MoviesPage() {
           <div className="space-y-2">
             <h3 className="font-medium">Genres</h3>
             <div className="flex flex-wrap gap-2">
-              <Badge variant="outline">Action</Badge>
-              <Badge variant="outline">Drama</Badge>
-              <Badge variant="outline">Sci-Fi</Badge>
-              <Badge variant="outline">Comedy</Badge>
-              <Badge variant="outline">Thriller</Badge>
-              <Badge variant="outline">Horror</Badge>
+              {[
+                "Action",
+                "Drama",
+                "Sci-Fi",
+                "Comedy",
+                "Thriller",
+                "Horror",
+              ].map((genre) => (
+                <Badge
+                  key={genre}
+                  variant={selectedGenre === genre ? "default" : "outline"}
+                  className={`cursor-pointer transition-colors hover:bg-primary hover:text-primary-foreground ${
+                    selectedGenre === genre
+                      ? "bg-primary text-primary-foreground"
+                      : ""
+                  }`}
+                  onClick={() => handleGenreSearch(genre)}
+                >
+                  {genre}
+                </Badge>
+              ))}
             </div>
           </div>
         </div>
 
         {/* Main Content */}
         <div className="flex-1">
-          {isSearching ? (
+          {isSearching || isGenreSearching || searchResults.length > 0 ? (
             <div className="space-y-6">
               <div className="flex items-center justify-between">
                 <h2 className="text-2xl font-bold">
-                  Search Results for "{searchQuery}"
+                  {isSearching
+                    ? `Search Results for "${searchQuery}"`
+                    : `Movies in ${selectedGenre}`}
                 </h2>
                 <Button variant="ghost" onClick={clearSearch}>
                   Clear Search
                 </Button>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                {searchResults.map((movie) => (
-                  <Card key={movie.id} className="overflow-hidden">
-                    <Link href={`/movies/${movie.id}`} className="block">
-                      <div className="bg-card rounded-lg shadow-md overflow-hidden flex flex-col h-full cursor-pointer transition-transform hover:scale-[1.03]">
-                        <div className="relative aspect-[2/3] w-full">
-                          <Image
-                            src={movie.cover || "/placeholder.svg"}
-                            alt={movie.title}
-                            fill
-                            className="object-cover"
-                          />
-                        </div>
-                        <div className="p-4 space-y-2">
-                          <div className="flex justify-between items-start">
-                            <div>
-                              <h3 className="font-medium line-clamp-1">
-                                {movie.title}
-                              </h3>
-                              <p className="text-sm text-muted-foreground">
-                                {movie.year}
-                              </p>
-                            </div>
-                            <div className="flex items-center">
-                              <Star className="h-3 w-3 fill-primary text-primary" />
-                              <span className="text-xs ml-1">
-                                {movie.rating}
-                              </span>
+              {isGenreSearching ? (
+                <div className="text-center py-12">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+                  <p className="text-muted-foreground">
+                    Loading {selectedGenre} movies...
+                  </p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                  {searchResults.map((movie) => (
+                    <Card key={movie.id} className="overflow-hidden">
+                      <Link href={`/movies/${movie.id}`} className="block">
+                        <div className="bg-card rounded-lg shadow-md overflow-hidden flex flex-col h-full cursor-pointer transition-transform hover:scale-[1.03]">
+                          <div className="relative aspect-[2/3] w-full">
+                            <Image
+                              src={movie.cover || "/placeholder.svg"}
+                              alt={movie.title}
+                              fill
+                              className="object-cover"
+                            />
+                          </div>
+                          <div className="p-4 space-y-2">
+                            <div className="flex justify-between items-start">
+                              <div>
+                                <h3 className="font-medium line-clamp-1">
+                                  {movie.title}
+                                </h3>
+                                <p className="text-sm text-muted-foreground">
+                                  {movie.year}
+                                </p>
+                              </div>
+                              <div className="flex items-center">
+                                <Star className="h-3 w-3 fill-primary text-primary" />
+                                <span className="text-xs ml-1">
+                                  {movie.rating}
+                                </span>
+                              </div>
                             </div>
                           </div>
                         </div>
+                      </Link>
+                      <div className="px-4 pb-4">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="w-full"
+                          onClick={() => {
+                            setAddToListMovie(movie);
+                            setAddToListOpen(true);
+                          }}
+                        >
+                          <Plus className="mr-1 h-4 w-4" /> Add to List
+                        </Button>
                       </div>
-                    </Link>
-                    <div className="px-4 pb-4">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="w-full"
-                        onClick={() => {
-                          setAddToListMovie(movie);
-                          setAddToListOpen(true);
-                        }}
-                      >
-                        <Plus className="mr-1 h-4 w-4" /> Add to List
-                      </Button>
-                    </div>
-                  </Card>
-                ))}
-              </div>
+                    </Card>
+                  ))}
+                </div>
+              )}
             </div>
           ) : (
             <div className="space-y-6">

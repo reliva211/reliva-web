@@ -156,6 +156,8 @@ export default function BooksPage() {
   const [creatingModalCollection, setCreatingModalCollection] = useState(false);
   const [selectedModalCollectionId, setSelectedModalCollectionId] =
     useState("");
+  const [selectedGenre, setSelectedGenre] = useState<string>("");
+  const [isGenreSearching, setIsGenreSearching] = useState(false);
 
   const handleSearch = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -163,6 +165,7 @@ export default function BooksPage() {
     if (!searchQuery.trim()) return;
 
     setIsSearching(true);
+    setSelectedGenre(""); // Clear genre selection when doing text search
 
     try {
       const res = await fetch(
@@ -204,9 +207,139 @@ export default function BooksPage() {
   const clearSearch = () => {
     setSearchQuery("");
     setIsSearching(false);
+    setSelectedGenre("");
+    setSearchResults([]);
+    setIsGenreSearching(false);
   };
 
-  const user = useCurrentUser();
+  const handleGenreSearch = async (genre: string) => {
+    if (selectedGenre === genre) {
+      // If clicking the same genre, deselect it
+      setSelectedGenre("");
+      setSearchResults([]);
+      setIsGenreSearching(false);
+      return;
+    }
+
+    setSelectedGenre(genre);
+    setIsGenreSearching(true);
+    setSearchQuery(""); // Clear text search when doing genre search
+
+    try {
+      // Create a better search query for different genres
+      let searchQuery = "";
+
+      switch (genre.toLowerCase()) {
+        case "non-fiction":
+          searchQuery =
+            "subject:nonfiction OR subject:non-fiction OR subject:reference OR subject:business OR subject:economics OR subject:philosophy OR subject:psychology";
+          break;
+        case "fiction":
+          searchQuery = "subject:fiction OR subject:literature";
+          break;
+        case "science":
+          searchQuery = "subject:science OR subject:scientific";
+          break;
+        case "history":
+          searchQuery = "subject:history OR subject:historical";
+          break;
+        case "biography":
+          searchQuery = "subject:biography OR subject:autobiography";
+          break;
+        case "self-help":
+          searchQuery =
+            "subject:self-help OR subject:self_help OR subject:personal_development";
+          break;
+        default:
+          searchQuery = `subject:${encodeURIComponent(genre)}`;
+      }
+
+      // Use Google Books API to search by genre
+      const apiUrl = `https://www.googleapis.com/books/v1/volumes?q=${searchQuery}&maxResults=20`;
+      console.log(`API URL for "${genre}":`, apiUrl); // Debug log
+
+      const res = await fetch(apiUrl);
+      const data = await res.json();
+
+      console.log(`Genre search for "${genre}":`, data); // Debug log
+      console.log(`Total items found:`, data.totalItems || 0); // Debug log
+
+      if (data.items && Array.isArray(data.items) && data.items.length > 0) {
+        const books: Book[] = data.items.map(
+          (item: any, index: number): Book => {
+            const info = item.volumeInfo;
+
+            return {
+              id: item.id,
+              title: info.title ?? "No title",
+              author: info.authors?.join(", ") ?? "Unknown author",
+              cover:
+                info.imageLinks?.thumbnail ??
+                "/placeholder.svg?height=200&width=140",
+              rating: info.averageRating ?? "N/A",
+              progress: undefined,
+              status: "",
+            };
+          }
+        );
+
+        setSearchResults(books);
+        console.log(`Successfully found ${books.length} books for "${genre}"`);
+      } else {
+        console.log(
+          `No results found for "${genre}". Trying fallback search...`
+        );
+
+        // Fallback: try a broader search
+        const fallbackQuery = `"${genre}"`;
+        const fallbackRes = await fetch(
+          `https://www.googleapis.com/books/v1/volumes?q=${fallbackQuery}&maxResults=20`
+        );
+        const fallbackData = await fallbackRes.json();
+
+        if (
+          fallbackData.items &&
+          Array.isArray(fallbackData.items) &&
+          fallbackData.items.length > 0
+        ) {
+          const fallbackBooks: Book[] = fallbackData.items.map(
+            (item: any, index: number): Book => {
+              const info = item.volumeInfo;
+
+              return {
+                id: item.id,
+                title: info.title ?? "No title",
+                author: info.authors?.join(", ") ?? "Unknown author",
+                cover:
+                  info.imageLinks?.thumbnail ??
+                  "/placeholder.svg?height=200&width=140",
+                rating: info.averageRating ?? "N/A",
+                progress: undefined,
+                status: "",
+              };
+            }
+          );
+
+          setSearchResults(fallbackBooks);
+          console.log(
+            `Fallback search found ${fallbackBooks.length} books for "${genre}"`
+          );
+        } else {
+          setSearchResults([]);
+          console.log(
+            `No results found even with fallback search for "${genre}"`
+          );
+        }
+      }
+    } catch (err) {
+      console.error("Genre search failed:", err);
+      setSearchResults([]);
+    } finally {
+      setIsGenreSearching(false);
+    }
+  };
+
+  const { user } = useCurrentUser();
   const userId = user?.uid;
 
   useEffect(() => {
@@ -555,23 +688,40 @@ export default function BooksPage() {
           <div>
             <h3 className="font-medium">Genres</h3>
             <div className="flex flex-wrap gap-2 mt-2">
-              <Badge variant="outline">Fiction</Badge>
-              <Badge variant="outline">Non-Fiction</Badge>
-              <Badge variant="outline">Science</Badge>
-              <Badge variant="outline">History</Badge>
-              <Badge variant="outline">Biography</Badge>
-              <Badge variant="outline">Self-Help</Badge>
+              {[
+                "Fiction",
+                "Non-Fiction",
+                "Science",
+                "History",
+                "Biography",
+                "Self-Help",
+              ].map((genre) => (
+                <Badge
+                  key={genre}
+                  variant={selectedGenre === genre ? "default" : "outline"}
+                  className={`cursor-pointer transition-colors hover:bg-primary hover:text-primary-foreground ${
+                    selectedGenre === genre
+                      ? "bg-primary text-primary-foreground"
+                      : ""
+                  }`}
+                  onClick={() => handleGenreSearch(genre)}
+                >
+                  {genre}
+                </Badge>
+              ))}
             </div>
           </div>
         </div>
 
         {/* Main Content */}
         <div className="flex-1 min-w-0">
-          {isSearching ? (
+          {isSearching || isGenreSearching || searchResults.length > 0 ? (
             <div className="space-y-6">
               <div className="flex items-center justify-between">
                 <h2 className="text-2xl font-bold">
-                  Search Results for "{searchQuery}"
+                  {isSearching
+                    ? `Search Results for "${searchQuery}"`
+                    : `Books in ${selectedGenre}`}
                 </h2>
                 <Button variant="ghost" onClick={clearSearch}>
                   Clear Search
@@ -594,68 +744,79 @@ export default function BooksPage() {
                   </Button>
                 )}
               </div>
-              <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-6">
-                {searchResults.map((book, index) => (
-                  <Card
-                    key={`${book.id}-${index}`}
-                    className="overflow-hidden relative w-full h-full flex flex-col group"
-                    onClick={(e) => {
-                      // Only open Add to List if not clicking on a button or input (e.g., checkbox)
-                      if (
-                        (e.target as HTMLElement).tagName === "BUTTON" ||
-                        (e.target as HTMLElement).tagName === "INPUT" ||
-                        (e.target as HTMLElement).closest("button") ||
-                        (e.target as HTMLElement).closest("input")
-                      ) {
-                        return;
-                      }
-                      setAddToListBook(book);
-                      setAddToListOpen(true);
-                    }}
-                  >
-                    <div className="absolute inset-0 z-10 cursor-pointer" />
-                    <CardContent className="p-0">
-                      <div className="relative aspect-[2/3] w-full">
-                        <Image
-                          src={book.cover || "/placeholder.svg"}
-                          alt={book.title}
-                          fill
-                          className="object-cover"
-                        />
-                      </div>
-                      <div className="p-4 space-y-2">
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <h3 className="font-medium line-clamp-1">
-                              {book.title}
-                            </h3>
-                            <p className="text-sm text-muted-foreground">
-                              {book.author}
-                            </p>
-                          </div>
-                          <div className="flex items-center">
-                            <Star className="h-3 w-3 fill-primary text-primary" />
-                            <span className="text-xs ml-1">{book.rating}</span>
+              {isGenreSearching ? (
+                <div className="text-center py-12">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+                  <p className="text-muted-foreground">
+                    Loading {selectedGenre} books...
+                  </p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-6">
+                  {searchResults.map((book, index) => (
+                    <Card
+                      key={`${book.id}-${index}`}
+                      className="overflow-hidden relative w-full h-full flex flex-col group"
+                      onClick={(e) => {
+                        // Only open Add to List if not clicking on a button or input (e.g., checkbox)
+                        if (
+                          (e.target as HTMLElement).tagName === "BUTTON" ||
+                          (e.target as HTMLElement).tagName === "INPUT" ||
+                          (e.target as HTMLElement).closest("button") ||
+                          (e.target as HTMLElement).closest("input")
+                        ) {
+                          return;
+                        }
+                        setAddToListBook(book);
+                        setAddToListOpen(true);
+                      }}
+                    >
+                      <div className="absolute inset-0 z-10 cursor-pointer" />
+                      <CardContent className="p-0">
+                        <div className="relative aspect-[2/3] w-full">
+                          <Image
+                            src={book.cover || "/placeholder.svg"}
+                            alt={book.title}
+                            fill
+                            className="object-cover"
+                          />
+                        </div>
+                        <div className="p-4 space-y-2">
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <h3 className="font-medium line-clamp-1">
+                                {book.title}
+                              </h3>
+                              <p className="text-sm text-muted-foreground">
+                                {book.author}
+                              </p>
+                            </div>
+                            <div className="flex items-center">
+                              <Star className="h-3 w-3 fill-primary text-primary" />
+                              <span className="text-xs ml-1">
+                                {book.rating}
+                              </span>
+                            </div>
                           </div>
                         </div>
+                      </CardContent>
+                      <div className="px-4 pb-4">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="w-full"
+                          onClick={() => {
+                            setAddToListBook(book);
+                            setAddToListOpen(true);
+                          }}
+                        >
+                          <Plus className="mr-1 h-4 w-4" /> Add to List
+                        </Button>
                       </div>
-                    </CardContent>
-                    <div className="px-4 pb-4">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="w-full"
-                        onClick={() => {
-                          setAddToListBook(book);
-                          setAddToListOpen(true);
-                        }}
-                      >
-                        <Plus className="mr-1 h-4 w-4" /> Add to List
-                      </Button>
-                    </div>
-                  </Card>
-                ))}
-              </div>
+                    </Card>
+                  ))}
+                </div>
+              )}
               {/* Batch Add Modal */}
               <Dialog open={isBatchModalOpen} onOpenChange={setBatchModalOpen}>
                 <DialogContent>
@@ -732,18 +893,16 @@ export default function BooksPage() {
                   ) : (
                     filteredBooks.map((book) => (
                       <Card key={book.id} className="overflow-hidden">
-                        <Link href={`/books/${book.id}`} className="block">
-                          <div className="bg-card rounded-lg shadow-md overflow-hidden flex flex-col h-full cursor-pointer transition-transform hover:scale-[1.03]">
-                            <div className="relative aspect-[2/3] w-full">
-                              <Image
-                                src={book.cover || "/placeholder.svg"}
-                                alt={book.title}
-                                fill
-                                className="object-cover"
-                              />
-                            </div>
+                        <div className="bg-card rounded-lg shadow-md overflow-hidden flex flex-col h-full cursor-pointer transition-transform hover:scale-[1.03]">
+                          <div className="relative aspect-[2/3] w-full">
+                            <Image
+                              src={book.cover || "/placeholder.svg"}
+                              alt={book.title}
+                              fill
+                              className="object-cover"
+                            />
                           </div>
-                        </Link>
+                        </div>
                       </Card>
                     ))
                   )}

@@ -134,7 +134,7 @@ export default function SeriesPage() {
   const [seriesRating, setSeriesRating] = useState(0);
   const [filterStatus, setFilterStatus] = useState("all");
 
-  const user = useCurrentUser();
+  const { user } = useCurrentUser();
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -627,6 +627,7 @@ export default function SeriesPage() {
 // Custom hook to get the current Firebase user
 export const useCurrentUser = () => {
   const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
@@ -635,10 +636,11 @@ export const useCurrentUser = () => {
       } else {
         setUser(null);
       }
+      setLoading(false);
     });
 
     return () => unsubscribe();
   }, []);
 
-  return user;
+  return { user, loading };
 };

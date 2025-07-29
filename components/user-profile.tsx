@@ -119,7 +119,7 @@ type Book = {
 };
 
 interface Movie {
-  id: number;
+  id: string;
   title: string;
   // director: string;
   year: number;
@@ -148,7 +148,7 @@ export default function UserProfile({ userId: propUserId }: UserProfileProps) {
   const [activeTab, setActiveTab] = useState("overview");
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const { theme, setTheme } = useTheme();
-  const user = useCurrentUser();
+  const { user, loading: authLoading } = useCurrentUser();
   const userId = propUserId || user?.uid;
   const [savedBooks, setSavedBooks] = useState<Book[]>([]);
   const [savedMovies, setSavedMovies] = useState<Movie[]>([]);
@@ -177,9 +177,18 @@ export default function UserProfile({ userId: propUserId }: UserProfileProps) {
       try {
         const moviesCollection = collection(db, "users", userId, "movies");
         const snapshot = await getDocs(moviesCollection);
-        const moviesData: Movie[] = snapshot.docs.map(
-          (doc) => ({ id: doc.id, ...doc.data() } as Movie)
-        );
+        const moviesData: Movie[] = snapshot.docs.map((doc) => {
+          const data = doc.data();
+          return {
+            id: doc.id,
+            title: data.title || "",
+            year: data.year || 0,
+            cover: data.cover || "",
+            status: data.status || "Unknown",
+            rating: data.rating || 0,
+            notes: data.notes || "",
+          } as Movie;
+        });
         setSavedMovies(moviesData);
       } catch (err) {
         console.error("Failed to fetch saved movies:", err);
@@ -189,9 +198,18 @@ export default function UserProfile({ userId: propUserId }: UserProfileProps) {
       try {
         const seriesCollection = collection(db, "users", userId, "series");
         const snapshot = await getDocs(seriesCollection);
-        const seriesData: Series[] = snapshot.docs.map(
-          (doc) => ({ id: doc.id, ...doc.data() } as Series)
-        );
+        const seriesData: Series[] = snapshot.docs.map((doc) => {
+          const data = doc.data();
+          return {
+            id: doc.id,
+            title: data.title || "",
+            year: data.year || 0,
+            cover: data.cover || "",
+            status: data.status || "Unknown",
+            rating: data.rating || 0,
+            notes: data.notes || "",
+          } as Series;
+        });
         setSavedSeries(seriesData);
       } catch (err) {
         console.error("Failed to fetch saved series:", err);

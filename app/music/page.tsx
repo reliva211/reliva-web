@@ -149,7 +149,7 @@ export default function MusicPage() {
     getTrackPreview,
   } = useMusicAPI();
 
-  const user = useCurrentUser();
+  const { user } = useCurrentUser();
   const userId = user?.uid;
 
   useEffect(() => {

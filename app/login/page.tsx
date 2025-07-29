@@ -1,66 +1,79 @@
-"use client"
+"use client";
 
-import type React from "react"
-import { useState } from "react"
-import Link from "next/link"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from "firebase/auth"
-import { auth } from "@/lib/firebase"
+import type React from "react";
+import { useState } from "react";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  signInWithEmailAndPassword,
+  GoogleAuthProvider,
+  signInWithPopup,
+} from "firebase/auth";
+import { auth } from "@/lib/firebase";
 
 export default function LoginPage() {
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
-  const [isLoading, setIsLoading] = useState(false)
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleEmailLogin = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsLoading(true)
-  
+    e.preventDefault();
+    setIsLoading(true);
+
     try {
-      const userCred = await signInWithEmailAndPassword(auth, email, password)
-      console.log("Firebase login success:", userCred.user)
-      window.location.href = "/"
+      const userCred = await signInWithEmailAndPassword(auth, email, password);
+      console.log("Firebase login success:", userCred.user);
+      window.location.href = "/";
     } catch (err) {
-      console.error("Firebase login failed:", err)
+      console.error("Firebase login failed:", err);
       // Handle errors like "auth/user-not-found", etc.
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
-  
+  };
+
   const handleGoogleLogin = async () => {
-    setIsLoading(true)
-  
+    setIsLoading(true);
+
     try {
-      const provider = new GoogleAuthProvider()
-      const result = await signInWithPopup(auth, provider)
-      console.log("Google login success:", result.user)
-      window.location.href = "/"
+      const provider = new GoogleAuthProvider();
+      const result = await signInWithPopup(auth, provider);
+      console.log("Google login success:", result.user);
+      window.location.href = "/";
     } catch (err) {
-      console.error("Google login failed:", err)
+      console.error("Google login failed:", err);
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   return (
-    <div className="container flex items-center justify-center min-h-[calc(100vh-8rem)] py-12">
-      <Card className="mx-auto max-w-sm">
-        <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl font-bold">Login</CardTitle>
-          <CardDescription>Choose your preferred login method</CardDescription>
+    <div className="container flex items-center justify-center min-h-[calc(100vh-8rem)] py-8 sm:py-12 px-4">
+      <Card className="mx-auto w-full max-w-sm sm:max-w-md">
+        <CardHeader className="space-y-1 px-6 sm:px-8">
+          <CardTitle className="text-xl sm:text-2xl font-bold">Login</CardTitle>
+          <CardDescription className="text-sm sm:text-base">
+            Choose your preferred login method
+          </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-4 px-6 sm:px-8">
           <Button
             variant="outline"
-            className="w-full flex items-center justify-center gap-2"
+            className="w-full flex items-center justify-center gap-2 text-sm sm:text-base"
             onClick={handleGoogleLogin}
             disabled={isLoading}
           >
-            <svg viewBox="0 0 24 24" className="h-5 w-5">
+            <svg viewBox="0 0 24 24" className="h-4 w-4 sm:h-5 sm:w-5">
               <path
                 d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
                 fill="#4285F4"
@@ -86,7 +99,9 @@ export default function LoginPage() {
               <span className="w-full border-t" />
             </div>
             <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-background px-2 text-muted-foreground">Or continue with</span>
+              <span className="bg-background px-2 text-muted-foreground">
+                Or continue with
+              </span>
             </div>
           </div>
 
@@ -106,7 +121,10 @@ export default function LoginPage() {
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <Label htmlFor="password">Password</Label>
-                  <Link href="/forgot-password" className="text-sm text-primary hover:underline">
+                  <Link
+                    href="/forgot-password"
+                    className="text-sm text-primary hover:underline"
+                  >
                     Forgot password?
                   </Link>
                 </div>
@@ -124,7 +142,7 @@ export default function LoginPage() {
             </div>
           </form>
         </CardContent>
-        <CardFooter className="flex flex-col">
+        <CardFooter className="flex flex-col px-6 sm:px-8">
           <div className="text-center text-sm">
             Don&apos;t have an account?{" "}
             <Link href="/signup" className="text-primary hover:underline">
@@ -134,5 +152,5 @@ export default function LoginPage() {
         </CardFooter>
       </Card>
     </div>
-  )
+  );
 }

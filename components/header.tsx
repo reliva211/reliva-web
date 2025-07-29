@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ModeToggle } from "@/components/mode-toggle";
@@ -16,6 +17,13 @@ import {
   Tv,
   ChevronDown,
   Search as SearchIcon,
+  Home,
+  Settings,
+  Heart,
+  Library,
+  TrendingUp,
+  Bell,
+  Info,
 } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
@@ -29,66 +37,44 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { auth } from "@/lib/firebase";
-import { signOut, User as FirebaseUser } from "firebase/auth";
+import { signOut } from "firebase/auth";
 import { Input } from "@/components/ui/input";
+import { useCurrentUser } from "@/hooks/use-current-user";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
-interface HeaderProps {
+interface SidebarProps {
   isLandingPage?: boolean;
 }
 
-export default function Header({ isLandingPage = false }: HeaderProps) {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isVisible, setIsVisible] = useState(!isLandingPage);
-  const [lastScrollY, setLastScrollY] = useState(0);
+export default function Sidebar({ isLandingPage = false }: SidebarProps) {
+  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isMobileOpen, setIsMobileOpen] = useState(false);
   const pathname = usePathname();
+  const router = useRouter();
 
-  const [user, setUser] = useState<FirebaseUser | null>(null);
-
-  useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged((firebaseUser) => {
-      setUser(firebaseUser);
-    });
-
-    return () => unsubscribe();
-  }, []);
-
-  // Scroll detection for header visibility (only on landing page)
-  useEffect(() => {
-    if (!isLandingPage) return;
-
-    const handleScroll = () => {
-      const currentScrollY = window.scrollY;
-
-      // Show header when scrolling down, hide when at top
-      if (currentScrollY > 100) {
-        setIsVisible(true);
-      } else {
-        setIsVisible(false);
-      }
-
-      setLastScrollY(currentScrollY);
-    };
-
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, [lastScrollY, isLandingPage]);
-
-  const routes = [
-    { href: "/music", label: "Music", icon: Music },
-    { href: "/books", label: "Books", icon: BookOpen },
-    { href: "/movies", label: "Movies", icon: Film },
-    { href: "/series", label: "Series", icon: Tv },
-    { href: "/community", label: "Community", icon: MessageCircle },
-  ];
+  const { user } = useCurrentUser();
 
   const handleSignOut = async () => {
     try {
       await signOut(auth);
-      window.location.href = "/"; // Redirect after sign out
+      // Use router.push instead of window.location.href for smoother navigation
+      router.push("/");
     } catch (error) {
       console.error("Error signing out:", error);
     }
   };
+
+  const navigationItems = [
+    { href: "/", label: "Home", icon: Home },
+    { href: "/music", label: "Music", icon: Music },
+    { href: "/books", label: "Books", icon: BookOpen },
+    { href: "/movies", label: "Movies", icon: Film },
+    { href: "/series", label: "Series", icon: Tv },
+    { href: "/notifications", label: "Notifications", icon: Bell },
+    { href: "/contact", label: "About Us", icon: Info },
+    { href: "/profile", label: "Profile", icon: User },
+    { href: "#", label: "Logout", icon: LogOut, onClick: handleSignOut },
+  ];
 
   // Get user initials for avatar fallback
   const getUserInitials = () => {
@@ -101,203 +87,142 @@ export default function Header({ isLandingPage = false }: HeaderProps) {
       .substring(0, 2);
   };
 
+  // Don't show sidebar on auth pages or when user is not logged in
+  const authPages = ["/login", "/signup", "/signin", "/auth"];
+  const isAuthPage = authPages.some((page) => pathname.startsWith(page));
+
+  // Show sidebar for authenticated users, except on auth pages
+  if (!user || isAuthPage) {
+    return null;
+  }
+
   return (
-    <header
-      className={cn(
-        "fixed top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 transition-all duration-300 ease-in-out",
-        isLandingPage
-          ? isVisible
-            ? "translate-y-0 opacity-100"
-            : "-translate-y-full opacity-0"
-          : "translate-y-0 opacity-100"
-      )}
-    >
-      <div className="container flex h-16 items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Link href="/" className="flex items-center space-x-2">
-            <span className="text-xl font-bold">reliva</span>
-          </Link>
-        </div>
-
-        {/* Desktop Navigation */}
-        <nav className="hidden md:flex items-center gap-6">
-          {user && (
-            <>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost">
-                    Select Section <ChevronDown className="ml-2 h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent>
-                  {routes.map((route) => {
-                    const Icon = route.icon;
-                    return (
-                      <DropdownMenuItem key={route.href} asChild>
-                        <Link
-                          href={route.href}
-                          className={cn(
-                            "flex items-center text-sm font-medium transition-colors hover:text-primary",
-                            pathname === route.href
-                              ? "text-primary"
-                              : "text-muted-foreground"
-                          )}
-                        >
-                          <Icon className="mr-2 h-4 w-4" />
-                          {route.label}
-                        </Link>
-                      </DropdownMenuItem>
-                    );
-                  })}
-                </DropdownMenuContent>
-              </DropdownMenu>
-              <div className="relative">
-                <SearchIcon className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input placeholder="Search..." className="pl-8" />
-              </div>
-            </>
-          )}
-        </nav>
-
-        <div className="hidden md:flex items-center gap-4">
-          {user ? (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="ghost"
-                  className="relative h-8 w-8 rounded-full"
-                >
-                  <Avatar className="h-8 w-8">
-                    <AvatarImage
-                      src={user.photoURL || ""}
-                      alt={user.displayName || "User"}
-                    />
-                    <AvatarFallback>{getUserInitials()}</AvatarFallback>
-                  </Avatar>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-56" align="end" forceMount>
-                <DropdownMenuLabel className="font-normal">
-                  <div className="flex flex-col space-y-1">
-                    <p className="text-sm font-medium leading-none">
-                      {user.displayName}
-                    </p>
-                    <p className="text-xs leading-none text-muted-foreground">
-                      {user.email}
-                    </p>
-                  </div>
-                </DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem asChild>
-                  <Link href="/profile">
-                    <User className="mr-2 h-4 w-4" />
-                    <span>Profile</span>
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleSignOut}>
-                  <LogOut className="mr-2 h-4 w-4" />
-                  <span>Log out</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+    <>
+      {/* Mobile Menu Button */}
+      <div className="lg:hidden fixed top-4 left-4 z-50">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => setIsMobileOpen(!isMobileOpen)}
+          className="bg-background/80 backdrop-blur-sm border"
+        >
+          {isMobileOpen ? (
+            <X className="h-6 w-6" />
           ) : (
-            <>
-              <Link href="/login">
-                <Button variant="ghost" size="sm">
-                  Login
-                </Button>
-              </Link>
-              <Link href="/signup">
-                <Button size="sm">Sign Up</Button>
-              </Link>
-            </>
+            <Menu className="h-6 w-6" />
           )}
-          <ModeToggle />
-        </div>
-
-        {/* Mobile Menu Button */}
-        <div className="flex md:hidden items-center gap-4">
-          {user && (
-            <Avatar className="h-8 w-8">
-              <AvatarImage
-                src={user.photoURL || ""}
-                alt={user.displayName || "User"}
-              />
-              <AvatarFallback>{getUserInitials()}</AvatarFallback>
-            </Avatar>
-          )}
-          <ModeToggle />
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setIsMenuOpen(!isMenuOpen)}
-            aria-label="Toggle Menu"
-          >
-            {isMenuOpen ? (
-              <X className="h-6 w-6" />
-            ) : (
-              <Menu className="h-6 w-6" />
-            )}
-          </Button>
-        </div>
+        </Button>
       </div>
 
-      {/* Mobile Menu */}
-      {isMenuOpen && (
-        <div className="md:hidden border-t">
-          <div className="container py-4 grid gap-4">
-            <nav className="grid gap-2">
-              {routes.map((route) => {
-                const Icon = route.icon;
+      {/* Mobile Sidebar Overlay */}
+      {isMobileOpen && (
+        <div
+          className="lg:hidden fixed inset-0 bg-black/50 z-40"
+          onClick={() => setIsMobileOpen(false)}
+        />
+      )}
+
+      {/* Sidebar */}
+      <aside
+        className={cn(
+          "fixed left-0 top-0 z-40 h-full bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-r transition-transform duration-300 ease-in-out",
+          isCollapsed ? "w-16" : "w-64",
+          isMobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
+        )}
+      >
+        <div className="flex h-full flex-col">
+          {/* Header */}
+          <div className="flex h-16 items-center justify-between px-4 border-b">
+            <Link href="/" className="flex items-center space-x-2">
+              <span
+                className={cn(
+                  "font-bold transition-all duration-300",
+                  isCollapsed ? "text-xs" : "text-xl"
+                )}
+              >
+                {isCollapsed ? "R" : "reliva"}
+              </span>
+            </Link>
+            <div className="flex items-center gap-2">
+              <ModeToggle />
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setIsCollapsed(!isCollapsed)}
+                className="hidden lg:flex"
+              >
+                <ChevronDown
+                  className={cn(
+                    "h-4 w-4 transition-transform duration-300",
+                    isCollapsed && "rotate-180"
+                  )}
+                />
+              </Button>
+            </div>
+          </div>
+
+          {/* Navigation */}
+          <ScrollArea className="flex-1 px-3 py-4">
+            <nav className="space-y-2">
+              {navigationItems.map((item) => {
+                const Icon = item.icon;
+                const isActive = pathname === item.href;
+
+                // Handle logout separately since it's not a navigation link
+                if (item.onClick) {
+                  return (
+                    <button
+                      key={item.href}
+                      onClick={() => {
+                        item.onClick();
+                        setIsMobileOpen(false);
+                      }}
+                      className={cn(
+                        "flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground",
+                        isActive
+                          ? "bg-accent text-accent-foreground"
+                          : "text-muted-foreground"
+                      )}
+                    >
+                      <Icon className="h-5 w-5 flex-shrink-0" />
+                      {!isCollapsed && <span>{item.label}</span>}
+                    </button>
+                  );
+                }
+
+                // Use Link for navigation items
                 return (
                   <Link
-                    key={route.href}
-                    href={route.href}
+                    key={item.href}
+                    href={item.href}
+                    onClick={() => setIsMobileOpen(false)}
                     className={cn(
-                      "flex items-center gap-2 text-sm font-medium transition-colors hover:text-primary p-2 rounded-md",
-                      pathname === route.href
-                        ? "text-primary bg-muted"
+                      "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground",
+                      isActive
+                        ? "bg-accent text-accent-foreground"
                         : "text-muted-foreground"
                     )}
-                    onClick={() => setIsMenuOpen(false)}
                   >
-                    <Icon className="h-5 w-5" />
-                    {route.label}
+                    <Icon className="h-5 w-5 flex-shrink-0" />
+                    {!isCollapsed && <span>{item.label}</span>}
                   </Link>
                 );
               })}
             </nav>
-            <div className="grid grid-cols-2 gap-2 pt-2 border-t">
-              {user ? (
-                <>
-                  <Link href="/profile" onClick={() => setIsMenuOpen(false)}>
-                    <Button variant="outline" className="w-full">
-                      <User className="mr-2 h-4 w-4" />
-                      Profile
-                    </Button>
-                  </Link>
-                  <Button className="w-full" onClick={handleSignOut}>
-                    <LogOut className="mr-2 h-4 w-4" />
-                    Log out
-                  </Button>
-                </>
-              ) : (
-                <>
-                  <Link href="/login" onClick={() => setIsMenuOpen(false)}>
-                    <Button variant="outline" className="w-full">
-                      Login
-                    </Button>
-                  </Link>
-                  <Link href="/signup" onClick={() => setIsMenuOpen(false)}>
-                    <Button className="w-full">Sign Up</Button>
-                  </Link>
-                </>
-              )}
-            </div>
-          </div>
+          </ScrollArea>
         </div>
-      )}
-    </header>
+      </aside>
+
+      {/* Main Content Wrapper */}
+      <div
+        className={cn(
+          "transition-all duration-300 ease-in-out",
+          isCollapsed ? "lg:ml-16" : "lg:ml-64"
+        )}
+      >
+        {/* Mobile padding for content */}
+        <div className="lg:hidden h-16" />
+      </div>
+    </>
   );
 }

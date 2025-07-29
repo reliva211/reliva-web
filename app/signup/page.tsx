@@ -88,22 +88,24 @@ export default function SignupPage() {
     }
   }
   return (
-    <div className="container flex items-center justify-center min-h-[calc(100vh-8rem)] py-12">
-      <Card className="mx-auto max-w-lg">
-        <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl font-bold">
+    <div className="container flex items-center justify-center min-h-[calc(100vh-8rem)] py-8 sm:py-12 px-4">
+      <Card className="mx-auto w-full max-w-sm sm:max-w-lg">
+        <CardHeader className="space-y-1 px-6 sm:px-8">
+          <CardTitle className="text-xl sm:text-2xl font-bold">
             Create an account
           </CardTitle>
-          <CardDescription>Choose your preferred signup method</CardDescription>
+          <CardDescription className="text-sm sm:text-base">
+            Choose your preferred signup method
+          </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-4 px-6 sm:px-8">
           <Button
             variant="outline"
-            className="w-full flex items-center justify-center gap-2"
+            className="w-full flex items-center justify-center gap-2 text-sm sm:text-base"
             onClick={handleGoogleSignup}
             disabled={isLoading}
           >
-            <svg viewBox="0 0 24 24" className="h-5 w-5">
+            <svg viewBox="0 0 24 24" className="h-4 w-4 sm:h-5 sm:w-5">
               <path
                 d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
                 fill="#4285F4"
@@ -176,7 +178,7 @@ export default function SignupPage() {
             </div>
           </form>
         </CardContent>
-        <CardFooter className="flex flex-col">
+        <CardFooter className="flex flex-col px-6 sm:px-8">
           <div className="text-center text-sm">
             Already have an account?{" "}
             <Link href="/login" className="text-primary hover:underline">

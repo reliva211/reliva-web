@@ -13,7 +13,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
 export default function HomePage() {
-  const user = useCurrentUser();
+  const { user } = useCurrentUser();
   const router = useRouter();
   const [trendingMovies, setTrendingMovies] = useState<any[]>([]);
   const [trendingSeries, setTrendingSeries] = useState<any[]>([]);
