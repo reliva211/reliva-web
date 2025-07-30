@@ -5,7 +5,12 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Star, Calendar, Clock, Play } from "lucide-react";
 
@@ -42,31 +47,33 @@ export default function HomePage() {
     fetchTrending();
   }, [user]);
 
-  const handleItemClick = async (item: any, type: 'movie' | 'series') => {
+  const handleItemClick = async (item: any, type: "movie" | "series") => {
     setSelectedItem(item);
     setOverviewOpen(true);
     setLoading(true);
-    
+
     try {
       const apiKey = process.env.NEXT_PUBLIC_TMDB_API_KEY;
-      const endpoint = type === 'movie' ? 'movie' : 'tv';
+      const endpoint = type === "movie" ? "movie" : "tv";
       const response = await fetch(
         `https://api.themoviedb.org/3/${endpoint}/${item.id}?api_key=${apiKey}&append_to_response=videos,credits`
       );
       const data = await response.json();
       setSelectedItem(data);
     } catch (error) {
-      console.error('Error fetching details:', error);
+      console.error("Error fetching details:", error);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleViewDetails = (item: any, type: 'movie' | 'series') => {
+  const handleViewDetails = (item: any, type: "movie" | "series") => {
     router.push(`/${type}s/${item.id}`);
   };
 
   if (!user) return null;
+
+  return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 dark:from-gray-900 dark:via-black dark:to-gray-900 text-gray-900 dark:text-white relative scroll-smooth">
       <div className="relative z-10 py-20 px-4">
         <div className="max-w-7xl mx-auto w-full space-y-16">
@@ -79,7 +86,7 @@ export default function HomePage() {
               {trendingMovies.map((movie) => (
                 <button
                   key={movie.id}
-                  onClick={() => handleItemClick(movie, 'movie')}
+                  onClick={() => handleItemClick(movie, "movie")}
                   className="bg-card rounded-xl shadow-md overflow-hidden flex flex-col items-center p-2 hover:scale-105 transition-transform cursor-pointer border-0 text-left"
                 >
                   <Image
@@ -109,7 +116,7 @@ export default function HomePage() {
               {trendingSeries.map((series) => (
                 <button
                   key={series.id}
-                  onClick={() => handleItemClick(series, 'series')}
+                  onClick={() => handleItemClick(series, "series")}
                   className="bg-card rounded-xl shadow-md overflow-hidden flex flex-col items-center p-2 hover:scale-105 transition-transform cursor-pointer border-0 text-left"
                 >
                   <Image
@@ -141,7 +148,7 @@ export default function HomePage() {
               {selectedItem?.title || selectedItem?.name}
             </DialogTitle>
           </DialogHeader>
-          
+
           {loading ? (
             <div className="flex items-center justify-center py-12">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
@@ -164,7 +171,7 @@ export default function HomePage() {
                     className="rounded-lg object-cover"
                   />
                 </div>
-                
+
                 <div className="flex-1 space-y-4">
                   <div>
                     <h3 className="text-xl font-semibold mb-2">
@@ -174,16 +181,20 @@ export default function HomePage() {
                       {selectedItem.overview}
                     </p>
                   </div>
-                  
+
                   <div className="flex flex-wrap gap-4 text-sm">
                     <div className="flex items-center gap-1">
                       <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                      <span>{selectedItem.vote_average?.toFixed(1) || 'N/A'}</span>
+                      <span>
+                        {selectedItem.vote_average?.toFixed(1) || "N/A"}
+                      </span>
                     </div>
                     <div className="flex items-center gap-1">
                       <Calendar className="h-4 w-4" />
                       <span>
-                        {selectedItem.release_date || selectedItem.first_air_date || 'N/A'}
+                        {selectedItem.release_date ||
+                          selectedItem.first_air_date ||
+                          "N/A"}
                       </span>
                     </div>
                     {selectedItem.runtime && (
@@ -199,7 +210,7 @@ export default function HomePage() {
                       </div>
                     )}
                   </div>
-                  
+
                   {selectedItem.genres && (
                     <div className="flex flex-wrap gap-2">
                       {selectedItem.genres.map((genre: any) => (
@@ -214,11 +225,16 @@ export default function HomePage() {
                   )}
                 </div>
               </div>
-              
+
               {/* Action buttons */}
               <div className="flex gap-3 pt-4 border-t">
                 <Button
-                  onClick={() => handleViewDetails(selectedItem, selectedItem.title ? 'movie' : 'series')}
+                  onClick={() =>
+                    handleViewDetails(
+                      selectedItem,
+                      selectedItem.title ? "movie" : "series"
+                    )
+                  }
                   className="flex-1"
                 >
                   View Full Details
