@@ -19,6 +19,8 @@ import {
   ListFilter,
   Eye,
   EyeOff,
+  Globe,
+  Lock,
 } from "lucide-react";
 import {
   Dialog,
@@ -39,6 +41,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -65,6 +68,8 @@ interface Series {
 interface Collection {
   id: string;
   name: string;
+  isPublic?: boolean;
+  isDefault?: boolean;
 }
 
 const mySeries: Series[] = [
@@ -156,14 +161,15 @@ export default function SeriesPage() {
     [listId: string]: number;
   }>({});
   const [allSeriesFromLists, setAllSeriesFromLists] = useState<any[]>([]);
-  const [userLists, setUserLists] = useState<{ id: string; name: string }[]>(
-    []
-  );
+  const [userLists, setUserLists] = useState<
+    { id: string; name: string; isPublic?: boolean; isDefault?: boolean }[]
+  >([]);
   const [isSavingToList, setIsSavingToList] = useState(false);
   const [isCreateCollectionOpen, setCreateCollectionOpen] = useState(false);
   const [newCollectionName, setNewCollectionName] = useState("");
+  const [newCollectionIsPublic, setNewCollectionIsPublic] = useState(false);
   const [selectedCollection, setSelectedCollection] = useState("all");
-  const [collections, setCollections] = useState<Collection[]>([]);
+
   // Add state for the overview modal
   const [overviewOpen, setOverviewOpen] = useState(false);
   const [selectedSeriesOverview, setSelectedSeriesOverview] =
@@ -212,12 +218,45 @@ export default function SeriesPage() {
       if (!user?.uid) return;
       const listsRef = collection(db, "users", user.uid, "seriesLists");
       const snapshot = await getDocs(listsRef);
-      setUserLists(
-        snapshot.docs.map(
-          (doc) =>
-            ({ id: doc.id, ...doc.data() } as { id: string; name: string })
-        )
+      const fetchedLists = snapshot.docs.map(
+        (doc) => ({ id: doc.id, ...doc.data() } as { id: string; name: string })
       );
+
+      // Define default collections
+      const defaultCollections = [
+        { name: "Watched", isPublic: false, isDefault: true },
+        { name: "Watching", isPublic: false, isDefault: true },
+        { name: "Watchlist", isPublic: false, isDefault: true },
+        { name: "Dropped", isPublic: false, isDefault: true },
+      ];
+
+      // Check which default collections are missing
+      const existingNames = fetchedLists.map((list) => list.name);
+      const missingDefaults = defaultCollections.filter(
+        (collection) => !existingNames.includes(collection.name)
+      );
+
+      // Create missing default collections
+      if (missingDefaults.length > 0) {
+        try {
+          for (const collection of missingDefaults) {
+            await addDoc(listsRef, collection);
+          }
+
+          // Fetch all lists again (including newly created defaults)
+          const newSnapshot = await getDocs(listsRef);
+          const allLists = newSnapshot.docs.map(
+            (doc) =>
+              ({ id: doc.id, ...doc.data() } as { id: string; name: string })
+          );
+          setUserLists(allLists);
+        } catch (error) {
+          console.error("Error creating default collections:", error);
+          setUserLists(fetchedLists);
+        }
+      } else {
+        setUserLists(fetchedLists);
+      }
     };
     fetchLists();
   }, [user]);
@@ -458,35 +497,6 @@ export default function SeriesPage() {
     setSeriesRating(series.rating || 0);
   };
 
-  const handleCreateCollection = () => {
-    if (newCollectionName.trim() === "") return;
-    const newCollection = {
-      id: (collections.length + 1).toString(),
-      name: newCollectionName.trim(),
-    };
-    setCollections([...collections, newCollection]);
-    setNewCollectionName("");
-    setCreateCollectionOpen(false);
-  };
-
-  const addSeriesToCollection = async (
-    seriesId: number,
-    collectionId: string
-  ) => {
-    const series = savedSeries.find((s) => s.id === seriesId);
-    if (!series) return;
-
-    const updatedCollections = series.collections
-      ? [...series.collections, collectionId]
-      : [collectionId];
-
-    setSavedSeries(
-      savedSeries.map((s) =>
-        s.id === seriesId ? { ...s, collections: updatedCollections } : s
-      )
-    );
-  };
-
   const saveSeriesDetails = async () => {
     if (!selectedSeries) return;
     setSavedSeries(
@@ -499,13 +509,6 @@ export default function SeriesPage() {
     setIsAddingNotes(false);
     setSelectedSeries(null);
   };
-
-  const filteredSeries =
-    selectedCollection === "all"
-      ? savedSeries
-      : savedSeries.filter((series) =>
-          series.collections?.includes(selectedCollection)
-        );
 
   // Fetch series counts for each list and all series
   useEffect(() => {
@@ -594,10 +597,10 @@ export default function SeriesPage() {
   }, [overviewOpen, selectedSeriesOverview]);
 
   return (
-    <div className="container py-8">
-      <div className="flex flex-col md:flex-row gap-8">
+    <div className="container py-8 min-h-screen flex items-start">
+      <div className="flex flex-col md:flex-row gap-8 w-full">
         {/* Sidebar */}
-        <div className="w-full md:w-64 space-y-6">
+        <div className="w-full md:w-64 space-y-6 flex flex-col justify-start flex-shrink-0">
           <form
             onSubmit={handleSearch}
             className="flex flex-col gap-2 w-full sm:flex-row sm:items-center sm:gap-2"
@@ -622,122 +625,145 @@ export default function SeriesPage() {
             </div>
           </form>
 
-          <h3 className="font-medium">My Collections</h3>
-          <div className="space-y-1">
-            <button
-              className={`w-full flex items-center justify-between rounded-md p-2 text-sm ${
-                selectedListSidebar === "all"
-                  ? "bg-accent"
-                  : "hover:bg-accent transition-colors"
-              }`}
-              onClick={() => setSelectedListSidebar("all")}
-            >
-              <span>All Series</span>
-              <span className="text-xs bg-primary/20 text-primary px-2 py-0.5 rounded-full">
-                {allSeriesFromLists.length}
-              </span>
-            </button>
-            {userLists.map((list) => (
+          <div className="space-y-2">
+            <h3 className="font-medium">My Collections</h3>
+            <div className="space-y-1">
               <button
-                key={list.id}
                 className={`w-full flex items-center justify-between rounded-md p-2 text-sm ${
-                  selectedListSidebar === list.id
+                  selectedListSidebar === "all"
                     ? "bg-accent"
                     : "hover:bg-accent transition-colors"
                 }`}
-                onClick={() => setSelectedListSidebar(list.id)}
+                onClick={() => setSelectedListSidebar("all")}
               >
-                <span>{list.name}</span>
-                <span className="text-xs bg-muted px-2 py-0.5 rounded-full">
-                  {listSeriesCounts[list.id] || 0}
+                <span>All Series</span>
+                <span className="text-xs bg-primary/20 text-primary px-2 py-0.5 rounded-full">
+                  {allSeriesFromLists.length}
                 </span>
               </button>
-            ))}
-          </div>
-          <Dialog
-            open={isCreateCollectionOpen}
-            onOpenChange={setCreateCollectionOpen}
-          >
-            <DialogTrigger asChild>
-              <Button
-                variant="outline"
-                size="sm"
-                className="w-full mt-2"
-                onClick={async () => {
-                  const name = prompt("Enter a name for your new collection:");
-                  if (!name || !user?.uid) return;
-                  const listsRef = collection(
-                    db,
-                    "users",
-                    user.uid,
-                    "seriesLists"
-                  );
-                  const newListDoc = await addDoc(listsRef, {
-                    name: name.trim(),
-                  });
-                  setUserLists((prev) => [
-                    ...prev,
-                    { id: newListDoc.id, name: name.trim() },
-                  ]);
-                  setSelectedListId(newListDoc.id); // auto-select new list
-                }}
-              >
-                <Plus className="mr-2 h-4 w-4" /> Create Collection
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[425px]">
-              <DialogHeader>
-                <DialogTitle>Create New Collection</DialogTitle>
-                <DialogDescription>
-                  Enter a name for your new collection.
-                </DialogDescription>
-              </DialogHeader>
-              <form
-                onSubmit={async (e) => {
-                  e.preventDefault();
-                  if (!newCollectionName.trim() || !user?.uid) return;
-                  const listsRef = collection(
-                    db,
-                    "users",
-                    user.uid,
-                    "seriesLists"
-                  );
-                  const newListDoc = await addDoc(listsRef, {
-                    name: newCollectionName.trim(),
-                  });
-                  setUserLists((prev) => [
-                    ...prev,
-                    { id: newListDoc.id, name: newCollectionName.trim() },
-                  ]);
-                  setSelectedListId(newListDoc.id); // auto-select new list
-                  setNewCollectionName("");
-                  setCreateCollectionOpen(false);
-                }}
-              >
-                <div className="grid gap-4 py-4">
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="name" className="text-right">
-                      Name
-                    </Label>
-                    <Input
-                      id="name"
-                      value={newCollectionName}
-                      onChange={(e) => setNewCollectionName(e.target.value)}
-                      className="col-span-3"
-                    />
+              {userLists.map((list) => (
+                <button
+                  key={list.id}
+                  className={`w-full flex items-center justify-between rounded-md p-2 text-sm ${
+                    selectedListSidebar === list.id
+                      ? "bg-accent"
+                      : "hover:bg-accent transition-colors"
+                  }`}
+                  onClick={() => setSelectedListSidebar(list.id)}
+                >
+                  <div className="flex items-center gap-2">
+                    <span>{list.name}</span>
+                    {list.isPublic && (
+                      <Globe className="h-3 w-3 text-muted-foreground" />
+                    )}
+                    {!list.isPublic && !list.isDefault && (
+                      <Lock className="h-3 w-3 text-muted-foreground" />
+                    )}
                   </div>
-                </div>
-                <DialogFooter>
-                  <Button type="submit">Save collection</Button>
-                </DialogFooter>
-              </form>
-            </DialogContent>
-          </Dialog>
+                  <span className="text-xs bg-muted px-2 py-0.5 rounded-full">
+                    {listSeriesCounts[list.id] || 0}
+                  </span>
+                </button>
+              ))}
+            </div>
+            <Dialog
+              open={isCreateCollectionOpen}
+              onOpenChange={setCreateCollectionOpen}
+            >
+              <DialogTrigger asChild>
+                <Button variant="outline" size="sm" className="w-full mt-2">
+                  <Plus className="mr-2 h-4 w-4" /> Create Collection
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[425px]">
+                <DialogHeader>
+                  <DialogTitle>Create New Collection</DialogTitle>
+                  <DialogDescription>
+                    Enter a name for your new collection.
+                  </DialogDescription>
+                </DialogHeader>
+                <form
+                  onSubmit={async (e) => {
+                    e.preventDefault();
+                    if (!newCollectionName.trim() || !user?.uid) return;
+                    const listsRef = collection(
+                      db,
+                      "users",
+                      user.uid,
+                      "seriesLists"
+                    );
+                    const newListDoc = await addDoc(listsRef, {
+                      name: newCollectionName.trim(),
+                      isPublic: newCollectionIsPublic,
+                      isDefault: false,
+                    });
+                    setUserLists((prev) => [
+                      ...prev,
+                      {
+                        id: newListDoc.id,
+                        name: newCollectionName.trim(),
+                        isPublic: newCollectionIsPublic,
+                        isDefault: false,
+                      },
+                    ]);
+                    setSelectedListId(newListDoc.id); // auto-select new list
+                    setNewCollectionName("");
+                    setNewCollectionIsPublic(false);
+                    setCreateCollectionOpen(false);
+                  }}
+                >
+                  <div className="grid gap-4 py-4">
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <Label htmlFor="name" className="text-right">
+                        Name
+                      </Label>
+                      <Input
+                        id="name"
+                        value={newCollectionName}
+                        onChange={(e) => setNewCollectionName(e.target.value)}
+                        className="col-span-3"
+                      />
+                    </div>
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <Label htmlFor="isPublic" className="text-right">
+                        Public Collection
+                      </Label>
+                      <div className="col-span-3 flex items-center space-x-2">
+                        <Checkbox
+                          id="isPublic"
+                          checked={newCollectionIsPublic}
+                          onCheckedChange={(checked) =>
+                            setNewCollectionIsPublic(!!checked)
+                          }
+                        />
+                        <Label
+                          htmlFor="isPublic"
+                          className="text-sm text-muted-foreground"
+                        >
+                          Make this collection visible on your public profile
+                        </Label>
+                      </div>
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button type="submit">Save collection</Button>
+                  </DialogFooter>
+                </form>
+              </DialogContent>
+            </Dialog>
+          </div>
 
-          <h3 className="font-medium">Genres</h3>
-          <div className="flex flex-wrap gap-2">
-            {["Drama", "Comedy", "Sci-Fi", "Crime", "Fantasy", "Animation"].map(
-              (genre) => (
+          <div className="space-y-2">
+            <h3 className="font-medium">Genres</h3>
+            <div className="flex flex-wrap gap-2">
+              {[
+                "Drama",
+                "Comedy",
+                "Sci-Fi",
+                "Crime",
+                "Fantasy",
+                "Animation",
+              ].map((genre) => (
                 <Badge
                   key={genre}
                   variant={selectedGenre === genre ? "default" : "outline"}
@@ -750,8 +776,8 @@ export default function SeriesPage() {
                 >
                   {genre}
                 </Badge>
-              )
-            )}
+              ))}
+            </div>
           </div>
         </div>
 
@@ -774,14 +800,16 @@ export default function SeriesPage() {
               </p>
               <Button onClick={() => window.location.reload()}>Retry</Button>
             </div>
-          ) : isSearching || isGenreSearching || searchResults.length > 0 ? (
+          ) : isSearching || isGenreSearching || searchQuery ? (
             // Show search results
             <div className="space-y-6">
               <div className="flex items-center justify-between">
                 <h2 className="text-2xl font-bold">
                   {isSearching
                     ? `Search Results for "${searchQuery}"`
-                    : `Series in ${selectedGenre}`}
+                    : isGenreSearching
+                    ? `Series in ${selectedGenre}`
+                    : `Search Results for "${searchQuery}"`}
                 </h2>
                 <Button variant="ghost" onClick={clearSearch}>
                   Clear Search
@@ -794,36 +822,31 @@ export default function SeriesPage() {
                     Loading {selectedGenre} series...
                   </p>
                 </div>
+              ) : searchResults.length === 0 ? (
+                <div className="text-center py-12">
+                  <Tv className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                  <h3 className="text-lg font-medium mb-2">No series found</h3>
+                  <p className="text-muted-foreground mb-4">
+                    Try a different search term or browse by genre
+                  </p>
+                </div>
               ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8 gap-6">
                   {searchResults.map((series) => (
-                    <Card key={series.id} className="overflow-hidden">
-                      <Link href={`/series/${series.id}`} className="block">
-                        <CardContent className="p-0">
-                          <div className="relative aspect-[2/3] w-full">
-                            <Image
-                              src={series.cover || "/placeholder.svg"}
-                              alt={series.title}
-                              fill
-                              className="object-cover"
-                            />
-                          </div>
-                        </CardContent>
-                      </Link>
-                      <div className="px-4 pb-4">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="w-full"
-                          onClick={() => {
-                            setAddToListSeries(series);
-                            setAddToListOpen(true);
-                          }}
-                        >
-                          <Plus className="mr-1 h-4 w-4" /> Add to List
-                        </Button>
+                    <Link
+                      key={series.id}
+                      href={`/series/${series.id}`}
+                      className="block"
+                    >
+                      <div className="relative aspect-[2/3] w-full rounded-lg overflow-hidden hover:scale-105 transition-transform cursor-pointer shadow-md">
+                        <Image
+                          src={series.cover || "/placeholder.svg"}
+                          alt={series.title}
+                          fill
+                          className="object-cover"
+                        />
                       </div>
-                    </Card>
+                    </Link>
                   ))}
                 </div>
               )}
@@ -851,7 +874,7 @@ export default function SeriesPage() {
                               src={series.cover || "/placeholder.svg"}
                               alt={series.title}
                               fill
-                              className="object-cover"
+                              className="object-cover rounded-xl"
                             />
                           </div>
                         </div>
@@ -886,7 +909,7 @@ export default function SeriesPage() {
                           src={series.cover || "/placeholder.svg"}
                           alt={series.title}
                           fill
-                          className="object-cover"
+                          className="object-cover rounded-xl"
                         />
                       </div>
                     </CardContent>
@@ -933,37 +956,6 @@ export default function SeriesPage() {
                 </div>
               )}
             </div>
-            <form
-              onSubmit={async (e) => {
-                e.preventDefault();
-                if (!newListName.trim() || !user?.uid) return;
-                const listsRef = collection(
-                  db,
-                  "users",
-                  user.uid,
-                  "seriesLists"
-                );
-                const newListDoc = await addDoc(listsRef, {
-                  name: newListName.trim(),
-                });
-                setUserLists((prev) => [
-                  ...prev,
-                  { id: newListDoc.id, name: newListName.trim() },
-                ]);
-                setSelectedListId(newListDoc.id); // auto-select new list
-                setNewListName("");
-              }}
-            >
-              <div className="font-medium mb-1">Create New List</div>
-              <Input
-                placeholder="New list name"
-                value={newListName}
-                onChange={(e) => {
-                  setNewListName(e.target.value);
-                  setSelectedListId("");
-                }}
-              />
-            </form>
           </div>
           <DialogFooter>
             <Button

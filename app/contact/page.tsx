@@ -41,7 +41,7 @@ export default function ContactPage() {
   const teamMembers = [
     {
       name: "Srikanth Jeeguru",
-      role: "Lead Developer",
+      role: "Project Lead",
       linkedin: "https://linkedin.com/in/srikanth-jeeguru",
       gmail: "srikanth@reliva.com",
       avatar: "/placeholder-user.jpg",
@@ -72,19 +72,19 @@ export default function ContactPage() {
   const socialLinks = [
     {
       name: "Instagram",
-      url: "https://instagram.com/reliva",
+      url: "https://www.instagram.com/relivaofficial",
       icon: Instagram,
       color: "text-pink-500",
     },
     {
       name: "X (Twitter)",
-      url: "https://x.com/reliva",
+      url: "https://x.com/relivaofficial",
       icon: Twitter,
       color: "text-blue-400",
     },
     {
       name: "Reddit",
-      url: "https://reddit.com/r/reliva",
+      url: "https://www.reddit.com/r/relivaofficial",
       icon: ExternalLink,
       color: "text-orange-500",
     },
@@ -262,29 +262,28 @@ export default function ContactPage() {
                               <h3 className="font-semibold text-gray-900 dark:text-white">
                                 {member.name}
                               </h3>
-                              <p className="text-sm text-gray-600 dark:text-gray-300">
+                              <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">
                                 {member.role}
                               </p>
+                              <div className="space-y-1">
+                                <a
+                                  href={member.linkedin}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="flex items-center gap-2 text-sm text-blue-600 dark:text-blue-400 hover:underline"
+                                >
+                                  <Linkedin className="h-3 w-3" />
+                                  <span>LinkedIn</span>
+                                </a>
+                                <a
+                                  href={`mailto:${member.gmail}`}
+                                  className="flex items-center gap-2 text-sm text-red-600 dark:text-red-400 hover:underline"
+                                >
+                                  <Mail className="h-3 w-3" />
+                                  <span>Gmail</span>
+                                </a>
+                              </div>
                             </div>
-                          </div>
-
-                          <div className="space-y-2 ml-15">
-                            <a
-                              href={member.linkedin}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="flex items-center gap-2 text-sm text-blue-600 dark:text-blue-400 hover:underline"
-                            >
-                              <Linkedin className="h-4 w-4" />
-                              <span>LinkedIn</span>
-                            </a>
-                            <a
-                              href={`mailto:${member.gmail}`}
-                              className="flex items-center gap-2 text-sm text-red-600 dark:text-red-400 hover:underline"
-                            >
-                              <Mail className="h-4 w-4" />
-                              <span>Gmail</span>
-                            </a>
                           </div>
 
                           {index < teamMembers.length - 1 && (

@@ -57,3 +57,55 @@
     @apply bg-background text-foreground;
   }
 }
+
+@layer utilities {
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+  }
+  .scrollbar-hide::-webkit-scrollbar-track {
+    display: none !important;
+  }
+  .scrollbar-hide::-webkit-scrollbar-thumb {
+    display: none !important;
+  }
+  .scrollbar-hide::-webkit-scrollbar-corner {
+    display: none !important;
+  }
+  .scrollbar-hide::-webkit-scrollbar-button {
+    display: none !important;
+  }
+}
+
+/* Force hide scrollbars for scrollable containers */
+.scrollable-container {
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+
+.scrollable-container::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+.scrollable-container::-webkit-scrollbar-track {
+  display: none !important;
+}
+
+.scrollable-container::-webkit-scrollbar-thumb {
+  display: none !important;
+}
+
+.scrollable-container::-webkit-scrollbar-corner {
+  display: none !important;
+}
+
+.scrollable-container::-webkit-scrollbar-button {
+  display: none !important;
+}

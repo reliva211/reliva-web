@@ -20,6 +20,22 @@ export default function LandingPage() {
   const [trendingMovies, setTrendingMovies] = useState<any[]>([]);
   const [trendingSeries, setTrendingSeries] = useState<any[]>([]);
 
+  // Prevent vertical scrolling when hovering over scrollable containers
+  useEffect(() => {
+    const handleWheel = (e: WheelEvent) => {
+      const target = e.target as HTMLElement;
+      const scrollableContainer = target.closest(".scrollable-container");
+      if (scrollableContainer) {
+        e.preventDefault();
+        e.stopPropagation();
+        return false;
+      }
+    };
+
+    document.addEventListener("wheel", handleWheel, { passive: false });
+    return () => document.removeEventListener("wheel", handleWheel);
+  }, []);
+
   useEffect(() => {
     if (!user) return;
     const fetchTrending = async () => {
@@ -53,98 +69,174 @@ export default function LandingPage() {
       <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 dark:from-gray-900 dark:via-black dark:to-gray-900 text-gray-900 dark:text-white relative scroll-smooth">
         <div className="relative z-10 py-8 px-4">
           <div className="max-w-7xl mx-auto w-full space-y-16">
+            {/* Welcome Section */}
+            <div className="text-center mb-12">
+              <div className="bg-gradient-to-r from-emerald-50 to-blue-50 dark:from-emerald-950/20 dark:to-blue-950/20 rounded-2xl p-8 border border-emerald-200 dark:border-emerald-800 shadow-lg">
+                <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-emerald-600 to-blue-600 dark:from-emerald-400 dark:to-blue-400 bg-clip-text text-transparent">
+                  Welcome back,{" "}
+                  {user.displayName ||
+                    user.email?.split("@")[0] ||
+                    "Media Explorer"}
+                  ! 🎬📚🎵
+                </h1>
+                <p className="text-lg md:text-xl text-gray-600 dark:text-gray-300 mb-6 max-w-3xl mx-auto">
+                  Ready to discover what's trending in the world of
+                  entertainment? From blockbuster movies to binge-worthy series,
+                  we've got your next obsession covered.
+                </p>
+                <div className="flex flex-wrap justify-center gap-4 text-sm text-gray-500 dark:text-gray-400">
+                  <span className="flex items-center gap-2">
+                    <span className="w-2 h-2 bg-emerald-500 rounded-full"></span>
+                    {trendingMovies.length} trending movies
+                  </span>
+                  <span className="flex items-center gap-2">
+                    <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
+                    {trendingSeries.length} trending series
+                  </span>
+                  <span className="flex items-center gap-2">
+                    <span className="w-2 h-2 bg-purple-500 rounded-full"></span>
+                    Fresh daily updates
+                  </span>
+                </div>
+              </div>
+            </div>
+
             {/* Trending Movies */}
             <div>
-              <h2 className="text-3xl md:text-4xl font-bold mb-6 text-gray-900 dark:text-white">
+              <h2 className="text-2xl md:text-3xl font-bold mb-4 text-gray-900 dark:text-white">
                 Trending Movies
               </h2>
-              <div className="relative">
-                <Carousel className="w-full">
-                  <CarouselContent>
-                    {trendingMovies.map((movie) => (
-                      <CarouselItem
-                        key={movie.id}
-                        className="basis-1/2 sm:basis-1/4 md:basis-1/6"
-                      >
-                        <div className="bg-card rounded-xl shadow-md overflow-hidden flex flex-col items-center p-2 hover:scale-105 transition-transform">
-                          <div className="relative w-full aspect-[2/3] mb-2">
-                            <Image
-                              src={
-                                movie.poster_path
-                                  ? `https://image.tmdb.org/t/p/w300${movie.poster_path}`
-                                  : "/placeholder.svg"
-                              }
-                              alt={movie.title}
-                              fill
-                              className="rounded-lg object-cover"
-                            />
-                          </div>
-                          <RatingStars
-                            mediaId={movie.id}
-                            mediaType="movie"
-                            mediaTitle={movie.title}
-                            mediaCover={
+              <div className="relative group">
+                <div
+                  className="flex gap-4 overflow-x-auto scrollbar-hide pb-4 cursor-grab active:cursor-grabbing scrollable-container"
+                  style={{
+                    scrollbarWidth: "none",
+                    msOverflowStyle: "none",
+                    WebkitScrollbar: { display: "none" },
+                  }}
+                  onWheel={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const container = e.currentTarget;
+                    container.scrollLeft += e.deltaY;
+                    return false;
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.overflowY = "hidden";
+                    e.currentTarget.style.overflowX = "auto";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.overflowY = "auto";
+                    e.currentTarget.style.overflowX = "hidden";
+                  }}
+                >
+                  {trendingMovies.map((movie) => (
+                    <div
+                      key={movie.id}
+                      className="flex-shrink-0 w-48 sm:w-56 md:w-64"
+                    >
+                      <div className="bg-card rounded-xl shadow-md overflow-hidden flex flex-col items-center p-2">
+                        <div className="relative w-full aspect-[2/3] mb-2">
+                          <Image
+                            src={
                               movie.poster_path
                                 ? `https://image.tmdb.org/t/p/w300${movie.poster_path}`
-                                : undefined
+                                : "/placeholder.svg"
                             }
-                            size="sm"
-                            className="mb-1"
+                            alt={movie.title}
+                            fill
+                            className="rounded-xl object-cover"
                           />
                         </div>
-                      </CarouselItem>
-                    ))}
-                  </CarouselContent>
-                  <CarouselPrevious className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-background/80 backdrop-blur-sm border shadow-lg" />
-                  <CarouselNext className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-background/80 backdrop-blur-sm border shadow-lg" />
-                </Carousel>
+                        <RatingStars
+                          mediaId={movie.id}
+                          mediaType="movie"
+                          mediaTitle={movie.title}
+                          mediaCover={
+                            movie.poster_path
+                              ? `https://image.tmdb.org/t/p/w300${movie.poster_path}`
+                              : undefined
+                          }
+                          size="sm"
+                          className="mb-1"
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
             {/* Trending Series */}
             <div>
-              <h2 className="text-3xl md:text-4xl font-bold mb-6 text-gray-900 dark:text-white">
+              <h2 className="text-2xl md:text-3xl font-bold mb-4 text-gray-900 dark:text-white">
                 Trending Series
               </h2>
-              <div className="relative">
-                <Carousel className="w-full">
-                  <CarouselContent>
-                    {trendingSeries.map((series) => (
-                      <CarouselItem
-                        key={series.id}
-                        className="basis-1/2 sm:basis-1/4 md:basis-1/6"
-                      >
-                        <div className="bg-card rounded-xl shadow-md overflow-hidden flex flex-col items-center p-2 hover:scale-105 transition-transform">
-                          <div className="relative w-full aspect-[2/3] mb-2">
-                            <Image
-                              src={
-                                series.poster_path
-                                  ? `https://image.tmdb.org/t/p/w300${series.poster_path}`
-                                  : "/placeholder.svg"
-                              }
-                              alt={series.name}
-                              fill
-                              className="rounded-lg object-cover"
-                            />
-                          </div>
-                          <RatingStars
-                            mediaId={series.id}
-                            mediaType="series"
-                            mediaTitle={series.name}
-                            mediaCover={
+              <div className="relative group">
+                <div
+                  className="flex gap-4 overflow-x-auto scrollbar-hide pb-4 cursor-grab active:cursor-grabbing scrollable-container"
+                  style={{
+                    scrollbarWidth: "none",
+                    msOverflowStyle: "none",
+                    WebkitScrollbar: {
+                      display: "none",
+                      width: "0px",
+                      height: "0px",
+                    },
+                    WebkitScrollbarTrack: { display: "none" },
+                    WebkitScrollbarThumb: { display: "none" },
+                    WebkitScrollbarCorner: { display: "none" },
+                    WebkitScrollbarButton: { display: "none" },
+                  }}
+                  onWheel={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const container = e.currentTarget;
+                    container.scrollLeft += e.deltaY;
+                    return false;
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.overflowY = "hidden";
+                    e.currentTarget.style.overflowX = "auto";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.overflowY = "auto";
+                    e.currentTarget.style.overflowX = "hidden";
+                  }}
+                >
+                  {trendingSeries.map((series) => (
+                    <div
+                      key={series.id}
+                      className="flex-shrink-0 w-48 sm:w-56 md:w-64"
+                    >
+                      <div className="bg-card rounded-xl shadow-md overflow-hidden flex flex-col items-center p-2">
+                        <div className="relative w-full aspect-[2/3] mb-2">
+                          <Image
+                            src={
                               series.poster_path
                                 ? `https://image.tmdb.org/t/p/w300${series.poster_path}`
-                                : undefined
+                                : "/placeholder.svg"
                             }
-                            size="sm"
-                            className="mb-1"
+                            alt={series.name}
+                            fill
+                            className="rounded-xl object-cover"
                           />
                         </div>
-                      </CarouselItem>
-                    ))}
-                  </CarouselContent>
-                  <CarouselPrevious className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-background/80 backdrop-blur-sm border shadow-lg" />
-                  <CarouselNext className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-background/80 backdrop-blur-sm border shadow-lg" />
-                </Carousel>
+                        <RatingStars
+                          mediaId={series.id}
+                          mediaType="series"
+                          mediaTitle={series.name}
+                          mediaCover={
+                            series.poster_path
+                              ? `https://image.tmdb.org/t/p/w300${series.poster_path}`
+                              : undefined
+                          }
+                          size="sm"
+                          className="mb-1"
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           </div>

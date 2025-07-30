@@ -31,9 +31,9 @@ export function RatingStars({
   const userRating = getUserRating(mediaId, mediaType);
 
   const sizeClasses = {
-    sm: "w-3 h-3",
-    md: "w-4 h-4",
-    lg: "w-6 h-6",
+    sm: "w-4 h-4",
+    md: "w-6 h-6",
+    lg: "w-8 h-8",
   };
 
   const handleStarClick = async (rating: number) => {
@@ -45,6 +45,18 @@ export function RatingStars({
       console.error("Error setting rating:", error);
       setHasError(true);
       // Don't crash the component, just log the error
+    }
+  };
+
+  const handleHalfStarClick = async (baseRating: number, isHalf: boolean) => {
+    if (saving || loading) return;
+    const rating = isHalf ? baseRating + 0.5 : baseRating;
+    try {
+      await setRating(mediaId, mediaType, mediaTitle, rating, mediaCover);
+      setHasError(false);
+    } catch (error) {
+      console.error("Error setting rating:", error);
+      setHasError(true);
     }
   };
 
@@ -90,22 +102,34 @@ export function RatingStars({
   return (
     <div className={`flex items-center gap-1 ${className}`}>
       {[1, 2, 3, 4, 5].map((star) => (
-        <button
-          key={star}
-          onClick={() => handleStarClick(star)}
-          onMouseEnter={() => handleStarHover(star)}
-          onMouseLeave={handleMouseLeave}
-          disabled={saving || loading}
-          className="transition-colors hover:scale-110 disabled:opacity-50"
-        >
+        <div key={star} className="relative">
+          {/* Half star (left side) */}
+          <button
+            onClick={() => handleHalfStarClick(star - 1, true)}
+            onMouseEnter={() => setHoverRating(star - 0.5)}
+            onMouseLeave={handleMouseLeave}
+            disabled={saving || loading}
+            className="absolute left-0 top-0 w-1/2 h-full transition-colors hover:scale-110 disabled:opacity-50 z-10"
+          />
+          {/* Full star (right side) */}
+          <button
+            onClick={() => handleStarClick(star)}
+            onMouseEnter={() => setHoverRating(star)}
+            onMouseLeave={handleMouseLeave}
+            disabled={saving || loading}
+            className="absolute right-0 top-0 w-1/2 h-full transition-colors hover:scale-110 disabled:opacity-50 z-10"
+          />
+          {/* Star icon */}
           <Star
             className={`${sizeClasses[size]} ${
               displayRating >= star
                 ? "fill-yellow-400 text-yellow-400"
+                : displayRating >= star - 0.5
+                ? "fill-yellow-400 text-yellow-400"
                 : "text-gray-300 dark:text-gray-600"
             }`}
           />
-        </button>
+        </div>
       ))}
       {showAverage && averageRating > 0 && (
         <span className="text-xs text-muted-foreground ml-1">

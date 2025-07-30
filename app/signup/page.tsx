@@ -1,7 +1,7 @@
 "use client";
 
 import type React from "react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,6 +25,34 @@ export default function SignupPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+
+  // Handle redirect result for mobile authentication
+  useEffect(() => {
+    const handleRedirectResult = async () => {
+      try {
+        const { getRedirectResult } = await import("firebase/auth");
+        const result = await getRedirectResult(auth);
+
+        if (result) {
+          const user = result.user;
+
+          // Create Firestore user doc with empty spotify field
+          await setDoc(
+            doc(db, "users", user.uid),
+            { spotify: { connected: false } },
+            { merge: true }
+          );
+
+          window.location.href = "/";
+        }
+      } catch (error: any) {
+        console.error("Redirect result error:", error);
+        // Don't show alert here as it might be a normal redirect
+      }
+    };
+
+    handleRedirectResult();
+  }, []);
 
   const handleEmailSignup = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -65,11 +93,27 @@ export default function SignupPage() {
     setIsLoading(true);
 
     try {
-      const { GoogleAuthProvider, signInWithPopup } = await import(
-        "firebase/auth"
-      );
+      const { GoogleAuthProvider, signInWithPopup, signInWithRedirect } =
+        await import("firebase/auth");
       const provider = new GoogleAuthProvider();
-      const result = await signInWithPopup(auth, provider);
+
+      // Try popup first, fallback to redirect for mobile
+      let result;
+      try {
+        result = await signInWithPopup(auth, provider);
+      } catch (popupError: any) {
+        // If popup fails (common on mobile), try redirect
+        if (
+          popupError.code === "auth/popup-closed-by-user" ||
+          popupError.code === "auth/popup-blocked" ||
+          popupError.code === "auth/unauthorized-domain"
+        ) {
+          await signInWithRedirect(auth, provider);
+          return; // Redirect will handle the rest
+        }
+        throw popupError;
+      }
+
       const user = result.user;
 
       // Create Firestore user doc with empty spotify field
@@ -82,7 +126,23 @@ export default function SignupPage() {
       window.location.href = "/";
     } catch (error: any) {
       console.error("Google signup failed:", error.message);
-      alert(error.message);
+
+      // Provide more helpful error messages
+      let errorMessage = "Authentication failed. Please try again.";
+
+      if (error.code === "auth/unauthorized-domain") {
+        errorMessage =
+          "This domain is not authorized for authentication. Please contact support or try from a different device.";
+      } else if (error.code === "auth/popup-closed-by-user") {
+        errorMessage = "Sign-in was cancelled. Please try again.";
+      } else if (error.code === "auth/popup-blocked") {
+        errorMessage =
+          "Pop-up was blocked. Please allow pop-ups and try again.";
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+
+      alert(errorMessage);
     } finally {
       setIsLoading(false);
     }

@@ -320,11 +320,23 @@ export default function SeriesPage() {
                 </Button>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {searchResults.map((series) => (
-                  <Card key={series.id} className="overflow-hidden">
-                    <CardContent className="p-0">
-                      <div className="relative aspect-[2/3] w-full">
+              {searchResults.length === 0 ? (
+                <div className="text-center py-12">
+                  <Tv className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                  <h3 className="text-lg font-medium mb-2">No series found</h3>
+                  <p className="text-muted-foreground mb-4">
+                    Try a different search term
+                  </p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8 gap-6">
+                  {searchResults.map((series) => (
+                    <Link
+                      key={series.id}
+                      href={`/series/${series.id}`}
+                      className="block"
+                    >
+                      <div className="relative aspect-[2/3] w-full rounded-lg overflow-hidden hover:scale-105 transition-transform cursor-pointer shadow-md">
                         <Image
                           src={series.cover || "/placeholder.svg"}
                           alt={series.title}
@@ -332,45 +344,10 @@ export default function SeriesPage() {
                           className="object-cover"
                         />
                       </div>
-                      <div className="p-4 space-y-2">
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <h3 className="font-medium line-clamp-1">
-                              {series.title}
-                            </h3>
-                            <p className="text-sm text-muted-foreground">
-                              {series.year}
-                            </p>
-                          </div>
-                          <div className="flex items-center">
-                            <Star className="h-3 w-3 fill-primary text-primary" />
-                            <span className="text-xs ml-1">
-                              {series.rating}
-                            </span>
-                          </div>
-                        </div>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="w-full"
-                          onClick={() => saveSeries(series)}
-                          disabled={savedIds.includes(series.id)}
-                        >
-                          {savedIds.includes(series.id) ? (
-                            <>
-                              <Check className="mr-1 h-4 w-4" /> Saved
-                            </>
-                          ) : (
-                            <>
-                              <Plus className="mr-1 h-4 w-4" /> Add to Watchlist
-                            </>
-                          )}
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
+                    </Link>
+                  ))}
+                </div>
+              )}
             </div>
           ) : (
             <Tabs defaultValue="my-series">

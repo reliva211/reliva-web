@@ -134,25 +134,49 @@ export function HorizontalList({
             {/* Horizontal Scroll Container */}
             <div
               ref={scrollContainerRef}
-              className="flex gap-3 sm:gap-4 overflow-x-auto scrollbar-hide pb-4 -mx-4 sm:-mx-6 px-4 sm:px-6"
+              className="flex gap-3 sm:gap-4 overflow-x-auto scrollbar-hide pb-4 -mx-4 sm:-mx-6 px-4 sm:px-6 cursor-grab active:cursor-grabbing scrollable-container"
               style={{
                 scrollbarWidth: "none",
                 msOverflowStyle: "none",
+                WebkitScrollbar: {
+                  display: "none",
+                  width: "0px",
+                  height: "0px",
+                },
+                WebkitScrollbarTrack: { display: "none" },
+                WebkitScrollbarThumb: { display: "none" },
+                WebkitScrollbarCorner: { display: "none" },
+                WebkitScrollbarButton: { display: "none" },
+              }}
+              onWheel={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const container = e.currentTarget;
+                container.scrollLeft += e.deltaY;
+                return false;
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.overflowY = "hidden";
+                e.currentTarget.style.overflowX = "auto";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.overflowY = "auto";
+                e.currentTarget.style.overflowX = "hidden";
               }}
             >
               {items.map((item) => (
                 <div
                   key={item.id}
-                  className="flex-shrink-0 w-24 sm:w-32 md:w-48 group/item hover:scale-105 transition-transform duration-200"
+                  className="flex-shrink-0 w-24 sm:w-32 md:w-48 group/item"
                 >
                   <div className="relative">
                     {/* Poster */}
-                    <div className="aspect-[2/3] bg-muted rounded-lg overflow-hidden mb-2">
+                    <div className="aspect-[2/3] bg-muted rounded-xl overflow-hidden mb-2">
                       <Image
                         src={item.cover}
                         alt={item.title}
                         fill
-                        className="object-cover group-hover/item:scale-110 transition-transform duration-200"
+                        className="object-cover rounded-xl"
                       />
                     </div>
 

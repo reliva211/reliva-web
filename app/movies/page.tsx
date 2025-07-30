@@ -21,6 +21,8 @@ import {
   Calendar,
   EyeOff,
   Eye,
+  Globe,
+  Lock,
 } from "lucide-react";
 import {
   Dialog,
@@ -52,6 +54,7 @@ import {
 } from "firebase/firestore";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -74,6 +77,8 @@ interface Movie {
 interface Collection {
   id: string;
   name: string;
+  isPublic?: boolean;
+  isDefault?: boolean;
 }
 
 // Dummy search results
@@ -125,15 +130,12 @@ export default function MoviesPage() {
   const [movieNotes, setMovieNotes] = useState("");
   const [movieRating, setMovieRating] = useState(0);
   const [filterStatus, setFilterStatus] = useState("all");
-  const [collections, setCollections] = useState<Collection[]>([
-    { id: "1", name: "Watched" },
-    { id: "2", name: "Watchlist" },
-  ]);
-  const [selectedCollection, setSelectedCollection] = useState<string>("all");
+
   const [isCreateCollectionOpen, setCreateCollectionOpen] = useState(false);
   const [newCollectionName, setNewCollectionName] = useState("");
+  const [newCollectionIsPublic, setNewCollectionIsPublic] = useState(false);
   const [userMovieLists, setUserMovieLists] = useState<
-    { id: string; name: string }[]
+    { id: string; name: string; isPublic?: boolean; isDefault?: boolean }[]
   >([]);
   const [selectedListSidebar, setSelectedListSidebar] = useState<string>("all");
   const [listMovieCounts, setListMovieCounts] = useState<{
@@ -200,12 +202,45 @@ export default function MoviesPage() {
       if (!user?.uid) return;
       const listsRef = collection(db, "users", user.uid, "movieLists");
       const snapshot = await getDocs(listsRef);
-      setUserMovieLists(
-        snapshot.docs.map(
-          (doc) =>
-            ({ id: doc.id, ...doc.data() } as { id: string; name: string })
-        )
+      const fetchedLists = snapshot.docs.map(
+        (doc) => ({ id: doc.id, ...doc.data() } as { id: string; name: string })
       );
+
+      // Define default collections
+      const defaultCollections = [
+        { name: "Watched", isPublic: false, isDefault: true },
+        { name: "Watching", isPublic: false, isDefault: true },
+        { name: "Watchlist", isPublic: false, isDefault: true },
+        { name: "Dropped", isPublic: false, isDefault: true },
+      ];
+
+      // Check which default collections are missing
+      const existingNames = fetchedLists.map((list) => list.name);
+      const missingDefaults = defaultCollections.filter(
+        (collection) => !existingNames.includes(collection.name)
+      );
+
+      // Create missing default collections
+      if (missingDefaults.length > 0) {
+        try {
+          for (const collection of missingDefaults) {
+            await addDoc(listsRef, collection);
+          }
+
+          // Fetch all lists again (including newly created defaults)
+          const newSnapshot = await getDocs(listsRef);
+          const allLists = newSnapshot.docs.map(
+            (doc) =>
+              ({ id: doc.id, ...doc.data() } as { id: string; name: string })
+          );
+          setUserMovieLists(allLists);
+        } catch (error) {
+          console.error("Error creating default collections:", error);
+          setUserMovieLists(fetchedLists);
+        }
+      } else {
+        setUserMovieLists(fetchedLists);
+      }
     };
     fetchLists();
   }, [user]);
@@ -443,48 +478,6 @@ export default function MoviesPage() {
     });
   };
 
-  const handleCreateCollection = () => {
-    if (newCollectionName.trim() === "") return;
-    const newCollection = {
-      id: (collections.length + 1).toString(),
-      name: newCollectionName.trim(),
-    };
-    setCollections([...collections, newCollection]);
-    setNewCollectionName("");
-    setCreateCollectionOpen(false);
-  };
-
-  const addMovieToCollection = async (
-    movieId: number,
-    collectionId: string
-  ) => {
-    const movie = savedMovies.find((m) => m.id === movieId);
-    if (!movie) return;
-
-    const updatedCollections = movie.collections
-      ? [...movie.collections, collectionId]
-      : [collectionId];
-
-    setSavedMovies(
-      savedMovies.map((m) =>
-        m.id === movieId ? { ...m, collections: updatedCollections } : m
-      )
-    );
-
-    if (uid) {
-      await updateDoc(doc(db, `users/${uid}/movies/${movieId}`), {
-        collections: updatedCollections,
-      });
-    }
-  };
-
-  const filteredMovies =
-    selectedCollection === "all"
-      ? savedMovies
-      : savedMovies.filter((movie) =>
-          movie.collections?.includes(selectedCollection)
-        );
-
   // Add to List modal logic
   const handleAddToList = async () => {
     if (
@@ -553,10 +546,10 @@ export default function MoviesPage() {
   }, [overviewOpen, selectedMovieOverview]);
 
   return (
-    <div className="container py-8">
-      <div className="flex flex-col md:flex-row gap-8">
+    <div className="container py-8 min-h-screen flex items-start">
+      <div className="flex flex-col md:flex-row gap-8 w-full">
         {/* Sidebar */}
-        <div className="w-full md:w-64 space-y-6">
+        <div className="w-full md:w-64 space-y-6 flex flex-col justify-start flex-shrink-0">
           <form
             onSubmit={handleSearch}
             className="flex flex-col gap-2 w-full sm:flex-row sm:items-center sm:gap-2"
@@ -607,7 +600,15 @@ export default function MoviesPage() {
                   }`}
                   onClick={() => setSelectedListSidebar(list.id)}
                 >
-                  <span>{list.name}</span>
+                  <div className="flex items-center gap-2">
+                    <span>{list.name}</span>
+                    {list.isPublic && (
+                      <Globe className="h-3 w-3 text-muted-foreground" />
+                    )}
+                    {!list.isPublic && !list.isDefault && (
+                      <Lock className="h-3 w-3 text-muted-foreground" />
+                    )}
+                  </div>
                   <span className="text-xs bg-muted px-2 py-0.5 rounded-full">
                     {listMovieCounts[list.id] || 0}
                   </span>
@@ -630,47 +631,73 @@ export default function MoviesPage() {
                     Enter a name for your new collection.
                   </DialogDescription>
                 </DialogHeader>
-                <div className="grid gap-4 py-4">
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="name" className="text-right">
-                      Name
-                    </Label>
-                    <form
-                      onSubmit={async (e) => {
-                        e.preventDefault();
-                        if (!newCollectionName.trim() || !user?.uid) return;
-                        const listsRef = collection(
-                          db,
-                          "users",
-                          user.uid,
-                          "movieLists"
-                        );
-                        const newListDoc = await addDoc(listsRef, {
-                          name: newCollectionName.trim(),
-                        });
-                        setUserMovieLists((prev) => [
-                          ...prev,
-                          { id: newListDoc.id, name: newCollectionName.trim() },
-                        ]);
-                        setSelectedListId(newListDoc.id); // auto-select new list
-                        setNewCollectionName("");
-                        setCreateCollectionOpen(false);
-                      }}
-                    >
+                <form
+                  onSubmit={async (e) => {
+                    e.preventDefault();
+                    if (!newCollectionName.trim() || !user?.uid) return;
+                    const listsRef = collection(
+                      db,
+                      "users",
+                      user.uid,
+                      "movieLists"
+                    );
+                    const newListDoc = await addDoc(listsRef, {
+                      name: newCollectionName.trim(),
+                      isPublic: newCollectionIsPublic,
+                      isDefault: false,
+                    });
+                    setUserMovieLists((prev) => [
+                      ...prev,
+                      {
+                        id: newListDoc.id,
+                        name: newCollectionName.trim(),
+                        isPublic: newCollectionIsPublic,
+                        isDefault: false,
+                      },
+                    ]);
+                    setSelectedListId(newListDoc.id); // auto-select new list
+                    setNewCollectionName("");
+                    setNewCollectionIsPublic(false);
+                    setCreateCollectionOpen(false);
+                  }}
+                >
+                  <div className="grid gap-4 py-4">
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <Label htmlFor="name" className="text-right">
+                        Name
+                      </Label>
                       <Input
                         id="name"
                         value={newCollectionName}
                         onChange={(e) => setNewCollectionName(e.target.value)}
                         className="col-span-3"
                       />
-                    </form>
+                    </div>
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <Label htmlFor="isPublic" className="text-right">
+                        Public Collection
+                      </Label>
+                      <div className="col-span-3 flex items-center space-x-2">
+                        <Checkbox
+                          id="isPublic"
+                          checked={newCollectionIsPublic}
+                          onCheckedChange={(checked) =>
+                            setNewCollectionIsPublic(!!checked)
+                          }
+                        />
+                        <Label
+                          htmlFor="isPublic"
+                          className="text-sm text-muted-foreground"
+                        >
+                          Make this collection visible on your public profile
+                        </Label>
+                      </div>
+                    </div>
                   </div>
-                </div>
-                <DialogFooter>
-                  <Button type="submit" onClick={handleCreateCollection}>
-                    Save collection
-                  </Button>
-                </DialogFooter>
+                  <DialogFooter>
+                    <Button type="submit">Save collection</Button>
+                  </DialogFooter>
+                </form>
               </DialogContent>
             </Dialog>
           </div>
@@ -705,13 +732,15 @@ export default function MoviesPage() {
 
         {/* Main Content */}
         <div className="flex-1">
-          {isSearching || isGenreSearching || searchResults.length > 0 ? (
+          {isSearching || isGenreSearching || searchQuery ? (
             <div className="space-y-6">
               <div className="flex items-center justify-between">
                 <h2 className="text-2xl font-bold">
                   {isSearching
                     ? `Search Results for "${searchQuery}"`
-                    : `Movies in ${selectedGenre}`}
+                    : isGenreSearching
+                    ? `Movies in ${selectedGenre}`
+                    : `Search Results for "${searchQuery}"`}
                 </h2>
                 <Button variant="ghost" onClick={clearSearch}>
                   Clear Search
@@ -725,54 +754,31 @@ export default function MoviesPage() {
                     Loading {selectedGenre} movies...
                   </p>
                 </div>
+              ) : searchResults.length === 0 ? (
+                <div className="text-center py-12">
+                  <Film className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                  <h3 className="text-lg font-medium mb-2">No movies found</h3>
+                  <p className="text-muted-foreground mb-4">
+                    Try a different search term or browse by genre
+                  </p>
+                </div>
               ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8 gap-6">
                   {searchResults.map((movie) => (
-                    <Card key={movie.id} className="overflow-hidden">
-                      <Link href={`/movies/${movie.id}`} className="block">
-                        <div className="bg-card rounded-lg shadow-md overflow-hidden flex flex-col h-full cursor-pointer transition-transform hover:scale-[1.03]">
-                          <div className="relative aspect-[2/3] w-full">
-                            <Image
-                              src={movie.cover || "/placeholder.svg"}
-                              alt={movie.title}
-                              fill
-                              className="object-cover"
-                            />
-                          </div>
-                          <div className="p-4 space-y-2">
-                            <div className="flex justify-between items-start">
-                              <div>
-                                <h3 className="font-medium line-clamp-1">
-                                  {movie.title}
-                                </h3>
-                                <p className="text-sm text-muted-foreground">
-                                  {movie.year}
-                                </p>
-                              </div>
-                              <div className="flex items-center">
-                                <Star className="h-3 w-3 fill-primary text-primary" />
-                                <span className="text-xs ml-1">
-                                  {movie.rating}
-                                </span>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </Link>
-                      <div className="px-4 pb-4">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="w-full"
-                          onClick={() => {
-                            setAddToListMovie(movie);
-                            setAddToListOpen(true);
-                          }}
-                        >
-                          <Plus className="mr-1 h-4 w-4" /> Add to List
-                        </Button>
+                    <Link
+                      key={movie.id}
+                      href={`/movies/${movie.id}`}
+                      className="block"
+                    >
+                      <div className="relative aspect-[2/3] w-full rounded-lg overflow-hidden hover:scale-105 transition-transform cursor-pointer shadow-md">
+                        <Image
+                          src={movie.cover || "/placeholder.svg"}
+                          alt={movie.title}
+                          fill
+                          className="object-cover"
+                        />
                       </div>
-                    </Card>
+                    </Link>
                   ))}
                 </div>
               )}
@@ -801,53 +807,22 @@ export default function MoviesPage() {
               searchQuery &&
               searchResults.length > 0 ? (
                 // Show search results (to be refactored in next steps)
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-4">
                   {searchResults.map((movie) => (
-                    <Card key={movie.id} className="overflow-hidden">
-                      <Link href={`/movies/${movie.id}`} className="block">
-                        <div className="bg-card rounded-lg shadow-md overflow-hidden flex flex-col h-full cursor-pointer transition-transform hover:scale-[1.03]">
-                          <div className="relative aspect-[2/3] w-full">
-                            <Image
-                              src={movie.cover || "/placeholder.svg"}
-                              alt={movie.title}
-                              fill
-                              className="object-cover"
-                            />
-                          </div>
-                          <div className="p-4 space-y-2">
-                            <div className="flex justify-between items-start">
-                              <div>
-                                <h3 className="font-medium line-clamp-1">
-                                  {movie.title}
-                                </h3>
-                                <p className="text-sm text-muted-foreground">
-                                  {movie.year}
-                                </p>
-                              </div>
-                              <div className="flex items-center">
-                                <Star className="h-3 w-3 fill-primary text-primary" />
-                                <span className="text-xs ml-1">
-                                  {movie.rating}
-                                </span>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </Link>
-                      <div className="px-4 pb-4">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="w-full"
-                          onClick={() => {
-                            setAddToListMovie(movie);
-                            setAddToListOpen(true);
-                          }}
-                        >
-                          <Plus className="mr-1 h-4 w-4" /> Add to List
-                        </Button>
+                    <Link
+                      key={movie.id}
+                      href={`/movies/${movie.id}`}
+                      className="block"
+                    >
+                      <div className="relative aspect-[2/3] w-full rounded-lg overflow-hidden hover:scale-105 transition-transform cursor-pointer">
+                        <Image
+                          src={movie.cover || "/placeholder.svg"}
+                          alt={movie.title}
+                          fill
+                          className="object-cover"
+                        />
                       </div>
-                    </Card>
+                    </Link>
                   ))}
                 </div>
               ) : (
@@ -917,39 +892,6 @@ export default function MoviesPage() {
                   No lists yet.
                 </div>
               )}
-            </div>
-            <div>
-              <div className="font-medium mb-1">Create New List</div>
-              <form
-                onSubmit={async (e) => {
-                  e.preventDefault();
-                  if (!newListName.trim() || !user?.uid) return;
-                  const listsRef = collection(
-                    db,
-                    "users",
-                    user.uid,
-                    "movieLists"
-                  );
-                  const newListDoc = await addDoc(listsRef, {
-                    name: newListName.trim(),
-                  });
-                  setUserMovieLists((prev) => [
-                    ...prev,
-                    { id: newListDoc.id, name: newListName.trim() },
-                  ]);
-                  setSelectedListId(newListDoc.id); // auto-select new list
-                  setNewListName("");
-                }}
-              >
-                <Input
-                  placeholder="New list name"
-                  value={newListName}
-                  onChange={(e) => {
-                    setNewListName(e.target.value);
-                    setSelectedListId("");
-                  }}
-                />
-              </form>
             </div>
           </div>
           <DialogFooter>

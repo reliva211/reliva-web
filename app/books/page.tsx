@@ -10,7 +10,16 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Search, BookOpen, Star, Plus, X, Check } from "lucide-react";
+import {
+  Search,
+  BookOpen,
+  Star,
+  Plus,
+  X,
+  Check,
+  Globe,
+  Lock,
+} from "lucide-react";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { db } from "@/lib/firebase";
 import {
@@ -101,6 +110,8 @@ type Book = {
 interface Collection {
   id: string;
   name: string;
+  isPublic?: boolean;
+  isDefault?: boolean;
 }
 
 // Dummy search results
@@ -140,6 +151,7 @@ export default function BooksPage() {
   const [selectedCollection, setSelectedCollection] = useState<string>("all");
   const [isCreateCollectionOpen, setCreateCollectionOpen] = useState(false);
   const [newCollectionName, setNewCollectionName] = useState("");
+  const [newCollectionIsPublic, setNewCollectionIsPublic] = useState(false);
   const [selectedBooks, setSelectedBooks] = useState<string[]>([]);
   const [isBatchModalOpen, setBatchModalOpen] = useState(false);
   const [batchCollectionId, setBatchCollectionId] = useState<string>("");
@@ -374,7 +386,43 @@ export default function BooksPage() {
         const fetchedCollections: Collection[] = snapshot.docs.map(
           (doc) => ({ id: doc.id, ...doc.data() } as Collection)
         );
-        setCollections(fetchedCollections);
+
+        // Define default collections
+        const defaultCollections = [
+          { name: "Reading", isPublic: false, isDefault: true },
+          { name: "Completed", isPublic: false, isDefault: true },
+          { name: "To Read", isPublic: false, isDefault: true },
+          { name: "Dropped", isPublic: false, isDefault: true },
+        ];
+
+        // Check which default collections are missing
+        const existingNames = fetchedCollections.map(
+          (collection) => collection.name
+        );
+        const missingDefaults = defaultCollections.filter(
+          (collection) => !existingNames.includes(collection.name)
+        );
+
+        // Create missing default collections
+        if (missingDefaults.length > 0) {
+          try {
+            for (const collection of missingDefaults) {
+              await addDoc(colRef, collection);
+            }
+
+            // Fetch all collections again (including newly created defaults)
+            const newSnapshot = await getDocs(colRef);
+            const allCollections: Collection[] = newSnapshot.docs.map(
+              (doc) => ({ id: doc.id, ...doc.data() } as Collection)
+            );
+            setCollections(allCollections);
+          } catch (error) {
+            console.error("Error creating default collections:", error);
+            setCollections(fetchedCollections);
+          }
+        } else {
+          setCollections(fetchedCollections);
+        }
       } catch (err) {
         console.error("Failed to fetch collections:", err);
       }
@@ -418,11 +466,19 @@ export default function BooksPage() {
         collection(db, "users", userId, "collections"),
         {
           name: newCollectionName.trim(),
+          isPublic: newCollectionIsPublic,
+          isDefault: false,
         }
       );
-      const newCollection = { id: colRef.id, name: newCollectionName.trim() };
+      const newCollection = {
+        id: colRef.id,
+        name: newCollectionName.trim(),
+        isPublic: newCollectionIsPublic,
+        isDefault: false,
+      };
       setCollections([...collections, newCollection]);
       setNewCollectionName("");
+      setNewCollectionIsPublic(false);
       setCreateCollectionOpen(false);
     } catch (err) {
       console.error("Failed to create collection:", err);
@@ -582,10 +638,10 @@ export default function BooksPage() {
   };
 
   return (
-    <div className="container max-w-6xl mx-auto px-2 sm:px-4 py-8">
-      <div className="flex flex-col md:flex-row gap-8">
+    <div className="container py-8 min-h-screen flex items-start">
+      <div className="flex flex-col md:flex-row gap-8 w-full">
         {/* Sidebar */}
-        <div className="w-full md:w-64 space-y-6 flex-shrink-0">
+        <div className="w-full md:w-64 space-y-6 flex flex-col justify-start flex-shrink-0">
           <form
             onSubmit={handleSearch}
             className="flex flex-col gap-2 w-full sm:flex-row sm:items-center sm:gap-2"
@@ -610,9 +666,9 @@ export default function BooksPage() {
             </div>
           </form>
 
-          <div>
+          <div className="space-y-2">
             <h3 className="font-medium">My Collections</h3>
-            <div className="space-y-1 mt-2">
+            <div className="space-y-1">
               <button
                 className={`w-full flex items-center justify-between rounded-md p-2 text-sm ${
                   selectedCollection === "all"
@@ -636,7 +692,15 @@ export default function BooksPage() {
                   }`}
                   onClick={() => setSelectedCollection(collection.id)}
                 >
-                  <span>{collection.name}</span>
+                  <div className="flex items-center gap-2">
+                    <span>{collection.name}</span>
+                    {collection.isPublic && (
+                      <Globe className="h-3 w-3 text-muted-foreground" />
+                    )}
+                    {!collection.isPublic && !collection.isDefault && (
+                      <Lock className="h-3 w-3 text-muted-foreground" />
+                    )}
+                  </div>
                   <span className="text-xs bg-muted px-2 py-0.5 rounded-full">
                     {
                       savedBooks.filter((b) =>
@@ -663,31 +727,56 @@ export default function BooksPage() {
                     Enter a name for your new collection.
                   </DialogDescription>
                 </DialogHeader>
-                <div className="grid gap-4 py-4">
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="name" className="text-right">
-                      Name
-                    </Label>
-                    <Input
-                      id="name"
-                      value={newCollectionName}
-                      onChange={(e) => setNewCollectionName(e.target.value)}
-                      className="col-span-3"
-                    />
+                <form
+                  onSubmit={async (e) => {
+                    e.preventDefault();
+                    await handleCreateCollection();
+                  }}
+                >
+                  <div className="grid gap-4 py-4">
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <Label htmlFor="name" className="text-right">
+                        Name
+                      </Label>
+                      <Input
+                        id="name"
+                        value={newCollectionName}
+                        onChange={(e) => setNewCollectionName(e.target.value)}
+                        className="col-span-3"
+                      />
+                    </div>
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <Label htmlFor="isPublic" className="text-right">
+                        Public Collection
+                      </Label>
+                      <div className="col-span-3 flex items-center space-x-2">
+                        <Checkbox
+                          id="isPublic"
+                          checked={newCollectionIsPublic}
+                          onCheckedChange={(checked) =>
+                            setNewCollectionIsPublic(!!checked)
+                          }
+                        />
+                        <Label
+                          htmlFor="isPublic"
+                          className="text-sm text-muted-foreground"
+                        >
+                          Make this collection visible on your public profile
+                        </Label>
+                      </div>
+                    </div>
                   </div>
-                </div>
-                <DialogFooter>
-                  <Button type="submit" onClick={handleCreateCollection}>
-                    Save collection
-                  </Button>
-                </DialogFooter>
+                  <DialogFooter>
+                    <Button type="submit">Save collection</Button>
+                  </DialogFooter>
+                </form>
               </DialogContent>
             </Dialog>
           </div>
 
-          <div>
+          <div className="space-y-2">
             <h3 className="font-medium">Genres</h3>
-            <div className="flex flex-wrap gap-2 mt-2">
+            <div className="flex flex-wrap gap-2">
               {[
                 "Fiction",
                 "Non-Fiction",
@@ -714,14 +803,16 @@ export default function BooksPage() {
         </div>
 
         {/* Main Content */}
-        <div className="flex-1 min-w-0">
-          {isSearching || isGenreSearching || searchResults.length > 0 ? (
+        <div className="flex-1">
+          {isSearching || isGenreSearching || searchQuery ? (
             <div className="space-y-6">
               <div className="flex items-center justify-between">
                 <h2 className="text-2xl font-bold">
                   {isSearching
                     ? `Search Results for "${searchQuery}"`
-                    : `Books in ${selectedGenre}`}
+                    : isGenreSearching
+                    ? `Books in ${selectedGenre}`
+                    : `Search Results for "${searchQuery}"`}
                 </h2>
                 <Button variant="ghost" onClick={clearSearch}>
                   Clear Search
@@ -751,69 +842,31 @@ export default function BooksPage() {
                     Loading {selectedGenre} books...
                   </p>
                 </div>
+              ) : searchResults.length === 0 ? (
+                <div className="text-center py-12">
+                  <BookOpen className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                  <h3 className="text-lg font-medium mb-2">No books found</h3>
+                  <p className="text-muted-foreground mb-4">
+                    Try a different search term or browse by genre
+                  </p>
+                </div>
               ) : (
-                <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-6">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8 gap-6">
                   {searchResults.map((book, index) => (
-                    <Card
+                    <Link
                       key={`${book.id}-${index}`}
-                      className="overflow-hidden relative w-full h-full flex flex-col group"
-                      onClick={(e) => {
-                        // Only open Add to List if not clicking on a button or input (e.g., checkbox)
-                        if (
-                          (e.target as HTMLElement).tagName === "BUTTON" ||
-                          (e.target as HTMLElement).tagName === "INPUT" ||
-                          (e.target as HTMLElement).closest("button") ||
-                          (e.target as HTMLElement).closest("input")
-                        ) {
-                          return;
-                        }
-                        setAddToListBook(book);
-                        setAddToListOpen(true);
-                      }}
+                      href={`/books/${book.id}`}
+                      className="block"
                     >
-                      <div className="absolute inset-0 z-10 cursor-pointer" />
-                      <CardContent className="p-0">
-                        <div className="relative aspect-[2/3] w-full">
-                          <Image
-                            src={book.cover || "/placeholder.svg"}
-                            alt={book.title}
-                            fill
-                            className="object-cover"
-                          />
-                        </div>
-                        <div className="p-4 space-y-2">
-                          <div className="flex justify-between items-start">
-                            <div>
-                              <h3 className="font-medium line-clamp-1">
-                                {book.title}
-                              </h3>
-                              <p className="text-sm text-muted-foreground">
-                                {book.author}
-                              </p>
-                            </div>
-                            <div className="flex items-center">
-                              <Star className="h-3 w-3 fill-primary text-primary" />
-                              <span className="text-xs ml-1">
-                                {book.rating}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                      </CardContent>
-                      <div className="px-4 pb-4">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="w-full"
-                          onClick={() => {
-                            setAddToListBook(book);
-                            setAddToListOpen(true);
-                          }}
-                        >
-                          <Plus className="mr-1 h-4 w-4" /> Add to List
-                        </Button>
+                      <div className="relative aspect-[2/3] w-full rounded-lg overflow-hidden hover:scale-105 transition-transform cursor-pointer shadow-md">
+                        <Image
+                          src={book.cover || "/placeholder.svg"}
+                          alt={book.title}
+                          fill
+                          className="object-cover"
+                        />
                       </div>
-                    </Card>
+                    </Link>
                   ))}
                 </div>
               )}
@@ -947,45 +1000,7 @@ export default function BooksPage() {
                 </div>
               </div>
             )}
-            <div>
-              <div className="mb-1 font-medium">Create New List</div>
-              <input
-                className="w-full p-2 rounded bg-gray-800 text-white mb-2"
-                placeholder="New list name"
-                value={newModalCollectionName}
-                onChange={(e) => setNewModalCollectionName(e.target.value)}
-                disabled={creatingModalCollection}
-              />
-              <Button
-                className="w-full mb-2"
-                onClick={async () => {
-                  if (!newModalCollectionName.trim() || !user?.uid) return;
-                  setCreatingModalCollection(true);
-                  const listsRef = collection(
-                    db,
-                    "users",
-                    user.uid,
-                    "collections"
-                  );
-                  const newListDoc = await addDoc(listsRef, {
-                    name: newModalCollectionName.trim(),
-                  });
-                  const newCol = {
-                    id: newListDoc.id,
-                    name: newModalCollectionName.trim(),
-                  };
-                  setCollections((prev) => [...prev, newCol]);
-                  setSelectedModalCollectionId(newCol.id); // auto-select new list
-                  setNewModalCollectionName("");
-                  setCreatingModalCollection(false);
-                }}
-                disabled={
-                  creatingModalCollection || !newModalCollectionName.trim()
-                }
-              >
-                {creatingModalCollection ? "Creating..." : "Create List"}
-              </Button>
-            </div>
+
             <Button
               className="w-full"
               onClick={async () => {
