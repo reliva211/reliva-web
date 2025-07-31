@@ -18,10 +18,10 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
 import { auth } from "@/lib/firebase"; // Adjust the path
 import { db } from "@/lib/firebase";
-import { setDoc, doc } from "firebase/firestore";
+import { setDoc, doc, serverTimestamp } from "firebase/firestore";
 
 export default function SignupPage() {
-  const [name, setName] = useState("");
+  const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -67,13 +67,22 @@ export default function SignupPage() {
       const user = userCredential.user;
 
       await updateProfile(user, {
-        displayName: name,
+        displayName: fullName,
       });
 
-      // Create Firestore user doc with empty spotify field
+      // Create Firestore user doc with complete user data
       await setDoc(
         doc(db, "users", user.uid),
-        { spotify: { connected: false } },
+        {
+          uid: user.uid,
+          email: user.email,
+          username: fullName || user.email?.split("@")[0],
+          fullName: fullName,
+          followers: [],
+          following: [],
+          createdAt: serverTimestamp(),
+          spotify: { connected: false }
+        },
         { merge: true }
       );
 
@@ -116,10 +125,19 @@ export default function SignupPage() {
 
       const user = result.user;
 
-      // Create Firestore user doc with empty spotify field
+      // Create Firestore user doc with complete user data
       await setDoc(
         doc(db, "users", user.uid),
-        { spotify: { connected: false } },
+        {
+          uid: user.uid,
+          email: user.email,
+          username: user.displayName || user.email?.split("@")[0],
+          fullName: user.displayName || "",
+          followers: [],
+          following: [],
+          createdAt: serverTimestamp(),
+          spotify: { connected: false }
+        },
         { merge: true }
       );
 
@@ -199,6 +217,17 @@ export default function SignupPage() {
 
           <form onSubmit={handleEmailSignup}>
             <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="fullName">Full Name</Label>
+                <Input
+                  id="fullName"
+                  type="text"
+                  placeholder="Enter your full name"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  required
+                />
+              </div>
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
                 <Input

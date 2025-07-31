@@ -25,6 +25,7 @@ import {
   Bell,
   Info,
   HelpCircle,
+  Users,
 } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
@@ -92,6 +93,7 @@ export default function Sidebar({ isLandingPage = false }: SidebarProps) {
     { href: "/books", label: "Books", icon: BookOpen },
     { href: "/movies", label: "Movies", icon: Film },
     { href: "/series", label: "Series", icon: Tv },
+    { href: "/users", label: "Discover People", icon: Users },
     { href: "/notifications", label: "Notifications", icon: Bell },
     { href: "/profile", label: "Profile", icon: User },
     { href: "/contact", label: "About Us", icon: HelpCircle },
