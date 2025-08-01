@@ -855,7 +855,12 @@ export default function SeriesPage() {
             !searchQuery &&
             !selectedGenre ? (
             <>
-              <h2 className="text-2xl font-bold">All My Series</h2>
+              <h2 className="text-2xl font-bold">
+                {selectedListSidebar === "all"
+                  ? "All My Series"
+                  : userLists.find((l) => l.id === selectedListSidebar)?.name ||
+                    "All My Series"}
+              </h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6">
                 {uniqueAllSeries.length === 0 ? (
                   <div className="col-span-full text-center text-muted-foreground py-12">

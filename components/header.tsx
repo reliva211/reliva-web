@@ -94,7 +94,6 @@ export default function Sidebar({ isLandingPage = false }: SidebarProps) {
     { href: "/books", label: "Books", icon: BookOpen },
     { href: "/movies", label: "Movies", icon: Film },
     { href: "/series", label: "Series", icon: Tv },
-    { href: "/reviews", label: "Write Review", icon: Edit },
   ];
 
   const navigationItems = [
@@ -410,6 +409,47 @@ export default function Sidebar({ isLandingPage = false }: SidebarProps) {
                       linkContent
                     );
                   })}
+
+                  {/* Post Button */}
+                  {(() => {
+                    const isActive = pathname === "/reviews";
+                    const linkContent = (
+                      <Link
+                        href="/reviews"
+                        onClick={() => setIsMobileOpen(false)}
+                        className={cn(
+                          "flex items-center gap-3 rounded-lg text-sm font-medium transition-all duration-200 hover:bg-accent hover:text-accent-foreground",
+                          isCollapsed
+                            ? "justify-center px-2 py-3"
+                            : "px-4 py-3",
+                          isActive
+                            ? "bg-accent text-accent-foreground"
+                            : "text-muted-foreground"
+                        )}
+                      >
+                        <Edit
+                          className={cn(
+                            "flex-shrink-0 transition-all duration-200",
+                            isCollapsed ? "h-5 w-5" : "h-5 w-5"
+                          )}
+                        />
+                        {!isCollapsed && (
+                          <span className="truncate">Post</span>
+                        )}
+                      </Link>
+                    );
+
+                    return isCollapsed ? (
+                      <Tooltip>
+                        <TooltipTrigger asChild>{linkContent}</TooltipTrigger>
+                        <TooltipContent side="right">
+                          Post
+                        </TooltipContent>
+                      </Tooltip>
+                    ) : (
+                      linkContent
+                    );
+                  })()}
                 </div>
 
                 {/* User & Settings */}

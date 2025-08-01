@@ -420,7 +420,11 @@ export default function MusicPage() {
         {/* Search Section */}
         <div className="flex flex-col space-y-4">
           <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-bold">Music Database</h1>
+            <h1 className="text-2xl font-bold">
+              {selectedTags.length > 0 
+                ? `Music - ${selectedTags.join(", ")}` 
+                : "Music Database"}
+            </h1>
             <Button
               variant="outline"
               size="sm"
@@ -652,7 +656,11 @@ export default function MusicPage() {
 
             <TabsContent value="artists" className="space-y-6">
               <div className="flex justify-between items-center">
-                <h2 className="text-xl font-semibold">Your Favorite Artists</h2>
+                <h2 className="text-xl font-semibold">
+                  {selectedTags.length > 0 
+                    ? `Favorite Artists - ${selectedTags.join(", ")}` 
+                    : "Your Favorite Artists"}
+                </h2>
               </div>
 
               {favoriteArtists.length === 0 ? (
@@ -711,7 +719,11 @@ export default function MusicPage() {
 
             <TabsContent value="releases" className="space-y-6">
               <div className="flex justify-between items-center">
-                <h2 className="text-xl font-semibold">Your Favorite Albums</h2>
+                <h2 className="text-xl font-semibold">
+                  {selectedTags.length > 0 
+                    ? `Favorite Albums - ${selectedTags.join(", ")}` 
+                    : "Your Favorite Albums"}
+                </h2>
               </div>
 
               {favoriteReleases.length === 0 ? (
@@ -765,7 +777,11 @@ export default function MusicPage() {
 
             <TabsContent value="tracks" className="space-y-6">
               <div className="flex justify-between items-center">
-                <h2 className="text-xl font-semibold">Your Favorite Tracks</h2>
+                <h2 className="text-xl font-semibold">
+                  {selectedTags.length > 0 
+                    ? `Favorite Tracks - ${selectedTags.join(", ")}` 
+                    : "Your Favorite Tracks"}
+                </h2>
               </div>
 
               {favoriteTracks.length === 0 ? (

@@ -79,9 +79,9 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto w-full space-y-16">
           {/* Trending Movies */}
           <div>
-            <h2 className="text-3xl md:text-4xl font-bold mb-6 text-gray-900 dark:text-white">
+            <h4 className="text-3xl md:text-4xl font-bold mb-6 text-gray-900 dark:text-white">
               Trending Movies
-            </h2>
+            </h4>
             <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-4">
               {trendingMovies.map((movie) => (
                 <button
@@ -109,9 +109,9 @@ export default function HomePage() {
           </div>
           {/* Trending Series */}
           <div>
-            <h2 className="text-3xl md:text-4xl font-bold mb-6 text-gray-900 dark:text-white">
+            <h4 className="text-3xl md:text-4xl font-bold mb-6 text-gray-900 dark:text-white">
               Trending Series
-            </h2>
+            </h4>
             <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-4">
               {trendingSeries.map((series) => (
                 <button

@@ -791,7 +791,11 @@ export default function MoviesPage() {
           ) : (
             <div className="space-y-4 lg:space-y-6">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                <h2 className="text-xl lg:text-2xl font-bold">My Movies</h2>
+                <h2 className="text-xl lg:text-2xl font-bold">
+                  {selectedListSidebar === "all" 
+                    ? "My Movies" 
+                    : userMovieLists.find(list => list.id === selectedListSidebar)?.name || "My Movies"}
+                </h2>
                 <div className="flex items-center gap-3">
                   <Select defaultValue="newest">
                     <SelectTrigger className="w-[140px] lg:w-[180px] h-10">
