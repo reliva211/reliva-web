@@ -27,6 +27,7 @@ import {
   HelpCircle,
   Users,
   Compass,
+  Edit,
 } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
@@ -93,6 +94,7 @@ export default function Sidebar({ isLandingPage = false }: SidebarProps) {
     { href: "/books", label: "Books", icon: BookOpen },
     { href: "/movies", label: "Movies", icon: Film },
     { href: "/series", label: "Series", icon: Tv },
+    { href: "/reviews", label: "Write Review", icon: Edit },
   ];
 
   const navigationItems = [

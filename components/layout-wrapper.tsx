@@ -4,6 +4,7 @@ import { usePathname } from "next/navigation";
 import Sidebar from "@/components/header";
 import Footer from "@/components/footer";
 import { useCurrentUser } from "@/hooks/use-current-user";
+import { Toaster } from "@/components/ui/toaster";
 
 interface LayoutWrapperProps {
   children: React.ReactNode;
@@ -24,6 +25,7 @@ export default function LayoutWrapper({ children }: LayoutWrapperProps) {
         <main className="flex-1 py-4 sm:py-6 lg:py-8">{children}</main>
         {shouldShowFooter && <Footer />}
       </div>
+      <Toaster />
     </div>
   );
 }

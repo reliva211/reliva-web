@@ -12,13 +12,18 @@ import Image from "next/image";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Play, Zap } from "lucide-react";
+import { ArrowRight, Play, Zap, MessageSquare } from "lucide-react";
 import { RatingStars } from "@/components/rating-stars";
+import ReviewPost from "@/components/review-post";
+import { collection, getDocs, query, orderBy, limit } from "firebase/firestore";
+import { db } from "@/lib/firebase";
 
 export default function LandingPage() {
   const { user, loading } = useCurrentUser();
   const [trendingMovies, setTrendingMovies] = useState<any[]>([]);
   const [trendingSeries, setTrendingSeries] = useState<any[]>([]);
+  const [reviews, setReviews] = useState<any[]>([]);
+  const [loadingReviews, setLoadingReviews] = useState(false);
 
   // Prevent vertical scrolling when hovering over scrollable containers
   useEffect(() => {
@@ -52,6 +57,39 @@ export default function LandingPage() {
       setTrendingSeries(seriesData.results || []);
     };
     fetchTrending();
+  }, [user]);
+
+  // Fetch reviews
+  useEffect(() => {
+    if (!user) return;
+    
+    const fetchReviews = async () => {
+      setLoadingReviews(true);
+      try {
+        const reviewsRef = collection(db, "reviews");
+        const q = query(reviewsRef, orderBy("timestamp", "desc"), limit(10));
+        const querySnapshot = await getDocs(q);
+        
+        const reviewsData = querySnapshot.docs.map(doc => {
+          const data = doc.data();
+          return {
+            id: doc.id,
+            ...data,
+            // Ensure compatibility with existing data structure
+            userDisplayName: data.userDisplayName || data.username || "Anonymous",
+            timestamp: data.timestamp || data.createdAt
+          };
+        });
+        
+        setReviews(reviewsData);
+      } catch (error) {
+        console.error("Error fetching reviews:", error);
+      } finally {
+        setLoadingReviews(false);
+      }
+    };
+
+    fetchReviews();
   }, [user]);
 
   // Show spinner while auth state is loading
@@ -112,7 +150,6 @@ export default function LandingPage() {
                   style={{
                     scrollbarWidth: "none",
                     msOverflowStyle: "none",
-                    WebkitScrollbar: { display: "none" },
                   }}
                   onWheel={(e) => {
                     e.preventDefault();
@@ -177,15 +214,6 @@ export default function LandingPage() {
                   style={{
                     scrollbarWidth: "none",
                     msOverflowStyle: "none",
-                    WebkitScrollbar: {
-                      display: "none",
-                      width: "0px",
-                      height: "0px",
-                    },
-                    WebkitScrollbarTrack: { display: "none" },
-                    WebkitScrollbarThumb: { display: "none" },
-                    WebkitScrollbarCorner: { display: "none" },
-                    WebkitScrollbarButton: { display: "none" },
                   }}
                   onWheel={(e) => {
                     e.preventDefault();
@@ -238,6 +266,93 @@ export default function LandingPage() {
                   ))}
                 </div>
               </div>
+            </div>
+
+            {/* Latest Reviews Feed */}
+            <div>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 md:mb-6 gap-3 md:gap-4">
+                <h2 className="text-xl md:text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white">
+                  Latest Reviews
+                </h2>
+                <Link 
+                  href="/reviews"
+                  className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 transition-colors px-3 py-2 md:px-4 md:py-2 rounded-lg hover:bg-emerald-50 dark:hover:bg-emerald-950/20 text-sm md:text-base"
+                >
+                  <span className="font-medium">Write Review</span>
+                  <ArrowRight className="h-3 w-3 md:h-4 md:w-4" />
+                </Link>
+              </div>
+              
+              {loadingReviews ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+                  {[...Array(3)].map((_, i) => (
+                    <div key={i} className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-4 animate-pulse">
+                      <div className="flex items-center space-x-3 mb-4">
+                        <div className="w-10 h-10 bg-gray-300 dark:bg-gray-600 rounded-full"></div>
+                        <div className="flex-1">
+                          <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-24 mb-2"></div>
+                          <div className="h-3 bg-gray-300 dark:bg-gray-600 rounded w-16"></div>
+                        </div>
+                      </div>
+                      <div className="space-y-3">
+                        <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-full"></div>
+                        <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-3/4"></div>
+                        <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-1/2"></div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : reviews.length === 0 ? (
+                <div className="text-center py-8 md:py-12 px-4">
+                  <MessageSquare className="h-10 w-10 md:h-12 md:w-12 text-gray-400 dark:text-gray-600 mx-auto mb-4" />
+                  <h3 className="text-base md:text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                    No reviews yet
+                  </h3>
+                  <p className="text-sm md:text-base text-gray-600 dark:text-gray-400 mb-6 max-w-sm md:max-w-md mx-auto px-4">
+                    Be the first to share your thoughts on movies, series, and books!
+                  </p>
+                  <Link href="/reviews">
+                    <Button className="bg-gradient-to-r from-emerald-600 to-blue-600 hover:from-emerald-700 hover:to-blue-700 text-white text-sm md:text-base px-6 py-2 md:px-8 md:py-3">
+                      Write Your First Review
+                    </Button>
+                  </Link>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+                  {reviews.slice(0, 9).map((review) => (
+                    <ReviewPost 
+                      key={review.id} 
+                      review={review}
+                      onLikeToggle={() => {
+                        // Refresh reviews after like toggle
+                        const fetchReviews = async () => {
+                          try {
+                            const reviewsRef = collection(db, "reviews");
+                            const q = query(reviewsRef, orderBy("timestamp", "desc"), limit(10));
+                            const querySnapshot = await getDocs(q);
+                            
+                            const reviewsData = querySnapshot.docs.map(doc => {
+                              const data = doc.data();
+                              return {
+                                id: doc.id,
+                                ...data,
+                                // Ensure compatibility with existing data structure
+                                userDisplayName: data.userDisplayName || data.username || "Anonymous",
+                                timestamp: data.timestamp || data.createdAt
+                              };
+                            });
+                            
+                            setReviews(reviewsData);
+                          } catch (error) {
+                            console.error("Error refreshing reviews:", error);
+                          }
+                        };
+                        fetchReviews();
+                      }}
+                    />
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </div>
