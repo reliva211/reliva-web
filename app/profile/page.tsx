@@ -33,11 +33,21 @@ import {
   Crown,
   Globe,
   Lock,
+  Heart,
+  MessageCircle,
+  ChevronRight,
+  Eye,
+  EyeOff,
+  MessageSquare,
+  MoreHorizontal,
 } from "lucide-react";
 import { EditProfileDialog } from "@/components/edit-profile";
 import { ImageUpload } from "@/components/image-upload";
 import { SearchModal } from "@/components/search-modal";
 import { HorizontalList } from "@/components/horizontal-list";
+import { MovieCard } from "@/components/movie-card";
+import { ReviewsSection } from "@/components/reviews-section";
+import { EnhancedMediaBar } from "@/components/enhanced-media-bar";
 import ErrorBoundary from "@/components/error-boundary";
 import { DebugPanel } from "@/components/debug-panel";
 import { db } from "@/lib/firebase";
@@ -75,14 +85,6 @@ export default function ProfilePage() {
     useState(false);
   const [publicCollectionItems, setPublicCollectionItems] =
     useState<PublicCollectionItems>({});
-
-  // Collection selection states
-  const [selectedMovieCollection, setSelectedMovieCollection] =
-    useState<string>("all");
-  const [selectedSeriesCollection, setSelectedSeriesCollection] =
-    useState<string>("all");
-  const [selectedBookCollection, setSelectedBookCollection] =
-    useState<string>("all");
 
   // Prevent vertical scrolling when hovering over scrollable containers
   useEffect(() => {
@@ -383,50 +385,271 @@ export default function ProfilePage() {
     return publicCollections.filter((col) => col.type === "books");
   };
 
-  // Get items by selected collection
-  const getMoviesBySelectedCollection = () => {
-    if (selectedMovieCollection === "all") {
-      return getMoviesBySection("top5").concat(
-        getMoviesBySection("watched"),
-        getMoviesBySection("watchlist"),
-        getMoviesBySection("recommended")
-      );
-    } else if (selectedMovieCollection.startsWith("public_")) {
-      const collectionId = selectedMovieCollection.replace("public_", "");
-      return publicCollectionItems[collectionId] || [];
-    } else {
-      return getMoviesBySection(selectedMovieCollection);
-    }
+  // Mock movie data for demonstration
+  const mockMovies = {
+    watched: [
+      {
+        id: "603",
+        title: "The Matrix",
+        year: 1999,
+        cover:
+          "https://image.tmdb.org/t/p/w500/f89U3ADr1oiB1s9GkdPOEpXUk5H.jpg",
+        rating: 4.8,
+        status: "watched",
+        mediaType: "movie" as const,
+      },
+      {
+        id: "27205",
+        title: "Inception",
+        year: 2010,
+        cover:
+          "https://image.tmdb.org/t/p/w500/9gk7adHYeDvHkCSEqAvQNLV5Uge.jpg",
+        rating: 4.5,
+        status: "watched",
+        mediaType: "movie" as const,
+      },
+      {
+        id: "157336",
+        title: "Interstellar",
+        year: 2014,
+        cover:
+          "https://image.tmdb.org/t/p/w500/gEU2QniE6E77NI6lCU6MxlNBvIx.jpg",
+        rating: 4.7,
+        status: "watched",
+        mediaType: "movie" as const,
+      },
+      {
+        id: "155",
+        title: "The Dark Knight",
+        year: 2008,
+        cover:
+          "https://image.tmdb.org/t/p/w500/qJ2tW6WMUDux911r6m7haRef0WH.jpg",
+        rating: 4.9,
+        status: "watched",
+        mediaType: "movie" as const,
+      },
+      {
+        id: "680",
+        title: "Pulp Fiction",
+        year: 1994,
+        cover:
+          "https://image.tmdb.org/t/p/w500/fIE3lAGcZDV1G6XM5KmuWnNsPp1.jpg",
+        rating: 4.6,
+        status: "watched",
+        mediaType: "movie" as const,
+      },
+      {
+        id: "550",
+        title: "Fight Club",
+        year: 1999,
+        cover:
+          "https://image.tmdb.org/t/p/w500/pB8BM7pdSp6B6Ih7QZ4DrQ3PmJK.jpg",
+        rating: 4.4,
+        status: "watched",
+        mediaType: "movie" as const,
+      },
+    ],
+    top5: [
+      {
+        id: "603",
+        title: "The Matrix",
+        year: 1999,
+        cover:
+          "https://image.tmdb.org/t/p/w500/f89U3ADr1oiB1s9GkdPOEpXUk5H.jpg",
+        rating: 4.8,
+        status: "top5",
+        mediaType: "movie" as const,
+      },
+      {
+        id: "27205",
+        title: "Inception",
+        year: 2010,
+        cover:
+          "https://image.tmdb.org/t/p/w500/9gk7adHYeDvHkCSEqAvQNLV5Uge.jpg",
+        rating: 4.5,
+        status: "top5",
+        mediaType: "movie" as const,
+      },
+      {
+        id: "157336",
+        title: "Interstellar",
+        year: 2014,
+        cover:
+          "https://image.tmdb.org/t/p/w500/gEU2QniE6E77NI6lCU6MxlNBvIx.jpg",
+        rating: 4.7,
+        status: "top5",
+        mediaType: "movie" as const,
+      },
+      {
+        id: "155",
+        title: "The Dark Knight",
+        year: 2008,
+        cover:
+          "https://image.tmdb.org/t/p/w500/qJ2tW6WMUDux911r6m7haRef0WH.jpg",
+        rating: 4.9,
+        status: "top5",
+        mediaType: "movie" as const,
+      },
+      {
+        id: "680",
+        title: "Pulp Fiction",
+        year: 1994,
+        cover:
+          "https://image.tmdb.org/t/p/w500/fIE3lAGcZDV1G6XM5KmuWnNsPp1.jpg",
+        rating: 4.6,
+        status: "top5",
+        mediaType: "movie" as const,
+      },
+    ],
+    recommended: [
+      {
+        id: "299536",
+        title: "Avengers: Infinity War",
+        year: 2018,
+        cover:
+          "https://image.tmdb.org/t/p/w500/7WsyChQLEftFiDOVTGkv3hFpyyt.jpg",
+        rating: 4.6,
+        status: "recommended",
+        mediaType: "movie" as const,
+      },
+      {
+        id: "299534",
+        title: "Avengers: Endgame",
+        year: 2019,
+        cover:
+          "https://image.tmdb.org/t/p/w500/or06FN3Dka5tukK1e9sl16pB3iy.jpg",
+        rating: 4.7,
+        status: "recommended",
+        mediaType: "movie" as const,
+      },
+      {
+        id: "181808",
+        title: "Star Wars: The Last Jedi",
+        year: 2017,
+        cover:
+          "https://image.tmdb.org/t/p/w500/kOVEVeg59E0wsnXmF9nrh6OmWII.jpg",
+        rating: 4.3,
+        status: "recommended",
+        mediaType: "movie" as const,
+      },
+      {
+        id: "181809",
+        title: "Star Wars: The Rise of Skywalker",
+        year: 2019,
+        cover:
+          "https://image.tmdb.org/t/p/w500/db32LaOibw8liAmU2SMBYBg2Dtr.jpg",
+        rating: 4.2,
+        status: "recommended",
+        mediaType: "movie" as const,
+      },
+      {
+        id: "49524",
+        title: "The Twilight Saga: Breaking Dawn - Part 2",
+        year: 2012,
+        cover:
+          "https://image.tmdb.org/t/p/w500/3nNLhKXUeeJXQZbMfX4juoyBamP.jpg",
+        rating: 4.1,
+        status: "watchlist",
+        mediaType: "movie" as const,
+      },
+      {
+        id: "550988",
+        title: "Free Guy",
+        year: 2021,
+        cover:
+          "https://image.tmdb.org/t/p/w500/xmbU4JTUm8rsdtn7Y3Fcm30SXM9.jpg",
+        rating: 4.0,
+        status: "watchlist",
+        mediaType: "movie" as const,
+      },
+      {
+        id: "634649",
+        title: "Spider-Man: No Way Home",
+        year: 2021,
+        cover:
+          "https://image.tmdb.org/t/p/w500/1g0dhYtq4irTY1GPXvft6k4YLjm.jpg",
+        rating: 4.5,
+        status: "watchlist",
+        mediaType: "movie" as const,
+      },
+    ],
+    watchlist: [
+      {
+        id: "299536",
+        title: "Avengers: Infinity War",
+        year: 2018,
+        cover:
+          "https://image.tmdb.org/t/p/w500/7WsyChQLEftFiDOVTGkv3hFpyyt.jpg",
+        rating: 4.6,
+        status: "watchlist",
+        mediaType: "movie" as const,
+      },
+      {
+        id: "299534",
+        title: "Avengers: Endgame",
+        year: 2019,
+        cover:
+          "https://image.tmdb.org/t/p/w500/or06FN3Dka5tukK1e9sl16pB3iy.jpg",
+        rating: 4.7,
+        status: "watchlist",
+        mediaType: "movie" as const,
+      },
+      {
+        id: "181808",
+        title: "Star Wars: The Last Jedi",
+        year: 2017,
+        cover:
+          "https://image.tmdb.org/t/p/w500/kOVEVeg59E0wsnXmF9nrh6OmWII.jpg",
+        rating: 4.3,
+        status: "watchlist",
+        mediaType: "movie" as const,
+      },
+      {
+        id: "181809",
+        title: "Star Wars: The Rise of Skywalker",
+        year: 2019,
+        cover:
+          "https://image.tmdb.org/t/p/w500/db32LaOibw8liAmU2SMBYBg2Dtr.jpg",
+        rating: 4.2,
+        status: "watchlist",
+        mediaType: "movie" as const,
+      },
+      {
+        id: "49524",
+        title: "The Twilight Saga: Breaking Dawn - Part 2",
+        year: 2012,
+        cover:
+          "https://image.tmdb.org/t/p/w500/3nNLhKXUeeJXQZbMfX4juoyBamP.jpg",
+        rating: 4.1,
+        status: "watchlist",
+        mediaType: "movie" as const,
+      },
+      {
+        id: "550988",
+        title: "Free Guy",
+        year: 2021,
+        cover:
+          "https://image.tmdb.org/t/p/w500/xmbU4JTUm8rsdtn7Y3Fcm30SXM9.jpg",
+        rating: 4.0,
+        status: "watchlist",
+        mediaType: "movie" as const,
+      },
+      {
+        id: "634649",
+        title: "Spider-Man: No Way Home",
+        year: 2021,
+        cover:
+          "https://image.tmdb.org/t/p/w500/1g0dhYtq4irTY1GPXvft6k4YLjm.jpg",
+        rating: 4.5,
+        status: "watchlist",
+        mediaType: "movie" as const,
+      },
+    ],
   };
 
-  const getSeriesBySelectedCollection = () => {
-    if (selectedSeriesCollection === "all") {
-      return getSeriesBySection("top5").concat(
-        getSeriesBySection("watched"),
-        getSeriesBySection("watchlist"),
-        getSeriesBySection("recommended")
-      );
-    } else if (selectedSeriesCollection.startsWith("public_")) {
-      const collectionId = selectedSeriesCollection.replace("public_", "");
-      return publicCollectionItems[collectionId] || [];
-    } else {
-      return getSeriesBySection(selectedSeriesCollection);
-    }
-  };
-
-  const getBooksBySelectedCollection = () => {
-    if (selectedBookCollection === "all") {
-      return getBooksBySection("top5").concat(
-        getBooksBySection("read"),
-        getBooksBySection("reading"),
-        getBooksBySection("recommended")
-      );
-    } else if (selectedBookCollection.startsWith("public_")) {
-      const collectionId = selectedBookCollection.replace("public_", "");
-      return publicCollectionItems[collectionId] || [];
-    } else {
-      return getBooksBySection(selectedBookCollection);
-    }
+  // Mock functions to replace Firebase queries
+  const getMoviesBySection = (section: string) => {
+    return mockMovies[section as keyof typeof mockMovies] || [];
   };
 
   const {
@@ -438,7 +661,6 @@ export default function ProfilePage() {
     addMovie,
     addSeries,
     addBook,
-    getMoviesBySection,
     getSeriesBySection,
     getBooksBySection,
   } = useCollections(user?.uid);
@@ -468,24 +690,38 @@ export default function ProfilePage() {
   const mockCollections: Collection[] = [
     {
       id: "1",
-      name: "thrillers you can watch",
+      name: "Thrillers You Can Watch",
       description: "10 movies",
       itemCount: 10,
       commentCount: 300,
     },
     {
       id: "2",
-      name: "you got to watch these movies before you die",
-      description: "",
-      itemCount: 0,
-      commentCount: 0,
+      name: "Movies You Must Watch Before You Die",
+      description: "25 essential films",
+      itemCount: 25,
+      commentCount: 150,
     },
     {
       id: "3",
-      name: "horror i would watch when im alone",
-      description: "",
-      itemCount: 0,
-      commentCount: 0,
+      name: "Horror Movies for Brave Souls",
+      description: "15 terrifying films",
+      itemCount: 15,
+      commentCount: 89,
+    },
+    {
+      id: "4",
+      name: "Sci-Fi Classics",
+      description: "20 mind-bending films",
+      itemCount: 20,
+      commentCount: 234,
+    },
+    {
+      id: "5",
+      name: "Comedy Gold",
+      description: "12 hilarious movies",
+      itemCount: 12,
+      commentCount: 67,
     },
   ];
 
@@ -586,16 +822,16 @@ export default function ProfilePage() {
             </ImageUpload>
 
             {/* User Info */}
-            <div className="flex-1 w-full">
-              <h1 className="text-xl sm:text-2xl font-bold mb-1">
+            <div className="flex-1 w-full min-w-0">
+              <h1 className="text-xl sm:text-2xl font-bold mb-1 truncate">
                 {user.displayName || "guy 1"}
               </h1>
-              <p className="text-muted-foreground mb-3">bio</p>
+              <p className="text-sm text-muted-foreground mb-3">bio</p>
               <div className="flex flex-col sm:flex-row gap-2">
                 <Button
                   variant="outline"
                   size="sm"
-                  className="w-full sm:w-auto"
+                  className="w-full sm:w-auto text-xs sm:text-sm h-9"
                 >
                   <Camera className="h-4 w-4 mr-2" />
                   add picture
@@ -604,586 +840,963 @@ export default function ProfilePage() {
                   variant="outline"
                   size="sm"
                   onClick={() => setEditDialogOpen(true)}
-                  className="w-full sm:w-auto"
+                  className="w-full sm:w-auto text-xs sm:text-sm h-9"
                 >
-                  <Edit className="h-4 w-4 mr-2" />
-                  edit page
+                  <MessageSquare className="h-4 w-4 mr-2" />
+                  message
                 </Button>
               </div>
             </div>
           </div>
-
-          {/* Global Bio Section */}
-          <Card className="mb-6">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <User className="h-5 w-5" />
-                Bio
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground">
-                {profile?.bio ||
-                  "Share your thoughts about movies and your cinematic journey..."}
-              </p>
-            </CardContent>
-          </Card>
 
           {/* Navigation Tabs */}
           <Tabs
             value={activeTab}
             onValueChange={(value) => {
               setActiveTab(value);
-              // Reset collection selections when switching tabs
-              if (value !== activeTab) {
-                setSelectedMovieCollection("all");
-                setSelectedSeriesCollection("all");
-                setSelectedBookCollection("all");
-              }
             }}
             className="w-full"
           >
-            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4">
-              <TabsTrigger value="movies" className="text-xs sm:text-sm">
-                movies
-              </TabsTrigger>
-              <TabsTrigger value="music" className="text-xs sm:text-sm">
+            <TabsList className="grid w-full grid-cols-4 h-auto bg-transparent border-b border-border rounded-none">
+              <TabsTrigger
+                value="music"
+                className="text-xs sm:text-sm py-2 h-10 data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:text-primary rounded-none"
+              >
                 music
               </TabsTrigger>
-              <TabsTrigger value="series" className="text-xs sm:text-sm">
-                series
+              <TabsTrigger
+                value="movies"
+                className="text-xs sm:text-sm py-2 h-10 data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:text-primary rounded-none"
+              >
+                movies
               </TabsTrigger>
-              <TabsTrigger value="books" className="text-xs sm:text-sm">
+              <TabsTrigger
+                value="series"
+                className="text-xs sm:text-sm py-2 h-10 data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:text-primary rounded-none"
+              >
+                shows
+              </TabsTrigger>
+              <TabsTrigger
+                value="books"
+                className="text-xs sm:text-sm py-2 h-10 data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:text-primary rounded-none"
+              >
                 books
               </TabsTrigger>
             </TabsList>
 
             {/* Movies Tab */}
             <TabsContent value="movies" className="mt-6 space-y-6">
-              {/* Collection Selection */}
-              <div className="flex flex-wrap gap-2 mb-4">
-                <Button
-                  variant={
-                    selectedMovieCollection === "all" ? "default" : "outline"
-                  }
-                  size="sm"
-                  onClick={() => setSelectedMovieCollection("all")}
-                >
-                  All Movies
-                </Button>
-                <Button
-                  variant={
-                    selectedMovieCollection === "top5" ? "default" : "outline"
-                  }
-                  size="sm"
-                  onClick={() => setSelectedMovieCollection("top5")}
-                >
-                  Top 5
-                </Button>
-                <Button
-                  variant={
-                    selectedMovieCollection === "watched"
-                      ? "default"
-                      : "outline"
-                  }
-                  size="sm"
-                  onClick={() => setSelectedMovieCollection("watched")}
-                >
-                  Watched
-                </Button>
-                <Button
-                  variant={
-                    selectedMovieCollection === "watchlist"
-                      ? "default"
-                      : "outline"
-                  }
-                  size="sm"
-                  onClick={() => setSelectedMovieCollection("watchlist")}
-                >
-                  Watchlist
-                </Button>
-                <Button
-                  variant={
-                    selectedMovieCollection === "recommended"
-                      ? "default"
-                      : "outline"
-                  }
-                  size="sm"
-                  onClick={() => setSelectedMovieCollection("recommended")}
-                >
-                  Recommended
-                </Button>
-                {getPublicMovieCollections().map((collection) => (
+              {/* Recently Watched Section - Clean Horizontal List */}
+              <div>
+                <h3 className="text-sm font-medium text-muted-foreground mb-4">
+                  recently watched
+                </h3>
+                <div className="flex items-center gap-4">
+                  <div className="aspect-[2/3] w-32 bg-muted rounded-md overflow-hidden flex-shrink-0">
+                    <Image
+                      src={
+                        getMoviesBySection("watched")[0]?.cover ||
+                        "/placeholder.svg"
+                      }
+                      alt={getMoviesBySection("watched")[0]?.title || "Movie"}
+                      width={128}
+                      height={192}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h4 className="font-medium text-sm mb-1">
+                      {getMoviesBySection("watched")[0]?.title || "Movie Title"}
+                    </h4>
+                    <p className="text-xs text-muted-foreground mb-2">
+                      cast: abc, def, ...
+                    </p>
+                    <div className="flex items-center gap-3">
+                      <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                        <Heart className="h-3 w-3" />
+                      </Button>
+                      <span className="text-xs text-muted-foreground">
+                        trailer
+                      </span>
+                      <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                        <Plus className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  </div>
                   <Button
-                    key={collection.id}
-                    variant={
-                      selectedMovieCollection === `public_${collection.id}`
-                        ? "default"
-                        : "outline"
-                    }
+                    variant="ghost"
                     size="sm"
-                    onClick={() =>
-                      setSelectedMovieCollection(`public_${collection.id}`)
-                    }
-                    className="flex items-center gap-1"
+                    className="h-8 w-8 p-0 flex-shrink-0"
                   >
-                    <Globe className="h-3 w-3" />
-                    {collection.name}
+                    <ChevronRight className="h-4 w-4" />
                   </Button>
-                ))}
+                </div>
               </div>
 
-              {/* Selected Collection Items */}
-              <HorizontalList
-                title={
-                  selectedMovieCollection === "all"
-                    ? "All Movies"
-                    : selectedMovieCollection === "top5"
-                    ? "Top 5"
-                    : selectedMovieCollection === "watched"
-                    ? "Watched"
-                    : selectedMovieCollection === "watchlist"
-                    ? "Watchlist"
-                    : selectedMovieCollection === "recommended"
-                    ? "Recommended"
-                    : selectedMovieCollection.startsWith("public_")
-                    ? getPublicMovieCollections().find(
-                        (c) =>
-                          c.id ===
-                          selectedMovieCollection.replace("public_", "")
-                      )?.name || "Collection"
-                    : "Movies"
-                }
-                icon={
-                  selectedMovieCollection === "all" ? (
-                    <Film className="h-5 w-5" />
-                  ) : selectedMovieCollection === "top5" ? (
-                    <Crown className="h-5 w-5" />
-                  ) : selectedMovieCollection === "watched" ? (
-                    <Play className="h-5 w-5" />
-                  ) : selectedMovieCollection === "watchlist" ? (
-                    <Clock className="h-5 w-5" />
-                  ) : selectedMovieCollection === "recommended" ? (
-                    <ThumbsUp className="h-5 w-5" />
-                  ) : selectedMovieCollection.startsWith("public_") ? (
-                    <Globe className="h-5 w-5" />
-                  ) : (
-                    <Film className="h-5 w-5" />
-                  )
-                }
-                items={getMoviesBySelectedCollection()}
-                onAddItemAction={() => {
-                  setSelectedMovieSection(selectedMovieCollection);
-                  setAddMovieModalOpen(true);
-                }}
-                emptyMessage={
-                  selectedMovieCollection === "all"
-                    ? "No movies yet"
-                    : selectedMovieCollection === "top5"
-                    ? "No top 5 movies yet"
-                    : selectedMovieCollection === "watched"
-                    ? "No watched movies yet"
-                    : selectedMovieCollection === "watchlist"
-                    ? "No movies in watchlist"
-                    : selectedMovieCollection === "recommended"
-                    ? "No recommended movies yet"
-                    : selectedMovieCollection.startsWith("public_")
-                    ? `No movies in ${
-                        getPublicMovieCollections().find(
-                          (c) =>
-                            c.id ===
-                            selectedMovieCollection.replace("public_", "")
-                        )?.name || "this collection"
-                      } yet`
-                    : "No movies yet"
-                }
-                emptyIcon={
-                  selectedMovieCollection === "all" ? (
-                    <Film className="h-12 w-12 mx-auto mb-2" />
-                  ) : selectedMovieCollection === "top5" ? (
-                    <Crown className="h-12 w-12 mx-auto mb-2" />
-                  ) : selectedMovieCollection === "watched" ? (
-                    <Play className="h-12 w-12 mx-auto mb-2" />
-                  ) : selectedMovieCollection === "watchlist" ? (
-                    <Clock className="h-12 w-12 mx-auto mb-2" />
-                  ) : selectedMovieCollection === "recommended" ? (
-                    <ThumbsUp className="h-12 w-12 mx-auto mb-2" />
-                  ) : selectedMovieCollection.startsWith("public_") ? (
-                    <Globe className="h-12 w-12 mx-auto mb-2" />
-                  ) : (
-                    <Film className="h-12 w-12 mx-auto mb-2" />
-                  )
-                }
-                showRating={selectedMovieCollection === "watched"}
-                showSpecialIcon={
-                  selectedMovieCollection === "top5" ||
-                  selectedMovieCollection === "recommended" ||
-                  selectedMovieCollection.startsWith("public_")
-                }
-                specialIcon={
-                  selectedMovieCollection === "top5" ? (
-                    <Crown className="h-3 w-3 text-yellow-500" />
-                  ) : selectedMovieCollection === "recommended" ? (
-                    <ThumbsUp className="h-3 w-3 text-green-500" />
-                  ) : selectedMovieCollection.startsWith("public_") ? (
-                    <Globe className="h-3 w-3 text-blue-500" />
-                  ) : undefined
-                }
-              />
+              {/* Favorites Section */}
+              <div className="bg-card border border-border rounded-lg p-4 shadow-sm">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-sm font-medium text-muted-foreground">
+                    favorite
+                  </h3>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-muted-foreground">
+                      5 items
+                    </span>
+                    <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                      <Plus className="h-3 w-3" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 w-6 p-0 text-xs"
+                    >
+                      View
+                    </Button>
+                  </div>
+                </div>
+                <div className="grid grid-cols-5 gap-2">
+                  {getMoviesBySection("top5")
+                    .slice(0, 5)
+                    .map((movie) => (
+                      <div key={movie.id}>
+                        <div className="aspect-[2/3] w-full bg-muted rounded-md overflow-hidden">
+                          <Image
+                            src={movie.cover || "/placeholder.svg"}
+                            alt={movie.title}
+                            width={100}
+                            height={150}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                      </div>
+                    ))}
+                </div>
+              </div>
+
+              {/* Watchlist Section */}
+              <div className="bg-card border border-border rounded-lg p-4 shadow-sm">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-sm font-medium text-muted-foreground">
+                    watchlist
+                  </h3>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-muted-foreground">
+                      8 items
+                    </span>
+                    <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                      <Plus className="h-3 w-3" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 w-6 p-0 text-xs"
+                    >
+                      View
+                    </Button>
+                  </div>
+                </div>
+                <div className="flex gap-4">
+                  <div className="flex flex-col gap-2">
+                    {getMoviesBySection("watchlist")
+                      .slice(0, 2)
+                      .map((movie) => (
+                        <div
+                          key={movie.id}
+                          className="aspect-[2/3] w-12 bg-muted rounded-md overflow-hidden"
+                        >
+                          <Image
+                            src={movie.cover || "/placeholder.svg"}
+                            alt={movie.title}
+                            width={48}
+                            height={72}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                      ))}
+                  </div>
+                  <div className="flex-1 bg-muted/20 rounded-md p-3">
+                    <p className="text-xs text-muted-foreground">
+                      More watchlist items...
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Collections Section */}
+              <div className="bg-card border border-border rounded-lg p-4 shadow-sm">
+                <h3 className="text-sm font-medium text-muted-foreground mb-4">
+                  collections
+                </h3>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-xs">
+                    <span>thrillers you can watch</span>
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <span>50 movies</span>
+                      <span>1000 likes</span>
+                      <span>200 comments</span>
+                    </div>
+                  </div>
+                  <div className="text-xs">
+                    <span>you got to watch these movies before you die</span>
+                  </div>
+                  <div className="text-xs">
+                    <span>horror i would watch when im alone</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Watched Section */}
+              <div className="bg-card border border-border rounded-lg p-4 shadow-sm">
+                <h3 className="text-sm font-medium text-muted-foreground mb-4">
+                  Watched
+                </h3>
+                <div className="grid grid-cols-6 gap-1">
+                  {getMoviesBySection("watched")
+                    .slice(0, 12)
+                    .map((movie) => (
+                      <div
+                        key={movie.id}
+                        className="aspect-[2/3] w-full bg-muted rounded-md overflow-hidden"
+                      >
+                        <Image
+                          src={movie.cover || "/placeholder.svg"}
+                          alt={movie.title}
+                          width={50}
+                          height={75}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    ))}
+                </div>
+              </div>
+
+              {/* Recent Reviews Section */}
+              <div className="bg-card border border-border rounded-lg p-4 shadow-sm">
+                <h3 className="text-sm font-medium text-muted-foreground mb-4">
+                  recent reviews
+                </h3>
+                <div className="h-24 bg-muted/20 rounded-md flex items-center justify-center">
+                  <p className="text-xs text-muted-foreground">
+                    Recent reviews will appear here
+                  </p>
+                </div>
+              </div>
             </TabsContent>
 
             {/* Music Tab */}
-            <TabsContent value="music" className="mt-6">
-              <div className="text-center py-12">
-                <Music className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                <h3 className="text-lg font-medium mb-2">Music Collection</h3>
-                <p className="text-muted-foreground">
-                  Your music collection will appear here
-                </p>
+            <TabsContent value="music" className="mt-6 space-y-6">
+              {/* Current Obsession - Clean Horizontal List */}
+              <div>
+                <h3 className="text-sm font-medium text-muted-foreground mb-4">
+                  current obsession
+                </h3>
+                <div className="flex items-center gap-4">
+                  <div className="aspect-square w-32 bg-muted rounded-md overflow-hidden flex-shrink-0">
+                    <Image
+                      src="https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=128&h=128&fit=crop&crop=center"
+                      alt="Album Cover"
+                      width={128}
+                      height={128}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h4 className="font-medium text-sm mb-1">
+                      Blinding Lights
+                    </h4>
+                    <p className="text-xs text-muted-foreground mb-2">
+                      The Weeknd • After Hours
+                    </p>
+                    <div className="flex items-center gap-3">
+                      <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                        <Heart className="h-3 w-3" />
+                      </Button>
+                      <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                        <Play className="h-3 w-3" />
+                      </Button>
+                      <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                        <MoreHorizontal className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 w-8 p-0 flex-shrink-0"
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+
+              {/* Favorite Songs - 5 items only */}
+              <div className="bg-card border border-border rounded-lg p-4 shadow-sm">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-sm font-medium text-muted-foreground">
+                    favorite songs
+                  </h3>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-muted-foreground">
+                      5 items
+                    </span>
+                    <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                      <Plus className="h-3 w-3" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 w-6 p-0 text-xs"
+                    >
+                      View
+                    </Button>
+                  </div>
+                </div>
+                <div className="grid grid-cols-5 gap-2">
+                  {[1, 2, 3, 4, 5].map((i) => (
+                    <div key={i}>
+                      <div className="aspect-square w-full bg-muted rounded-md overflow-hidden">
+                        <Image
+                          src={
+                            i % 2 === 0
+                              ? "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=100&h=100&fit=crop&crop=center"
+                              : "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=100&h=100&fit=crop&crop=center"
+                          }
+                          alt="Album"
+                          width={100}
+                          height={100}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Favorite Artists */}
+              <div className="bg-card border border-border rounded-lg p-4 shadow-sm">
+                <h3 className="text-sm font-medium text-muted-foreground mb-3">
+                  favorite artists
+                </h3>
+                <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+                  {[1, 2, 3, 4, 5, 6].map((i) => (
+                    <div
+                      key={i}
+                      className="aspect-square w-full bg-muted rounded-md overflow-hidden"
+                    >
+                      <Image
+                        src={
+                          i % 2 === 0
+                            ? "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=100&h=100&fit=crop&crop=center"
+                            : "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=100&h=100&fit=crop&crop=center"
+                        }
+                        alt="Artist"
+                        width={100}
+                        height={100}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Favorite Albums */}
+              <div className="bg-card border border-border rounded-lg p-4 shadow-sm">
+                <h3 className="text-sm font-medium text-muted-foreground mb-3">
+                  favorite albums
+                </h3>
+                <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+                  {[1, 2, 3, 4, 5, 6].map((i) => (
+                    <div
+                      key={i}
+                      className="aspect-square w-full bg-muted rounded-md overflow-hidden"
+                    >
+                      <Image
+                        src={
+                          i % 2 === 0
+                            ? "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=100&h=100&fit=crop&crop=center"
+                            : "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=100&h=100&fit=crop&crop=center"
+                        }
+                        alt="Album"
+                        width={100}
+                        height={100}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Recommendations */}
+              <div className="bg-card border border-border rounded-lg p-4 shadow-sm">
+                <h3 className="text-sm font-medium text-muted-foreground mb-3">
+                  recommendation
+                </h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {[1, 2, 3, 4].map((i) => (
+                    <div key={i} className="bg-muted/20 rounded-md p-3">
+                      <div className="flex gap-3">
+                        <div className="w-8 h-8 bg-muted rounded-md overflow-hidden flex-shrink-0">
+                          <Image
+                            src={
+                              i % 2 === 0
+                                ? "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=32&h=32&fit=crop&crop=center"
+                                : "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=32&h=32&fit=crop&crop=center"
+                            }
+                            alt="Song"
+                            width={32}
+                            height={32}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-medium text-xs truncate">
+                            don't fall in love with me
+                          </h4>
+                          <p className="text-xs text-muted-foreground truncate">
+                            song: khalid
+                          </p>
+                          <div className="flex items-center gap-1 mt-2">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-5 px-2 text-xs"
+                            >
+                              reply
+                            </Button>
+                            <div className="flex items-center gap-1">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-5 w-5 p-0"
+                              >
+                                <Heart className="h-3 w-3" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-5 w-5 p-0"
+                              >
+                                <Play className="h-3 w-3" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-5 w-5 p-0"
+                              >
+                                <MoreHorizontal className="h-3 w-3" />
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Rating */}
+              <div className="bg-card border border-border rounded-lg p-4 shadow-sm">
+                <h3 className="text-sm font-medium text-muted-foreground mb-3">
+                  rating
+                </h3>
+                <div className="h-16 bg-muted/20 rounded-md flex items-center justify-center">
+                  <p className="text-xs text-muted-foreground">
+                    Rating input area
+                  </p>
+                </div>
               </div>
             </TabsContent>
 
             {/* Series Tab */}
             <TabsContent value="series" className="mt-6 space-y-6">
-              {/* Collection Selection */}
-              <div className="flex flex-wrap gap-2 mb-4">
-                <Button
-                  variant={
-                    selectedSeriesCollection === "all" ? "default" : "outline"
-                  }
-                  size="sm"
-                  onClick={() => setSelectedSeriesCollection("all")}
-                >
-                  All Series
-                </Button>
-                <Button
-                  variant={
-                    selectedSeriesCollection === "top5" ? "default" : "outline"
-                  }
-                  size="sm"
-                  onClick={() => setSelectedSeriesCollection("top5")}
-                >
-                  Top 5
-                </Button>
-                <Button
-                  variant={
-                    selectedSeriesCollection === "watched"
-                      ? "default"
-                      : "outline"
-                  }
-                  size="sm"
-                  onClick={() => setSelectedSeriesCollection("watched")}
-                >
-                  Watched
-                </Button>
-                <Button
-                  variant={
-                    selectedSeriesCollection === "watchlist"
-                      ? "default"
-                      : "outline"
-                  }
-                  size="sm"
-                  onClick={() => setSelectedSeriesCollection("watchlist")}
-                >
-                  Watchlist
-                </Button>
-                <Button
-                  variant={
-                    selectedSeriesCollection === "recommended"
-                      ? "default"
-                      : "outline"
-                  }
-                  size="sm"
-                  onClick={() => setSelectedSeriesCollection("recommended")}
-                >
-                  Recommended
-                </Button>
-                {getPublicSeriesCollections().map((collection) => (
+              {/* Currently Watching Section - Clean Horizontal List */}
+              <div>
+                <h3 className="text-sm font-medium text-muted-foreground mb-4">
+                  currently watching
+                </h3>
+                <div className="flex items-center gap-4">
+                  <div className="aspect-[2/3] w-32 bg-muted rounded-md overflow-hidden flex-shrink-0">
+                    <Image
+                      src="https://image.tmdb.org/t/p/w500/ggFHVNu6YYI5L9pCfOacjizRGt.jpg"
+                      alt="Breaking Bad"
+                      width={128}
+                      height={192}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h4 className="font-medium text-sm mb-1">suits</h4>
+                    <p className="text-xs text-muted-foreground mb-2">
+                      description... cast etc. def...
+                    </p>
+                    <div className="flex items-center gap-3">
+                      <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                        <Heart className="h-3 w-3" />
+                      </Button>
+                      <span className="text-xs text-muted-foreground">
+                        trailer
+                      </span>
+                      <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                        <Plus className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  </div>
                   <Button
-                    key={collection.id}
-                    variant={
-                      selectedSeriesCollection === `public_${collection.id}`
-                        ? "default"
-                        : "outline"
-                    }
+                    variant="ghost"
                     size="sm"
-                    onClick={() =>
-                      setSelectedSeriesCollection(`public_${collection.id}`)
-                    }
-                    className="flex items-center gap-1"
+                    className="h-8 w-8 p-0 flex-shrink-0"
                   >
-                    <Globe className="h-3 w-3" />
-                    {collection.name}
+                    <ChevronRight className="h-4 w-4" />
                   </Button>
-                ))}
+                </div>
               </div>
 
-              {/* Selected Collection Items */}
-              <HorizontalList
-                title={
-                  selectedSeriesCollection === "all"
-                    ? "All Series"
-                    : selectedSeriesCollection === "top5"
-                    ? "Top 5"
-                    : selectedSeriesCollection === "watched"
-                    ? "Watched"
-                    : selectedSeriesCollection === "watchlist"
-                    ? "Watchlist"
-                    : selectedSeriesCollection === "recommended"
-                    ? "Recommended"
-                    : selectedSeriesCollection.startsWith("public_")
-                    ? getPublicSeriesCollections().find(
-                        (c) =>
-                          c.id ===
-                          selectedSeriesCollection.replace("public_", "")
-                      )?.name || "Collection"
-                    : "Series"
-                }
-                icon={
-                  selectedSeriesCollection === "all" ? (
-                    <Tv className="h-5 w-5" />
-                  ) : selectedSeriesCollection === "top5" ? (
-                    <Crown className="h-5 w-5" />
-                  ) : selectedSeriesCollection === "watched" ? (
-                    <Play className="h-5 w-5" />
-                  ) : selectedSeriesCollection === "watchlist" ? (
-                    <Clock className="h-5 w-5" />
-                  ) : selectedSeriesCollection === "recommended" ? (
-                    <ThumbsUp className="h-5 w-5" />
-                  ) : selectedSeriesCollection.startsWith("public_") ? (
-                    <Globe className="h-5 w-5" />
-                  ) : (
-                    <Tv className="h-5 w-5" />
-                  )
-                }
-                items={getSeriesBySelectedCollection()}
-                onAddItemAction={() => {
-                  setSelectedSeriesSection(selectedSeriesCollection);
-                  setAddSeriesModalOpen(true);
-                }}
-                emptyMessage={
-                  selectedSeriesCollection === "all"
-                    ? "No series yet"
-                    : selectedSeriesCollection === "top5"
-                    ? "No top 5 series yet"
-                    : selectedSeriesCollection === "watched"
-                    ? "No watched series yet"
-                    : selectedSeriesCollection === "watchlist"
-                    ? "No series in watchlist"
-                    : selectedSeriesCollection === "recommended"
-                    ? "No recommended series yet"
-                    : selectedSeriesCollection.startsWith("public_")
-                    ? `No series in ${
-                        getPublicSeriesCollections().find(
-                          (c) =>
-                            c.id ===
-                            selectedSeriesCollection.replace("public_", "")
-                        )?.name || "this collection"
-                      } yet`
-                    : "No series yet"
-                }
-                emptyIcon={
-                  selectedSeriesCollection === "all" ? (
-                    <Tv className="h-12 w-12 mx-auto mb-2" />
-                  ) : selectedSeriesCollection === "top5" ? (
-                    <Crown className="h-12 w-12 mx-auto mb-2" />
-                  ) : selectedSeriesCollection === "watched" ? (
-                    <Play className="h-12 w-12 mx-auto mb-2" />
-                  ) : selectedSeriesCollection === "watchlist" ? (
-                    <Clock className="h-12 w-12 mx-auto mb-2" />
-                  ) : selectedSeriesCollection === "recommended" ? (
-                    <ThumbsUp className="h-12 w-12 mx-auto mb-2" />
-                  ) : selectedSeriesCollection.startsWith("public_") ? (
-                    <Globe className="h-12 w-12 mx-auto mb-2" />
-                  ) : (
-                    <Tv className="h-12 w-12 mx-auto mb-2" />
-                  )
-                }
-                showRating={selectedSeriesCollection === "watched"}
-                showSpecialIcon={
-                  selectedSeriesCollection === "top5" ||
-                  selectedSeriesCollection === "recommended" ||
-                  selectedSeriesCollection.startsWith("public_")
-                }
-                specialIcon={
-                  selectedSeriesCollection === "top5" ? (
-                    <Crown className="h-3 w-3 text-yellow-500" />
-                  ) : selectedSeriesCollection === "recommended" ? (
-                    <ThumbsUp className="h-3 w-3 text-green-500" />
-                  ) : selectedSeriesCollection.startsWith("public_") ? (
-                    <Globe className="h-3 w-3 text-blue-500" />
-                  ) : undefined
-                }
-              />
+              {/* Favorites Section */}
+              <div className="bg-card border border-border rounded-lg p-4 shadow-sm">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-sm font-medium text-muted-foreground">
+                    favorite
+                  </h3>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-muted-foreground">
+                      5 items
+                    </span>
+                    <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                      <Plus className="h-3 w-3" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 w-6 p-0 text-xs"
+                    >
+                      View
+                    </Button>
+                  </div>
+                </div>
+                <div className="grid grid-cols-5 gap-2">
+                  {[
+                    {
+                      id: "1399",
+                      title: "Game of Thrones",
+                      year: 2011,
+                      cover:
+                        "https://image.tmdb.org/t/p/w500/u3bZgnGQ9T01sWNhyveQz0wH0Hl.jpg",
+                    },
+                    {
+                      id: "2316",
+                      title: "The Office",
+                      year: 2005,
+                      cover:
+                        "https://image.tmdb.org/t/p/w500/qWnJzyZhyy74gjpSjIXWmuk0ifX.jpg",
+                    },
+                    {
+                      id: "1668",
+                      title: "Friends",
+                      year: 1994,
+                      cover:
+                        "https://image.tmdb.org/t/p/w500/f496cm9enuEsZkSPzCwnTESEK5s.jpg",
+                    },
+                    {
+                      id: "1398",
+                      title: "The Sopranos",
+                      year: 1999,
+                      cover:
+                        "https://image.tmdb.org/t/p/w500/7gO7l4aHZzJbTqHd0qKqKqKqKqKq.jpg",
+                    },
+                    {
+                      id: "1438",
+                      title: "The Wire",
+                      year: 2002,
+                      cover:
+                        "https://image.tmdb.org/t/p/w500/7gO7l4aHZzJbTqHd0qKqKqKqKqKq.jpg",
+                    },
+                  ].map((series) => (
+                    <div key={series.id}>
+                      <div className="aspect-[2/3] w-full bg-muted rounded-md overflow-hidden">
+                        <Image
+                          src={series.cover}
+                          alt={series.title}
+                          width={100}
+                          height={150}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Watchlist Section */}
+              <div className="bg-card border border-border rounded-lg p-4 shadow-sm">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-sm font-medium text-muted-foreground">
+                    watchlist
+                  </h3>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-muted-foreground">
+                      6 items
+                    </span>
+                    <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                      <Plus className="h-3 w-3" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 w-6 p-0 text-xs"
+                    >
+                      View
+                    </Button>
+                  </div>
+                </div>
+                <div className="flex gap-4">
+                  <div className="flex flex-col gap-2">
+                    {[
+                      {
+                        id: "1",
+                        title: "House of the Dragon",
+                        cover:
+                          "https://image.tmdb.org/t/p/w500/z2yahl2uefxDCl0nogcRBstwruJ.jpg",
+                      },
+                      {
+                        id: "2",
+                        title: "The Last of Us",
+                        cover:
+                          "https://image.tmdb.org/t/p/w500/uKvVjHNqB5VmOrdxqAt2F7J78ED.jpg",
+                      },
+                    ].map((series) => (
+                      <div
+                        key={series.id}
+                        className="aspect-[2/3] w-12 bg-muted rounded-md overflow-hidden"
+                      >
+                        <Image
+                          src={series.cover}
+                          alt={series.title}
+                          width={48}
+                          height={72}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                  <div className="flex-1 bg-muted/20 rounded-md p-3">
+                    <p className="text-xs text-muted-foreground">
+                      More watchlist items...
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Collections Section */}
+              <div className="bg-card border border-border rounded-lg p-4 shadow-sm">
+                <h3 className="text-sm font-medium text-muted-foreground mb-4">
+                  collections
+                </h3>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-xs">
+                    <span>crime dramas</span>
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <span>8 series</span>
+                      <span>245 likes</span>
+                      <span>89 comments</span>
+                    </div>
+                  </div>
+                  <div className="text-xs">
+                    <span>comedy classics</span>
+                  </div>
+                  <div className="text-xs">
+                    <span>sci-fi adventures</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Watched Section */}
+              <div className="bg-card border border-border rounded-lg p-4 shadow-sm">
+                <h3 className="text-sm font-medium text-muted-foreground mb-4">
+                  Watched
+                </h3>
+                <div className="grid grid-cols-6 gap-1">
+                  {[
+                    "https://image.tmdb.org/t/p/w500/ggFHVNu6YYI5L9pCfOacjizRGt.jpg",
+                    "https://image.tmdb.org/t/p/w500/49WJfeN0moxb9IPfGn8AIqMGskD.jpg",
+                    "https://image.tmdb.org/t/p/w500/7k9sxGzJbqjKqQjJZqJZqJZqJZqJ.jpg",
+                    "https://image.tmdb.org/t/p/w500/sWgBv7LV2PRoQgkxwlibdGXKq1q.jpg",
+                    "https://image.tmdb.org/t/p/w500/7vjaCdMw15FEbXyLQTVa04URsPm.jpg",
+                    "https://image.tmdb.org/t/p/w500/9PFonBhy4cQy7Jz20NpMygczOkv.jpg",
+                    "https://image.tmdb.org/t/p/w500/u3bZgnGQ9T01sWNhyveQz0wH0Hl.jpg",
+                    "https://image.tmdb.org/t/p/w500/qWnJzyZhyy74gjpSjIXWmuk0ifX.jpg",
+                    "https://image.tmdb.org/t/p/w500/f496cm9enuEsZkSPzCwnTESEK5s.jpg",
+                    "https://image.tmdb.org/t/p/w500/z2yahl2uefxDCl0nogcRBstwruJ.jpg",
+                  ].map((cover, index) => (
+                    <div
+                      key={index}
+                      className="aspect-[2/3] w-full bg-muted rounded-md overflow-hidden"
+                    >
+                      <Image
+                        src={cover}
+                        alt="Series"
+                        width={50}
+                        height={75}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Recent Reviews Section */}
+              <div className="bg-card border border-border rounded-lg p-4 shadow-sm">
+                <h3 className="text-sm font-medium text-muted-foreground mb-4">
+                  recent reviews
+                </h3>
+                <div className="h-24 bg-muted/20 rounded-md flex items-center justify-center">
+                  <p className="text-xs text-muted-foreground">
+                    Recent reviews will appear here
+                  </p>
+                </div>
+              </div>
             </TabsContent>
 
             {/* Books Tab */}
             <TabsContent value="books" className="mt-6 space-y-6">
-              {/* Collection Selection */}
-              <div className="flex flex-wrap gap-2 mb-4">
-                <Button
-                  variant={
-                    selectedBookCollection === "all" ? "default" : "outline"
-                  }
-                  size="sm"
-                  onClick={() => setSelectedBookCollection("all")}
-                >
-                  All Books
-                </Button>
-                <Button
-                  variant={
-                    selectedBookCollection === "top5" ? "default" : "outline"
-                  }
-                  size="sm"
-                  onClick={() => setSelectedBookCollection("top5")}
-                >
-                  Top 5
-                </Button>
-                <Button
-                  variant={
-                    selectedBookCollection === "read" ? "default" : "outline"
-                  }
-                  size="sm"
-                  onClick={() => setSelectedBookCollection("read")}
-                >
-                  Read
-                </Button>
-                <Button
-                  variant={
-                    selectedBookCollection === "reading" ? "default" : "outline"
-                  }
-                  size="sm"
-                  onClick={() => setSelectedBookCollection("reading")}
-                >
-                  Reading List
-                </Button>
-                <Button
-                  variant={
-                    selectedBookCollection === "recommended"
-                      ? "default"
-                      : "outline"
-                  }
-                  size="sm"
-                  onClick={() => setSelectedBookCollection("recommended")}
-                >
-                  Recommended
-                </Button>
-                {getPublicBookCollections().map((collection) => (
+              {/* Currently Reading Section - Clean Horizontal List */}
+              <div>
+                <h3 className="text-sm font-medium text-muted-foreground mb-4">
+                  currently listening
+                </h3>
+                <div className="flex items-center gap-4">
+                  <div className="aspect-[2/3] w-32 bg-muted rounded-md overflow-hidden flex-shrink-0">
+                    <Image
+                      src="https://images-na.ssl-images-amazon.com/images/S/compressed.photo.goodreads.com/books/1674739970i/32620332.jpg"
+                      alt="The Seven Husbands of Evelyn Hugo"
+                      width={128}
+                      height={192}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h4 className="font-medium text-sm mb-1">
+                      The Seven Husbands of Evelyn Hugo
+                    </h4>
+                    <p className="text-xs text-muted-foreground mb-2">
+                      description... cast etc. def...
+                    </p>
+                    <div className="flex items-center gap-3">
+                      <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                        <Heart className="h-3 w-3" />
+                      </Button>
+                      <span className="text-xs text-muted-foreground">
+                        trailer
+                      </span>
+                      <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                        <Plus className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  </div>
                   <Button
-                    key={collection.id}
-                    variant={
-                      selectedBookCollection === `public_${collection.id}`
-                        ? "default"
-                        : "outline"
-                    }
+                    variant="ghost"
                     size="sm"
-                    onClick={() =>
-                      setSelectedBookCollection(`public_${collection.id}`)
-                    }
-                    className="flex items-center gap-1"
+                    className="h-8 w-8 p-0 flex-shrink-0"
                   >
-                    <Globe className="h-3 w-3" />
-                    {collection.name}
+                    <ChevronRight className="h-4 w-4" />
                   </Button>
-                ))}
+                </div>
               </div>
 
-              {/* Selected Collection Items */}
-              <HorizontalList
-                title={
-                  selectedBookCollection === "all"
-                    ? "All Books"
-                    : selectedBookCollection === "top5"
-                    ? "Top 5"
-                    : selectedBookCollection === "read"
-                    ? "Read"
-                    : selectedBookCollection === "reading"
-                    ? "Reading List"
-                    : selectedBookCollection === "recommended"
-                    ? "Recommended"
-                    : selectedBookCollection.startsWith("public_")
-                    ? getPublicBookCollections().find(
-                        (c) =>
-                          c.id === selectedBookCollection.replace("public_", "")
-                      )?.name || "Collection"
-                    : "Books"
-                }
-                icon={
-                  selectedBookCollection === "all" ? (
-                    <BookOpen className="h-5 w-5" />
-                  ) : selectedBookCollection === "top5" ? (
-                    <Crown className="h-5 w-5" />
-                  ) : selectedBookCollection === "read" ? (
-                    <Play className="h-5 w-5" />
-                  ) : selectedBookCollection === "reading" ? (
-                    <Clock className="h-5 w-5" />
-                  ) : selectedBookCollection === "recommended" ? (
-                    <ThumbsUp className="h-5 w-5" />
-                  ) : selectedBookCollection.startsWith("public_") ? (
-                    <Globe className="h-5 w-5" />
-                  ) : (
-                    <BookOpen className="h-5 w-5" />
-                  )
-                }
-                items={getBooksBySelectedCollection()}
-                onAddItemAction={() => {
-                  setSelectedBookSection(selectedBookCollection);
-                  setAddBookModalOpen(true);
-                }}
-                emptyMessage={
-                  selectedBookCollection === "all"
-                    ? "No books yet"
-                    : selectedBookCollection === "top5"
-                    ? "No top 5 books yet"
-                    : selectedBookCollection === "read"
-                    ? "No read books yet"
-                    : selectedBookCollection === "reading"
-                    ? "No books in reading list"
-                    : selectedBookCollection === "recommended"
-                    ? "No recommended books yet"
-                    : selectedBookCollection.startsWith("public_")
-                    ? `No books in ${
-                        getPublicBookCollections().find(
-                          (c) =>
-                            c.id ===
-                            selectedBookCollection.replace("public_", "")
-                        )?.name || "this collection"
-                      } yet`
-                    : "No books yet"
-                }
-                emptyIcon={
-                  selectedBookCollection === "all" ? (
-                    <BookOpen className="h-12 w-12 mx-auto mb-2" />
-                  ) : selectedBookCollection === "top5" ? (
-                    <Crown className="h-12 w-12 mx-auto mb-2" />
-                  ) : selectedBookCollection === "read" ? (
-                    <Play className="h-12 w-12 mx-auto mb-2" />
-                  ) : selectedBookCollection === "reading" ? (
-                    <Clock className="h-12 w-12 mx-auto mb-2" />
-                  ) : selectedBookCollection === "recommended" ? (
-                    <ThumbsUp className="h-12 w-12 mx-auto mb-2" />
-                  ) : selectedBookCollection.startsWith("public_") ? (
-                    <Globe className="h-12 w-12 mx-auto mb-2" />
-                  ) : (
-                    <BookOpen className="h-12 w-12 mx-auto mb-2" />
-                  )
-                }
-                showRating={selectedBookCollection === "read"}
-                showSpecialIcon={
-                  selectedBookCollection === "top5" ||
-                  selectedBookCollection === "recommended" ||
-                  selectedBookCollection.startsWith("public_")
-                }
-                specialIcon={
-                  selectedBookCollection === "top5" ? (
-                    <Crown className="h-3 w-3 text-yellow-500" />
-                  ) : selectedBookCollection === "recommended" ? (
-                    <ThumbsUp className="h-3 w-3 text-green-500" />
-                  ) : selectedBookCollection.startsWith("public_") ? (
-                    <Globe className="h-3 w-3 text-blue-500" />
-                  ) : undefined
-                }
-              />
+              {/* Favorites Section */}
+              <div className="bg-card border border-border rounded-lg p-4 shadow-sm">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-sm font-medium text-muted-foreground">
+                    favorite
+                  </h3>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-muted-foreground">
+                      5 items
+                    </span>
+                    <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                      <Plus className="h-3 w-3" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 w-6 p-0 text-xs"
+                    >
+                      View
+                    </Button>
+                  </div>
+                </div>
+                <div className="grid grid-cols-5 gap-2">
+                  {[
+                    {
+                      id: "1",
+                      title: "The Great Gatsby",
+                      year: 1925,
+                      cover:
+                        "https://images-na.ssl-images-amazon.com/images/S/compressed.photo.goodreads.com/books/1490528560i/4671.jpg",
+                    },
+                    {
+                      id: "2",
+                      title: "1984",
+                      year: 1949,
+                      cover:
+                        "https://images-na.ssl-images-amazon.com/images/S/compressed.photo.goodreads.com/books/1532714506i/40961427.jpg",
+                    },
+                    {
+                      id: "3",
+                      title: "To Kill a Mockingbird",
+                      year: 1960,
+                      cover:
+                        "https://images-na.ssl-images-amazon.com/images/S/compressed.photo.goodreads.com/books/1553383690i/2657.jpg",
+                    },
+                    {
+                      id: "4",
+                      title: "Pride and Prejudice",
+                      year: 1813,
+                      cover:
+                        "https://images-na.ssl-images-amazon.com/images/S/compressed.photo.goodreads.com/books/1320399351i/1885.jpg",
+                    },
+                    {
+                      id: "5",
+                      title: "The Hobbit",
+                      year: 1937,
+                      cover:
+                        "https://images-na.ssl-images-amazon.com/images/S/compressed.photo.goodreads.com/books/1546071216i/5907.jpg",
+                    },
+                  ].map((book) => (
+                    <div key={book.id}>
+                      <div className="aspect-[2/3] w-full bg-muted rounded-md overflow-hidden">
+                        <Image
+                          src={book.cover}
+                          alt={book.title}
+                          width={100}
+                          height={150}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Reading List Section */}
+              <div className="bg-card border border-border rounded-lg p-4 shadow-sm">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-sm font-medium text-muted-foreground">
+                    reading list
+                  </h3>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-muted-foreground">
+                      8 items
+                    </span>
+                    <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                      <Plus className="h-3 w-3" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 w-6 p-0 text-xs"
+                    >
+                      View
+                    </Button>
+                  </div>
+                </div>
+                <div className="flex gap-4">
+                  <div className="flex flex-col gap-2">
+                    {[
+                      {
+                        id: "1",
+                        title: "The Lincoln Highway",
+                        cover:
+                          "https://images-na.ssl-images-amazon.com/images/S/compressed.photo.goodreads.com/books/1634158558i/58819501.jpg",
+                      },
+                      {
+                        id: "2",
+                        title: "Cloud Cuckoo Land",
+                        cover:
+                          "https://images-na.ssl-images-amazon.com/images/S/compressed.photo.goodreads.com/books/1634158558i/56707975.jpg",
+                      },
+                    ].map((book) => (
+                      <div
+                        key={book.id}
+                        className="aspect-[2/3] w-12 bg-muted rounded-md overflow-hidden"
+                      >
+                        <Image
+                          src={book.cover}
+                          alt={book.title}
+                          width={48}
+                          height={72}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                  <div className="flex-1 bg-muted/20 rounded-md p-3">
+                    <p className="text-xs text-muted-foreground">
+                      More reading list items...
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Collections Section */}
+              <div className="bg-card border border-border rounded-lg p-4 shadow-sm">
+                <h3 className="text-sm font-medium text-muted-foreground mb-4">
+                  collections
+                </h3>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-xs">
+                    <span>classic literature</span>
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <span>15 books</span>
+                      <span>342 likes</span>
+                      <span>156 comments</span>
+                    </div>
+                  </div>
+                  <div className="text-xs">
+                    <span>science fiction</span>
+                  </div>
+                  <div className="text-xs">
+                    <span>mystery & thriller</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Read Section */}
+              <div className="bg-card border border-border rounded-lg p-4 shadow-sm">
+                <h3 className="text-sm font-medium text-muted-foreground mb-4">
+                  Read
+                </h3>
+                <div className="grid grid-cols-6 gap-1">
+                  {getBooksBySection("read")
+                    .slice(0, 10)
+                    .map((book) => (
+                      <div
+                        key={book.id}
+                        className="aspect-[2/3] w-full bg-muted rounded-md overflow-hidden"
+                      >
+                        <Image
+                          src={book.cover || "/placeholder.svg"}
+                          alt={book.title}
+                          width={50}
+                          height={75}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    ))}
+                </div>
+              </div>
+
+              {/* Recent Reviews Section */}
+              <div className="bg-card border border-border rounded-lg p-4 shadow-sm">
+                <h3 className="text-sm font-medium text-muted-foreground mb-4">
+                  recent reviews
+                </h3>
+                <div className="h-24 bg-muted/20 rounded-md flex items-center justify-center">
+                  <p className="text-xs text-muted-foreground">
+                    Recent reviews will appear here
+                  </p>
+                </div>
+              </div>
             </TabsContent>
           </Tabs>
         </div>
@@ -1309,9 +1922,9 @@ export default function ProfilePage() {
               bookCollections: getPublicBookCollections().length,
             },
             selectedCollections: {
-              movies: selectedMovieCollection,
-              series: selectedSeriesCollection,
-              books: selectedBookCollection,
+              movies: "N/A (removed)",
+              series: "N/A (removed)",
+              books: "N/A (removed)",
             },
             search: {
               movieSearch: {

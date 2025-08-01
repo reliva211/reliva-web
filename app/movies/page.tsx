@@ -546,14 +546,11 @@ export default function MoviesPage() {
   }, [overviewOpen, selectedMovieOverview]);
 
   return (
-    <div className="container py-8 min-h-screen flex items-start">
-      <div className="flex flex-col md:flex-row gap-8 w-full">
+    <div className="w-full min-h-screen">
+      <div className="flex flex-col lg:flex-row gap-4 lg:gap-8 w-full">
         {/* Sidebar */}
-        <div className="w-full md:w-64 space-y-6 flex flex-col justify-start flex-shrink-0">
-          <form
-            onSubmit={handleSearch}
-            className="flex flex-col gap-2 w-full sm:flex-row sm:items-center sm:gap-2"
-          >
+        <div className="w-full lg:w-64 space-y-4 lg:space-y-6 flex flex-col justify-start flex-shrink-0">
+          <form onSubmit={handleSearch} className="flex flex-col gap-2 w-full">
             <div className="relative w-full">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
@@ -575,10 +572,10 @@ export default function MoviesPage() {
           </form>
 
           <div className="space-y-2">
-            <h3 className="font-medium">My Collections</h3>
+            <h3 className="font-medium text-sm lg:text-base">My Collections</h3>
             <div className="space-y-1">
               <button
-                className={`w-full flex items-center justify-between rounded-md p-2 text-sm ${
+                className={`w-full flex items-center justify-between rounded-md p-3 text-xs lg:text-sm ${
                   selectedListSidebar === "all"
                     ? "bg-accent"
                     : "hover:bg-accent transition-colors"
@@ -593,7 +590,7 @@ export default function MoviesPage() {
               {userMovieLists.map((list) => (
                 <button
                   key={list.id}
-                  className={`w-full flex items-center justify-between rounded-md p-2 text-sm ${
+                  className={`w-full flex items-center justify-between rounded-md p-3 text-xs lg:text-sm ${
                     selectedListSidebar === list.id
                       ? "bg-accent"
                       : "hover:bg-accent transition-colors"
@@ -601,15 +598,15 @@ export default function MoviesPage() {
                   onClick={() => setSelectedListSidebar(list.id)}
                 >
                   <div className="flex items-center gap-2">
-                    <span>{list.name}</span>
+                    <span className="truncate">{list.name}</span>
                     {list.isPublic && (
-                      <Globe className="h-3 w-3 text-muted-foreground" />
+                      <Globe className="h-3 w-3 text-muted-foreground flex-shrink-0" />
                     )}
                     {!list.isPublic && !list.isDefault && (
-                      <Lock className="h-3 w-3 text-muted-foreground" />
+                      <Lock className="h-3 w-3 text-muted-foreground flex-shrink-0" />
                     )}
                   </div>
-                  <span className="text-xs bg-muted px-2 py-0.5 rounded-full">
+                  <span className="text-xs bg-muted px-2 py-0.5 rounded-full flex-shrink-0">
                     {listMovieCounts[list.id] || 0}
                   </span>
                 </button>
@@ -620,7 +617,11 @@ export default function MoviesPage() {
               onOpenChange={setCreateCollectionOpen}
             >
               <DialogTrigger asChild>
-                <Button variant="outline" size="sm" className="w-full mt-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full mt-3 text-xs lg:text-sm h-10"
+                >
                   <Plus className="mr-2 h-4 w-4" /> Create Collection
                 </Button>
               </DialogTrigger>
@@ -702,9 +703,9 @@ export default function MoviesPage() {
             </Dialog>
           </div>
 
-          <div className="space-y-2">
-            <h3 className="font-medium">Genres</h3>
-            <div className="flex flex-wrap gap-2">
+          <div className="space-y-3">
+            <h3 className="font-medium text-sm lg:text-base">Genres</h3>
+            <div className="flex flex-wrap gap-3">
               {[
                 "Action",
                 "Drama",
@@ -716,7 +717,7 @@ export default function MoviesPage() {
                 <Badge
                   key={genre}
                   variant={selectedGenre === genre ? "default" : "outline"}
-                  className={`cursor-pointer transition-colors hover:bg-primary hover:text-primary-foreground ${
+                  className={`cursor-pointer transition-colors hover:bg-primary hover:text-primary-foreground text-xs px-3 py-1 ${
                     selectedGenre === genre
                       ? "bg-primary text-primary-foreground"
                       : ""
@@ -731,18 +732,22 @@ export default function MoviesPage() {
         </div>
 
         {/* Main Content */}
-        <div className="flex-1">
+        <div className="flex-1 min-w-0">
           {isSearching || isGenreSearching || searchQuery ? (
-            <div className="space-y-6">
-              <div className="flex items-center justify-between">
-                <h2 className="text-2xl font-bold">
+            <div className="space-y-4 lg:space-y-6">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <h2 className="text-xl lg:text-2xl font-bold">
                   {isSearching
                     ? `Search Results for "${searchQuery}"`
                     : isGenreSearching
                     ? `Movies in ${selectedGenre}`
                     : `Search Results for "${searchQuery}"`}
                 </h2>
-                <Button variant="ghost" onClick={clearSearch}>
+                <Button
+                  variant="ghost"
+                  onClick={clearSearch}
+                  className="w-full sm:w-auto h-10 sm:h-9"
+                >
                   Clear Search
                 </Button>
               </div>
@@ -763,7 +768,7 @@ export default function MoviesPage() {
                   </p>
                 </div>
               ) : (
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8 gap-6">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8 gap-3 lg:gap-6">
                   {searchResults.map((movie) => (
                     <Link
                       key={movie.id}
@@ -784,12 +789,12 @@ export default function MoviesPage() {
               )}
             </div>
           ) : (
-            <div className="space-y-6">
-              <div className="flex items-center justify-between">
-                <h2 className="text-2xl font-bold">My Movies</h2>
-                <div className="flex items-center gap-2">
+            <div className="space-y-4 lg:space-y-6">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <h2 className="text-xl lg:text-2xl font-bold">My Movies</h2>
+                <div className="flex items-center gap-3">
                   <Select defaultValue="newest">
-                    <SelectTrigger className="w-[180px]">
+                    <SelectTrigger className="w-[140px] lg:w-[180px] h-10">
                       <ListFilter className="h-4 w-4 mr-2" />
                       <SelectValue placeholder="Sort by" />
                     </SelectTrigger>
@@ -807,7 +812,7 @@ export default function MoviesPage() {
               searchQuery &&
               searchResults.length > 0 ? (
                 // Show search results (to be refactored in next steps)
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-4">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8 gap-3 lg:gap-4">
                   {searchResults.map((movie) => (
                     <Link
                       key={movie.id}
@@ -827,10 +832,16 @@ export default function MoviesPage() {
                 </div>
               ) : (
                 // Show uniqueDisplayedMovies (filtered by collection)
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8 gap-3 lg:gap-4">
                   {uniqueDisplayedMovies.length === 0 ? (
                     <div className="col-span-full text-center text-muted-foreground py-12">
-                      No movies in your collections yet.
+                      <Film className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+                      <h3 className="text-lg font-medium mb-2">
+                        No movies found
+                      </h3>
+                      <p className="text-sm">
+                        No movies in your collections yet.
+                      </p>
                     </div>
                   ) : (
                     uniqueDisplayedMovies.map((movie) => (

@@ -26,6 +26,7 @@ import {
   Info,
   HelpCircle,
   Users,
+  Compass,
 } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
@@ -87,12 +88,15 @@ export default function Sidebar({ isLandingPage = false }: SidebarProps) {
     setShowLogoutConfirm(true);
   };
 
-  const navigationItems = [
-    { href: "/", label: "Home", icon: Home },
+  const discoverItems = [
     { href: "/music", label: "Music", icon: Music },
     { href: "/books", label: "Books", icon: BookOpen },
     { href: "/movies", label: "Movies", icon: Film },
     { href: "/series", label: "Series", icon: Tv },
+  ];
+
+  const navigationItems = [
+    { href: "/", label: "Home", icon: Home },
     { href: "/users", label: "Discover People", icon: Users },
     { href: "/notifications", label: "Notifications", icon: Bell },
     { href: "/profile", label: "Profile", icon: User },
@@ -129,7 +133,7 @@ export default function Sidebar({ isLandingPage = false }: SidebarProps) {
             variant="ghost"
             size="icon"
             onClick={() => setIsMobileOpen(!isMobileOpen)}
-            className="bg-background/80 backdrop-blur-sm border"
+            className="bg-background/80 backdrop-blur-sm border shadow-lg h-12 w-12"
           >
             {isMobileOpen ? (
               <X className="h-6 w-6" />
@@ -161,15 +165,15 @@ export default function Sidebar({ isLandingPage = false }: SidebarProps) {
             {/* Header */}
             <div
               className={cn(
-                "flex h-20 items-center justify-between border-b transition-all duration-300",
-                isCollapsed ? "px-2" : "px-6"
+                "flex h-16 lg:h-20 items-center justify-between border-b transition-all duration-300",
+                isCollapsed ? "px-2" : "px-4 lg:px-6"
               )}
             >
               <Link href="/" className="flex items-center space-x-2">
                 <span
                   className={cn(
                     "font-bold transition-all duration-300",
-                    isCollapsed ? "text-lg mx-auto" : "text-xl"
+                    isCollapsed ? "text-lg mx-auto" : "text-lg lg:text-xl"
                   )}
                 >
                   {isCollapsed ? "R" : "reliva"}
@@ -214,32 +218,123 @@ export default function Sidebar({ isLandingPage = false }: SidebarProps) {
             <ScrollArea className="flex-1">
               <nav
                 className={cn(
-                  "py-6 transition-all duration-300 flex flex-col justify-center min-h-full",
-                  isCollapsed ? "px-2" : "px-4"
+                  "py-4 lg:py-6 transition-all duration-300 flex flex-col justify-center min-h-full",
+                  isCollapsed ? "px-2" : "px-3 lg:px-4"
                 )}
               >
                 {/* Main Navigation */}
                 <div
                   className={cn(
                     "space-y-2 transition-all duration-300",
-                    isCollapsed ? "space-y-3" : "space-y-3"
+                    isCollapsed ? "space-y-3" : "space-y-2 lg:space-y-3"
                   )}
                 >
-                  {navigationItems.slice(0, 6).map((item) => {
+                  {/* Home */}
+                  {(() => {
+                    const item = navigationItems[0];
                     const Icon = item.icon;
                     const isActive = pathname === item.href;
 
-                    // Handle logout separately since it's not a navigation link
-                    if (item.onClick) {
-                      const buttonContent = (
-                        <button
-                          key={item.href}
-                          onClick={() => {
-                            item.onClick();
-                            setIsMobileOpen(false);
-                          }}
+                    const linkContent = (
+                      <Link
+                        key={item.href}
+                        href={item.href}
+                        onClick={() => setIsMobileOpen(false)}
+                        className={cn(
+                          "flex items-center gap-3 rounded-lg text-sm font-medium transition-all duration-200 hover:bg-accent hover:text-accent-foreground",
+                          isCollapsed
+                            ? "justify-center px-2 py-3"
+                            : "px-4 py-3",
+                          isActive
+                            ? "bg-accent text-accent-foreground"
+                            : "text-muted-foreground"
+                        )}
+                      >
+                        <Icon
                           className={cn(
-                            "flex w-full items-center gap-3 rounded-lg text-sm font-medium transition-all duration-200 hover:bg-accent hover:text-accent-foreground",
+                            "flex-shrink-0 transition-all duration-200",
+                            isCollapsed ? "h-5 w-5" : "h-5 w-5"
+                          )}
+                        />
+                        {!isCollapsed && (
+                          <span className="truncate">{item.label}</span>
+                        )}
+                      </Link>
+                    );
+
+                    return isCollapsed ? (
+                      <Tooltip key={item.href}>
+                        <TooltipTrigger asChild>{linkContent}</TooltipTrigger>
+                        <TooltipContent side="right">
+                          {item.label}
+                        </TooltipContent>
+                      </Tooltip>
+                    ) : (
+                      linkContent
+                    );
+                  })()}
+
+                  {/* Discover Section - Dropdown for expanded state */}
+                  {!isCollapsed && (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <button
+                          className={cn(
+                            "flex w-full items-center gap-3 rounded-lg text-sm font-medium transition-all duration-200 hover:bg-accent hover:text-accent-foreground px-4 py-3 text-muted-foreground",
+                            (pathname === "/music" ||
+                              pathname === "/books" ||
+                              pathname === "/movies" ||
+                              pathname === "/series") &&
+                              "bg-accent text-accent-foreground"
+                          )}
+                        >
+                          <Compass className="h-5 w-5 flex-shrink-0" />
+                          <span className="truncate">Discover</span>
+                          <ChevronDown className="ml-auto h-4 w-4" />
+                        </button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent
+                        side="right"
+                        align="start"
+                        className="w-48"
+                      >
+                        {discoverItems.map((item) => {
+                          const Icon = item.icon;
+                          const isActive = pathname === item.href;
+
+                          return (
+                            <DropdownMenuItem key={item.href} asChild>
+                              <Link
+                                href={item.href}
+                                onClick={() => setIsMobileOpen(false)}
+                                className={cn(
+                                  "flex items-center gap-3 w-full",
+                                  isActive && "bg-accent text-accent-foreground"
+                                )}
+                              >
+                                <Icon className="h-4 w-4" />
+                                <span>{item.label}</span>
+                              </Link>
+                            </DropdownMenuItem>
+                          );
+                        })}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  )}
+
+                  {/* Discover items for collapsed state */}
+                  {isCollapsed &&
+                    discoverItems.map((item) => {
+                      const Icon = item.icon;
+                      const isActive = pathname === item.href;
+
+                      const linkContent = (
+                        <Link
+                          key={item.href}
+                          href={item.href}
+                          onClick={() => setIsMobileOpen(false)}
+                          className={cn(
+                            "flex items-center gap-3 rounded-lg text-sm font-medium transition-all duration-200 hover:bg-accent hover:text-accent-foreground",
                             isCollapsed
                               ? "justify-center px-2 py-3"
                               : "px-4 py-3",
@@ -257,24 +352,24 @@ export default function Sidebar({ isLandingPage = false }: SidebarProps) {
                           {!isCollapsed && (
                             <span className="truncate">{item.label}</span>
                           )}
-                        </button>
+                        </Link>
                       );
 
-                      return isCollapsed ? (
+                      return (
                         <Tooltip key={item.href}>
-                          <TooltipTrigger asChild>
-                            {buttonContent}
-                          </TooltipTrigger>
+                          <TooltipTrigger asChild>{linkContent}</TooltipTrigger>
                           <TooltipContent side="right">
                             {item.label}
                           </TooltipContent>
                         </Tooltip>
-                      ) : (
-                        buttonContent
                       );
-                    }
+                    })}
 
-                    // Use Link for navigation items
+                  {/* Other navigation items */}
+                  {navigationItems.slice(1, 4).map((item) => {
+                    const Icon = item.icon;
+                    const isActive = pathname === item.href;
+
                     const linkContent = (
                       <Link
                         key={item.href}
@@ -322,7 +417,7 @@ export default function Sidebar({ isLandingPage = false }: SidebarProps) {
                     isCollapsed ? "space-y-3" : "space-y-3"
                   )}
                 >
-                  {navigationItems.slice(6).map((item) => {
+                  {navigationItems.slice(4).map((item) => {
                     const Icon = item.icon;
                     const isActive = pathname === item.href;
 

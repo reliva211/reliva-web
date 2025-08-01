@@ -21,7 +21,7 @@ export default function LayoutWrapper({ children }: LayoutWrapperProps) {
     <div className="flex min-h-screen">
       <Sidebar isLandingPage={isLandingPage} />
       <div className="flex-1 flex flex-col">
-        <main className="flex-1">{children}</main>
+        <main className="flex-1 py-4 sm:py-6 lg:py-8">{children}</main>
         {shouldShowFooter && <Footer />}
       </div>
     </div>

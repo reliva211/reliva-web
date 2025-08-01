@@ -392,7 +392,8 @@ export default function MovieDetailPage({
                       {movie.credits.cast.slice(0, 12).map((actor, index) => (
                         <div
                           key={`cast-${actor.id}-${index}`}
-                          className="flex items-center space-x-3 p-3 bg-card rounded-lg"
+                          className="flex items-center space-x-3 p-3 bg-card rounded-lg cursor-pointer hover:bg-accent transition-colors"
+                          onClick={() => router.push(`/person/${actor.id}`)}
                         >
                           {actor.profile_path ? (
                             <Image
@@ -444,7 +445,8 @@ export default function MovieDetailPage({
                         .map((person, index) => (
                           <div
                             key={`crew-${person.id}-${index}`}
-                            className="flex items-center space-x-3 p-3 bg-card rounded-lg"
+                            className="flex items-center space-x-3 p-3 bg-card rounded-lg cursor-pointer hover:bg-accent transition-colors"
+                            onClick={() => router.push(`/person/${person.id}`)}
                           >
                             {person.profile_path ? (
                               <Image
