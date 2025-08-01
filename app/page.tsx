@@ -269,56 +269,63 @@ export default function LandingPage() {
             </div>
 
             {/* Latest Reviews Feed */}
-            <div>
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 md:mb-6 gap-3 md:gap-4">
-                <h2 className="text-xl md:text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white">
-                  Latest Reviews
-                </h2>
+            <div className="bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 rounded-3xl p-6 md:p-8 border border-gray-200 dark:border-gray-700 shadow-lg">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 md:mb-8 gap-4">
+                <div>
+                  <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-gray-900 dark:text-white mb-2">
+                    Latest Reviews
+                  </h2>
+                  <p className="text-gray-600 dark:text-gray-400 text-sm md:text-base">
+                    See what the community is saying about their favorite media
+                  </p>
+                </div>
                 <Link 
                   href="/reviews"
-                  className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 transition-colors px-3 py-2 md:px-4 md:py-2 rounded-lg hover:bg-emerald-50 dark:hover:bg-emerald-950/20 text-sm md:text-base"
+                  className="flex items-center gap-2 bg-gradient-to-r from-emerald-600 to-blue-600 hover:from-emerald-700 hover:to-blue-700 text-white transition-all duration-300 px-4 py-3 md:px-6 md:py-3 rounded-xl hover:shadow-lg transform hover:scale-105 font-medium text-sm md:text-base"
                 >
-                  <span className="font-medium">Write Review</span>
-                  <ArrowRight className="h-3 w-3 md:h-4 md:w-4" />
+                  <span>Write Review</span>
+                  <ArrowRight className="h-4 w-4 md:h-5 md:w-5" />
                 </Link>
               </div>
               
               {loadingReviews ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
                   {[...Array(3)].map((_, i) => (
-                    <div key={i} className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-4 animate-pulse">
-                      <div className="flex items-center space-x-3 mb-4">
-                        <div className="w-10 h-10 bg-gray-300 dark:bg-gray-600 rounded-full"></div>
+                    <div key={i} className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 p-6 animate-pulse">
+                      <div className="flex items-center space-x-4 mb-6">
+                        <div className="w-12 h-12 bg-gray-300 dark:bg-gray-600 rounded-full"></div>
                         <div className="flex-1">
-                          <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-24 mb-2"></div>
-                          <div className="h-3 bg-gray-300 dark:bg-gray-600 rounded w-16"></div>
+                          <div className="h-5 bg-gray-300 dark:bg-gray-600 rounded w-32 mb-3"></div>
+                          <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-20"></div>
                         </div>
                       </div>
-                      <div className="space-y-3">
-                        <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-full"></div>
-                        <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-3/4"></div>
-                        <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-1/2"></div>
+                      <div className="space-y-4">
+                        <div className="h-5 bg-gray-300 dark:bg-gray-600 rounded w-full"></div>
+                        <div className="h-5 bg-gray-300 dark:bg-gray-600 rounded w-4/5"></div>
+                        <div className="h-5 bg-gray-300 dark:bg-gray-600 rounded w-3/5"></div>
                       </div>
                     </div>
                   ))}
                 </div>
               ) : reviews.length === 0 ? (
-                <div className="text-center py-8 md:py-12 px-4">
-                  <MessageSquare className="h-10 w-10 md:h-12 md:w-12 text-gray-400 dark:text-gray-600 mx-auto mb-4" />
-                  <h3 className="text-base md:text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                <div className="text-center py-12 md:py-16 px-6">
+                  <div className="w-20 h-20 bg-gradient-to-br from-emerald-100 to-blue-100 dark:from-emerald-900/30 dark:to-blue-900/30 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <MessageSquare className="h-10 w-10 text-emerald-600 dark:text-emerald-400" />
+                  </div>
+                  <h3 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white mb-4">
                     No reviews yet
                   </h3>
-                  <p className="text-sm md:text-base text-gray-600 dark:text-gray-400 mb-6 max-w-sm md:max-w-md mx-auto px-4">
-                    Be the first to share your thoughts on movies, series, and books!
+                  <p className="text-gray-600 dark:text-gray-400 mb-8 max-w-md mx-auto text-base md:text-lg leading-relaxed">
+                    Be the first to share your thoughts on movies, series, and books! Start the conversation.
                   </p>
                   <Link href="/reviews">
-                    <Button className="bg-gradient-to-r from-emerald-600 to-blue-600 hover:from-emerald-700 hover:to-blue-700 text-white text-sm md:text-base px-6 py-2 md:px-8 md:py-3">
+                    <Button className="bg-gradient-to-r from-emerald-600 to-blue-600 hover:from-emerald-700 hover:to-blue-700 text-white text-base md:text-lg px-8 py-4 md:px-10 md:py-4 rounded-xl font-semibold shadow-lg transform hover:scale-105 transition-all duration-300">
                       Write Your First Review
                     </Button>
                   </Link>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
                   {reviews.slice(0, 9).map((review) => (
                     <ReviewPost 
                       key={review.id} 
