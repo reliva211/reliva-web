@@ -670,27 +670,39 @@ function SeriesCard({
           className="object-cover transition-transform group-hover:scale-105"
         />
         <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button size="sm" variant="secondary">
-                <Plus className="h-4 w-4 mr-1" />
-                Add to Collection
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent>
-              {collections.map((collection) => (
-                <DropdownMenuItem
-                  key={collection.id}
-                  onClick={() => onAddToCollection(series, collection.id)}
-                >
-                  <div className="flex items-center gap-2">
-                    <div className={`w-3 h-3 rounded-full ${collection.color || 'bg-gray-500'}`} />
-                    {collection.name}
-                  </div>
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <div className="flex flex-col gap-2">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button size="sm" variant="secondary">
+                  <Plus className="h-4 w-4 mr-1" />
+                  Add to Collection
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                {collections.map((collection) => (
+                  <DropdownMenuItem
+                    key={collection.id}
+                    onClick={() => onAddToCollection(series, collection.id)}
+                  >
+                    <div className="flex items-center gap-2">
+                      <div className={`w-3 h-3 rounded-full ${collection.color || 'bg-gray-500'}`} />
+                      {collection.name}
+                    </div>
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+            
+            <Button 
+              size="sm" 
+              variant="secondary"
+              asChild
+            >
+              <Link href={`/series/${series.id}`}>
+                View Details
+              </Link>
+            </Button>
+          </div>
         </div>
       </div>
       <CardContent className="p-3">
