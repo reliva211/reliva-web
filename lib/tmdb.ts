@@ -50,5 +50,9 @@ export async function searchSeries(query: string) {
       ? `https://image.tmdb.org/t/p/w300${series.poster_path}`
       : "/placeholder.svg?height=300&width=200",
     rating: series.vote_average ?? 0,
+    overview: series.overview || "",
+    first_air_date: series.first_air_date || "",
+    number_of_seasons: series.number_of_seasons || 1,
+    number_of_episodes: series.number_of_episodes || 1,
   }));
 }
