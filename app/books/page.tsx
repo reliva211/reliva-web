@@ -1,36 +1,22 @@
 "use client";
 
-import type React from "react";
-
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Search,
   BookOpen,
-  Star,
   Plus,
   X,
-  Check,
-  Globe,
-  Lock,
+  SortAsc,
+  SortDesc,
+  Grid3X3,
+  List,
+  MoreHorizontal,
 } from "lucide-react";
-import { useCurrentUser } from "@/hooks/use-current-user";
-import { db } from "@/lib/firebase";
-import {
-  collection,
-  doc,
-  getDocs,
-  setDoc,
-  updateDoc,
-  deleteDoc,
-  addDoc,
-} from "firebase/firestore";
 import {
   Dialog,
   DialogContent,
@@ -40,985 +26,824 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
-import { Select } from "@/components/ui/select";
+
+import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { useRef } from "react";
+import { db } from "@/lib/firebase";
+import {
+  setDoc,
+  doc,
+  deleteDoc,
+  updateDoc,
+  collection,
+  getDocs,
+  addDoc,
+} from "firebase/firestore";
+import { useCurrentUser } from "@/hooks/use-current-user";
 import Link from "next/link";
 
-// Dummy data for books
-const myBooks = [
-  {
-    id: "1",
-    title: "The Midnight Library",
-    author: "Matt Haig",
-    cover: "/placeholder.svg?height=200&width=140",
-    status: "Reading",
-    progress: 42,
-  },
-  {
-    id: "2",
-    title: "Atomic Habits",
-    author: "James Clear",
-    cover: "/placeholder.svg?height=200&width=140",
-    status: "Completed",
-    progress: 100,
-  },
-  {
-    id: "3",
-    title: "Project Hail Mary",
-    author: "Andy Weir",
-    cover: "/placeholder.svg?height=200&width=140",
-    status: "Want to Read",
-    progress: 0,
-  },
-  {
-    id: "4",
-    title: "The Psychology of Money",
-    author: "Morgan Housel",
-    cover: "/placeholder.svg?height=200&width=140",
-    status: "Reading",
-    progress: 67,
-  },
-  {
-    id: "5",
-    title: "Educated",
-    author: "Tara Westover",
-    cover: "/placeholder.svg?height=200&width=140",
-    status: "Completed",
-    progress: 100,
-  },
-];
-
-type Book = {
-  progress: any;
-  status: string;
+interface Book {
   id: string;
   title: string;
   author: string;
+  year: number;
   cover: string;
-  rating: number | string;
+  status?: string;
+  notes?: string;
   collections?: string[];
-};
+  overview?: string;
+  publishedDate?: string;
+  pageCount?: number;
+}
 
 interface Collection {
   id: string;
   name: string;
   isPublic?: boolean;
   isDefault?: boolean;
+  color?: string;
 }
 
-// Dummy search results
-// const searchResults = [
-//   {
-//     id: 1,
-//     title: "The Great Gatsby",
-//     author: "F. Scott Fitzgerald",
-//     cover: "/placeholder.svg?height=200&width=140",
-//     rating: 4.2,
-//   },
-//   {
-//     id: 2,
-//     title: "To Kill a Mockingbird",
-//     author: "Harper Lee",
-//     cover: "/placeholder.svg?height=200&width=140",
-//     rating: 4.8,
-//   },
-//   { id: 3, title: "1984", author: "George Orwell", cover: "/placeholder.svg?height=200&width=140", rating: 4.6 },
-//   {
-//     id: 4,
-//     title: "Pride and Prejudice",
-//     author: "Jane Austen",
-//     cover: "/placeholder.svg?height=200&width=140",
-//     rating: 4.5,
-//   },
-// ]
+interface SearchResult {
+  id: string;
+  title: string;
+  author: string;
+  year: number;
+  cover: string;
+  overview?: string;
+  publishedDate?: string;
+  pageCount?: number;
+}
+
+// Google Books API Search Function
+const searchBooks = async (query: string): Promise<SearchResult[]> => {
+  try {
+    const response = await fetch(
+      `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}&maxResults=20`
+    );
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch books');
+    }
+
+    const data = await response.json();
+    
+    if (!data.items) {
+      return [];
+    }
+
+    return data.items.map((book: any) => {
+      const info = book.volumeInfo;
+      let year = 0;
+      if (info.publishedDate) {
+        const date = new Date(info.publishedDate);
+        if (!isNaN(date.getTime())) {
+          year = date.getFullYear();
+        }
+      }
+      
+      return {
+        id: book.id,
+        title: info.title || "Unknown Title",
+        author: info.authors?.join(", ") || "Unknown Author",
+        year: year,
+        cover: info.imageLinks?.thumbnail || "/placeholder.svg",
+        overview: info.description || "",
+        publishedDate: info.publishedDate || "",
+        pageCount: info.pageCount || 0,
+      };
+    });
+  } catch (error) {
+    console.error('Error searching books:', error);
+    return [];
+  }
+};
 
 export default function BooksPage() {
+  const { user } = useCurrentUser();
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearching, setIsSearching] = useState(false);
+  const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [savedBooks, setSavedBooks] = useState<Book[]>([]);
-  const [savedIds, setSavedIds] = useState<string[]>([]);
-  const [filterStatus, setFilterStatus] = useState("all");
-  const [searchResults, setSearchResults] = useState<Book[]>([]);
   const [collections, setCollections] = useState<Collection[]>([]);
   const [selectedCollection, setSelectedCollection] = useState<string>("all");
   const [isCreateCollectionOpen, setCreateCollectionOpen] = useState(false);
   const [newCollectionName, setNewCollectionName] = useState("");
   const [newCollectionIsPublic, setNewCollectionIsPublic] = useState(false);
-  const [selectedBooks, setSelectedBooks] = useState<string[]>([]);
-  const [isBatchModalOpen, setBatchModalOpen] = useState(false);
-  const [batchCollectionId, setBatchCollectionId] = useState<string>("");
-  const [batchNewCollection, setBatchNewCollection] = useState("");
-  const [batchLoading, setBatchLoading] = useState(false);
-  const [addToListDropdownOpen, setAddToListDropdownOpen] = useState<
-    string | null
-  >(null);
-  const [selectedBook, setSelectedBook] = useState<Book | null>(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [addToListBook, setAddToListBook] = useState<any>(null);
-  const [addToListOpen, setAddToListOpen] = useState(false);
-  const [newModalCollectionName, setNewModalCollectionName] = useState("");
-  const [creatingModalCollection, setCreatingModalCollection] = useState(false);
-  const [selectedModalCollectionId, setSelectedModalCollectionId] =
-    useState("");
   const [selectedGenre, setSelectedGenre] = useState<string>("");
   const [isGenreSearching, setIsGenreSearching] = useState(false);
+  const [sortBy, setSortBy] = useState<"title" | "year" | "rating" | "added">("added");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
 
-  const handleSearch = async (e: React.FormEvent<HTMLFormElement>) => {
+  // Default collections for books
+  const defaultCollections = [
+    { name: "All Books", isDefault: true, color: "bg-blue-500" },
+    { name: "Reading", isDefault: true, color: "bg-green-500" },
+    { name: "Completed", isDefault: true, color: "bg-yellow-500" },
+    { name: "To Read", isDefault: true, color: "bg-purple-500" },
+    { name: "Dropped", isDefault: true, color: "bg-red-500" },
+  ];
+
+  // Fetch user's books and collections
+  useEffect(() => {
+    if (!user?.uid) return;
+
+    const fetchUserData = async () => {
+      try {
+        // Fetch books
+        const booksRef = collection(db, "users", user.uid, "books");
+        const booksSnapshot = await getDocs(booksRef);
+        const booksData = booksSnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        })) as Book[];
+        setSavedBooks(booksData);
+
+        // Fetch collections
+        const collectionsRef = collection(db, "users", user.uid, "bookCollections");
+        const collectionsSnapshot = await getDocs(collectionsRef);
+        const collectionsData = collectionsSnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        })) as Collection[];
+
+        // Create default collections if they don't exist
+        const existingNames = collectionsData.map(col => col.name);
+        const missingDefaults = defaultCollections.filter(
+          col => !existingNames.includes(col.name)
+        );
+
+        if (missingDefaults.length > 0) {
+          for (const defaultCol of missingDefaults) {
+            await addDoc(collectionsRef, defaultCol);
+          }
+          // Refetch collections
+          const newSnapshot = await getDocs(collectionsRef);
+          const allCollections = newSnapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+          })) as Collection[];
+          setCollections(allCollections);
+        } else {
+          setCollections(collectionsData);
+        }
+      } catch (error) {
+        console.error("Error fetching user data:", error);
+      }
+    };
+
+    fetchUserData();
+  }, [user]);
+
+  // Enhanced fuzzy search
+  const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
-
     if (!searchQuery.trim()) return;
 
     setIsSearching(true);
-    setSelectedGenre(""); // Clear genre selection when doing text search
+    setSelectedGenre("");
 
     try {
-      const res = await fetch(
-        `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(
-          searchQuery
-        )}`
-      );
-      const data = await res.json();
-
-      if (data.items && Array.isArray(data.items)) {
-        const books: Book[] = data.items.map(
-          (item: any, index: number): Book => {
-            const info = item.volumeInfo;
-
-            return {
-              id: item.id,
-              title: info.title ?? "No title",
-              author: info.authors?.join(", ") ?? "Unknown author",
-              cover:
-                info.imageLinks?.thumbnail ??
-                "/placeholder.svg?height=200&width=140",
-              rating: info.averageRating ?? "N/A",
-              progress: undefined,
-              status: "",
-            };
-          }
-        );
-
-        setSearchResults(books);
-      } else {
-        setSearchResults([]);
-      }
-    } catch (err) {
-      console.error("Search failed:", err);
+      const results = await searchBooks(searchQuery);
+      setSearchResults(results);
+    } catch (error) {
+      console.error("Error searching books:", error);
       setSearchResults([]);
+    } finally {
+      setIsSearching(false);
     }
   };
 
   const clearSearch = () => {
     setSearchQuery("");
-    setIsSearching(false);
-    setSelectedGenre("");
     setSearchResults([]);
+    setSelectedGenre("");
+    setIsSearching(false);
     setIsGenreSearching(false);
   };
 
-  const handleGenreSearch = async (genre: string) => {
-    if (selectedGenre === genre) {
-      // If clicking the same genre, deselect it
-      setSelectedGenre("");
-      setSearchResults([]);
-      setIsGenreSearching(false);
-      return;
-    }
+  // Handle collection selection and clear search
+  const handleCollectionSelect = (collectionId: string) => {
+    setSelectedCollection(collectionId);
+    // Clear search when clicking on collection tabs
+    setSearchQuery("");
+    setSearchResults([]);
+    setIsSearching(false);
+    setIsGenreSearching(false);
+  };
 
-    setSelectedGenre(genre);
-    setIsGenreSearching(true);
-    setSearchQuery(""); // Clear text search when doing genre search
+  // Add book to collection
+  const addBookToCollection = async (book: SearchResult, collectionId: string) => {
+    if (!user?.uid) return;
 
     try {
-      // Create a better search query for different genres
-      let searchQuery = "";
-
-      switch (genre.toLowerCase()) {
-        case "non-fiction":
-          searchQuery =
-            "subject:nonfiction OR subject:non-fiction OR subject:reference OR subject:business OR subject:economics OR subject:philosophy OR subject:psychology";
-          break;
-        case "fiction":
-          searchQuery = "subject:fiction OR subject:literature";
-          break;
-        case "science":
-          searchQuery = "subject:science OR subject:scientific";
-          break;
-        case "history":
-          searchQuery = "subject:history OR subject:historical";
-          break;
-        case "biography":
-          searchQuery = "subject:biography OR subject:autobiography";
-          break;
-        case "self-help":
-          searchQuery =
-            "subject:self-help OR subject:self_help OR subject:personal_development";
-          break;
-        default:
-          searchQuery = `subject:${encodeURIComponent(genre)}`;
-      }
-
-      // Use Google Books API to search by genre
-      const apiUrl = `https://www.googleapis.com/books/v1/volumes?q=${searchQuery}&maxResults=20`;
-      console.log(`API URL for "${genre}":`, apiUrl); // Debug log
-
-      const res = await fetch(apiUrl);
-      const data = await res.json();
-
-      console.log(`Genre search for "${genre}":`, data); // Debug log
-      console.log(`Total items found:`, data.totalItems || 0); // Debug log
-
-      if (data.items && Array.isArray(data.items) && data.items.length > 0) {
-        const books: Book[] = data.items.map(
-          (item: any, index: number): Book => {
-            const info = item.volumeInfo;
-
-            return {
-              id: item.id,
-              title: info.title ?? "No title",
-              author: info.authors?.join(", ") ?? "Unknown author",
-              cover:
-                info.imageLinks?.thumbnail ??
-                "/placeholder.svg?height=200&width=140",
-              rating: info.averageRating ?? "N/A",
-              progress: undefined,
-              status: "",
-            };
-          }
-        );
-
-        setSearchResults(books);
-        console.log(`Successfully found ${books.length} books for "${genre}"`);
+      // Check if book already exists
+      const existingBook = savedBooks.find(b => b.id === book.id);
+      
+      // Get the "All Books" collection
+      const allBooksCollection = collections.find(col => col.name === "All Books");
+      
+      if (existingBook) {
+        let updatedCollections = [...(existingBook.collections || [])];
+        
+        // Always add to "All Books" if it exists
+        if (allBooksCollection && !updatedCollections.includes(allBooksCollection.id)) {
+          updatedCollections.push(allBooksCollection.id);
+        }
+        
+        // Add to specific collection if not already there
+        if (!updatedCollections.includes(collectionId)) {
+          updatedCollections.push(collectionId);
+        }
+        
+        await updateDoc(doc(db, "users", user.uid, "books", book.id), {
+          collections: updatedCollections
+        });
+        setSavedBooks(prev => prev.map(b => 
+          b.id === book.id ? { ...b, collections: updatedCollections } : b
+        ));
       } else {
-        console.log(
-          `No results found for "${genre}". Trying fallback search...`
-        );
-
-        // Fallback: try a broader search
-        const fallbackQuery = `"${genre}"`;
-        const fallbackRes = await fetch(
-          `https://www.googleapis.com/books/v1/volumes?q=${fallbackQuery}&maxResults=20`
-        );
-        const fallbackData = await fallbackRes.json();
-
-        if (
-          fallbackData.items &&
-          Array.isArray(fallbackData.items) &&
-          fallbackData.items.length > 0
-        ) {
-          const fallbackBooks: Book[] = fallbackData.items.map(
-            (item: any, index: number): Book => {
-              const info = item.volumeInfo;
-
-              return {
-                id: item.id,
-                title: info.title ?? "No title",
-                author: info.authors?.join(", ") ?? "Unknown author",
-                cover:
-                  info.imageLinks?.thumbnail ??
-                  "/placeholder.svg?height=200&width=140",
-                rating: info.averageRating ?? "N/A",
-                progress: undefined,
-                status: "",
-              };
-            }
-          );
-
-          setSearchResults(fallbackBooks);
-          console.log(
-            `Fallback search found ${fallbackBooks.length} books for "${genre}"`
-          );
-        } else {
-          setSearchResults([]);
-          console.log(
-            `No results found even with fallback search for "${genre}"`
-          );
+        // Create new book
+        let bookCollections = [collectionId];
+        
+        // Always add to "All Books" if it exists
+        if (allBooksCollection) {
+          bookCollections.push(allBooksCollection.id);
         }
+        
+        const bookData: Book = {
+          id: book.id,
+          title: book.title,
+          author: book.author,
+          year: book.year,
+          cover: book.cover,
+          status: "To Read",
+          notes: "",
+          collections: bookCollections,
+          overview: book.overview || "",
+          publishedDate: book.publishedDate || "",
+          pageCount: book.pageCount || 0,
+        };
+
+        await setDoc(doc(db, "users", user.uid, "books", book.id), bookData);
+        setSavedBooks(prev => [...prev, bookData]);
       }
-    } catch (err) {
-      console.error("Genre search failed:", err);
-      setSearchResults([]);
-    } finally {
-      setIsGenreSearching(false);
+    } catch (error) {
+      console.error("Error adding book to collection:", error);
     }
   };
 
-  const { user } = useCurrentUser();
-  const userId = user?.uid;
+  // Remove book from collection
+  const removeBookFromCollection = async (bookId: string, collectionId: string) => {
+    if (!user?.uid) return;
 
-  useEffect(() => {
-    if (!userId) return;
-
-    const fetchSavedBooks = async () => {
-      try {
-        const booksCollection = collection(db, "users", userId, "books");
-        const snapshot = await getDocs(booksCollection);
-        const booksData: Book[] = snapshot.docs.map(
-          (doc) => ({ id: doc.id, ...doc.data() } as Book)
-        );
-        setSavedBooks(booksData);
-        setSavedIds(booksData.map((book) => book.id));
-        // Also fetch collections for the user here from firestore if they exist
-        // and set them with setCollections
-      } catch (err) {
-        console.error("Failed to fetch saved books:", err);
-      }
-    };
-
-    fetchSavedBooks();
-  }, [userId]);
-
-  // Fetch collections from Firestore on mount and when userId changes
-  useEffect(() => {
-    if (!userId) return;
-    const fetchCollections = async () => {
-      try {
-        const colRef = collection(db, "users", userId, "collections");
-        const snapshot = await getDocs(colRef);
-        const fetchedCollections: Collection[] = snapshot.docs.map(
-          (doc) => ({ id: doc.id, ...doc.data() } as Collection)
-        );
-
-        // Define default collections
-        const defaultCollections = [
-          { name: "Reading", isPublic: false, isDefault: true },
-          { name: "Completed", isPublic: false, isDefault: true },
-          { name: "To Read", isPublic: false, isDefault: true },
-          { name: "Dropped", isPublic: false, isDefault: true },
-        ];
-
-        // Check which default collections are missing
-        const existingNames = fetchedCollections.map(
-          (collection) => collection.name
-        );
-        const missingDefaults = defaultCollections.filter(
-          (collection) => !existingNames.includes(collection.name)
-        );
-
-        // Create missing default collections
-        if (missingDefaults.length > 0) {
-          try {
-            for (const collection of missingDefaults) {
-              await addDoc(colRef, collection);
-            }
-
-            // Fetch all collections again (including newly created defaults)
-            const newSnapshot = await getDocs(colRef);
-            const allCollections: Collection[] = newSnapshot.docs.map(
-              (doc) => ({ id: doc.id, ...doc.data() } as Collection)
-            );
-            setCollections(allCollections);
-          } catch (error) {
-            console.error("Error creating default collections:", error);
-            setCollections(fetchedCollections);
-          }
-        } else {
-          setCollections(fetchedCollections);
-        }
-      } catch (err) {
-        console.error("Failed to fetch collections:", err);
-      }
-    };
-    fetchCollections();
-  }, [userId]);
-
-  const saveBook = async (book: any) => {
-    if (!savedIds.includes(book.id)) {
-      const newBook = {
-        ...book,
-        status: "Want to Read",
-        progress: 0,
-        collections: [],
-      };
-      setSavedBooks([...savedBooks, newBook]);
-      setSavedIds([...savedIds, book.id]);
-
-      if (userId) {
-        const bookRef = doc(db, "users", userId, "books", book.id.toString());
-        await setDoc(bookRef, newBook);
-      }
-    }
-  };
-
-  const removeBook = async (id: string) => {
-    setSavedBooks(savedBooks.filter((book) => book.id !== id));
-    setSavedIds(savedIds.filter((bookId) => bookId !== id));
-
-    if (userId) {
-      const bookRef = doc(db, "users", userId, "books", id.toString());
-      await deleteDoc(bookRef);
-    }
-  };
-
-  // Create a new collection in Firestore
-  const handleCreateCollection = async () => {
-    if (newCollectionName.trim() === "" || !userId) return;
     try {
-      const colRef = await addDoc(
-        collection(db, "users", userId, "collections"),
-        {
-          name: newCollectionName.trim(),
-          isPublic: newCollectionIsPublic,
-          isDefault: false,
-        }
-      );
-      const newCollection = {
-        id: colRef.id,
+      const book = savedBooks.find(b => b.id === bookId);
+      if (!book) return;
+
+      const updatedCollections = book.collections?.filter(id => id !== collectionId) || [];
+      
+      if (updatedCollections.length === 0) {
+        // Remove book entirely if no collections left
+        await deleteDoc(doc(db, "users", user.uid, "books", bookId));
+        setSavedBooks(prev => prev.filter(b => b.id !== bookId));
+      } else {
+        // Update book with remaining collections
+        await updateDoc(doc(db, "users", user.uid, "books", bookId), {
+          collections: updatedCollections
+        });
+        setSavedBooks(prev => prev.map(b => 
+          b.id === bookId ? { ...b, collections: updatedCollections } : b
+        ));
+      }
+    } catch (error) {
+      console.error("Error removing book from collection:", error);
+    }
+  };
+
+  // Create new collection
+  const createCollection = async () => {
+    if (!user?.uid || !newCollectionName.trim()) return;
+
+    try {
+      const collectionData = {
         name: newCollectionName.trim(),
         isPublic: newCollectionIsPublic,
         isDefault: false,
+        color: `bg-${['blue', 'green', 'yellow', 'purple', 'red', 'pink', 'indigo'][Math.floor(Math.random() * 7)]}-500`
       };
-      setCollections([...collections, newCollection]);
+
+      const docRef = await addDoc(collection(db, "users", user.uid, "bookCollections"), collectionData);
+      
+      const newCollection = { id: docRef.id, ...collectionData };
+      setCollections(prev => [...prev, newCollection]);
+      
       setNewCollectionName("");
       setNewCollectionIsPublic(false);
       setCreateCollectionOpen(false);
-    } catch (err) {
-      console.error("Failed to create collection:", err);
+    } catch (error) {
+      console.error("Error creating collection:", error);
     }
   };
 
-  const addBookToCollection = async (bookId: string, collectionId: string) => {
-    const book =
-      searchResults.find((b) => b.id === bookId) ||
-      savedBooks.find((b) => b.id === bookId);
-    if (!book) return;
-
-    // Check if book is already in savedBooks
-    const existingBook = savedBooks.find((b) => b.id === bookId);
-    let updatedCollections: string[] = [];
-    if (existingBook) {
-      // Add collectionId if not already present
-      updatedCollections = existingBook.collections
-        ? Array.from(new Set([...existingBook.collections, collectionId]))
-        : [collectionId];
-      setSavedBooks(
-        savedBooks.map((b) =>
-          b.id === bookId ? { ...b, collections: updatedCollections } : b
-        )
-      );
-      if (userId) {
-        await updateDoc(doc(db, "users", userId, "books", bookId), {
-          collections: updatedCollections,
-        });
-      }
-    } else {
-      // Book not in library, add it with the collection
-      const newBook = {
-        ...book,
-        status: "Want to Read",
-        progress: 0,
-        collections: [collectionId],
-      };
-      setSavedBooks([...savedBooks, newBook]);
-      setSavedIds([...savedIds, bookId]);
-      if (userId) {
-        await setDoc(doc(db, "users", userId, "books", bookId), newBook);
-      }
-    }
-  };
-
-  const updateBookStatus = async (id: string, status: string) => {
-    const updated = savedBooks.map((book) =>
-      book.id === id
-        ? {
-            ...book,
-            status,
-            progress: status === "Completed" ? 100 : book.progress,
-          }
-        : book
-    );
-
-    setSavedBooks(updated);
-
-    if (userId) {
-      const bookToUpdate = updated.find((book) => book.id === id);
-      if (bookToUpdate) {
-        const bookRef = doc(db, "users", userId, "books", id.toString());
-        await updateDoc(bookRef, {
-          status: bookToUpdate.status,
-          progress: bookToUpdate.progress,
-        });
-      }
-    }
-  };
-
-  const filteredBooks =
-    selectedCollection === "all"
-      ? savedBooks
-      : savedBooks.filter((book) =>
-          book.collections?.includes(selectedCollection)
-        );
-
-  // Multi-select handlers
-  const toggleBookSelect = (id: string) => {
-    setSelectedBooks((prev) =>
-      prev.includes(id) ? prev.filter((bid) => bid !== id) : [...prev, id]
-    );
-  };
-  const selectAllBooks = () => {
-    setSelectedBooks(searchResults.map((b) => b.id));
-  };
-  const clearSelectedBooks = () => {
-    setSelectedBooks([]);
-  };
-  const allSelected =
-    selectedBooks.length === searchResults.length && searchResults.length > 0;
-
-  // Batch add handler (add books to Firestore under the chosen or new collection)
-  const handleBatchAdd = async () => {
-    if (!userId) {
-      setBatchLoading(false);
-      return;
-    }
-    setBatchLoading(true);
-    let collectionId = batchCollectionId;
-    // Create new collection in Firestore if needed
-    if (batchNewCollection.trim()) {
-      try {
-        const colRef = await addDoc(
-          collection(db, "users", userId, "collections"),
-          {
-            name: batchNewCollection.trim(),
-          }
-        );
-        collectionId = colRef.id;
-        setCollections([
-          ...collections,
-          { id: colRef.id, name: batchNewCollection.trim() },
-        ]);
-      } catch (err) {
-        console.error("Failed to create batch collection:", err);
-        setBatchLoading(false);
-        return;
-      }
-    }
-    // Add all selected books to Firestore under the chosen collection
-    for (const bookId of selectedBooks) {
-      const book = searchResults.find((b) => b.id === bookId);
-      if (!book) continue;
-      const newBook = {
-        ...book,
-        status: "Want to Read",
-        progress: 0,
-        collections: [collectionId],
-      };
-      await setDoc(
-        doc(db, "users", userId, "books", book.id.toString()),
-        newBook
+  // Filter and sort books
+  const filteredAndSortedBooks = useMemo(() => {
+    let filtered = savedBooks;
+    
+    // Filter by collection
+    if (selectedCollection !== "all") {
+      filtered = savedBooks.filter(book => 
+        book.collections?.includes(selectedCollection)
       );
     }
-    setBatchLoading(false);
-    setBatchModalOpen(false);
-    clearSelectedBooks();
-    // Refetch savedBooks and collections
-    if (userId) {
-      const booksCollection = collection(db, "users", userId, "books");
-      const snapshot = await getDocs(booksCollection);
-      const booksData: Book[] = snapshot.docs.map(
-        (doc) => ({ id: doc.id, ...doc.data() } as Book)
-      );
-      setSavedBooks(booksData);
-      setSavedIds(booksData.map((book) => book.id));
-      // Refetch collections
-      const colRef = collection(db, "users", userId, "collections");
-      const colSnap = await getDocs(colRef);
-      const fetchedCollections: Collection[] = colSnap.docs.map(
-        (doc) => ({ id: doc.id, ...doc.data() } as Collection)
-      );
-      setCollections(fetchedCollections);
-    }
+
+    // Sort books
+    filtered.sort((a, b) => {
+      let aValue: any, bValue: any;
+      
+      switch (sortBy) {
+        case "title":
+          aValue = a.title.toLowerCase();
+          bValue = b.title.toLowerCase();
+          break;
+        case "year":
+          aValue = a.year;
+          bValue = b.year;
+          break;
+        case "added":
+        default:
+          aValue = a.id;
+          bValue = b.id;
+          break;
+      }
+
+      if (sortOrder === "asc") {
+        return aValue > bValue ? 1 : -1;
+      } else {
+        return aValue < bValue ? 1 : -1;
+      }
+    });
+
+    return filtered;
+  }, [savedBooks, selectedCollection, sortBy, sortOrder]);
+
+  // Get collection info
+  const getCollectionInfo = (collectionId: string) => {
+    return collections.find(col => col.id === collectionId);
   };
 
   return (
-    <div className="container py-8 min-h-screen flex items-start">
-      <div className="flex flex-col md:flex-row gap-8 w-full">
-        {/* Sidebar */}
-        <div className="w-full md:w-64 space-y-6 flex flex-col justify-start flex-shrink-0">
-          <form
-            onSubmit={handleSearch}
-            className="flex flex-col gap-2 w-full sm:flex-row sm:items-center sm:gap-2"
-          >
-            <div className="relative w-full">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search for books"
-                className="pl-10 pr-10 w-full"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-              {searchQuery && (
-                <button
-                  type="button"
-                  onClick={clearSearch}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2"
-                >
-                  <X className="h-4 w-4 text-muted-foreground" />
-                </button>
-              )}
+    <div className="min-h-screen bg-background">
+      {/* Header */}
+      <div className="border-b bg-card">
+        <div className="container mx-auto px-4 py-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold">Books</h1>
+              <p className="text-muted-foreground">Discover and organize your favorite books</p>
             </div>
-          </form>
-
-          <div className="space-y-2">
-            <h3 className="font-medium">My Collections</h3>
-            <div className="space-y-1">
-              <button
-                className={`w-full flex items-center justify-between rounded-md p-2 text-sm ${
-                  selectedCollection === "all"
-                    ? "bg-accent"
-                    : "hover:bg-accent transition-colors"
-                }`}
-                onClick={() => setSelectedCollection("all")}
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setViewMode(viewMode === "grid" ? "list" : "grid")}
               >
-                <span>All Books</span>
-                <span className="text-xs bg-primary/20 text-primary px-2 py-0.5 rounded-full">
-                  {savedBooks.length}
-                </span>
-              </button>
-              {collections.map((collection) => (
-                <button
-                  key={collection.id}
-                  className={`w-full flex items-center justify-between rounded-md p-2 text-sm ${
-                    selectedCollection === collection.id
-                      ? "bg-accent"
-                      : "hover:bg-accent transition-colors"
-                  }`}
-                  onClick={() => setSelectedCollection(collection.id)}
-                >
-                  <div className="flex items-center gap-2">
-                    <span>{collection.name}</span>
-                    {collection.isPublic && (
-                      <Globe className="h-3 w-3 text-muted-foreground" />
-                    )}
-                    {!collection.isPublic && !collection.isDefault && (
-                      <Lock className="h-3 w-3 text-muted-foreground" />
-                    )}
-                  </div>
-                  <span className="text-xs bg-muted px-2 py-0.5 rounded-full">
-                    {
-                      savedBooks.filter((b) =>
-                        b.collections?.includes(collection.id)
-                      ).length
-                    }
-                  </span>
-                </button>
-              ))}
-            </div>
-            <Dialog
-              open={isCreateCollectionOpen}
-              onOpenChange={setCreateCollectionOpen}
-            >
-              <DialogTrigger asChild>
-                <Button variant="outline" size="sm" className="w-full mt-2">
-                  <Plus className="mr-2 h-4 w-4" /> Create Collection
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-[425px]">
-                <DialogHeader>
-                  <DialogTitle>Create New Collection</DialogTitle>
-                  <DialogDescription>
-                    Enter a name for your new collection.
-                  </DialogDescription>
-                </DialogHeader>
-                <form
-                  onSubmit={async (e) => {
-                    e.preventDefault();
-                    await handleCreateCollection();
-                  }}
-                >
-                  <div className="grid gap-4 py-4">
-                    <div className="grid grid-cols-4 items-center gap-4">
-                      <Label htmlFor="name" className="text-right">
-                        Name
-                      </Label>
-                      <Input
-                        id="name"
-                        value={newCollectionName}
-                        onChange={(e) => setNewCollectionName(e.target.value)}
-                        className="col-span-3"
-                      />
-                    </div>
-                    <div className="grid grid-cols-4 items-center gap-4">
-                      <Label htmlFor="isPublic" className="text-right">
-                        Public Collection
-                      </Label>
-                      <div className="col-span-3 flex items-center space-x-2">
-                        <Checkbox
-                          id="isPublic"
-                          checked={newCollectionIsPublic}
-                          onCheckedChange={(checked) =>
-                            setNewCollectionIsPublic(!!checked)
-                          }
-                        />
-                        <Label
-                          htmlFor="isPublic"
-                          className="text-sm text-muted-foreground"
-                        >
-                          Make this collection visible on your public profile
-                        </Label>
-                      </div>
-                    </div>
-                  </div>
-                  <DialogFooter>
-                    <Button type="submit">Save collection</Button>
-                  </DialogFooter>
-                </form>
-              </DialogContent>
-            </Dialog>
-          </div>
-
-          <div className="space-y-2">
-            <h3 className="font-medium">Genres</h3>
-            <div className="flex flex-wrap gap-2">
-              {[
-                "Fiction",
-                "Non-Fiction",
-                "Science",
-                "History",
-                "Biography",
-                "Self-Help",
-              ].map((genre) => (
-                <Badge
-                  key={genre}
-                  variant={selectedGenre === genre ? "default" : "outline"}
-                  className={`cursor-pointer transition-colors hover:bg-primary hover:text-primary-foreground ${
-                    selectedGenre === genre
-                      ? "bg-primary text-primary-foreground"
-                      : ""
-                  }`}
-                  onClick={() => handleGenreSearch(genre)}
-                >
-                  {genre}
-                </Badge>
-              ))}
+                {viewMode === "grid" ? <List className="h-4 w-4" /> : <Grid3X3 className="h-4 w-4" />}
+              </Button>
             </div>
           </div>
         </div>
+      </div>
 
-        {/* Main Content */}
-        <div className="flex-1">
-          {isSearching || isGenreSearching || searchQuery ? (
-            <div className="space-y-6">
-              <div className="flex items-center justify-between">
-                <h2 className="text-2xl font-bold">
-                  {isSearching
-                    ? `Search Results for "${searchQuery}"`
-                    : isGenreSearching
-                    ? `Books in ${selectedGenre}`
-                    : `Search Results for "${searchQuery}"`}
-                </h2>
-                <Button variant="ghost" onClick={clearSearch}>
+      <div className="container mx-auto px-4 py-6">
+        {/* Search and Filters */}
+        <div className="mb-8">
+          <div className="flex flex-col lg:flex-row gap-4 mb-6">
+            {/* Search */}
+            <div className="flex-1">
+              <form onSubmit={handleSearch} className="flex gap-2">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search books..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-10"
+                  />
+                  {searchQuery && (
+                    <button
+                      type="button"
+                      onClick={clearSearch}
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2"
+                    >
+                      <X className="h-4 w-4 text-muted-foreground" />
+                    </button>
+                  )}
+                </div>
+                <Button type="submit" disabled={isSearching}>
+                  {isSearching ? "Searching..." : "Search"}
+                </Button>
+              </form>
+            </div>
+
+            {/* Sort Controls */}
+            {searchResults.length === 0 && (
+              <div className="flex items-center gap-2">
+                <Select value={sortBy} onValueChange={(value: any) => setSortBy(value)}>
+                  <SelectTrigger className="w-40">
+                    <SortAsc className="h-4 w-4 mr-2" />
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="added">Date Added</SelectItem>
+                    <SelectItem value="title">Title</SelectItem>
+                    <SelectItem value="year">Year</SelectItem>
+                  </SelectContent>
+                </Select>
+                
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setSortOrder(sortOrder === "asc" ? "desc" : "asc")}
+                >
+                  {sortOrder === "asc" ? <SortAsc className="h-4 w-4" /> : <SortDesc className="h-4 w-4" />}
+                </Button>
+              </div>
+            )}
+          </div>
+
+          {/* Collections Tabs */}
+          <div className="flex items-center gap-2 overflow-x-auto pb-2">
+            {collections.map((collection) => {
+              const bookCount = savedBooks.filter(book => 
+                book.collections?.includes(collection.id)
+              ).length;
+              
+              return (
+                <button
+                  key={collection.id}
+                  onClick={() => handleCollectionSelect(collection.id)}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all whitespace-nowrap ${
+                    selectedCollection === collection.id
+                      ? "bg-primary text-primary-foreground shadow-md"
+                      : "hover:bg-accent"
+                  }`}
+                >
+                  <div className={`w-3 h-3 rounded-full ${collection.color || 'bg-gray-500'}`} />
+                  <span className="font-medium">{collection.name}</span>
+                  <Badge variant="secondary" className="ml-1">{bookCount}</Badge>
+                </button>
+              );
+            })}
+            
+            <Dialog open={isCreateCollectionOpen} onOpenChange={setCreateCollectionOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline" size="sm">
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Create New Collection</DialogTitle>
+                  <DialogDescription>
+                    Create a new collection to organize your books.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="name">Collection Name</Label>
+                    <Input
+                      id="name"
+                      value={newCollectionName}
+                      onChange={(e) => setNewCollectionName(e.target.value)}
+                      placeholder="Enter collection name..."
+                    />
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="public"
+                      checked={newCollectionIsPublic}
+                      onCheckedChange={(checked) => setNewCollectionIsPublic(!!checked)}
+                    />
+                    <Label htmlFor="public">Make collection public</Label>
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button onClick={createCollection} disabled={!newCollectionName.trim()}>
+                    Create Collection
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          </div>
+        </div>
+
+        {/* Content */}
+        <div className="space-y-6">
+          {isSearching ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+                <p className="text-muted-foreground">Searching books...</p>
+              </div>
+            </div>
+          ) : searchResults.length > 0 ? (
+            <div>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-2xl font-bold">Search Results ({searchResults.length})</h2>
+                <Button variant="outline" onClick={clearSearch}>
                   Clear Search
                 </Button>
               </div>
-              {/* Multi-select controls */}
-              <div className="flex items-center gap-4 mb-2">
-                {selectedBooks.length > 0 && (
-                  <Button size="sm" onClick={() => setBatchModalOpen(true)}>
-                    Add Selected to Collection
-                  </Button>
-                )}
-                {selectedBooks.length > 0 && (
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={clearSelectedBooks}
-                  >
-                    Clear Selection
-                  </Button>
-                )}
+              <div className={viewMode === "grid" 
+                ? "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4"
+                : "space-y-4"
+              }>
+                {searchResults.map((book) => (
+                  <BookCard
+                    key={book.id}
+                    book={book}
+                    collections={collections}
+                    isInCollections={savedBooks.some(b => b.id === book.id)}
+                    onAddToCollection={addBookToCollection}
+                    viewMode={viewMode}
+                  />
+                ))}
               </div>
-              {isGenreSearching ? (
-                <div className="text-center py-12">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-                  <p className="text-muted-foreground">
-                    Loading {selectedGenre} books...
-                  </p>
-                </div>
-              ) : searchResults.length === 0 ? (
-                <div className="text-center py-12">
-                  <BookOpen className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                  <h3 className="text-lg font-medium mb-2">No books found</h3>
-                  <p className="text-muted-foreground mb-4">
-                    Try a different search term or browse by genre
-                  </p>
-                </div>
-              ) : (
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8 gap-6">
-                  {searchResults.map((book, index) => (
-                    <Link
-                      key={`${book.id}-${index}`}
-                      href={`/books/${book.id}`}
-                      className="block"
-                    >
-                      <div className="relative aspect-[2/3] w-full rounded-lg overflow-hidden hover:scale-105 transition-transform cursor-pointer shadow-md">
-                        <Image
-                          src={book.cover || "/placeholder.svg"}
-                          alt={book.title}
-                          fill
-                          className="object-cover"
-                        />
-                      </div>
-                    </Link>
-                  ))}
-                </div>
+            </div>
+          ) : filteredAndSortedBooks.length === 0 ? (
+            <div className="text-center py-12">
+              <BookOpen className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-lg font-semibold mb-2">No books found</h3>
+              <p className="text-muted-foreground mb-4">
+                {searchQuery 
+                  ? "Try a different search term"
+                  : "Start by searching for books"
+                }
+              </p>
+              {!searchQuery && (
+                <Button onClick={() => setSearchQuery("")}>
+                  Search Books
+                </Button>
               )}
-              {/* Batch Add Modal */}
-              <Dialog open={isBatchModalOpen} onOpenChange={setBatchModalOpen}>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Add Selected Books to Collection</DialogTitle>
-                  </DialogHeader>
-                  <div className="mb-4">
-                    <label className="block mb-2">Select Collection</label>
-                    <select
-                      className="w-full p-2 rounded bg-gray-800 text-white"
-                      value={batchCollectionId}
-                      onChange={(e) => setBatchCollectionId(e.target.value)}
-                    >
-                      <option value="">-- Select --</option>
-                      {collections.map((col) => (
-                        <option key={col.id} value={col.id}>
-                          {col.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="mb-4 text-center">or</div>
-                  <div className="mb-4">
-                    <label className="block mb-2">Create New Collection</label>
-                    <input
-                      className="w-full p-2 rounded bg-gray-800 text-white"
-                      placeholder="New collection name"
-                      value={batchNewCollection}
-                      onChange={(e) => setBatchNewCollection(e.target.value)}
-                    />
-                  </div>
-                  <DialogFooter>
-                    <Button
-                      onClick={handleBatchAdd}
-                      disabled={
-                        batchLoading ||
-                        (!batchCollectionId && !batchNewCollection) ||
-                        selectedBooks.length === 0
-                      }
-                    >
-                      {batchLoading ? "Adding..." : "Add Books"}
-                    </Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
             </div>
           ) : (
-            <div className="space-y-6">
-              <h2 className="text-2xl font-bold">
-                {selectedCollection === "all"
-                  ? "My Books"
-                  : collections.find((c) => c.id === selectedCollection)
-                      ?.name || "My Books"}
-              </h2>
-              {filteredBooks.length === 0 ? (
-                <div className="text-center py-12">
-                  <BookOpen className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                  <h3 className="text-lg font-medium mb-2">
-                    No books in this section
-                  </h3>
-                  <p className="text-muted-foreground mb-4">
-                    Add books to your library or change your filter
-                  </p>
-                  <Button onClick={() => setSelectedCollection("all")}>
-                    View All Books
-                  </Button>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6">
-                  {filteredBooks.length === 0 ? (
-                    <div className="col-span-full text-center text-muted-foreground py-12">
-                      No books in your collections yet.
-                    </div>
-                  ) : (
-                    filteredBooks.map((book) => (
-                      <Card key={book.id} className="overflow-hidden">
-                        <div className="bg-card rounded-lg shadow-md overflow-hidden flex flex-col h-full cursor-pointer transition-transform hover:scale-[1.03]">
-                          <div className="relative aspect-[2/3] w-full">
-                            <Image
-                              src={book.cover || "/placeholder.svg"}
-                              alt={book.title}
-                              fill
-                              className="object-cover"
-                            />
-                          </div>
-                        </div>
-                      </Card>
-                    ))
-                  )}
-                </div>
-              )}
+            <div>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-2xl font-bold">
+                  {selectedCollection === "all" 
+                    ? "All Books" 
+                    : getCollectionInfo(selectedCollection)?.name || "Books"
+                  } ({filteredAndSortedBooks.length})
+                </h2>
+              </div>
+              <div className={viewMode === "grid" 
+                ? "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4"
+                : "space-y-4"
+              }>
+                {filteredAndSortedBooks.map((book) => (
+                  <SavedBookCard
+                    key={book.id}
+                    book={book}
+                    collections={collections}
+                    onRemoveFromCollection={removeBookFromCollection}
+                    viewMode={viewMode}
+                  />
+                ))}
+              </div>
             </div>
           )}
         </div>
       </div>
-      {/* Dialog for Add to List */}
-      <Dialog open={addToListOpen} onOpenChange={setAddToListOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Add to List</DialogTitle>
-            <DialogDescription>
-              Choose a list or create a new one to add{" "}
-              <b>{addToListBook?.title}</b>.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            {collections.length > 0 && (
-              <div>
-                <div className="mb-2 font-medium">Your Lists</div>
-                <div className="space-y-2">
-                  {collections.map((collection) => (
-                    <label
-                      key={collection.id}
-                      className="flex items-center gap-2 cursor-pointer"
-                    >
-                      <input
-                        type="radio"
-                        name="modal-collection"
-                        value={collection.id}
-                        checked={selectedModalCollectionId === collection.id}
-                        onChange={() =>
-                          setSelectedModalCollectionId(collection.id)
-                        }
-                      />
-                      <span>{collection.name}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            <Button
-              className="w-full"
-              onClick={async () => {
-                if (!selectedModalCollectionId || !addToListBook) return;
-                await addBookToCollection(
-                  addToListBook.id,
-                  selectedModalCollectionId
-                );
-                setAddToListOpen(false);
-                setSelectedModalCollectionId("");
-              }}
-              disabled={!selectedModalCollectionId}
-            >
-              Add to List
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
     </div>
+  );
+}
+
+// Book Card Component for Search Results
+function BookCard({ 
+  book, 
+  collections, 
+  isInCollections, 
+  onAddToCollection, 
+  viewMode 
+}: {
+  book: SearchResult;
+  collections: Collection[];
+  isInCollections: boolean;
+  onAddToCollection: (book: SearchResult, collectionId: string) => void;
+  viewMode: "grid" | "list";
+}) {
+  if (viewMode === "list") {
+    return (
+      <Card className="flex items-center space-x-4 p-4 hover:shadow-lg transition-shadow">
+        <div className="relative w-16 h-24 flex-shrink-0">
+          <Image
+            src={book.cover}
+            alt={book.title}
+            fill
+            className="object-cover rounded"
+          />
+        </div>
+        <div className="flex-1 min-w-0">
+          <h3 className="font-semibold truncate">{book.title}</h3>
+          <p className="text-sm text-muted-foreground">{book.author}</p>
+          <p className="text-sm text-muted-foreground">{book.year || 'N/A'}</p>
+        </div>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="sm">
+              <Plus className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            {collections.map((collection) => (
+              <DropdownMenuItem
+                key={collection.id}
+                onClick={() => onAddToCollection(book, collection.id)}
+              >
+                <div className="flex items-center gap-2">
+                  <div className={`w-3 h-3 rounded-full ${collection.color || 'bg-gray-500'}`} />
+                  {collection.name}
+                </div>
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </Card>
+    );
+  }
+
+  return (
+    <Card className="group relative overflow-hidden hover:shadow-xl transition-all duration-300">
+      <div className="relative aspect-[2/3]">
+        <Image
+          src={book.cover}
+          alt={book.title}
+          fill
+          className="object-cover transition-transform group-hover:scale-105"
+        />
+        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button size="sm" variant="secondary">
+                <Plus className="h-4 w-4 mr-1" />
+                Add to Collection
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              {collections.map((collection) => (
+                <DropdownMenuItem
+                  key={collection.id}
+                  onClick={() => onAddToCollection(book, collection.id)}
+                >
+                  <div className="flex items-center gap-2">
+                    <div className={`w-3 h-3 rounded-full ${collection.color || 'bg-gray-500'}`} />
+                    {collection.name}
+                  </div>
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </div>
+      <CardContent className="p-3">
+        <h3 className="font-semibold text-sm truncate">{book.title}</h3>
+        <p className="text-xs text-muted-foreground">{book.author}</p>
+        <p className="text-xs text-muted-foreground">{book.year || 'N/A'}</p>
+      </CardContent>
+    </Card>
+  );
+}
+
+// Saved Book Card Component
+function SavedBookCard({ 
+  book, 
+  collections, 
+  onRemoveFromCollection, 
+  viewMode 
+}: {
+  book: Book;
+  collections: Collection[];
+  onRemoveFromCollection: (bookId: string, collectionId: string) => void;
+  viewMode: "grid" | "list";
+}) {
+  if (viewMode === "list") {
+    return (
+      <Card className="flex items-center space-x-4 p-4 hover:shadow-lg transition-shadow">
+        <div className="relative w-16 h-24 flex-shrink-0">
+          <Image
+            src={book.cover}
+            alt={book.title}
+            fill
+            className="object-cover rounded"
+          />
+        </div>
+        <div className="flex-1 min-w-0">
+          <h3 className="font-semibold truncate">{book.title}</h3>
+          <p className="text-sm text-muted-foreground">{book.author}</p>
+          <p className="text-sm text-muted-foreground">{book.year || 'N/A'}</p>
+          <div className="flex flex-wrap gap-1 mt-2">
+            {book.collections?.map((collectionId) => {
+              const collection = collections.find(c => c.id === collectionId);
+              return collection ? (
+                <Badge key={collectionId} variant="outline" className="text-xs">
+                  {collection.name}
+                </Badge>
+              ) : null;
+            })}
+          </div>
+        </div>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="sm">
+              <MoreHorizontal className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            {book.collections?.map((collectionId) => {
+              const collection = collections.find(c => c.id === collectionId);
+              return collection ? (
+                <DropdownMenuItem
+                  key={collectionId}
+                  onClick={() => onRemoveFromCollection(book.id, collectionId)}
+                >
+                  Remove from {collection.name}
+                </DropdownMenuItem>
+              ) : null;
+            })}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </Card>
+    );
+  }
+
+  return (
+    <Card className="group relative overflow-hidden hover:shadow-xl transition-all duration-300">
+      <div className="relative aspect-[2/3]">
+        <Image
+          src={book.cover}
+          alt={book.title}
+          fill
+          className="object-cover transition-transform group-hover:scale-105"
+        />
+        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button size="sm" variant="secondary">
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              {book.collections?.map((collectionId) => {
+                const collection = collections.find(c => c.id === collectionId);
+                return collection ? (
+                  <DropdownMenuItem
+                    key={collectionId}
+                    onClick={() => onRemoveFromCollection(book.id, collectionId)}
+                  >
+                    Remove from {collection.name}
+                  </DropdownMenuItem>
+                ) : null;
+              })}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </div>
+      <CardContent className="p-3">
+        <h3 className="font-semibold text-sm truncate">{book.title}</h3>
+        <p className="text-xs text-muted-foreground">{book.author}</p>
+        <p className="text-xs text-muted-foreground">{book.year || 'N/A'}</p>
+        <div className="flex flex-wrap gap-1 mt-2">
+          {book.collections?.slice(0, 2).map((collectionId) => {
+            const collection = collections.find(c => c.id === collectionId);
+            return collection ? (
+              <Badge key={collectionId} variant="outline" className="text-xs">
+                {collection.name}
+              </Badge>
+            ) : null;
+          })}
+          {book.collections && book.collections.length > 2 && (
+            <Badge variant="outline" className="text-xs">
+              +{book.collections.length - 2}
+            </Badge>
+          )}
+        </div>
+      </CardContent>
+    </Card>
   );
 }
