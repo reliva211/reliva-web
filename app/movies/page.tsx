@@ -1,28 +1,22 @@
 "use client";
 
-import type React from "react";
-
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Search,
   Film,
   Star,
   Plus,
-  Check,
   X,
-  ListFilter,
-  Calendar,
-  EyeOff,
-  Eye,
-  Globe,
-  Lock,
+  SortAsc,
+  SortDesc,
+  Grid3X3,
+  List,
+  MoreHorizontal,
 } from "lucide-react";
 import {
   Dialog,
@@ -40,7 +34,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
 import { searchMovies } from "@/lib/tmdb";
 import { db } from "@/lib/firebase";
 import {
@@ -60,7 +53,9 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
+
 import Link from "next/link";
 
 interface Movie {
@@ -72,6 +67,8 @@ interface Movie {
   rating?: number;
   notes?: string;
   collections?: string[];
+  overview?: string;
+  release_date?: string;
 }
 
 interface Collection {
@@ -79,966 +76,750 @@ interface Collection {
   name: string;
   isPublic?: boolean;
   isDefault?: boolean;
+  color?: string;
 }
 
-// Dummy search results
-const searchdummy = [
-  {
-    id: 1,
-    title: "The Matrix",
-    director: "The Wachowskis",
-    year: 1999,
-    cover: "/placeholder.svg?height=300&width=200",
-    rating: 4.7,
-  },
-  {
-    id: 2,
-    title: "Blade Runner 2049",
-    director: "Denis Villeneuve",
-    year: 2017,
-    cover: "/placeholder.svg?height=300&width=200",
-    rating: 4.5,
-  },
-  {
-    id: 3,
-    title: "Joker",
-    director: "Todd Phillips",
-    year: 2019,
-    cover: "/placeholder.svg?height=300&width=200",
-    rating: 4.4,
-  },
-  {
-    id: 4,
-    title: "The Silence of the Lambs",
-    director: "Jonathan Demme",
-    year: 1991,
-    cover: "/placeholder.svg?height=300&width=200",
-    rating: 4.6,
-  },
-];
+interface SearchResult {
+  id: number;
+  title: string;
+  year: number;
+  cover: string;
+  rating?: number;
+  overview?: string;
+  release_date?: string;
+}
 
 export default function MoviesPage() {
-  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const { user } = useCurrentUser();
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearching, setIsSearching] = useState(false);
+  const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [savedMovies, setSavedMovies] = useState<Movie[]>([]);
-  const [savedIds, setSavedIds] = useState(
-    savedMovies.map((movie) => movie.id)
-  );
-  const [selectedMovie, setSelectedMovie] = useState<any>(null);
-  const [isAddingNotes, setIsAddingNotes] = useState(false);
-  const [movieNotes, setMovieNotes] = useState("");
-  const [movieRating, setMovieRating] = useState(0);
-  const [filterStatus, setFilterStatus] = useState("all");
-
+  const [collections, setCollections] = useState<Collection[]>([]);
+  const [selectedCollection, setSelectedCollection] = useState<string>("all");
   const [isCreateCollectionOpen, setCreateCollectionOpen] = useState(false);
   const [newCollectionName, setNewCollectionName] = useState("");
   const [newCollectionIsPublic, setNewCollectionIsPublic] = useState(false);
-  const [userMovieLists, setUserMovieLists] = useState<
-    { id: string; name: string; isPublic?: boolean; isDefault?: boolean }[]
-  >([]);
-  const [selectedListSidebar, setSelectedListSidebar] = useState<string>("all");
-  const [listMovieCounts, setListMovieCounts] = useState<{
-    [listId: string]: number;
-  }>({});
-  const [allMoviesFromLists, setAllMoviesFromLists] = useState<any[]>([]);
-  const [addToListOpen, setAddToListOpen] = useState(false);
-  const [addToListMovie, setAddToListMovie] = useState<any>(null);
-  const [selectedListId, setSelectedListId] = useState<string>("");
-  const [newListName, setNewListName] = useState("");
-  const [isSavingToList, setIsSavingToList] = useState(false);
-  const [overviewOpen, setOverviewOpen] = useState(false);
-  const [selectedMovieOverview, setSelectedMovieOverview] = useState<any>(null);
-  const [tmdbDetails, setTmdbDetails] = useState<any>(null);
-  const [tmdbLoading, setTmdbLoading] = useState(false);
-  const [tmdbError, setTmdbError] = useState<string | null>(null);
   const [selectedGenre, setSelectedGenre] = useState<string>("");
   const [isGenreSearching, setIsGenreSearching] = useState(false);
+  const [sortBy, setSortBy] = useState<"title" | "year" | "rating" | "added">("added");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
 
-  const { user } = useCurrentUser();
+  // Default collections for movies
+  const defaultCollections = [
+    { name: "All Movies", isDefault: true, color: "bg-blue-500" },
+    { name: "Watched", isDefault: true, color: "bg-green-500" },
+    { name: "Watching", isDefault: true, color: "bg-yellow-500" },
+    { name: "Watchlist", isDefault: true, color: "bg-purple-500" },
+    { name: "Dropped", isDefault: true, color: "bg-red-500" },
+  ];
 
-  const fetchUserMovies = async (uid: string) => {
-    const querySnapshot = await getDocs(collection(db, `users/${uid}/movies`));
-    const movies: Movie[] = [];
-    const ids: number[] = [];
-
-    querySnapshot.forEach((doc) => {
-      const data = doc.data();
-      const movie: Movie = {
-        id: data.id || Number(doc.id),
-        title: data.title || "",
-        year: data.year || 0,
-        cover: data.cover || "",
-        status: data.status || "Unknown",
-        rating: data.rating || 0,
-        notes: data.notes || "",
-        collections: data.collections || [],
-      };
-      movies.push(movie);
-      ids.push(movie.id);
-    });
-
-    setSavedMovies(
-      movies.map((movie) => ({
-        ...movie,
-        status: movie.status || "Unknown", // Ensure status is always a string
-        rating: movie.rating || 0, // Ensure rating is always a number
-        notes: movie.notes || "", // Ensure notes is always a string
-        collections: movie.collections || [],
-      }))
-    );
-    setSavedIds(ids);
-  };
-
+  // Fetch user's movies and collections
   useEffect(() => {
-    if (user?.uid) {
-      fetchUserMovies(user.uid);
-    }
-  }, [user]);
+    if (!user?.uid) return;
 
-  // Fetch user movie lists from Firestore on mount and whenever user changes
-  useEffect(() => {
-    const fetchLists = async () => {
-      if (!user?.uid) return;
-      const listsRef = collection(db, "users", user.uid, "movieLists");
-      const snapshot = await getDocs(listsRef);
-      const fetchedLists = snapshot.docs.map(
-        (doc) => ({ id: doc.id, ...doc.data() } as { id: string; name: string })
-      );
+    const fetchUserData = async () => {
+      try {
+        // Fetch movies
+        const moviesRef = collection(db, "users", user.uid, "movies");
+        const moviesSnapshot = await getDocs(moviesRef);
+        const moviesData = moviesSnapshot.docs.map(doc => ({
+          id: parseInt(doc.id),
+          ...doc.data()
+        })) as Movie[];
+        setSavedMovies(moviesData);
 
-      // Define default collections
-      const defaultCollections = [
-        { name: "Watched", isPublic: false, isDefault: true },
-        { name: "Watching", isPublic: false, isDefault: true },
-        { name: "Watchlist", isPublic: false, isDefault: true },
-        { name: "Dropped", isPublic: false, isDefault: true },
-      ];
+        // Fetch collections
+        const collectionsRef = collection(db, "users", user.uid, "movieCollections");
+        const collectionsSnapshot = await getDocs(collectionsRef);
+        const collectionsData = collectionsSnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        })) as Collection[];
 
-      // Check which default collections are missing
-      const existingNames = fetchedLists.map((list) => list.name);
-      const missingDefaults = defaultCollections.filter(
-        (collection) => !existingNames.includes(collection.name)
-      );
+        // Create default collections if they don't exist
+        const existingNames = collectionsData.map(col => col.name);
+        const missingDefaults = defaultCollections.filter(
+          col => !existingNames.includes(col.name)
+        );
 
-      // Create missing default collections
-      if (missingDefaults.length > 0) {
-        try {
-          for (const collection of missingDefaults) {
-            await addDoc(listsRef, collection);
+        if (missingDefaults.length > 0) {
+          for (const defaultCol of missingDefaults) {
+            await addDoc(collectionsRef, defaultCol);
           }
-
-          // Fetch all lists again (including newly created defaults)
-          const newSnapshot = await getDocs(listsRef);
-          const allLists = newSnapshot.docs.map(
-            (doc) =>
-              ({ id: doc.id, ...doc.data() } as { id: string; name: string })
-          );
-          setUserMovieLists(allLists);
-        } catch (error) {
-          console.error("Error creating default collections:", error);
-          setUserMovieLists(fetchedLists);
+          // Refetch collections
+          const newSnapshot = await getDocs(collectionsRef);
+          const allCollections = newSnapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+          })) as Collection[];
+          setCollections(allCollections);
+        } else {
+          setCollections(collectionsData);
         }
-      } else {
-        setUserMovieLists(fetchedLists);
+      } catch (error) {
+        console.error("Error fetching user data:", error);
       }
     };
-    fetchLists();
+
+    fetchUserData();
   }, [user]);
 
-  // Fetch movies for each list and deduplicate
-  useEffect(() => {
-    const fetchMovies = async () => {
-      if (!user?.uid) return;
-      const counts: { [listId: string]: number } = {};
-      let allMovies: any[] = [];
-      for (const list of userMovieLists) {
-        const moviesColRef = collection(
-          db,
-          "users",
-          user.uid,
-          "movieLists",
-          list.id,
-          "movies"
-        );
-        const snapshot = await getDocs(moviesColRef);
-        counts[list.id] = snapshot.size;
-        allMovies = allMovies.concat(
-          snapshot.docs.map((doc) => ({
-            id: doc.id,
-            ...doc.data(),
-            listId: list.id,
-          }))
-        );
-      }
-      setListMovieCounts(counts);
-      setAllMoviesFromLists(allMovies);
-    };
-    fetchMovies();
-  }, [user, userMovieLists]);
-
-  // Deduplicate allMoviesFromLists before rendering
-  const uniqueAllMovies = [];
-  const seenAll = new Set();
-  for (const m of allMoviesFromLists) {
-    const key = m.listId + "-" + m.id;
-    if (!seenAll.has(key)) {
-      uniqueAllMovies.push(m);
-      seenAll.add(key);
-    }
-  }
-  // Filter by selected list
-  let displayedMovies = uniqueAllMovies;
-  if (selectedListSidebar !== "all") {
-    displayedMovies = uniqueAllMovies.filter(
-      (m) => m.listId === selectedListSidebar
-    );
-  }
-  const uniqueDisplayedMovies = [];
-  const seenDisplayed = new Set();
-  for (const m of displayedMovies) {
-    const key = m.listId + "-" + m.id;
-    if (!seenDisplayed.has(key)) {
-      uniqueDisplayedMovies.push(m);
-      seenDisplayed.add(key);
-    }
-  }
-
+  // Enhanced fuzzy search
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
-
     if (!searchQuery.trim()) return;
 
     setIsSearching(true);
-    setSelectedGenre(""); // Clear genre selection when doing text search
+    setSelectedGenre("");
 
     try {
       const results = await searchMovies(searchQuery);
       setSearchResults(results);
     } catch (error) {
-      console.error("Error fetching search results:", error);
+      console.error("Error searching movies:", error);
+      setSearchResults([]);
+    } finally {
+      setIsSearching(false);
     }
   };
+
   const clearSearch = () => {
     setSearchQuery("");
-    setIsSearching(false);
-    setSelectedGenre("");
     setSearchResults([]);
+    setSelectedGenre("");
+    setIsSearching(false);
     setIsGenreSearching(false);
   };
 
-  const handleGenreSearch = async (genre: string) => {
-    if (selectedGenre === genre) {
-      // If clicking the same genre, deselect it
-      setSelectedGenre("");
-      setSearchResults([]);
-      setIsGenreSearching(false);
-      return;
-    }
-
-    setSelectedGenre(genre);
-    setIsGenreSearching(true);
-    setSearchQuery(""); // Clear text search when doing genre search
+  // Add movie to collection
+  const addMovieToCollection = async (movie: SearchResult, collectionId: string) => {
+    if (!user?.uid) return;
 
     try {
-      // Get genre ID from TMDB
-      const genreMap: { [key: string]: number } = {
-        Action: 28,
-        Drama: 18,
-        "Sci-Fi": 878,
-        Comedy: 35,
-        Thriller: 53,
-        Horror: 27,
-        Romance: 10749,
-        Adventure: 12,
-        Fantasy: 14,
-        Animation: 16,
-        Crime: 80,
-        Documentary: 99,
-        Family: 10751,
-        History: 36,
-        Music: 10402,
-        Mystery: 9648,
-        War: 10752,
-        Western: 37,
-      };
-
-      const genreId = genreMap[genre];
-      if (!genreId) {
-        console.error(`Genre "${genre}" not found in TMDB genre map`);
-        setSearchResults([]);
-        return;
-      }
-
-      // Use TMDB API to search by genre
-      const apiUrl = `https://api.themoviedb.org/3/discover/movie?api_key=${process.env.NEXT_PUBLIC_TMDB_API_KEY}&with_genres=${genreId}&sort_by=popularity.desc&page=1`;
-      console.log(`API URL for "${genre}":`, apiUrl); // Debug log
-
-      const res = await fetch(apiUrl);
-      const data = await res.json();
-
-      console.log(`Genre search for "${genre}":`, data); // Debug log
-      console.log(`Total items found:`, data.total_results || 0); // Debug log
-
-      if (
-        data.results &&
-        Array.isArray(data.results) &&
-        data.results.length > 0
-      ) {
-        const movies = data.results.map((movie: any) => ({
+      // Check if movie already exists
+      const existingMovie = savedMovies.find(m => m.id === movie.id);
+      
+      if (existingMovie) {
+        // Update existing movie with new collection
+        const updatedCollections = [...(existingMovie.collections || []), collectionId];
+        await updateDoc(doc(db, "users", user.uid, "movies", movie.id.toString()), {
+          collections: updatedCollections
+        });
+        setSavedMovies(prev => prev.map(m => 
+          m.id === movie.id ? { ...m, collections: updatedCollections } : m
+        ));
+      } else {
+        // Create new movie
+        const movieData: Movie = {
           id: movie.id,
           title: movie.title,
-          year: new Date(movie.release_date).getFullYear(),
-          cover: movie.poster_path
-            ? `https://image.tmdb.org/t/p/w500${movie.poster_path}`
-            : "/placeholder.svg",
-          rating: movie.vote_average,
-          overview: movie.overview,
-          release_date: movie.release_date,
-        }));
+          year: movie.year,
+          cover: movie.cover,
+          status: "Watchlist",
+          rating: movie.rating || 0,
+          notes: "",
+          collections: [collectionId],
+          overview: movie.overview || "",
+          release_date: movie.release_date || "",
+        };
 
-        setSearchResults(movies);
-        console.log(
-          `Successfully found ${movies.length} movies for "${genre}"`
-        );
-      } else {
-        console.log(`No results found for "${genre}"`);
-        setSearchResults([]);
+        await setDoc(doc(db, "users", user.uid, "movies", movie.id.toString()), movieData);
+        setSavedMovies(prev => [...prev, movieData]);
       }
-    } catch (err) {
-      console.error("Genre search failed:", err);
-      setSearchResults([]);
-    } finally {
-      setIsGenreSearching(false);
+    } catch (error) {
+      console.error("Error adding movie to collection:", error);
     }
   };
 
-  const uid = user?.uid;
+  // Remove movie from collection
+  const removeMovieFromCollection = async (movieId: number, collectionId: string) => {
+    if (!user?.uid) return;
 
-  const saveMovie = async (movie: Movie) => {
-    const uid = user?.uid; // Get current user ID from context or session
-
-    if (!savedIds.includes(movie.id)) {
-      const newMovie = {
-        ...movie,
-        status: "Watchlist",
-        rating: 0,
-        notes: "",
-        collections: [],
-      };
-      setSavedMovies([...savedMovies, newMovie]);
-      setSavedIds([...savedIds, movie.id]);
-
-      // Save to Firestore
-      await setDoc(doc(db, `users/${uid}/movies/${movie.id}`), newMovie);
-    }
-  };
-
-  const removeMovie = async (id: number) => {
-    const uid = user?.uid;
-
-    setSavedMovies(savedMovies.filter((movie) => movie.id !== id));
-    setSavedIds(savedIds.filter((movieId) => movieId !== id));
-
-    await deleteDoc(doc(db, `users/${uid}/movies/${id}`));
-  };
-
-  const updateMovieStatus = async (id: number, status: string) => {
-    const uid = user?.uid;
-
-    setSavedMovies(
-      savedMovies.map((movie) =>
-        movie.id === id ? { ...movie, status } : movie
-      )
-    );
-
-    await updateDoc(doc(db, `users/${uid}/movies/${id}`), { status });
-  };
-
-  const openMovieDetails = (movie: any) => {
-    setSelectedMovie(movie);
-    setMovieNotes(movie.notes || "");
-    setMovieRating(movie.rating || 0);
-  };
-
-  const saveMovieDetails = async () => {
-    const uid = user?.uid;
-
-    setSavedMovies(
-      savedMovies.map((movie) =>
-        movie.id === selectedMovie.id
-          ? { ...movie, notes: movieNotes, rating: movieRating }
-          : movie
-      )
-    );
-    setIsAddingNotes(false);
-
-    await updateDoc(doc(db, `users/${uid}/movies/${selectedMovie.id}`), {
-      notes: movieNotes,
-      rating: movieRating,
-    });
-  };
-
-  // Add to List modal logic
-  const handleAddToList = async () => {
-    if (
-      !user?.uid ||
-      !addToListMovie ||
-      (!selectedListId && !newListName.trim())
-    )
-      return;
-    setIsSavingToList(true);
-    let listId = selectedListId;
     try {
-      // Create new list if needed
-      if (!listId && newListName.trim()) {
-        const listsRef = collection(db, "users", user.uid, "movieLists");
-        const newListDoc = await addDoc(listsRef, { name: newListName.trim() });
-        listId = newListDoc.id;
-        setUserMovieLists((prev) => [
-          ...prev,
-          { id: listId, name: newListName.trim() },
-        ]);
-        setSelectedListId(listId); // auto-select new list
+      const movie = savedMovies.find(m => m.id === movieId);
+      if (!movie) return;
+
+      const updatedCollections = movie.collections?.filter(id => id !== collectionId) || [];
+      
+      if (updatedCollections.length === 0) {
+        // Remove movie entirely if no collections left
+        await deleteDoc(doc(db, "users", user.uid, "movies", movieId.toString()));
+        setSavedMovies(prev => prev.filter(m => m.id !== movieId));
+      } else {
+        // Update movie with remaining collections
+        await updateDoc(doc(db, "users", user.uid, "movies", movieId.toString()), {
+          collections: updatedCollections
+        });
+        setSavedMovies(prev => prev.map(m => 
+          m.id === movieId ? { ...m, collections: updatedCollections } : m
+        ));
       }
-      // Save movie under the list
-      if (listId) {
-        const listDocRef = doc(db, "users", user.uid, "movieLists", listId);
-        const moviesColRef = collection(listDocRef, "movies");
-        const movieDocRef = doc(moviesColRef, String(addToListMovie.id));
-        await setDoc(movieDocRef, { ...addToListMovie, listId });
-      }
-      setIsSavingToList(false);
-      setAddToListOpen(false);
-      setAddToListMovie(null);
-      setSelectedListId("");
-      setNewListName("");
-    } catch (err) {
-      setIsSavingToList(false);
-      alert("Failed to add movie to list. Please try again.");
+    } catch (error) {
+      console.error("Error removing movie from collection:", error);
     }
   };
 
-  // Fetch richer TMDB details when modal opens and a movie is selected
-  useEffect(() => {
-    const fetchDetails = async () => {
-      if (!overviewOpen || !selectedMovieOverview?.id) {
-        setTmdbDetails(null);
-        setTmdbError(null);
-        return;
+  // Handle collection selection and clear search
+  const handleCollectionSelect = (collectionId: string) => {
+    setSelectedCollection(collectionId);
+    // Clear search when clicking on collection tabs
+    setSearchQuery("");
+    setSearchResults([]);
+    setIsSearching(false);
+    setIsGenreSearching(false);
+  };
+
+  // Create new collection
+  const createCollection = async () => {
+    if (!user?.uid || !newCollectionName.trim()) return;
+
+    try {
+      const collectionData = {
+        name: newCollectionName.trim(),
+        isPublic: newCollectionIsPublic,
+        isDefault: false,
+        color: `bg-${['blue', 'green', 'yellow', 'purple', 'red', 'pink', 'indigo'][Math.floor(Math.random() * 7)]}-500`
+      };
+
+      const docRef = await addDoc(collection(db, "users", user.uid, "movieCollections"), collectionData);
+      
+      const newCollection = { id: docRef.id, ...collectionData };
+      setCollections(prev => [...prev, newCollection]);
+      
+      setNewCollectionName("");
+      setNewCollectionIsPublic(false);
+      setCreateCollectionOpen(false);
+    } catch (error) {
+      console.error("Error creating collection:", error);
+    }
+  };
+
+  // Filter and sort movies
+  const filteredAndSortedMovies = useMemo(() => {
+    let filtered = savedMovies;
+    
+    // Filter by collection
+    if (selectedCollection !== "all") {
+      filtered = savedMovies.filter(movie => 
+        movie.collections?.includes(selectedCollection)
+      );
+    }
+
+    // Sort movies
+    filtered.sort((a, b) => {
+      let aValue: any, bValue: any;
+      
+      switch (sortBy) {
+        case "title":
+          aValue = a.title.toLowerCase();
+          bValue = b.title.toLowerCase();
+          break;
+        case "year":
+          aValue = a.year;
+          bValue = b.year;
+          break;
+        case "rating":
+          aValue = a.rating || 0;
+          bValue = b.rating || 0;
+          break;
+        case "added":
+        default:
+          aValue = a.id;
+          bValue = b.id;
+          break;
       }
-      setTmdbLoading(true);
-      setTmdbError(null);
-      try {
-        const res = await fetch(
-          `https://api.themoviedb.org/3/movie/${selectedMovieOverview.id}?api_key=${process.env.NEXT_PUBLIC_TMDB_API_KEY}&language=en-US`
-        );
-        if (!res.ok) throw new Error("Failed to fetch details");
-        const data = await res.json();
-        setTmdbDetails(data);
-      } catch (err: any) {
-        setTmdbError("Could not load movie details.");
-        setTmdbDetails(null);
-      } finally {
-        setTmdbLoading(false);
+
+      if (sortOrder === "asc") {
+        return aValue > bValue ? 1 : -1;
+      } else {
+        return aValue < bValue ? 1 : -1;
       }
-    };
-    fetchDetails();
-  }, [overviewOpen, selectedMovieOverview]);
+    });
+
+    return filtered;
+  }, [savedMovies, selectedCollection, sortBy, sortOrder]);
+
+  // Get collection info
+  const getCollectionInfo = (collectionId: string) => {
+    return collections.find(col => col.id === collectionId);
+  };
 
   return (
-    <div className="w-full min-h-screen">
-      <div className="flex flex-col lg:flex-row gap-4 lg:gap-8 w-full">
-        {/* Sidebar */}
-        <div className="w-full lg:w-64 space-y-4 lg:space-y-6 flex flex-col justify-start flex-shrink-0">
-          <form onSubmit={handleSearch} className="flex flex-col gap-2 w-full">
-            <div className="relative w-full">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search for movies"
-                className="pl-10 pr-10 w-full"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-              {searchQuery && (
-                <button
-                  type="button"
-                  onClick={clearSearch}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2"
-                >
-                  <X className="h-4 w-4 text-muted-foreground" />
-                </button>
-              )}
+    <div className="min-h-screen bg-background">
+      {/* Header */}
+      <div className="border-b bg-card">
+        <div className="container mx-auto px-4 py-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold">Movies</h1>
+              <p className="text-muted-foreground">Discover and organize your favorite films</p>
             </div>
-          </form>
-
-          <div className="space-y-2">
-            <h3 className="font-medium text-sm lg:text-base">My Collections</h3>
-            <div className="space-y-1">
-              <button
-                className={`w-full flex items-center justify-between rounded-md p-3 text-xs lg:text-sm ${
-                  selectedListSidebar === "all"
-                    ? "bg-accent"
-                    : "hover:bg-accent transition-colors"
-                }`}
-                onClick={() => setSelectedListSidebar("all")}
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setViewMode(viewMode === "grid" ? "list" : "grid")}
               >
-                <span>All Movies</span>
-                <span className="text-xs bg-primary/20 text-primary px-2 py-0.5 rounded-full">
-                  {uniqueAllMovies.length}
-                </span>
-              </button>
-              {userMovieLists.map((list) => (
-                <button
-                  key={list.id}
-                  className={`w-full flex items-center justify-between rounded-md p-3 text-xs lg:text-sm ${
-                    selectedListSidebar === list.id
-                      ? "bg-accent"
-                      : "hover:bg-accent transition-colors"
-                  }`}
-                  onClick={() => setSelectedListSidebar(list.id)}
-                >
-                  <div className="flex items-center gap-2">
-                    <span className="truncate">{list.name}</span>
-                    {list.isPublic && (
-                      <Globe className="h-3 w-3 text-muted-foreground flex-shrink-0" />
-                    )}
-                    {!list.isPublic && !list.isDefault && (
-                      <Lock className="h-3 w-3 text-muted-foreground flex-shrink-0" />
-                    )}
-                  </div>
-                  <span className="text-xs bg-muted px-2 py-0.5 rounded-full flex-shrink-0">
-                    {listMovieCounts[list.id] || 0}
-                  </span>
-                </button>
-              ))}
-            </div>
-            <Dialog
-              open={isCreateCollectionOpen}
-              onOpenChange={setCreateCollectionOpen}
-            >
-              <DialogTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="w-full mt-3 text-xs lg:text-sm h-10"
-                >
-                  <Plus className="mr-2 h-4 w-4" /> Create Collection
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-[425px]">
-                <DialogHeader>
-                  <DialogTitle>Create New Collection</DialogTitle>
-                  <DialogDescription>
-                    Enter a name for your new collection.
-                  </DialogDescription>
-                </DialogHeader>
-                <form
-                  onSubmit={async (e) => {
-                    e.preventDefault();
-                    if (!newCollectionName.trim() || !user?.uid) return;
-                    const listsRef = collection(
-                      db,
-                      "users",
-                      user.uid,
-                      "movieLists"
-                    );
-                    const newListDoc = await addDoc(listsRef, {
-                      name: newCollectionName.trim(),
-                      isPublic: newCollectionIsPublic,
-                      isDefault: false,
-                    });
-                    setUserMovieLists((prev) => [
-                      ...prev,
-                      {
-                        id: newListDoc.id,
-                        name: newCollectionName.trim(),
-                        isPublic: newCollectionIsPublic,
-                        isDefault: false,
-                      },
-                    ]);
-                    setSelectedListId(newListDoc.id); // auto-select new list
-                    setNewCollectionName("");
-                    setNewCollectionIsPublic(false);
-                    setCreateCollectionOpen(false);
-                  }}
-                >
-                  <div className="grid gap-4 py-4">
-                    <div className="grid grid-cols-4 items-center gap-4">
-                      <Label htmlFor="name" className="text-right">
-                        Name
-                      </Label>
-                      <Input
-                        id="name"
-                        value={newCollectionName}
-                        onChange={(e) => setNewCollectionName(e.target.value)}
-                        className="col-span-3"
-                      />
-                    </div>
-                    <div className="grid grid-cols-4 items-center gap-4">
-                      <Label htmlFor="isPublic" className="text-right">
-                        Public Collection
-                      </Label>
-                      <div className="col-span-3 flex items-center space-x-2">
-                        <Checkbox
-                          id="isPublic"
-                          checked={newCollectionIsPublic}
-                          onCheckedChange={(checked) =>
-                            setNewCollectionIsPublic(!!checked)
-                          }
-                        />
-                        <Label
-                          htmlFor="isPublic"
-                          className="text-sm text-muted-foreground"
-                        >
-                          Make this collection visible on your public profile
-                        </Label>
-                      </div>
-                    </div>
-                  </div>
-                  <DialogFooter>
-                    <Button type="submit">Save collection</Button>
-                  </DialogFooter>
-                </form>
-              </DialogContent>
-            </Dialog>
-          </div>
-
-          <div className="space-y-3">
-            <h3 className="font-medium text-sm lg:text-base">Genres</h3>
-            <div className="flex flex-wrap gap-3">
-              {[
-                "Action",
-                "Drama",
-                "Sci-Fi",
-                "Comedy",
-                "Thriller",
-                "Horror",
-              ].map((genre) => (
-                <Badge
-                  key={genre}
-                  variant={selectedGenre === genre ? "default" : "outline"}
-                  className={`cursor-pointer transition-colors hover:bg-primary hover:text-primary-foreground text-xs px-3 py-1 ${
-                    selectedGenre === genre
-                      ? "bg-primary text-primary-foreground"
-                      : ""
-                  }`}
-                  onClick={() => handleGenreSearch(genre)}
-                >
-                  {genre}
-                </Badge>
-              ))}
+                {viewMode === "grid" ? <List className="h-4 w-4" /> : <Grid3X3 className="h-4 w-4" />}
+              </Button>
             </div>
           </div>
         </div>
+      </div>
 
-        {/* Main Content */}
-        <div className="flex-1 min-w-0">
-          {isSearching || isGenreSearching || searchQuery ? (
-            <div className="space-y-4 lg:space-y-6">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                <h2 className="text-xl lg:text-2xl font-bold">
-                  {isSearching
-                    ? `Search Results for "${searchQuery}"`
-                    : isGenreSearching
-                    ? `Movies in ${selectedGenre}`
-                    : `Search Results for "${searchQuery}"`}
-                </h2>
+      <div className="container mx-auto px-4 py-6">
+        {/* Search and Filters */}
+        <div className="mb-8">
+          <div className="flex flex-col lg:flex-row gap-4 mb-6">
+            {/* Search */}
+            <div className="flex-1">
+              <form onSubmit={handleSearch} className="flex gap-2">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search movies..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-10"
+                  />
+                  {searchQuery && (
+                    <button
+                      type="button"
+                      onClick={clearSearch}
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2"
+                    >
+                      <X className="h-4 w-4 text-muted-foreground" />
+                    </button>
+                  )}
+                </div>
+                <Button type="submit" disabled={isSearching}>
+                  {isSearching ? "Searching..." : "Search"}
+                </Button>
+              </form>
+            </div>
+
+            {/* Sort Controls */}
+            {searchResults.length === 0 && (
+              <div className="flex items-center gap-2">
+                <Select value={sortBy} onValueChange={(value: any) => setSortBy(value)}>
+                  <SelectTrigger className="w-40">
+                    <SortAsc className="h-4 w-4 mr-2" />
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="added">Date Added</SelectItem>
+                    <SelectItem value="title">Title</SelectItem>
+                    <SelectItem value="year">Year</SelectItem>
+                    <SelectItem value="rating">Rating</SelectItem>
+                  </SelectContent>
+                </Select>
+                
                 <Button
-                  variant="ghost"
-                  onClick={clearSearch}
-                  className="w-full sm:w-auto h-10 sm:h-9"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setSortOrder(sortOrder === "asc" ? "desc" : "asc")}
                 >
+                  {sortOrder === "asc" ? <SortAsc className="h-4 w-4" /> : <SortDesc className="h-4 w-4" />}
+                </Button>
+              </div>
+            )}
+          </div>
+
+          {/* Collections Tabs */}
+          <div className="flex items-center gap-2 overflow-x-auto pb-2">
+            {collections.map((collection) => {
+              const movieCount = savedMovies.filter(movie => 
+                movie.collections?.includes(collection.id)
+              ).length;
+              
+              return (
+                <button
+                  key={collection.id}
+                  onClick={() => handleCollectionSelect(collection.id)}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all whitespace-nowrap ${
+                    selectedCollection === collection.id
+                      ? "bg-primary text-primary-foreground shadow-md"
+                      : "hover:bg-accent"
+                  }`}
+                >
+                  <div className={`w-3 h-3 rounded-full ${collection.color || 'bg-gray-500'}`} />
+                  <span className="font-medium">{collection.name}</span>
+                  <Badge variant="secondary" className="ml-1">{movieCount}</Badge>
+                </button>
+              );
+            })}
+            
+            <Dialog open={isCreateCollectionOpen} onOpenChange={setCreateCollectionOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline" size="sm">
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Create New Collection</DialogTitle>
+                  <DialogDescription>
+                    Create a new collection to organize your movies.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="name">Collection Name</Label>
+                    <Input
+                      id="name"
+                      value={newCollectionName}
+                      onChange={(e) => setNewCollectionName(e.target.value)}
+                      placeholder="Enter collection name..."
+                    />
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="public"
+                      checked={newCollectionIsPublic}
+                      onCheckedChange={(checked) => setNewCollectionIsPublic(!!checked)}
+                    />
+                    <Label htmlFor="public">Make collection public</Label>
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button onClick={createCollection} disabled={!newCollectionName.trim()}>
+                    Create Collection
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          </div>
+        </div>
+
+        {/* Content */}
+        <div className="space-y-6">
+          {isSearching ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+                <p className="text-muted-foreground">Searching movies...</p>
+              </div>
+            </div>
+          ) : searchResults.length > 0 ? (
+            <div>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-2xl font-bold">Search Results ({searchResults.length})</h2>
+                <Button variant="outline" onClick={clearSearch}>
                   Clear Search
                 </Button>
               </div>
-
-              {isGenreSearching ? (
-                <div className="text-center py-12">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-                  <p className="text-muted-foreground">
-                    Loading {selectedGenre} movies...
-                  </p>
-                </div>
-              ) : searchResults.length === 0 ? (
-                <div className="text-center py-12">
-                  <Film className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                  <h3 className="text-lg font-medium mb-2">No movies found</h3>
-                  <p className="text-muted-foreground mb-4">
-                    Try a different search term or browse by genre
-                  </p>
-                </div>
-              ) : (
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8 gap-3 lg:gap-6">
-                  {searchResults.map((movie) => (
-                    <Link
-                      key={movie.id}
-                      href={`/movies/${movie.id}`}
-                      className="block"
-                    >
-                      <div className="relative aspect-[2/3] w-full rounded-lg overflow-hidden hover:scale-105 transition-transform cursor-pointer shadow-md">
-                        <Image
-                          src={movie.cover || "/placeholder.svg"}
-                          alt={movie.title}
-                          fill
-                          className="object-cover"
-                        />
-                      </div>
-                    </Link>
-                  ))}
-                </div>
+              <div className={viewMode === "grid" 
+                ? "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4"
+                : "space-y-4"
+              }>
+                {searchResults.map((movie) => (
+                  <MovieCard
+                    key={movie.id}
+                    movie={movie}
+                    collections={collections}
+                    isInCollections={savedMovies.some(m => m.id === movie.id)}
+                    onAddToCollection={addMovieToCollection}
+                    viewMode={viewMode}
+                  />
+                ))}
+              </div>
+            </div>
+          ) : filteredAndSortedMovies.length === 0 ? (
+            <div className="text-center py-12">
+              <Film className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-lg font-semibold mb-2">No movies found</h3>
+              <p className="text-muted-foreground mb-4">
+                {searchQuery 
+                  ? "Try a different search term"
+                  : "Start by searching for movies"
+                }
+              </p>
+              {!searchQuery && (
+                <Button onClick={() => setSearchQuery("")}>
+                  Search Movies
+                </Button>
               )}
             </div>
           ) : (
-            <div className="space-y-4 lg:space-y-6">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                <h2 className="text-xl lg:text-2xl font-bold">
-                  {selectedListSidebar === "all" 
-                    ? "My Movies" 
-                    : userMovieLists.find(list => list.id === selectedListSidebar)?.name || "My Movies"}
+            <div>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-2xl font-bold">
+                  {selectedCollection === "all" 
+                    ? "All Movies" 
+                    : getCollectionInfo(selectedCollection)?.name || "Movies"
+                  } ({filteredAndSortedMovies.length})
                 </h2>
-                <div className="flex items-center gap-3">
-                  <Select defaultValue="newest">
-                    <SelectTrigger className="w-[140px] lg:w-[180px] h-10">
-                      <ListFilter className="h-4 w-4 mr-2" />
-                      <SelectValue placeholder="Sort by" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="newest">Newest First</SelectItem>
-                      <SelectItem value="oldest">Oldest First</SelectItem>
-                      <SelectItem value="rating">Highest Rated</SelectItem>
-                      <SelectItem value="title">Title (A-Z)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
               </div>
-
-              {selectedListSidebar === "all" &&
-              searchQuery &&
-              searchResults.length > 0 ? (
-                // Show search results (to be refactored in next steps)
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8 gap-3 lg:gap-4">
-                  {searchResults.map((movie) => (
-                    <Link
-                      key={movie.id}
-                      href={`/movies/${movie.id}`}
-                      className="block"
-                    >
-                      <div className="relative aspect-[2/3] w-full rounded-lg overflow-hidden hover:scale-105 transition-transform cursor-pointer">
-                        <Image
-                          src={movie.cover || "/placeholder.svg"}
-                          alt={movie.title}
-                          fill
-                          className="object-cover"
-                        />
-                      </div>
-                    </Link>
-                  ))}
-                </div>
-              ) : (
-                // Show uniqueDisplayedMovies (filtered by collection)
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8 gap-3 lg:gap-4">
-                  {uniqueDisplayedMovies.length === 0 ? (
-                    <div className="col-span-full text-center text-muted-foreground py-12">
-                      <Film className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                      <h3 className="text-lg font-medium mb-2">
-                        No movies found
-                      </h3>
-                      <p className="text-sm">
-                        No movies in your collections yet.
-                      </p>
-                    </div>
-                  ) : (
-                    uniqueDisplayedMovies.map((movie) => (
-                      <Card
-                        key={movie.listId + "-" + movie.id}
-                        className="overflow-hidden"
-                      >
-                        <Link href={`/movies/${movie.id}`} className="block">
-                          <div className="bg-card rounded-lg shadow-md overflow-hidden flex flex-col h-full cursor-pointer transition-transform hover:scale-[1.03]">
-                            <div className="relative aspect-[2/3] w-full">
-                              <Image
-                                src={movie.cover || "/placeholder.svg"}
-                                alt={movie.title}
-                                fill
-                                className="object-cover"
-                              />
-                            </div>
-                          </div>
-                        </Link>
-                      </Card>
-                    ))
-                  )}
-                </div>
-              )}
+              <div className={viewMode === "grid" 
+                ? "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4"
+                : "space-y-4"
+              }>
+                {filteredAndSortedMovies.map((movie) => (
+                  <SavedMovieCard
+                    key={movie.id}
+                    movie={movie}
+                    collections={collections}
+                    onRemoveFromCollection={removeMovieFromCollection}
+                    viewMode={viewMode}
+                  />
+                ))}
+              </div>
             </div>
           )}
         </div>
       </div>
-      <Dialog open={addToListOpen} onOpenChange={setAddToListOpen}>
-        <DialogContent>
-          <DialogTitle>Add to List</DialogTitle>
-          <DialogDescription>
-            Choose a list or create a new one to add{" "}
-            <b>{addToListMovie?.title}</b>.
-          </DialogDescription>
-          <div className="space-y-4">
-            <div>
-              <div className="font-medium mb-2">Your Lists</div>
-              {userMovieLists.length > 0 ? (
-                <div className="space-y-2">
-                  {userMovieLists.map((list) => (
-                    <label
-                      key={list.id}
-                      className="flex items-center gap-2 cursor-pointer"
-                    >
-                      <input
-                        type="radio"
-                        name="movie-list"
-                        value={list.id}
-                        checked={selectedListId === list.id}
-                        onChange={() => setSelectedListId(list.id)}
-                      />
-                      <span>{list.name}</span>
-                    </label>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-muted-foreground text-sm">
-                  No lists yet.
-                </div>
-              )}
-            </div>
-          </div>
-          <DialogFooter>
-            <Button
-              onClick={handleAddToList}
-              disabled={
-                isSavingToList || (!selectedListId && !newListName.trim())
-              }
-            >
-              {isSavingToList ? "Saving..." : "Add to List"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-      <Dialog open={overviewOpen} onOpenChange={setOverviewOpen}>
-        <DialogContent className="max-w-2xl">
-          <DialogTitle>
-            {tmdbDetails?.title ||
-              selectedMovieOverview?.title ||
-              "Movie Overview"}
-          </DialogTitle>
-          {tmdbLoading ? (
-            <div className="py-12 text-center text-muted-foreground">
-              Loading details...
-            </div>
-          ) : tmdbError ? (
-            <div className="py-12 text-center text-destructive">
-              {tmdbError}
-            </div>
-          ) : tmdbDetails ? (
-            <div className="flex flex-col md:flex-row gap-6">
-              <div className="flex-shrink-0">
-                <Image
-                  src={
-                    tmdbDetails.poster_path
-                      ? `https://image.tmdb.org/t/p/w300${tmdbDetails.poster_path}`
-                      : selectedMovieOverview.cover || "/placeholder.svg"
-                  }
-                  alt={tmdbDetails.title || selectedMovieOverview.title}
-                  width={200}
-                  height={300}
-                  className="rounded-lg"
-                />
-              </div>
-              <div className="flex-1 space-y-2">
-                <h2 className="text-2xl font-bold">
-                  {tmdbDetails.title || selectedMovieOverview.title}
-                </h2>
-                <div className="flex items-center gap-4 text-muted-foreground">
-                  <span>
-                    {tmdbDetails.release_date
-                      ? tmdbDetails.release_date.slice(0, 4)
-                      : selectedMovieOverview.year}
-                  </span>
-                  <div className="flex items-center gap-1">
-                    <Star className="w-4 h-4 fill-primary text-primary" />
-                    <span>
-                      {tmdbDetails.vote_average?.toFixed(2) ??
-                        selectedMovieOverview.rating}
-                    </span>
-                  </div>
-                </div>
-                {tmdbDetails.genres && tmdbDetails.genres.length > 0 && (
-                  <div className="flex flex-wrap gap-2">
-                    {tmdbDetails.genres.map((genre: any) => (
-                      <Badge key={genre.id} variant="secondary">
-                        {genre.name}
-                      </Badge>
-                    ))}
-                  </div>
-                )}
-                {tmdbDetails.overview && (
-                  <p className="text-base mt-2">{tmdbDetails.overview}</p>
-                )}
-                <div className="text-sm mt-2 space-y-1">
-                  {tmdbDetails.release_date && (
-                    <div>
-                      <b>Release Date:</b> {tmdbDetails.release_date}
-                    </div>
-                  )}
-                  {tmdbDetails.status && (
-                    <div>
-                      <b>Status:</b> {tmdbDetails.status}
-                    </div>
-                  )}
-                  {typeof tmdbDetails.runtime === "number" && (
-                    <div>
-                      <b>Runtime:</b> {tmdbDetails.runtime} min
-                    </div>
-                  )}
-                  {typeof tmdbDetails.budget === "number" &&
-                    tmdbDetails.budget > 0 && (
-                      <div>
-                        <b>Budget:</b> ${tmdbDetails.budget.toLocaleString()}
-                      </div>
-                    )}
-                  {typeof tmdbDetails.revenue === "number" &&
-                    tmdbDetails.revenue > 0 && (
-                      <div>
-                        <b>Revenue:</b> ${tmdbDetails.revenue.toLocaleString()}
-                      </div>
-                    )}
-                </div>
-              </div>
-            </div>
-          ) : selectedMovieOverview ? (
-            <div className="flex flex-col md:flex-row gap-6">
-              <div className="flex-shrink-0">
-                <Image
-                  src={selectedMovieOverview.cover || "/placeholder.svg"}
-                  alt={selectedMovieOverview.title}
-                  width={200}
-                  height={300}
-                  className="rounded-lg"
-                />
-              </div>
-              <div className="flex-1 space-y-2">
-                <h2 className="text-2xl font-bold">
-                  {selectedMovieOverview.title}
-                </h2>
-                <div className="flex items-center gap-4 text-muted-foreground">
-                  <span>{selectedMovieOverview.year}</span>
-                  <div className="flex items-center gap-1">
-                    <Star className="w-4 h-4 fill-primary text-primary" />
-                    <span>{selectedMovieOverview.rating}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          ) : null}
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
+
+// Movie Card Component for Search Results
+function MovieCard({ 
+  movie, 
+  collections, 
+  isInCollections, 
+  onAddToCollection, 
+  viewMode 
+}: {
+  movie: SearchResult;
+  collections: Collection[];
+  isInCollections: boolean;
+  onAddToCollection: (movie: SearchResult, collectionId: string) => void;
+  viewMode: "grid" | "list";
+}) {
+  const [showDropdown, setShowDropdown] = useState(false);
+
+  if (viewMode === "list") {
+    return (
+      <Card className="flex items-center space-x-4 p-4 hover:shadow-lg transition-shadow">
+        <div className="relative w-16 h-24 flex-shrink-0">
+          <Image
+            src={movie.cover}
+            alt={movie.title}
+            fill
+            className="object-cover rounded"
+          />
+        </div>
+        <div className="flex-1 min-w-0">
+          <h3 className="font-semibold truncate">{movie.title}</h3>
+          <p className="text-sm text-muted-foreground">{movie.year}</p>
+          {movie.rating && (
+            <div className="flex items-center gap-1 mt-1">
+              <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+              <span className="text-sm">{movie.rating.toFixed(1)}</span>
+            </div>
+          )}
+        </div>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="sm">
+              <Plus className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            {collections.map((collection) => (
+              <DropdownMenuItem
+                key={collection.id}
+                onClick={() => onAddToCollection(movie, collection.id)}
+              >
+                <div className="flex items-center gap-2">
+                  <div className={`w-3 h-3 rounded-full ${collection.color || 'bg-gray-500'}`} />
+                  {collection.name}
+                </div>
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </Card>
+    );
+  }
+
+  return (
+    <Card className="group relative overflow-hidden hover:shadow-xl transition-all duration-300">
+      <div className="relative aspect-[2/3]">
+        <Image
+          src={movie.cover}
+          alt={movie.title}
+          fill
+          className="object-cover transition-transform group-hover:scale-105"
+        />
+        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button size="sm" variant="secondary">
+                <Plus className="h-4 w-4 mr-1" />
+                Add to Collection
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              {collections.map((collection) => (
+                <DropdownMenuItem
+                  key={collection.id}
+                  onClick={() => onAddToCollection(movie, collection.id)}
+                >
+                  <div className="flex items-center gap-2">
+                    <div className={`w-3 h-3 rounded-full ${collection.color || 'bg-gray-500'}`} />
+                    {collection.name}
+                  </div>
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </div>
+      <CardContent className="p-3">
+        <h3 className="font-semibold text-sm truncate">{movie.title}</h3>
+        <p className="text-xs text-muted-foreground">{movie.year}</p>
+        {movie.rating && (
+          <div className="flex items-center gap-1 mt-1">
+            <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+            <span className="text-xs">{movie.rating.toFixed(1)}</span>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+// Saved Movie Card Component
+function SavedMovieCard({ 
+  movie, 
+  collections, 
+  onRemoveFromCollection, 
+  viewMode 
+}: {
+  movie: Movie;
+  collections: Collection[];
+  onRemoveFromCollection: (movieId: number, collectionId: string) => void;
+  viewMode: "grid" | "list";
+}) {
+  const [showDropdown, setShowDropdown] = useState(false);
+
+  if (viewMode === "list") {
+    return (
+      <Card className="flex items-center space-x-4 p-4 hover:shadow-lg transition-shadow">
+        <div className="relative w-16 h-24 flex-shrink-0">
+          <Image
+            src={movie.cover}
+            alt={movie.title}
+            fill
+            className="object-cover rounded"
+          />
+        </div>
+        <div className="flex-1 min-w-0">
+          <h3 className="font-semibold truncate">{movie.title}</h3>
+          <p className="text-sm text-muted-foreground">{movie.year}</p>
+          {movie.rating && (
+            <div className="flex items-center gap-1 mt-1">
+              <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+              <span className="text-sm">{movie.rating.toFixed(1)}</span>
+            </div>
+          )}
+          <div className="flex flex-wrap gap-1 mt-2">
+            {movie.collections?.map((collectionId) => {
+              const collection = collections.find(c => c.id === collectionId);
+              return collection ? (
+                <Badge key={collectionId} variant="outline" className="text-xs">
+                  {collection.name}
+                </Badge>
+              ) : null;
+            })}
+          </div>
+        </div>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="sm">
+              <MoreHorizontal className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem asChild>
+              <Link href={`/movies/${movie.id}`}>
+                View Details
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            {movie.collections?.map((collectionId) => {
+              const collection = collections.find(c => c.id === collectionId);
+              return collection ? (
+                <DropdownMenuItem
+                  key={collectionId}
+                  onClick={() => onRemoveFromCollection(movie.id, collectionId)}
+                >
+                  Remove from {collection.name}
+                </DropdownMenuItem>
+              ) : null;
+            })}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </Card>
+    );
+  }
+
+  return (
+    <Card className="group relative overflow-hidden hover:shadow-xl transition-all duration-300">
+      <div className="relative aspect-[2/3]">
+        <Image
+          src={movie.cover}
+          alt={movie.title}
+          fill
+          className="object-cover transition-transform group-hover:scale-105"
+        />
+        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button size="sm" variant="secondary">
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuItem asChild>
+                <Link href={`/movies/${movie.id}`}>
+                  View Details
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              {movie.collections?.map((collectionId) => {
+                const collection = collections.find(c => c.id === collectionId);
+                return collection ? (
+                  <DropdownMenuItem
+                    key={collectionId}
+                    onClick={() => onRemoveFromCollection(movie.id, collectionId)}
+                  >
+                    Remove from {collection.name}
+                  </DropdownMenuItem>
+                ) : null;
+              })}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </div>
+      <CardContent className="p-3">
+        <h3 className="font-semibold text-sm truncate">{movie.title}</h3>
+        <p className="text-xs text-muted-foreground">{movie.year}</p>
+        {movie.rating && (
+          <div className="flex items-center gap-1 mt-1">
+            <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+            <span className="text-xs">{movie.rating.toFixed(1)}</span>
+          </div>
+        )}
+        <div className="flex flex-wrap gap-1 mt-2">
+          {movie.collections?.slice(0, 2).map((collectionId) => {
+            const collection = collections.find(c => c.id === collectionId);
+            return collection ? (
+              <Badge key={collectionId} variant="outline" className="text-xs">
+                {collection.name}
+              </Badge>
+            ) : null;
+          })}
+          {movie.collections && movie.collections.length > 2 && (
+            <Badge variant="outline" className="text-xs">
+              +{movie.collections.length - 2}
+            </Badge>
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  );
+} 
