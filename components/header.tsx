@@ -44,6 +44,7 @@ import { auth } from "@/lib/firebase";
 import { signOut } from "firebase/auth";
 import { Input } from "@/components/ui/input";
 import { useCurrentUser } from "@/hooks/use-current-user";
+import { useNotifications } from "@/hooks/use-notifications";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   AlertDialog,
@@ -74,6 +75,7 @@ export default function Sidebar({ isLandingPage = false }: SidebarProps) {
   const router = useRouter();
 
   const { user } = useCurrentUser();
+  const { unreadCount, error: notificationError } = useNotifications();
 
   const handleSignOut = async () => {
     try {
@@ -99,7 +101,7 @@ export default function Sidebar({ isLandingPage = false }: SidebarProps) {
   const navigationItems = [
     { href: "/", label: "Home", icon: Home },
     { href: "/users", label: "Discover People", icon: Users },
-    { href: "/notifications", label: "Notifications", icon: Bell },
+    { href: "/notifications", label: "Notifications", icon: Bell, badge: unreadCount },
     { href: "/profile", label: "Profile", icon: User },
     { href: "/contact", label: "About Us", icon: HelpCircle },
     { href: "#", label: "Logout", icon: LogOut, onClick: handleLogoutClick },
@@ -370,6 +372,7 @@ export default function Sidebar({ isLandingPage = false }: SidebarProps) {
                   {navigationItems.slice(1, 4).map((item) => {
                     const Icon = item.icon;
                     const isActive = pathname === item.href;
+                    const badge = (item as any).badge;
 
                     const linkContent = (
                       <Link
@@ -377,7 +380,7 @@ export default function Sidebar({ isLandingPage = false }: SidebarProps) {
                         href={item.href}
                         onClick={() => setIsMobileOpen(false)}
                         className={cn(
-                          "flex items-center gap-3 rounded-lg text-sm font-medium transition-all duration-200 hover:bg-accent hover:text-accent-foreground",
+                          "flex items-center gap-3 rounded-lg text-sm font-medium transition-all duration-200 hover:bg-accent hover:text-accent-foreground relative",
                           isCollapsed
                             ? "justify-center px-2 py-3"
                             : "px-4 py-3",
@@ -386,12 +389,19 @@ export default function Sidebar({ isLandingPage = false }: SidebarProps) {
                             : "text-muted-foreground"
                         )}
                       >
-                        <Icon
-                          className={cn(
-                            "flex-shrink-0 transition-all duration-200",
-                            isCollapsed ? "h-5 w-5" : "h-5 w-5"
+                        <div className="relative">
+                          <Icon
+                            className={cn(
+                              "flex-shrink-0 transition-all duration-200",
+                              isCollapsed ? "h-5 w-5" : "h-5 w-5"
+                            )}
+                          />
+                          {badge > 0 && (
+                            <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-red-500 text-white text-xs flex items-center justify-center font-medium">
+                              {badge > 99 ? "99+" : badge}
+                            </span>
                           )}
-                        />
+                        </div>
                         {!isCollapsed && (
                           <span className="truncate">{item.label}</span>
                         )}

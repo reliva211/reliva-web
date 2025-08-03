@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { collection, getDocs, doc, updateDoc, arrayUnion, arrayRemove, query, where } from "firebase/firestore";
+import { collection, getDocs, doc, updateDoc, arrayUnion, arrayRemove, query, where, addDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { Button } from "@/components/ui/button";
@@ -98,13 +98,37 @@ export default function UsersPage() {
     }
   };
 
+  // Create notification when user follows someone
+  const createFollowNotification = async (targetUser: UserData) => {
+    try {
+      const notificationData = {
+        type: "follow",
+        message: "started following you",
+        fromUserId: currentUser!.uid,
+        toUserId: targetUser.uid,
+        fromUserName: currentUser!.displayName || currentUser!.email?.split("@")[0] || "Anonymous",
+        fromUserAvatar: currentUser!.photoURL || "",
+        actionUrl: `/users/${currentUser!.uid}`,
+        isRead: false,
+        createdAt: new Date().toISOString(),
+      };
+
+      await addDoc(collection(db, "notifications"), notificationData);
+    } catch (error) {
+      console.error("Error creating follow notification:", error);
+    }
+  };
+
   // Handle follow/unfollow
   const handleFollowToggle = async (targetUserId: string) => {
     if (!currentUser) return;
 
     try {
       const isFollowing = followingStates[targetUserId];
+      const targetUser = searchResults.find(user => user.uid === targetUserId);
       
+      if (!targetUser) return;
+
       // Update target user's followers in users
       const targetUserRef = doc(db, "users", targetUserId);
       await updateDoc(targetUserRef, {
@@ -120,6 +144,11 @@ export default function UsersPage() {
           ? arrayRemove(targetUserId)
           : arrayUnion(targetUserId)
       });
+
+      // Create notification when following (not when unfollowing)
+      if (!isFollowing) {
+        await createFollowNotification(targetUser);
+      }
 
       // Update local state
       setFollowingStates(prev => ({
