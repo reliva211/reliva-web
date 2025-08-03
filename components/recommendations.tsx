@@ -1,0 +1,349 @@
+"use client"
+
+import { useState, useEffect } from "react"
+import { Card, CardContent, CardHeader } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+import { Play, Star, Plus, Check, TrendingUp, Heart, Clock, RefreshCw } from "lucide-react"
+
+interface Song {
+  id: string
+  name: string
+  artists: {
+    primary: Array<{
+      id: string
+      name: string
+    }>
+  }
+  image: Array<{
+    quality: string
+    url: string
+  }>
+  album: {
+    name: string
+  }
+  duration: number
+  year: string
+  language: string
+  playCount: number
+}
+
+interface RecommendationsProps {
+  currentSong: Song | null
+  ratings: Record<string, number>
+  myList: Set<string>
+  onPlaySong: (song: Song) => void
+  onToggleMyList: (songId: string) => void
+  onRateSong: (songId: string, rating: number) => void
+}
+
+export function Recommendations({
+  currentSong,
+  ratings,
+  myList,
+  onPlaySong,
+  onToggleMyList,
+  onRateSong,
+}: RecommendationsProps) {
+  const [recommendations, setRecommendations] = useState<Song[]>([])
+  const [trendingSongs, setTrendingSongs] = useState<Song[]>([])
+  const [basedOnRatings, setBasedOnRatings] = useState<Song[]>([])
+  const [loading, setLoading] = useState(false)
+  const [activeTab, setActiveTab] = useState<"trending" | "similar" | "rated">("trending")
+
+  // Get trending songs
+  useEffect(() => {
+    fetchTrendingSongs()
+  }, [])
+
+  // Get recommendations based on current song
+  useEffect(() => {
+    if (currentSong) {
+      fetchSimilarSongs(currentSong.id)
+    }
+  }, [currentSong])
+
+  // Get recommendations based on highly rated songs
+  useEffect(() => {
+    const highlyRatedSongs = Object.entries(ratings)
+      .filter(([_, rating]) => rating >= 4)
+      .map(([songId]) => songId)
+
+    if (highlyRatedSongs.length > 0) {
+      fetchBasedOnRatings(highlyRatedSongs[0]) // Use the first highly rated song
+    }
+  }, [ratings])
+
+  const fetchTrendingSongs = async () => {
+    setLoading(true)
+    try {
+      const response = await fetch("/api/recommendations?limit=12")
+      const data = await response.json()
+
+      let results: Song[] = []
+      if (data.data?.results) {
+        results = data.data.results
+      } else if (data.results) {
+        results = data.results
+      } else if (Array.isArray(data)) {
+        results = data
+      }
+
+      setTrendingSongs(results.slice(0, 12))
+    } catch (error) {
+      console.error("Error fetching trending songs:", error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const fetchSimilarSongs = async (songId: string) => {
+    try {
+      const response = await fetch(`/api/recommendations?songId=${songId}&limit=8`)
+      const data = await response.json()
+
+      let results: Song[] = []
+      if (data.data?.results) {
+        results = data.data.results
+      } else if (data.results) {
+        results = data.results
+      } else if (Array.isArray(data)) {
+        results = data
+      }
+
+      setRecommendations(results.slice(0, 8))
+    } catch (error) {
+      console.error("Error fetching similar songs:", error)
+    }
+  }
+
+  const fetchBasedOnRatings = async (songId: string) => {
+    try {
+      const response = await fetch(`/api/recommendations?songId=${songId}&limit=8`)
+      const data = await response.json()
+
+      let results: Song[] = []
+      if (data.data?.results) {
+        results = data.data.results
+      } else if (data.results) {
+        results = data.results
+      } else if (Array.isArray(data)) {
+        results = data
+      }
+
+      setBasedOnRatings(results.slice(0, 8))
+    } catch (error) {
+      console.error("Error fetching recommendations based on ratings:", error)
+    }
+  }
+
+  const formatDuration = (seconds: number) => {
+    const mins = Math.floor(seconds / 60)
+    const secs = seconds % 60
+    return `${mins}:${secs.toString().padStart(2, "0")}`
+  }
+
+  const StarRating = ({ songId, currentRating }: { songId: string; currentRating: number }) => {
+    return (
+      <div className="flex items-center gap-1">
+        {[1, 2, 3, 4, 5].map((star) => (
+          <Star
+            key={star}
+            className={`w-3 h-3 cursor-pointer transition-colors ${
+              star <= currentRating ? "fill-white text-white" : "text-gray-500 hover:text-gray-300"
+            }`}
+            onClick={(e) => {
+              e.stopPropagation()
+              onRateSong(songId, star)
+            }}
+          />
+        ))}
+      </div>
+    )
+  }
+
+  const getCurrentRecommendations = () => {
+    switch (activeTab) {
+      case "trending":
+        return trendingSongs
+      case "similar":
+        return recommendations
+      case "rated":
+        return basedOnRatings
+      default:
+        return trendingSongs
+    }
+  }
+
+  const getTabTitle = () => {
+    switch (activeTab) {
+      case "trending":
+        return "Trending Now"
+      case "similar":
+        return currentSong ? `Similar to "${currentSong.name}"` : "Similar Songs"
+      case "rated":
+        return "Based on Your Ratings"
+      default:
+        return "Recommendations"
+    }
+  }
+
+  const getTabIcon = () => {
+    switch (activeTab) {
+      case "trending":
+        return <TrendingUp className="w-4 h-4" />
+      case "similar":
+        return <RefreshCw className="w-4 h-4" />
+      case "rated":
+        return <Heart className="w-4 h-4" />
+      default:
+        return <TrendingUp className="w-4 h-4" />
+    }
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Tab Navigation */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          {getTabIcon()}
+          <h2 className="text-2xl font-bold text-white">{getTabTitle()}</h2>
+        </div>
+        <div className="flex gap-2">
+          <Button
+            size="sm"
+            variant={activeTab === "trending" ? "default" : "outline"}
+            onClick={() => setActiveTab("trending")}
+            className={
+              activeTab === "trending" ? "bg-white text-black" : "border-gray-600 text-white hover:bg-gray-800"
+            }
+          >
+            <TrendingUp className="w-4 h-4 mr-1" />
+            Trending
+          </Button>
+          {currentSong && (
+            <Button
+              size="sm"
+              variant={activeTab === "similar" ? "default" : "outline"}
+              onClick={() => setActiveTab("similar")}
+              className={
+                activeTab === "similar" ? "bg-white text-black" : "border-gray-600 text-white hover:bg-gray-800"
+              }
+            >
+              <RefreshCw className="w-4 h-4 mr-1" />
+              Similar
+            </Button>
+          )}
+          {Object.keys(ratings).length > 0 && (
+            <Button
+              size="sm"
+              variant={activeTab === "rated" ? "default" : "outline"}
+              onClick={() => setActiveTab("rated")}
+              className={activeTab === "rated" ? "bg-white text-black" : "border-gray-600 text-white hover:bg-gray-800"}
+            >
+              <Heart className="w-4 h-4 mr-1" />
+              For You
+            </Button>
+          )}
+        </div>
+      </div>
+
+      {/* Recommendations Grid */}
+      {loading ? (
+        <div className="text-center py-8">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto mb-4"></div>
+          <p className="text-gray-400">Loading recommendations...</p>
+        </div>
+      ) : (
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          {getCurrentRecommendations().map((song) => (
+            <Card
+              key={song.id}
+              className="bg-gray-900 border-gray-700 hover:bg-gray-800 transition-all cursor-pointer group"
+              onClick={() => onPlaySong(song)}
+            >
+              <CardHeader className="pb-2">
+                <div className="relative">
+                  <img
+                    src={
+                      song.image?.[1]?.url ||
+                      song.image?.[0]?.url ||
+                      "/placeholder.svg?height=150&width=150&query=music" ||
+                      "/placeholder.svg"
+                    }
+                    alt={song.name}
+                    className="w-full aspect-square rounded-lg object-cover"
+                  />
+                  <Button
+                    size="sm"
+                    className="absolute inset-0 bg-black/70 hover:bg-black/90 text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      onPlaySong(song)
+                    }}
+                  >
+                    <Play className="w-5 h-5" />
+                  </Button>
+                  {ratings[song.id] > 0 && (
+                    <Badge className="absolute top-2 left-2 bg-white text-black text-xs">{ratings[song.id]}★</Badge>
+                  )}
+                  {myList.has(song.id) && (
+                    <Badge className="absolute top-2 right-2 bg-green-600 text-white text-xs">
+                      <Check className="w-3 h-3" />
+                    </Badge>
+                  )}
+                </div>
+              </CardHeader>
+
+              <CardContent className="pt-0">
+                <div className="space-y-2">
+                  <h3 className="font-semibold text-white text-sm truncate" title={song.name}>
+                    {song.name}
+                  </h3>
+                  <p className="text-xs text-gray-300 truncate">
+                    {song.artists?.primary?.map((artist) => artist.name).join(", ") || "Unknown Artist"}
+                  </p>
+
+                  <div className="flex items-center justify-between text-xs text-gray-400">
+                    <span className="flex items-center gap-1">
+                      <Clock className="w-3 h-3" />
+                      {formatDuration(song.duration)}
+                    </span>
+                    <span>{song.year}</span>
+                  </div>
+
+                  <div className="flex items-center justify-between pt-2">
+                    <StarRating songId={song.id} currentRating={ratings[song.id] || 0} />
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className={`p-1 h-6 w-6 ${
+                        myList.has(song.id) ? "text-green-500" : "text-gray-400 hover:text-white"
+                      }`}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        onToggleMyList(song.id)
+                      }}
+                    >
+                      {myList.has(song.id) ? <Check className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+
+      {getCurrentRecommendations().length === 0 && !loading && (
+        <div className="text-center py-8">
+          <div className="text-gray-400 mb-2">
+            {activeTab === "similar" && "Play a song to get similar recommendations"}
+            {activeTab === "rated" && "Rate some songs to get personalized recommendations"}
+            {activeTab === "trending" && "No trending songs available"}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
