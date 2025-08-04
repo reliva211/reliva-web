@@ -100,6 +100,7 @@ export default function Sidebar({ isLandingPage = false }: SidebarProps) {
 
   const navigationItems = [
     { href: "/", label: "Home", icon: Home },
+    { href: "/recommendations", label: "Recommendations", icon: TrendingUp },
     { href: "/users", label: "Discover People", icon: Users },
     { href: "/notifications", label: "Notifications", icon: Bell, badge: unreadCount },
     { href: "/profile", label: "Profile", icon: User },
