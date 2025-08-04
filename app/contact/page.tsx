@@ -42,28 +42,28 @@ export default function ContactPage() {
     {
       name: "Srikanth Jeeguru",
       role: "Project Lead",
-      linkedin: "https://linkedin.com/in/srikanth-jeeguru",
-      gmail: "srikanth@reliva.com",
+      linkedin: "https://www.linkedin.com/in/srikanth-jiguru-43276527b",
+      gmail: "srikanthirl211@gmail.com",
       avatar: "/placeholder-user.jpg",
     },
     {
       name: "Sushanth Kotamarti",
       role: "Developer",
-      linkedin: "https://linkedin.com/in/sushanth-kotamarti",
+      linkedin: "https://www.linkedin.com/in/sushanth2805",
       gmail: "sushanth@reliva.com",
       avatar: "/placeholder-user.jpg",
     },
     {
       name: "Karthik Sriramoju",
       role: "Developer",
-      linkedin: "https://linkedin.com/in/karthik-sriramoju",
+      linkedin: "https://www.linkedin.com/in/karthik-sriramoju-",
       gmail: "karthik@reliva.com",
       avatar: "/placeholder-user.jpg",
     },
     {
       name: "Lokadhitya Matti",
       role: "Developer",
-      linkedin: "https://linkedin.com/in/lokadhitya-matti",
+      linkedin: "https://www.linkedin.com/in/lokadithya-matti-8b84a926b",
       gmail: "lokadhitya@reliva.com",
       avatar: "/placeholder-user.jpg",
     },
@@ -116,14 +116,15 @@ export default function ContactPage() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <p className="text-gray-600 dark:text-gray-300 leading-relaxed">
-                    Reliva is more than just a media tracking platform. We're a
-                    community of passionate media enthusiasts who believe in
-                    sharing what we love without gatekeeping.
+                    We're a team of passionate music enthusiasts, cinephiles and bookworms dedicated to
+                    bringing you the best in music, books, movies, and TV shows.
+                    Our platform is designed to help you share your favorites, discover your friend's
+                    favorites, recommend new finds and connect with others who share your interests.  
                   </p>
                   <p className="text-gray-600 dark:text-gray-300 leading-relaxed">
                     Our mission is to create a space where you can discover,
                     track, and share your favorite music, books, movies, and TV
-                    series with like-minded people.
+                    shows with people who care for you.
                   </p>
                   <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400">
                     <Heart className="h-5 w-5" />
