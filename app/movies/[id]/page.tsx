@@ -29,6 +29,15 @@ import {
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 
+interface Video {
+  id: string;
+  key: string;
+  name: string;
+  site: string;
+  type: string;
+  official: boolean;
+}
+
 interface MovieDetail {
   id: number;
   title: string;
@@ -42,6 +51,9 @@ interface MovieDetail {
   runtime: number;
   status: string;
   tagline: string;
+  videos?: {
+    results: Video[];
+  };
   credits?: {
     cast: Array<{
       id: number;
@@ -81,6 +93,8 @@ export default function MovieDetailPage({
   const [addToListOpen, setAddToListOpen] = useState(false);
   const [isSavingToList, setIsSavingToList] = useState(false);
   const [activeTab, setActiveTab] = useState("all");
+  const [trailerOpen, setTrailerOpen] = useState(false);
+  const [selectedTrailer, setSelectedTrailer] = useState<Video | null>(null);
 
   useEffect(() => {
     if (!authLoading && user === null) {
@@ -170,6 +184,28 @@ export default function MovieDetailPage({
     }
   };
 
+  const getBestTrailer = () => {
+    if (!movie?.videos?.results) return null;
+    
+    const trailers = movie.videos.results.filter(
+      video => video.site === "YouTube" && video.type === "Trailer"
+    );
+    
+    if (trailers.length === 0) return null;
+    
+    // Prefer official trailers, then the first one
+    const officialTrailer = trailers.find(trailer => trailer.official);
+    return officialTrailer || trailers[0];
+  };
+
+  const handleTrailerClick = () => {
+    const trailer = getBestTrailer();
+    if (trailer) {
+      setSelectedTrailer(trailer);
+      setTrailerOpen(true);
+    }
+  };
+
   if (authLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 dark:from-gray-900 dark:via-black dark:to-gray-900 flex items-center justify-center">
@@ -246,9 +282,14 @@ export default function MovieDetailPage({
               </p>
 
               <div className="flex items-center gap-4">
-                <Button size="sm" variant="outline">
+                <Button 
+                  size="sm" 
+                  variant="outline"
+                  onClick={handleTrailerClick}
+                  disabled={!getBestTrailer()}
+                >
                   <Play className="w-4 h-4 mr-2" />
-                  Trailer
+                  {getBestTrailer() ? "Watch Trailer" : "No Trailer"}
                 </Button>
                 <div className="flex items-center gap-1">
                   <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
@@ -507,6 +548,26 @@ export default function MovieDetailPage({
           </div>
         </div>
       </div>
+
+      {/* Trailer Modal */}
+      <Dialog open={trailerOpen} onOpenChange={setTrailerOpen}>
+        <DialogContent className="max-w-4xl max-h-[80vh]">
+          <DialogHeader>
+            <DialogTitle>{selectedTrailer?.name || "Movie Trailer"}</DialogTitle>
+          </DialogHeader>
+          {selectedTrailer && (
+            <div className="relative w-full" style={{ paddingBottom: '56.25%' }}>
+              <iframe
+                src={`https://www.youtube.com/embed/${selectedTrailer.key}?autoplay=1`}
+                title={selectedTrailer.name}
+                className="absolute top-0 left-0 w-full h-full rounded-lg"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+              />
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
