@@ -825,26 +825,24 @@ export default function ProfilePage() {
             {/* User Info */}
             <div className="flex-1 w-full min-w-0">
               <h1 className="text-xl sm:text-2xl font-bold mb-1 truncate">
-                {user.displayName || "guy 1"}
+                Srikanth Jeeguru
               </h1>
               <p className="text-sm text-muted-foreground mb-3">bio</p>
               <div className="flex flex-col sm:flex-row gap-2">
                 <Button
-                  variant="outline"
-                  size="sm"
-                  className="w-full sm:w-auto text-xs sm:text-sm h-9"
-                >
-                  <Camera className="h-4 w-4 mr-2" />
-                  add picture
-                </Button>
-                <Button
-                  variant="outline"
+                  variant="ghost"
                   size="sm"
                   onClick={() => setEditDialogOpen(true)}
-                  className="w-full sm:w-auto text-xs sm:text-sm h-9"
+                  className="w-full sm:w-auto text-xs sm:text-sm h-9 text-muted-foreground hover:text-foreground"
                 >
-                  <MessageSquare className="h-4 w-4 mr-2" />
-                  message
+                  edit
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="w-full sm:w-auto text-xs sm:text-sm h-9 text-muted-foreground hover:text-foreground"
+                >
+                  share
                 </Button>
               </div>
             </div>
