@@ -12,18 +12,14 @@ import Image from "next/image";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Play, Zap, MessageSquare } from "lucide-react";
+import { ArrowRight, Play, Zap, MessageSquare, Users, UserPlus } from "lucide-react";
 import { RatingStars } from "@/components/rating-stars";
 import ReviewPost from "@/components/review-post";
-import { collection, getDocs, query, orderBy, limit } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { useFollowedReviews } from "@/hooks/use-followed-reviews";
 
 export default function LandingPage() {
   const { user, loading } = useCurrentUser();
-  const [trendingMovies, setTrendingMovies] = useState<any[]>([]);
-  const [trendingSeries, setTrendingSeries] = useState<any[]>([]);
-  const [reviews, setReviews] = useState<any[]>([]);
-  const [loadingReviews, setLoadingReviews] = useState(false);
+  const { reviews, loading: loadingReviews, error, retry } = useFollowedReviews();
 
   // Prevent vertical scrolling when hovering over scrollable containers
   useEffect(() => {
@@ -41,57 +37,6 @@ export default function LandingPage() {
     return () => document.removeEventListener("wheel", handleWheel);
   }, []);
 
-  useEffect(() => {
-    if (!user) return;
-    const fetchTrending = async () => {
-      const apiKey = process.env.NEXT_PUBLIC_TMDB_API_KEY;
-      const [moviesRes, seriesRes] = await Promise.all([
-        fetch(
-          `https://api.themoviedb.org/3/trending/movie/day?api_key=${apiKey}`
-        ),
-        fetch(`https://api.themoviedb.org/3/trending/tv/day?api_key=${apiKey}`),
-      ]);
-      const moviesData = await moviesRes.json();
-      const seriesData = await seriesRes.json();
-      setTrendingMovies(moviesData.results || []);
-      setTrendingSeries(seriesData.results || []);
-    };
-    fetchTrending();
-  }, [user]);
-
-  // Fetch reviews
-  useEffect(() => {
-    if (!user) return;
-    
-    const fetchReviews = async () => {
-      setLoadingReviews(true);
-      try {
-        const reviewsRef = collection(db, "reviews");
-        const q = query(reviewsRef, orderBy("timestamp", "desc"), limit(10));
-        const querySnapshot = await getDocs(q);
-        
-        const reviewsData = querySnapshot.docs.map(doc => {
-          const data = doc.data();
-          return {
-            id: doc.id,
-            ...data,
-            // Ensure compatibility with existing data structure
-            userDisplayName: data.userDisplayName || data.username || "Anonymous",
-            timestamp: data.timestamp || data.createdAt
-          };
-        });
-        
-        setReviews(reviewsData);
-      } catch (error) {
-        console.error("Error fetching reviews:", error);
-      } finally {
-        setLoadingReviews(false);
-      }
-    };
-
-    fetchReviews();
-  }, [user]);
-
   // Show spinner while auth state is loading
   if (loading) {
     return (
@@ -102,7 +47,7 @@ export default function LandingPage() {
   }
 
   if (user) {
-    // Show trending sections for signed-in users
+    // Show personalized feed for signed-in users
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 dark:from-gray-900 dark:via-black dark:to-gray-900 text-gray-900 dark:text-white relative scroll-smooth">
         <div className="relative z-10 py-8 px-4">
@@ -118,174 +63,54 @@ export default function LandingPage() {
                   ! 🎬📚🎵
                 </h1>
                 <p className="text-lg md:text-xl text-gray-600 dark:text-gray-300 mb-6 max-w-3xl mx-auto">
-                  Ready to discover what's trending in the world of
-                  entertainment? From blockbuster movies to binge-worthy series,
-                  we've got your next obsession covered.
+                  Discover what your friends are watching, reading, and listening to. 
+                  Stay connected with the people you follow and never miss their latest reviews.
                 </p>
                 <div className="flex flex-wrap justify-center gap-4 text-sm text-gray-500 dark:text-gray-400">
                   <span className="flex items-center gap-2">
                     <span className="w-2 h-2 bg-emerald-500 rounded-full"></span>
-                    {trendingMovies.length} trending movies
+                    {reviews.length} reviews from people you follow
                   </span>
                   <span className="flex items-center gap-2">
                     <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
-                    {trendingSeries.length} trending series
+                    Fresh daily updates
                   </span>
                   <span className="flex items-center gap-2">
                     <span className="w-2 h-2 bg-purple-500 rounded-full"></span>
-                    Fresh daily updates
+                    Personalized feed
                   </span>
                 </div>
               </div>
             </div>
 
-            {/* Trending Movies */}
-            <div>
-              <h2 className="text-2xl md:text-3xl font-bold mb-4 text-gray-900 dark:text-white">
-                Trending Movies
-              </h2>
-              <div className="relative group">
-                <div
-                  className="flex gap-4 overflow-x-auto scrollbar-hide pb-4 cursor-grab active:cursor-grabbing scrollable-container"
-                  style={{
-                    scrollbarWidth: "none",
-                    msOverflowStyle: "none",
-                  }}
-                  onWheel={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    const container = e.currentTarget;
-                    container.scrollLeft += e.deltaY;
-                    return false;
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.overflowY = "hidden";
-                    e.currentTarget.style.overflowX = "auto";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.overflowY = "auto";
-                    e.currentTarget.style.overflowX = "hidden";
-                  }}
-                >
-                  {trendingMovies.map((movie) => (
-                    <div
-                      key={movie.id}
-                      className="flex-shrink-0 w-48 sm:w-56 md:w-64"
-                    >
-                      <div className="bg-card rounded-xl shadow-md overflow-hidden flex flex-col items-center p-2">
-                        <div className="relative w-full aspect-[2/3] mb-2">
-                          <Image
-                            src={
-                              movie.poster_path
-                                ? `https://image.tmdb.org/t/p/w300${movie.poster_path}`
-                                : "/placeholder.svg"
-                            }
-                            alt={movie.title}
-                            fill
-                            className="rounded-xl object-cover"
-                          />
-                        </div>
-                        <RatingStars
-                          mediaId={movie.id}
-                          mediaType="movie"
-                          mediaTitle={movie.title}
-                          mediaCover={
-                            movie.poster_path
-                              ? `https://image.tmdb.org/t/p/w300${movie.poster_path}`
-                              : undefined
-                          }
-                          size="sm"
-                          className="mb-1"
-                        />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-            {/* Trending Series */}
-            <div>
-              <h2 className="text-2xl md:text-3xl font-bold mb-4 text-gray-900 dark:text-white">
-                Trending Series
-              </h2>
-              <div className="relative group">
-                <div
-                  className="flex gap-4 overflow-x-auto scrollbar-hide pb-4 cursor-grab active:cursor-grabbing scrollable-container"
-                  style={{
-                    scrollbarWidth: "none",
-                    msOverflowStyle: "none",
-                  }}
-                  onWheel={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    const container = e.currentTarget;
-                    container.scrollLeft += e.deltaY;
-                    return false;
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.overflowY = "hidden";
-                    e.currentTarget.style.overflowX = "auto";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.overflowY = "auto";
-                    e.currentTarget.style.overflowX = "hidden";
-                  }}
-                >
-                  {trendingSeries.map((series) => (
-                    <div
-                      key={series.id}
-                      className="flex-shrink-0 w-48 sm:w-56 md:w-64"
-                    >
-                      <div className="bg-card rounded-xl shadow-md overflow-hidden flex flex-col items-center p-2">
-                        <div className="relative w-full aspect-[2/3] mb-2">
-                          <Image
-                            src={
-                              series.poster_path
-                                ? `https://image.tmdb.org/t/p/w300${series.poster_path}`
-                                : "/placeholder.svg"
-                            }
-                            alt={series.name}
-                            fill
-                            className="rounded-xl object-cover"
-                          />
-                        </div>
-                        <RatingStars
-                          mediaId={series.id}
-                          mediaType="series"
-                          mediaTitle={series.name}
-                          mediaCover={
-                            series.poster_path
-                              ? `https://image.tmdb.org/t/p/w300${series.poster_path}`
-                              : undefined
-                          }
-                          size="sm"
-                          className="mb-1"
-                        />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* Latest Reviews Feed */}
+            {/* Reviews Feed from Followed Users */}
             <div className="bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 rounded-3xl p-6 md:p-8 border border-gray-200 dark:border-gray-700 shadow-lg">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 md:mb-8 gap-4">
                 <div>
                   <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-gray-900 dark:text-white mb-2">
-                    Latest Reviews
+                    Your Reviews & People You Follow
                   </h2>
                   <p className="text-gray-600 dark:text-gray-400 text-sm md:text-base">
-                    See what the community is saying about their favorite media
+                    See your reviews and what your friends are saying about their favorite media
                   </p>
                 </div>
-                <Link 
-                  href="/reviews"
-                  className="flex items-center gap-2 bg-gradient-to-r from-emerald-600 to-blue-600 hover:from-emerald-700 hover:to-blue-700 text-white transition-all duration-300 px-4 py-3 md:px-6 md:py-3 rounded-xl hover:shadow-lg transform hover:scale-105 font-medium text-sm md:text-base"
-                >
-                  <span>Write Review</span>
-                  <ArrowRight className="h-4 w-4 md:h-5 md:w-5" />
-                </Link>
+                <div className="flex gap-2">
+                  <Link href="/users">
+                    <Button
+                      variant="outline"
+                      className="flex items-center gap-2"
+                    >
+                      <Users className="h-4 w-4" />
+                      <span>Find People</span>
+                    </Button>
+                  </Link>
+                  <Link href="/reviews">
+                    <Button className="bg-gradient-to-r from-emerald-600 to-blue-600 hover:from-emerald-700 hover:to-blue-700 text-white transition-all duration-300 px-4 py-3 md:px-6 md:py-3 rounded-xl hover:shadow-lg transform hover:scale-105 font-medium text-sm md:text-base">
+                      <span>Write Review</span>
+                      <ArrowRight className="h-4 w-4 md:h-5 md:w-5" />
+                    </Button>
+                  </Link>
+                </div>
               </div>
               
               {loadingReviews ? (
@@ -307,22 +132,48 @@ export default function LandingPage() {
                     </div>
                   ))}
                 </div>
+              ) : error ? (
+                <div className="text-center py-12 md:py-16 px-6">
+                  <div className="w-20 h-20 bg-gradient-to-br from-red-100 to-orange-100 dark:from-red-900/30 dark:to-orange-900/30 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <MessageSquare className="h-10 w-10 text-red-600 dark:text-red-400" />
+                  </div>
+                  <h3 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white mb-4">
+                    Error Loading Reviews
+                  </h3>
+                  <p className="text-gray-600 dark:text-gray-400 mb-8 max-w-md mx-auto text-base md:text-lg leading-relaxed">
+                    {error}
+                  </p>
+                  <Button 
+                    onClick={retry}
+                    className="bg-gradient-to-r from-emerald-600 to-blue-600 hover:from-emerald-700 hover:to-blue-700 text-white text-base md:text-lg px-8 py-4 md:px-10 md:py-4 rounded-xl font-semibold shadow-lg transform hover:scale-105 transition-all duration-300"
+                  >
+                    Try Again
+                  </Button>
+                </div>
               ) : reviews.length === 0 ? (
                 <div className="text-center py-12 md:py-16 px-6">
                   <div className="w-20 h-20 bg-gradient-to-br from-emerald-100 to-blue-100 dark:from-emerald-900/30 dark:to-blue-900/30 rounded-full flex items-center justify-center mx-auto mb-6">
-                    <MessageSquare className="h-10 w-10 text-emerald-600 dark:text-emerald-400" />
+                    <UserPlus className="h-10 w-10 text-emerald-600 dark:text-emerald-400" />
                   </div>
                   <h3 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white mb-4">
                     No reviews yet
                   </h3>
                   <p className="text-gray-600 dark:text-gray-400 mb-8 max-w-md mx-auto text-base md:text-lg leading-relaxed">
-                    Be the first to share your thoughts on movies, series, and books! Start the conversation.
+                    Start following people to see their reviews, or write your first review to share with the community!
                   </p>
-                  <Link href="/reviews">
-                    <Button className="bg-gradient-to-r from-emerald-600 to-blue-600 hover:from-emerald-700 hover:to-blue-700 text-white text-base md:text-lg px-8 py-4 md:px-10 md:py-4 rounded-xl font-semibold shadow-lg transform hover:scale-105 transition-all duration-300">
-                      Write Your First Review
-                    </Button>
-                  </Link>
+                  <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                    <Link href="/users">
+                      <Button className="bg-gradient-to-r from-emerald-600 to-blue-600 hover:from-emerald-700 hover:to-blue-700 text-white text-base md:text-lg px-8 py-4 md:px-10 md:py-4 rounded-xl font-semibold shadow-lg transform hover:scale-105 transition-all duration-300">
+                        <Users className="h-5 w-5 mr-2" />
+                        Find People to Follow
+                      </Button>
+                    </Link>
+                    <Link href="/reviews">
+                      <Button variant="outline" className="text-base md:text-lg px-8 py-4 md:px-10 md:py-4 rounded-xl font-semibold shadow-lg transform hover:scale-105 transition-all duration-300">
+                        Write Your First Review
+                      </Button>
+                    </Link>
+                  </div>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
@@ -331,30 +182,8 @@ export default function LandingPage() {
                       key={review.id} 
                       review={review}
                       onLikeToggle={() => {
-                        // Refresh reviews after like toggle
-                        const fetchReviews = async () => {
-                          try {
-                            const reviewsRef = collection(db, "reviews");
-                            const q = query(reviewsRef, orderBy("timestamp", "desc"), limit(10));
-                            const querySnapshot = await getDocs(q);
-                            
-                            const reviewsData = querySnapshot.docs.map(doc => {
-                              const data = doc.data();
-                              return {
-                                id: doc.id,
-                                ...data,
-                                // Ensure compatibility with existing data structure
-                                userDisplayName: data.userDisplayName || data.username || "Anonymous",
-                                timestamp: data.timestamp || data.createdAt
-                              };
-                            });
-                            
-                            setReviews(reviewsData);
-                          } catch (error) {
-                            console.error("Error refreshing reviews:", error);
-                          }
-                        };
-                        fetchReviews();
+                        // The hook will automatically refresh when user changes
+                        // This is handled by the useEffect dependency on user
                       }}
                     />
                   ))}
