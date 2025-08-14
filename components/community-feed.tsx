@@ -1,29 +1,40 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Button } from "@/components/ui/button"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { ThemeProvider } from "@/components/theme-provider"
-import { EnhancedCreatePost } from "@/components/enhanced-create-post"
-import { Heart, MessageCircle, Repeat2, Share, MoreHorizontal, Book, Music, Film, Plus } from "lucide-react"
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { ThemeProvider } from "@/components/theme-provider";
+import { EnhancedCreatePost } from "@/components/enhanced-create-post";
+import {
+  Heart,
+  MessageCircle,
+  Repeat2,
+  Share,
+  MoreHorizontal,
+  Book,
+  Music,
+  Film,
+  Plus,
+} from "lucide-react";
 
 interface Post {
-  id: string
+  id: string;
   user: {
-    name: string
-    username: string
-    avatar: string
-  }
-  content: string
-  category: "book" | "music" | "movie"
-  timestamp: string
-  likes: number
-  comments: number
-  retweets: number
-  isLiked: boolean
-  isRetweeted: boolean
-  images?: string[]
+    name: string;
+    username: string;
+    avatar: string;
+  };
+  content: string;
+  category: "book" | "music" | "movie";
+  timestamp: string;
+  likes: number;
+  comments: number;
+  retweets: number;
+  isLiked: boolean;
+  isRetweeted: boolean;
+  images?: string[];
 }
 
 const mockPosts: Post[] = [
@@ -78,7 +89,10 @@ const mockPosts: Post[] = [
     retweets: 12,
     isLiked: false,
     isRetweeted: true,
-    images: ["/placeholder.svg?height=200&width=300", "/placeholder.svg?height=200&width=300"],
+    images: [
+      "/placeholder.svg?height=200&width=300",
+      "/placeholder.svg?height=200&width=300",
+    ],
   },
   {
     id: "4",
@@ -114,22 +128,23 @@ const mockPosts: Post[] = [
     isLiked: false,
     isRetweeted: false,
   },
-]
+];
 
 const categoryIcons = {
   book: Book,
   music: Music,
   movie: Film,
-}
+};
 
 const categoryColors = {
   book: "text-emerald-500",
   music: "text-purple-500",
   movie: "text-blue-500",
-}
+};
 
 export default function CommunityFeed() {
-  const [posts, setPosts] = useState<Post[]>(mockPosts)
+  const router = useRouter();
+  const [posts, setPosts] = useState<Post[]>(mockPosts);
 
   const handleLike = (postId: string) => {
     setPosts(
@@ -140,10 +155,10 @@ export default function CommunityFeed() {
               isLiked: !post.isLiked,
               likes: post.isLiked ? post.likes - 1 : post.likes + 1,
             }
-          : post,
-      ),
-    )
-  }
+          : post
+      )
+    );
+  };
 
   const handleRetweet = (postId: string) => {
     setPosts(
@@ -152,15 +167,26 @@ export default function CommunityFeed() {
           ? {
               ...post,
               isRetweeted: !post.isRetweeted,
-              retweets: post.isRetweeted ? post.retweets - 1 : post.retweets + 1,
+              retweets: post.isRetweeted
+                ? post.retweets - 1
+                : post.retweets + 1,
             }
-          : post,
-      ),
-    )
-  }
+          : post
+      )
+    );
+  };
 
   const addPost = (
-    newPost: Omit<Post, "id" | "timestamp" | "likes" | "comments" | "retweets" | "isLiked" | "isRetweeted">,
+    newPost: Omit<
+      Post,
+      | "id"
+      | "timestamp"
+      | "likes"
+      | "comments"
+      | "retweets"
+      | "isLiked"
+      | "isRetweeted"
+    >
   ) => {
     const post: Post = {
       ...newPost,
@@ -171,9 +197,9 @@ export default function CommunityFeed() {
       retweets: 0,
       isLiked: false,
       isRetweeted: false,
-    }
-    setPosts([post, ...posts])
-  }
+    };
+    setPosts([post, ...posts]);
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -191,7 +217,10 @@ export default function CommunityFeed() {
         <div className="border-b p-4">
           <div className="flex space-x-3">
             <Avatar className="h-10 w-10 flex-shrink-0">
-              <AvatarImage src="/placeholder.svg?height=40&width=40" alt="You" />
+              <AvatarImage
+                src="/placeholder.svg?height=40&width=40"
+                alt="You"
+              />
               <AvatarFallback>You</AvatarFallback>
             </Avatar>
             <div className="flex-1 min-w-0">
@@ -212,12 +241,21 @@ export default function CommunityFeed() {
         <ScrollArea className="h-[calc(100vh-10rem)]">
           <div className="divide-y">
             {posts.map((post) => {
-              const CategoryIcon = categoryIcons[post.category]
+              const CategoryIcon = categoryIcons[post.category];
               return (
-                <article key={post.id} className="p-4 hover:bg-muted/30 transition-colors">
+                <article
+                  key={post.id}
+                  className="p-4 hover:bg-muted/30 transition-colors"
+                >
                   <div className="flex space-x-3">
-                    <Avatar className="h-10 w-10 flex-shrink-0 mt-1">
-                      <AvatarImage src={post.user.avatar || "/placeholder.svg"} alt={post.user.name} />
+                    <Avatar
+                      className="h-10 w-10 flex-shrink-0 mt-1 cursor-pointer hover:opacity-80 transition-opacity"
+                      onClick={() => router.push(`/users/${post.user.uid}`)}
+                    >
+                      <AvatarImage
+                        src={post.user.avatar || "/placeholder.svg"}
+                        alt={post.user.name}
+                      />
                       <AvatarFallback>
                         {post.user.name
                           .split(" ")
@@ -230,31 +268,52 @@ export default function CommunityFeed() {
                       {/* Header */}
                       <div className="flex items-start justify-between mb-1">
                         <div className="flex items-center space-x-2 min-w-0 flex-1">
-                          <span className="font-semibold text-sm truncate max-w-[100px] sm:max-w-[150px]">
+                          <span
+                            className="font-semibold text-sm truncate max-w-[100px] sm:max-w-[150px] cursor-pointer hover:underline"
+                            onClick={() =>
+                              router.push(`/users/${post.user.uid}`)
+                            }
+                          >
                             {post.user.name}
                           </span>
                           <span className="text-muted-foreground text-sm truncate max-w-[80px] sm:max-w-[120px]">
                             @{post.user.username}
                           </span>
-                          <span className="text-muted-foreground text-sm hidden sm:inline">·</span>
-                          <span className="text-muted-foreground text-sm">{post.timestamp}</span>
+                          <span className="text-muted-foreground text-sm hidden sm:inline">
+                            ·
+                          </span>
+                          <span className="text-muted-foreground text-sm">
+                            {post.timestamp}
+                          </span>
                         </div>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 flex-shrink-0"
+                        >
                           <MoreHorizontal className="h-4 w-4" />
                         </Button>
                       </div>
 
                       {/* Category Badge */}
                       <div className="flex items-center space-x-2 mb-3">
-                        <CategoryIcon className={`w-4 h-4 ${categoryColors[post.category]}`} />
-                        <span className={`text-xs font-medium ${categoryColors[post.category]}`}>
+                        <CategoryIcon
+                          className={`w-4 h-4 ${categoryColors[post.category]}`}
+                        />
+                        <span
+                          className={`text-xs font-medium ${
+                            categoryColors[post.category]
+                          }`}
+                        >
                           {post.category.toUpperCase()}
                         </span>
                       </div>
 
                       {/* Content */}
                       <div className="mb-3">
-                        <p className="text-sm leading-relaxed break-words">{post.content}</p>
+                        <p className="text-sm leading-relaxed break-words">
+                          {post.content}
+                        </p>
                       </div>
 
                       {/* Images */}
@@ -296,7 +355,9 @@ export default function CommunityFeed() {
                           variant="ghost"
                           size="sm"
                           className={`hover:bg-green-50 dark:hover:bg-green-950 px-3 py-2 h-9 ${
-                            post.isRetweeted ? "text-green-500" : "text-muted-foreground hover:text-green-500"
+                            post.isRetweeted
+                              ? "text-green-500"
+                              : "text-muted-foreground hover:text-green-500"
                           }`}
                           onClick={() => handleRetweet(post.id)}
                         >
@@ -308,11 +369,17 @@ export default function CommunityFeed() {
                           variant="ghost"
                           size="sm"
                           className={`hover:bg-red-50 dark:hover:bg-red-950 px-3 py-2 h-9 ${
-                            post.isLiked ? "text-red-500" : "text-muted-foreground hover:text-red-500"
+                            post.isLiked
+                              ? "text-red-500"
+                              : "text-muted-foreground hover:text-red-500"
                           }`}
                           onClick={() => handleLike(post.id)}
                         >
-                          <Heart className={`w-4 h-4 mr-2 ${post.isLiked ? "fill-current" : ""}`} />
+                          <Heart
+                            className={`w-4 h-4 mr-2 ${
+                              post.isLiked ? "fill-current" : ""
+                            }`}
+                          />
                           <span className="text-sm">{post.likes}</span>
                         </Button>
 
@@ -327,7 +394,7 @@ export default function CommunityFeed() {
                     </div>
                   </div>
                 </article>
-              )
+              );
             })}
           </div>
         </ScrollArea>
@@ -336,12 +403,14 @@ export default function CommunityFeed() {
         <Button
           size="lg"
           className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg hover:shadow-xl transition-all z-50 sm:hidden"
-          onClick={() => document.getElementById("create-post-trigger")?.click()}
+          onClick={() =>
+            document.getElementById("create-post-trigger")?.click()
+          }
         >
           <Plus className="h-6 w-6" />
           <span className="sr-only">Create post</span>
         </Button>
       </main>
     </div>
-  )
+  );
 }

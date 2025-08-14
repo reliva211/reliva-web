@@ -314,14 +314,24 @@ export default function RecommendationsPage() {
                         {/* User Header */}
                         <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
                           <div className="flex items-center gap-3">
-                            <Avatar className="h-10 w-10">
+                            <Avatar
+                              className="h-10 w-10 cursor-pointer hover:opacity-80 transition-opacity"
+                              onClick={() =>
+                                router.push(`/users/${userRec.user.uid}`)
+                              }
+                            >
                               <AvatarImage src={userRec.user.photoURL} />
                               <AvatarFallback>
                                 {getUserInitials(userRec.user.displayName)}
                               </AvatarFallback>
                             </Avatar>
                             <div>
-                              <h3 className="font-semibold text-gray-900 dark:text-white">
+                              <h3
+                                className="font-semibold text-gray-900 dark:text-white cursor-pointer hover:underline"
+                                onClick={() =>
+                                  router.push(`/users/${userRec.user.uid}`)
+                                }
+                              >
                                 {userRec.user.displayName}
                               </h3>
                               <p className="text-sm text-muted-foreground">

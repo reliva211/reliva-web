@@ -122,6 +122,24 @@ export default function ProfilePage() {
     user?.uid
   );
 
+  // Auto-select first available tab when sections are hidden
+  useEffect(() => {
+    if (profile?.visibleSections) {
+      const availableTabs = [];
+      if (profile.visibleSections.music !== false) availableTabs.push("music");
+      if (profile.visibleSections.movies !== false)
+        availableTabs.push("movie-profile");
+      if (profile.visibleSections.series !== false)
+        availableTabs.push("series");
+      if (profile.visibleSections.books !== false) availableTabs.push("books");
+
+      // If current tab is not available, switch to first available tab
+      if (availableTabs.length > 0 && !availableTabs.includes(activeTab)) {
+        setActiveTab(availableTabs[0]);
+      }
+    }
+  }, [profile?.visibleSections, activeTab]);
+
   // Fetch public collections
   const fetchPublicCollections = async (userId: string) => {
     setLoadingPublicCollections(true);
@@ -821,7 +839,7 @@ export default function ProfilePage() {
     <ErrorBoundary>
       <div className="min-h-screen bg-background">
         {/* Top Profile Section */}
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4 sm:py-6">
+        <div className="max-w-4xl mx-auto px-2 sm:px-3 py-4 sm:py-6">
           <div className="flex flex-col items-center text-center gap-4 mb-6">
             {/* Profile Picture */}
             <ImageUpload onUpload={handleAvatarUpload}>
@@ -857,6 +875,11 @@ export default function ProfilePage() {
                 <Button
                   variant="ghost"
                   size="sm"
+                  onClick={() => {
+                    const publicUrl = `${window.location.origin}/users/${user?.uid}`;
+                    navigator.clipboard.writeText(publicUrl);
+                    // You could add a toast notification here
+                  }}
                   className="text-xs sm:text-sm h-9 text-muted-foreground hover:text-foreground"
                 >
                   share
@@ -873,52 +896,68 @@ export default function ProfilePage() {
             }}
             className="w-full"
           >
-            <TabsList className="grid w-full grid-cols-4 h-auto bg-transparent border-b border-border rounded-none">
-              <TabsTrigger
-                value="music"
-                className="text-xs sm:text-sm py-2 h-10 data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:text-primary rounded-none"
-              >
-                music
-              </TabsTrigger>
-              <TabsTrigger
-                value="movie-profile"
-                className="text-xs sm:text-sm py-2 h-10 data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:text-primary rounded-none"
-              >
-                movies
-              </TabsTrigger>
-              <TabsTrigger
-                value="series"
-                className="text-xs sm:text-sm py-2 h-10 data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:text-primary rounded-none"
-              >
-                shows
-              </TabsTrigger>
-              <TabsTrigger
-                value="books"
-                className="text-xs sm:text-sm py-2 h-10 data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:text-primary rounded-none"
-              >
-                books
-              </TabsTrigger>
+            <TabsList className="flex w-auto mx-auto justify-center gap-8 h-8 bg-transparent border-b border-border rounded-none mb-4">
+              {profile?.visibleSections?.music !== false && (
+                <TabsTrigger
+                  value="music"
+                  className="text-xs py-1 h-6 data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:text-primary rounded-none w-fit"
+                >
+                  music
+                </TabsTrigger>
+              )}
+              {profile?.visibleSections?.movies !== false && (
+                <TabsTrigger
+                  value="movie-profile"
+                  className="text-xs py-1 h-6 data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:text-primary rounded-none w-fit"
+                >
+                  movies
+                </TabsTrigger>
+              )}
+              {profile?.visibleSections?.series !== false && (
+                <TabsTrigger
+                  value="series"
+                  className="text-xs py-1 h-6 data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:text-primary rounded-none w-fit"
+                >
+                  shows
+                </TabsTrigger>
+              )}
+              {profile?.visibleSections?.books !== false && (
+                <TabsTrigger
+                  value="books"
+                  className="text-xs py-1 h-6 data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:text-primary rounded-none w-fit"
+                >
+                  books
+                </TabsTrigger>
+              )}
             </TabsList>
 
             {/* Music Tab */}
-            <TabsContent value="music" className="mt-6">
-              <ProfileMusicSection />
-            </TabsContent>
+            {profile?.visibleSections?.music !== false && (
+              <TabsContent value="music" className="mt-6">
+                <ProfileMusicSection />
+              </TabsContent>
+            )}
 
             {/* Movies Tab */}
-            <TabsContent value="movie-profile" className="mt-6">
-              <ProfileMovieSection />
-            </TabsContent>
+            {profile?.visibleSections?.movies !== false && (
+              <TabsContent value="movie-profile" className="mt-6">
+                <ProfileMovieSection />
+              </TabsContent>
+            )}
 
             {/* Series Tab */}
-            <TabsContent value="series" className="mt-6">
-              <ProfileSeriesSection />
-            </TabsContent>
+            {profile?.visibleSections?.series !== false && (
+              <TabsContent value="series" className="mt-6">
+                <ProfileSeriesSection />
+              </TabsContent>
+            )}
 
             {/* Books Tab */}
-            <TabsContent value="books" className="mt-6">
-              <ProfileBooksSection />
-            </TabsContent>
+            {profile?.visibleSections?.books !== false && (
+              <TabsContent value="books" className="mt-6">
+                <ProfileBooksSection />
+              </TabsContent>
+            )}
           </Tabs>
         </div>
 

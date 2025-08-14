@@ -1,7 +1,17 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { collection, getDocs, doc, updateDoc, arrayUnion, arrayRemove, query, where, addDoc } from "firebase/firestore";
+import {
+  collection,
+  getDocs,
+  doc,
+  updateDoc,
+  arrayUnion,
+  arrayRemove,
+  query,
+  where,
+  addDoc,
+} from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { useUserConnections } from "@/hooks/use-user-connections";
@@ -10,7 +20,15 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Search, User, Users, Loader2, UserPlus, UserCheck, ArrowRight } from "lucide-react";
+import {
+  Search,
+  User,
+  Users,
+  Loader2,
+  UserPlus,
+  UserCheck,
+  ArrowRight,
+} from "lucide-react";
 import Link from "next/link";
 
 interface UserData {
@@ -25,11 +43,17 @@ interface UserData {
 
 export default function UsersPage() {
   const { user: currentUser, loading: currentUserLoading } = useCurrentUser();
-  const { followers, following, loading: connectionsLoading } = useUserConnections();
+  const {
+    followers,
+    following,
+    loading: connectionsLoading,
+  } = useUserConnections();
   const [searchResults, setSearchResults] = useState<UserData[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [searching, setSearching] = useState(false);
-  const [followingStates, setFollowingStates] = useState<Record<string, boolean>>({});
+  const [followingStates, setFollowingStates] = useState<
+    Record<string, boolean>
+  >({});
   const [hasSearched, setHasSearched] = useState(false);
   const [activeTab, setActiveTab] = useState("discover");
 
@@ -79,10 +103,7 @@ export default function UsersPage() {
         const username = user.username?.toLowerCase() || "";
 
         // Check if search term appears in any of these fields
-        return (
-          fullName.includes(searchTerm) ||
-          username.includes(searchTerm)
-        );
+        return fullName.includes(searchTerm) || username.includes(searchTerm);
       });
 
       setSearchResults(filteredUsers);
@@ -90,12 +111,11 @@ export default function UsersPage() {
       // Initialize following states for search results
       const followingStatesMap: Record<string, boolean> = {};
       filteredUsers.forEach((user) => {
-        followingStatesMap[user.uid] = currentUser 
+        followingStatesMap[user.uid] = currentUser
           ? (user.followers || []).includes(currentUser.uid)
           : false;
       });
       setFollowingStates(followingStatesMap);
-
     } catch (error) {
       console.error("Error searching users:", error);
     } finally {
@@ -111,7 +131,10 @@ export default function UsersPage() {
         message: "started following you",
         fromUserId: currentUser!.uid,
         toUserId: targetUser.uid,
-        fromUserName: currentUser!.displayName || currentUser!.email?.split("@")[0] || "Anonymous",
+        fromUserName:
+          currentUser!.displayName ||
+          currentUser!.email?.split("@")[0] ||
+          "Anonymous",
         fromUserAvatar: currentUser!.photoURL || "",
         actionUrl: `/users/${currentUser!.uid}`,
         isRead: false,
@@ -130,24 +153,26 @@ export default function UsersPage() {
 
     try {
       const isFollowing = followingStates[targetUserId];
-      const targetUser = searchResults.find(user => user.uid === targetUserId);
-      
+      const targetUser = searchResults.find(
+        (user) => user.uid === targetUserId
+      );
+
       if (!targetUser) return;
 
       // Update target user's followers in users
       const targetUserRef = doc(db, "users", targetUserId);
       await updateDoc(targetUserRef, {
-        followers: isFollowing 
+        followers: isFollowing
           ? arrayRemove(currentUser.uid)
-          : arrayUnion(currentUser.uid)
+          : arrayUnion(currentUser.uid),
       });
 
       // Update current user's following in users
       const currentUserRef = doc(db, "users", currentUser.uid);
       await updateDoc(currentUserRef, {
-        following: isFollowing 
+        following: isFollowing
           ? arrayRemove(targetUserId)
-          : arrayUnion(targetUserId)
+          : arrayUnion(targetUserId),
       });
 
       // Create notification when following (not when unfollowing)
@@ -156,24 +181,25 @@ export default function UsersPage() {
       }
 
       // Update local state
-      setFollowingStates(prev => ({
+      setFollowingStates((prev) => ({
         ...prev,
-        [targetUserId]: !isFollowing
+        [targetUserId]: !isFollowing,
       }));
 
       // Update search results
-      setSearchResults(prev => prev.map(user => {
-        if (user.uid === targetUserId) {
-          return {
-            ...user,
-            followers: isFollowing 
-              ? (user.followers || []).filter(id => id !== currentUser.uid)
-              : [...(user.followers || []), currentUser.uid]
-          };
-        }
-        return user;
-      }));
-
+      setSearchResults((prev) =>
+        prev.map((user) => {
+          if (user.uid === targetUserId) {
+            return {
+              ...user,
+              followers: isFollowing
+                ? (user.followers || []).filter((id) => id !== currentUser.uid)
+                : [...(user.followers || []), currentUser.uid],
+            };
+          }
+          return user;
+        })
+      );
     } catch (error) {
       console.error("Error updating follow status:", error);
     }
@@ -206,8 +232,12 @@ export default function UsersPage() {
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-3 mb-8">
           <TabsTrigger value="discover">Discover People</TabsTrigger>
-          <TabsTrigger value="following">Following ({following.length})</TabsTrigger>
-          <TabsTrigger value="followers">Followers ({followers.length})</TabsTrigger>
+          <TabsTrigger value="following">
+            Following ({following.length})
+          </TabsTrigger>
+          <TabsTrigger value="followers">
+            Followers ({followers.length})
+          </TabsTrigger>
         </TabsList>
 
         {/* Discover Tab */}
@@ -250,21 +280,26 @@ export default function UsersPage() {
                 {searching ? "Searching..." : "No users found"}
               </h3>
               <p className="text-muted-foreground">
-                {searching 
+                {searching
                   ? "Looking for users..."
-                  : "Try adjusting your search terms"
-                }
+                  : "Try adjusting your search terms"}
               </p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {searchResults.map((user) => (
-                <Card key={user.uid} className="hover:shadow-md transition-shadow">
+                <Card
+                  key={user.uid}
+                  className="hover:shadow-md transition-shadow"
+                >
                   <CardHeader className="pb-3">
                     <div className="flex items-center space-x-3">
-                      <Avatar className="h-12 w-12">
-                        <AvatarImage 
-                          src="" 
+                      <Avatar
+                        className="h-12 w-12 cursor-pointer hover:opacity-80 transition-opacity"
+                        onClick={() => router.push(`/users/${user.uid}`)}
+                      >
+                        <AvatarImage
+                          src=""
                           alt={user.fullName || user.username}
                         />
                         <AvatarFallback>
@@ -272,7 +307,10 @@ export default function UsersPage() {
                         </AvatarFallback>
                       </Avatar>
                       <div className="flex-1 min-w-0">
-                        <h3 className="font-semibold text-sm truncate">
+                        <h3
+                          className="font-semibold text-sm truncate cursor-pointer hover:underline"
+                          onClick={() => router.push(`/users/${user.uid}`)}
+                        >
                           {user.fullName || "No name"}
                         </h3>
                         <p className="text-xs text-muted-foreground truncate">
@@ -285,16 +323,24 @@ export default function UsersPage() {
                     {/* Following/Followers Count */}
                     <div className="flex items-center justify-between mb-3">
                       <div className="text-xs text-muted-foreground">
-                        <span className="font-medium">{(user.followers || []).length}</span> followers
+                        <span className="font-medium">
+                          {(user.followers || []).length}
+                        </span>{" "}
+                        followers
                       </div>
                       <div className="text-xs text-muted-foreground">
-                        <span className="font-medium">{(user.following || []).length}</span> following
+                        <span className="font-medium">
+                          {(user.following || []).length}
+                        </span>{" "}
+                        following
                       </div>
                     </div>
 
                     {/* Follow Button */}
                     <Button
-                      variant={followingStates[user.uid] ? "outline" : "default"}
+                      variant={
+                        followingStates[user.uid] ? "outline" : "default"
+                      }
                       size="sm"
                       onClick={() => handleFollowToggle(user.uid)}
                       disabled={!currentUser}
@@ -321,7 +367,9 @@ export default function UsersPage() {
           ) : following.length === 0 ? (
             <div className="text-center py-12">
               <UserPlus className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-semibold mb-2">Not following anyone yet</h3>
+              <h3 className="text-lg font-semibold mb-2">
+                Not following anyone yet
+              </h3>
               <p className="text-muted-foreground mb-4">
                 Start following people to see their reviews in your feed
               </p>
@@ -332,12 +380,18 @@ export default function UsersPage() {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {following.map((user) => (
-                <Card key={user.uid} className="hover:shadow-md transition-shadow">
+                <Card
+                  key={user.uid}
+                  className="hover:shadow-md transition-shadow"
+                >
                   <CardHeader className="pb-3">
                     <div className="flex items-center space-x-3">
-                      <Avatar className="h-12 w-12">
-                        <AvatarImage 
-                          src={user.avatarUrl || ""} 
+                      <Avatar
+                        className="h-12 w-12 cursor-pointer hover:opacity-80 transition-opacity"
+                        onClick={() => router.push(`/users/${user.uid}`)}
+                      >
+                        <AvatarImage
+                          src={user.avatarUrl || ""}
                           alt={user.fullName || user.username}
                         />
                         <AvatarFallback>
@@ -401,12 +455,15 @@ export default function UsersPage() {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {followers.map((user) => (
-                <Card key={user.uid} className="hover:shadow-md transition-shadow">
+                <Card
+                  key={user.uid}
+                  className="hover:shadow-md transition-shadow"
+                >
                   <CardHeader className="pb-3">
                     <div className="flex items-center space-x-3">
                       <Avatar className="h-12 w-12">
-                        <AvatarImage 
-                          src={user.avatarUrl || ""} 
+                        <AvatarImage
+                          src={user.avatarUrl || ""}
                           alt={user.fullName || user.username}
                         />
                         <AvatarFallback>

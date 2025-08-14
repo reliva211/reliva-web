@@ -30,7 +30,8 @@ import { useSeriesProfile, type TMDBSeries } from "@/hooks/use-series-profile";
 import { useCurrentUser } from "@/hooks/use-current-user";
 
 interface ProfileSeriesSectionProps {
-  // Optional future props for wiring real data
+  userId?: string;
+  readOnly?: boolean;
 }
 
 // Helper function to clean up text content
@@ -55,8 +56,12 @@ const getTextContent = (text: any): string => {
   return "";
 };
 
-export default function ProfileSeriesSection(_: ProfileSeriesSectionProps) {
+export default function ProfileSeriesSection({
+  userId,
+  readOnly = false,
+}: ProfileSeriesSectionProps) {
   const { user } = useCurrentUser();
+  const targetUserId = userId || user?.uid;
   const {
     seriesProfile,
     loading,
@@ -74,7 +79,7 @@ export default function ProfileSeriesSection(_: ProfileSeriesSectionProps) {
     removeRating,
     searchSeries,
     searchCreator,
-  } = useSeriesProfile(user?.uid);
+  } = useSeriesProfile(targetUserId);
 
   // Search states
   const [searchQuery, setSearchQuery] = useState("");
@@ -208,12 +213,16 @@ export default function ProfileSeriesSection(_: ProfileSeriesSectionProps) {
       return (
         <Star
           key={i}
-          className={`h-4 w-4 cursor-pointer transition-colors ${
+          className={`h-4 w-4 transition-colors ${
             isFullStar ? "fill-yellow-400 text-yellow-400" : "text-gray-300"
-          }`}
-          onMouseEnter={() => handleRatingHover(seriesId, starValue)}
-          onMouseLeave={handleRatingLeave}
-          onClick={() => handleRatingClick(seriesId, starValue)}
+          } ${!readOnly ? "cursor-pointer" : ""}`}
+          onMouseEnter={
+            !readOnly ? () => handleRatingHover(seriesId, starValue) : undefined
+          }
+          onMouseLeave={!readOnly ? handleRatingLeave : undefined}
+          onClick={
+            !readOnly ? () => handleRatingClick(seriesId, starValue) : undefined
+          }
         />
       );
     });
@@ -457,18 +466,10 @@ export default function ProfileSeriesSection(_: ProfileSeriesSectionProps) {
     }
   };
 
-  // Handle add to list click
-  const handleAddToListClick = (series: TMDBSeries) => {
-    // Add to watchlist if not already there
-    if (!safeSeriesProfile.watchlist?.find((s) => s.id === series.id)) {
-      addToWatchlist(series);
-    }
-  };
-
   // Show loading state
   if (loading) {
     return (
-      <div className="space-y-5 max-w-4xl mx-auto">
+      <div className="space-y-5 max-w-[800px] mx-auto">
         <div className="grid grid-cols-3 gap-3 sm:gap-4">
           {[1, 2, 3].map((i) => (
             <div key={i} className="animate-pulse">
@@ -492,7 +493,7 @@ export default function ProfileSeriesSection(_: ProfileSeriesSectionProps) {
   // Show error state
   if (error) {
     return (
-      <div className="space-y-5 max-w-4xl mx-auto">
+      <div className="space-y-5 max-w-[800px] mx-auto">
         <div className="text-center p-8">
           <div className="text-red-500 mb-4">
             Error loading series profile: {error}
@@ -508,7 +509,7 @@ export default function ProfileSeriesSection(_: ProfileSeriesSectionProps) {
   // Show setup instructions if no TMDB API key
   if (!process.env.NEXT_PUBLIC_TMDB_API_KEY) {
     return (
-      <div className="space-y-5 max-w-4xl mx-auto">
+      <div className="space-y-5 max-w-[800px] mx-auto">
         <div className="text-center p-8">
           <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 mb-4">
             <h3 className="text-lg font-semibold text-yellow-800 mb-2">
@@ -601,7 +602,7 @@ export default function ProfileSeriesSection(_: ProfileSeriesSectionProps) {
   const limitedRatings = safeSeriesProfile.ratings || [];
 
   return (
-    <div className="space-y-5 max-w-4xl mx-auto">
+    <div className="space-y-0 max-w-3xl mx-auto">
       <div>
         {/* currently watching - simplified format */}
         <div>
@@ -609,14 +610,16 @@ export default function ProfileSeriesSection(_: ProfileSeriesSectionProps) {
             <p className="text-sm font-medium text-muted-foreground">
               currently watching
             </p>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-6 w-6 p-0 hover:bg-muted"
-              onClick={() => openSearchDialog("recentlyWatched")}
-            >
-              <Plus className="h-3 w-3" />
-            </Button>
+            {!readOnly && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-6 w-6 p-0 hover:bg-muted"
+                onClick={() => openSearchDialog("recentlyWatched")}
+              >
+                <Plus className="h-3 w-3" />
+              </Button>
+            )}
           </div>
           {currentRecentlyWatched ? (
             <div className="relative">
@@ -689,16 +692,6 @@ export default function ProfileSeriesSection(_: ProfileSeriesSectionProps) {
                     >
                       trailer
                     </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="h-7 text-xs px-3"
-                      onClick={() =>
-                        handleAddToListClick(currentRecentlyWatched)
-                      }
-                    >
-                      add to list
-                    </Button>
                   </div>
                 </div>
               </div>
@@ -763,14 +756,16 @@ export default function ProfileSeriesSection(_: ProfileSeriesSectionProps) {
       <div>
         <div className="flex items-center justify-between mb-3">
           <p className="text-sm font-medium text-muted-foreground">favorite</p>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-6 w-6 p-0 hover:bg-muted"
-            onClick={() => openSearchDialog("favoriteSeriesList")}
-          >
-            <Plus className="h-3 w-3" />
-          </Button>
+          {!readOnly && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-6 w-6 p-0 hover:bg-muted"
+              onClick={() => openSearchDialog("favoriteSeriesList")}
+            >
+              <Plus className="h-3 w-3" />
+            </Button>
+          )}
         </div>
         <div className="relative">
           <Button
@@ -783,7 +778,7 @@ export default function ProfileSeriesSection(_: ProfileSeriesSectionProps) {
           </Button>
           <div
             ref={scrollContainerRefs.favoriteSeriesList}
-            className="flex gap-2 overflow-x-auto scrollbar-hide"
+            className="flex gap-4 overflow-x-auto scrollbar-hide"
             style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
           >
             {limitedFavoriteSeriesList.length > 0
@@ -808,19 +803,21 @@ export default function ProfileSeriesSection(_: ProfileSeriesSectionProps) {
                           target.src = "/placeholder.svg";
                         }}
                       />
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="absolute top-1 right-1 h-6 w-6 p-0 bg-black/50 hover:bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity"
-                        onClick={() =>
-                          handleRemoveItem(
-                            "favoriteSeriesList",
-                            series.id.toString()
-                          )
-                        }
-                      >
-                        <X className="h-3 w-3 text-white" />
-                      </Button>
+                      {!readOnly && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="absolute top-1 right-1 h-6 w-6 p-0 bg-black/50 hover:bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity"
+                          onClick={() =>
+                            handleRemoveItem(
+                              "favoriteSeriesList",
+                              series.id.toString()
+                            )
+                          }
+                        >
+                          <X className="h-3 w-3 text-white" />
+                        </Button>
+                      )}
                     </div>
                     <div className="mt-2 text-center">
                       <p className="text-sm font-semibold leading-tight">
@@ -872,14 +869,16 @@ export default function ProfileSeriesSection(_: ProfileSeriesSectionProps) {
       <div>
         <div className="flex items-center justify-between mb-3">
           <p className="text-sm font-medium text-muted-foreground">watchlist</p>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-6 w-6 p-0 hover:bg-muted"
-            onClick={() => openSearchDialog("watchlist")}
-          >
-            <Plus className="h-3 w-3" />
-          </Button>
+          {!readOnly && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-6 w-6 p-0 hover:bg-muted"
+              onClick={() => openSearchDialog("watchlist")}
+            >
+              <Plus className="h-3 w-3" />
+            </Button>
+          )}
         </div>
         <div className="relative">
           <Button
@@ -892,7 +891,7 @@ export default function ProfileSeriesSection(_: ProfileSeriesSectionProps) {
           </Button>
           <div
             ref={scrollContainerRefs.watchlist}
-            className="flex gap-2 overflow-x-auto scrollbar-hide"
+            className="flex gap-4 overflow-x-auto scrollbar-hide"
             style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
           >
             {limitedWatchlist.length > 0
@@ -917,16 +916,18 @@ export default function ProfileSeriesSection(_: ProfileSeriesSectionProps) {
                           target.src = "/placeholder.svg";
                         }}
                       />
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="absolute top-1 right-1 h-6 w-6 p-0 bg-black/50 hover:bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity"
-                        onClick={() =>
-                          handleRemoveItem("watchlist", series.id.toString())
-                        }
-                      >
-                        <X className="h-3 w-3 text-white" />
-                      </Button>
+                      {!readOnly && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="absolute top-1 right-1 h-6 w-6 p-0 bg-black/50 hover:bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity"
+                          onClick={() =>
+                            handleRemoveItem("watchlist", series.id.toString())
+                          }
+                        >
+                          <X className="h-3 w-3 text-white" />
+                        </Button>
+                      )}
                     </div>
                     <div className="mt-2 text-center">
                       <p className="text-sm font-semibold leading-tight">
@@ -980,14 +981,16 @@ export default function ProfileSeriesSection(_: ProfileSeriesSectionProps) {
           <p className="text-sm font-medium text-muted-foreground">
             recommendation
           </p>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-6 w-6 p-0 hover:bg-muted"
-            onClick={() => openSearchDialog("recommendation")}
-          >
-            <Plus className="h-3 w-3" />
-          </Button>
+          {!readOnly && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-6 w-6 p-0 hover:bg-muted"
+              onClick={() => openSearchDialog("recommendation")}
+            >
+              <Plus className="h-3 w-3" />
+            </Button>
+          )}
         </div>
         <div className="relative">
           <Button
@@ -1000,7 +1003,7 @@ export default function ProfileSeriesSection(_: ProfileSeriesSectionProps) {
           </Button>
           <div
             ref={scrollContainerRefs.recommendations}
-            className="flex gap-2 overflow-x-auto scrollbar-hide"
+            className="flex gap-4 overflow-x-auto scrollbar-hide"
             style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
           >
             {limitedRecommendations.length > 0
@@ -1025,19 +1028,21 @@ export default function ProfileSeriesSection(_: ProfileSeriesSectionProps) {
                           target.src = "/placeholder.svg";
                         }}
                       />
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="absolute top-1 right-1 h-6 w-6 p-0 bg-black/50 hover:bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity"
-                        onClick={() =>
-                          handleRemoveItem(
-                            "recommendation",
-                            series.id.toString()
-                          )
-                        }
-                      >
-                        <X className="h-3 w-3 text-white" />
-                      </Button>
+                      {!readOnly && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="absolute top-1 right-1 h-6 w-6 p-0 bg-black/50 hover:bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity"
+                          onClick={() =>
+                            handleRemoveItem(
+                              "recommendation",
+                              series.id.toString()
+                            )
+                          }
+                        >
+                          <X className="h-3 w-3 text-white" />
+                        </Button>
+                      )}
                     </div>
                     <div className="mt-2 text-center">
                       <p className="text-sm font-semibold leading-tight">
@@ -1089,14 +1094,16 @@ export default function ProfileSeriesSection(_: ProfileSeriesSectionProps) {
       <div>
         <div className="flex items-center justify-between mb-3">
           <p className="text-sm font-medium text-muted-foreground">rating</p>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-6 w-6 p-0 hover:bg-muted"
-            onClick={() => openSearchDialog("rating")}
-          >
-            <Plus className="h-3 w-3" />
-          </Button>
+          {!readOnly && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-6 w-6 p-0 hover:bg-muted"
+              onClick={() => openSearchDialog("rating")}
+            >
+              <Plus className="h-3 w-3" />
+            </Button>
+          )}
         </div>
         <div className="relative">
           <Button
@@ -1109,7 +1116,7 @@ export default function ProfileSeriesSection(_: ProfileSeriesSectionProps) {
           </Button>
           <div
             ref={scrollContainerRefs.ratings}
-            className="flex gap-2 overflow-x-auto scrollbar-hide"
+            className="flex gap-4 overflow-x-auto scrollbar-hide"
             style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
           >
             {limitedRatings.length > 0
@@ -1134,19 +1141,21 @@ export default function ProfileSeriesSection(_: ProfileSeriesSectionProps) {
                           target.src = "/placeholder.svg";
                         }}
                       />
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="absolute top-1 right-1 h-6 w-6 p-0 bg-black/50 hover:bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity"
-                        onClick={() =>
-                          handleRemoveItem(
-                            "rating",
-                            rating.series.id.toString()
-                          )
-                        }
-                      >
-                        <X className="h-3 w-3 text-white" />
-                      </Button>
+                      {!readOnly && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="absolute top-1 right-1 h-6 w-6 p-0 bg-black/50 hover:bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity"
+                          onClick={() =>
+                            handleRemoveItem(
+                              "rating",
+                              rating.series.id.toString()
+                            )
+                          }
+                        >
+                          <X className="h-3 w-3 text-white" />
+                        </Button>
+                      )}
                       <div className="absolute bottom-1 left-1 right-1 flex justify-center gap-1 p-2 bg-black/50 rounded-md">
                         {renderInteractiveStars(
                           rating.series.id.toString(),

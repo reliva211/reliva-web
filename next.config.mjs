@@ -7,8 +7,9 @@ const nextConfig = {
     ignoreBuildErrors: true,
   },
   images: {
+    domains: ["image.tmdb.org"],
     unoptimized: true,
   },
-}
+};
 
-export default nextConfig
+export default nextConfig;

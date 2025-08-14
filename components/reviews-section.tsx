@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -104,6 +105,7 @@ export function ReviewsSection({
   mediaType = "movie",
   className = "",
 }: ReviewsSectionProps) {
+  const router = useRouter();
   const { user } = useCurrentUser();
   const [showAllReviews, setShowAllReviews] = useState(false);
 
@@ -162,7 +164,10 @@ export function ReviewsSection({
           <CardContent className="p-4">
             <div className="flex items-start gap-3">
               {/* User Avatar */}
-              <Avatar className="h-10 w-10 flex-shrink-0">
+              <Avatar
+                className="h-10 w-10 flex-shrink-0 cursor-pointer hover:opacity-80 transition-opacity"
+                onClick={() => router.push(`/users/${review.userId}`)}
+              >
                 <AvatarImage src={review.userAvatar} alt={review.userName} />
                 <AvatarFallback>
                   <User className="h-5 w-5" />
@@ -172,7 +177,12 @@ export function ReviewsSection({
               {/* Review Content */}
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-2">
-                  <h4 className="font-medium text-sm">{review.userName}</h4>
+                  <h4
+                    className="font-medium text-sm cursor-pointer hover:underline"
+                    onClick={() => router.push(`/users/${review.userId}`)}
+                  >
+                    {review.userName}
+                  </h4>
                   <span className="text-xs text-muted-foreground">
                     {formatDate(review.createdAt)}
                   </span>

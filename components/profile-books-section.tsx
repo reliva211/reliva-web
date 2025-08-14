@@ -33,7 +33,8 @@ import {
 import { useCurrentUser } from "@/hooks/use-current-user";
 
 interface ProfileBooksSectionProps {
-  // Optional future props for wiring real data
+  userId?: string;
+  readOnly?: boolean;
 }
 
 // Helper function to clean up text content
@@ -58,8 +59,12 @@ const getTextContent = (text: any): string => {
   return "";
 };
 
-export default function ProfileBooksSection(_: ProfileBooksSectionProps) {
+export default function ProfileBooksSection({
+  userId,
+  readOnly = false,
+}: ProfileBooksSectionProps) {
   const { user } = useCurrentUser();
+  const targetUserId = userId || user?.uid;
   const {
     booksProfile,
     loading,
@@ -77,7 +82,7 @@ export default function ProfileBooksSection(_: ProfileBooksSectionProps) {
     searchBooks,
     searchBooksByTitleAndAuthor,
     getBookById,
-  } = useBooksProfile(user?.uid || "");
+  } = useBooksProfile(targetUserId || "");
 
   // Search states
   const [searchQuery, setSearchQuery] = useState("");
@@ -399,12 +404,16 @@ export default function ProfileBooksSection(_: ProfileBooksSectionProps) {
       return (
         <Star
           key={i}
-          className={`h-4 w-4 cursor-pointer transition-colors ${
+          className={`h-4 w-4 transition-colors ${
             isFullStar ? "fill-yellow-400 text-yellow-400" : "text-gray-300"
-          }`}
-          onMouseEnter={() => handleRatingHover(bookId, starValue)}
-          onMouseLeave={handleRatingLeave}
-          onClick={() => handleRatingClick(bookId, starValue)}
+          } ${!readOnly ? "cursor-pointer" : ""}`}
+          onMouseEnter={
+            !readOnly ? () => handleRatingHover(bookId, starValue) : undefined
+          }
+          onMouseLeave={!readOnly ? handleRatingLeave : undefined}
+          onClick={
+            !readOnly ? () => handleRatingClick(bookId, starValue) : undefined
+          }
         />
       );
     });
@@ -447,14 +456,6 @@ export default function ProfileBooksSection(_: ProfileBooksSectionProps) {
     }
   };
 
-  // Handle add to list click
-  const handleAddToListClick = (book: GoogleBookItem) => {
-    // Add to reading list if not already there
-    if (!safeBooksProfile.readingList?.find((b) => b.id === book.id)) {
-      addToReadingList(book);
-    }
-  };
-
   // Limit items to specified limits per section
   const limitedFavoriteBooks =
     safeBooksProfile.favoriteBooks?.slice(0, 5) || [];
@@ -465,7 +466,7 @@ export default function ProfileBooksSection(_: ProfileBooksSectionProps) {
   // Show loading state
   if (loading) {
     return (
-      <div className="space-y-5 max-w-4xl mx-auto">
+      <div className="space-y-5 max-w-[800px] mx-auto">
         <div className="grid grid-cols-3 gap-3 sm:gap-4">
           {[1, 2, 3].map((i) => (
             <div key={i} className="animate-pulse">
@@ -489,7 +490,7 @@ export default function ProfileBooksSection(_: ProfileBooksSectionProps) {
   // Show error state
   if (error) {
     return (
-      <div className="space-y-5 max-w-4xl mx-auto">
+      <div className="space-y-5 max-w-[800px] mx-auto">
         <div className="text-center p-8">
           <div className="text-red-500 mb-4">
             Error loading books profile: {error}
@@ -503,7 +504,7 @@ export default function ProfileBooksSection(_: ProfileBooksSectionProps) {
   }
 
   return (
-    <div key={profileKey} className="space-y-5 max-w-4xl mx-auto">
+    <div key={profileKey} className="space-y-0 max-w-3xl mx-auto">
       <div>
         {/* currently reading - simplified format */}
         <div>
@@ -511,14 +512,16 @@ export default function ProfileBooksSection(_: ProfileBooksSectionProps) {
             <p className="text-sm font-medium text-muted-foreground">
               currently reading
             </p>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-6 w-6 p-0 hover:bg-muted"
-              onClick={() => openSearchDialog("recentlyRead")}
-            >
-              <Plus className="h-3 w-3" />
-            </Button>
+            {!readOnly && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-6 w-6 p-0 hover:bg-muted"
+                onClick={() => openSearchDialog("recentlyRead")}
+              >
+                <Plus className="h-3 w-3" />
+              </Button>
+            )}
           </div>
           {currentRecentlyRead ? (
             <div className="relative">
@@ -589,14 +592,6 @@ export default function ProfileBooksSection(_: ProfileBooksSectionProps) {
                     >
                       read
                     </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="h-7 text-xs px-3"
-                      onClick={() => handleAddToListClick(currentRecentlyRead)}
-                    >
-                      add to list
-                    </Button>
                   </div>
                 </div>
               </div>
@@ -632,14 +627,16 @@ export default function ProfileBooksSection(_: ProfileBooksSectionProps) {
       <div>
         <div className="flex items-center justify-between mb-3">
           <p className="text-sm font-medium text-muted-foreground">favorite</p>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-6 w-6 p-0 hover:bg-muted"
-            onClick={() => openSearchDialog("favoriteBooks")}
-          >
-            <Plus className="h-3 w-3" />
-          </Button>
+          {!readOnly && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-6 w-6 p-0 hover:bg-muted"
+              onClick={() => openSearchDialog("favoriteBooks")}
+            >
+              <Plus className="h-3 w-3" />
+            </Button>
+          )}
         </div>
         <div className="relative">
           <Button
@@ -652,7 +649,7 @@ export default function ProfileBooksSection(_: ProfileBooksSectionProps) {
           </Button>
           <div
             ref={scrollContainerRefs.favoriteBooks}
-            className="flex gap-2 overflow-x-auto scrollbar-hide"
+            className="flex gap-4 overflow-x-auto scrollbar-hide"
             style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
           >
             {limitedFavoriteBooks.length > 0
@@ -673,16 +670,18 @@ export default function ProfileBooksSection(_: ProfileBooksSectionProps) {
                           target.src = "/placeholder.svg";
                         }}
                       />
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="absolute top-1 right-1 h-6 w-6 p-0 bg-black/50 hover:bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity"
-                        onClick={() =>
-                          handleRemoveItem("favoriteBooks", book.id)
-                        }
-                      >
-                        <X className="h-3 w-3 text-white" />
-                      </Button>
+                      {!readOnly && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="absolute top-1 right-1 h-6 w-6 p-0 bg-black/50 hover:bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity"
+                          onClick={() =>
+                            handleRemoveItem("favoriteBooks", book.id)
+                          }
+                        >
+                          <X className="h-3 w-3 text-white" />
+                        </Button>
+                      )}
                     </div>
                     <div className="mt-2 text-center">
                       <p className="text-sm font-semibold leading-tight">
@@ -736,14 +735,16 @@ export default function ProfileBooksSection(_: ProfileBooksSectionProps) {
           <p className="text-sm font-medium text-muted-foreground">
             reading list
           </p>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-6 w-6 p-0 hover:bg-muted"
-            onClick={() => openSearchDialog("readingList")}
-          >
-            <Plus className="h-3 w-3" />
-          </Button>
+          {!readOnly && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-6 w-6 p-0 hover:bg-muted"
+              onClick={() => openSearchDialog("readingList")}
+            >
+              <Plus className="h-3 w-3" />
+            </Button>
+          )}
         </div>
         <div className="relative">
           <Button
@@ -756,7 +757,7 @@ export default function ProfileBooksSection(_: ProfileBooksSectionProps) {
           </Button>
           <div
             ref={scrollContainerRefs.readingList}
-            className="flex gap-2 overflow-x-auto scrollbar-hide"
+            className="flex gap-4 overflow-x-auto scrollbar-hide"
             style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
           >
             {limitedReadingList.length > 0
@@ -777,14 +778,18 @@ export default function ProfileBooksSection(_: ProfileBooksSectionProps) {
                           target.src = "/placeholder.svg";
                         }}
                       />
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="absolute top-1 right-1 h-6 w-6 p-0 bg-black/50 hover:bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity"
-                        onClick={() => handleRemoveItem("readingList", book.id)}
-                      >
-                        <X className="h-3 w-3 text-white" />
-                      </Button>
+                      {!readOnly && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="absolute top-1 right-1 h-6 w-6 p-0 bg-black/50 hover:bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity"
+                          onClick={() =>
+                            handleRemoveItem("readingList", book.id)
+                          }
+                        >
+                          <X className="h-3 w-3 text-white" />
+                        </Button>
+                      )}
                     </div>
                     <div className="mt-2 text-center">
                       <p className="text-sm font-semibold leading-tight">
@@ -838,14 +843,16 @@ export default function ProfileBooksSection(_: ProfileBooksSectionProps) {
           <p className="text-sm font-medium text-muted-foreground">
             recommendations
           </p>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-6 w-6 p-0 hover:bg-muted"
-            onClick={() => openSearchDialog("recommendations")}
-          >
-            <Plus className="h-3 w-3" />
-          </Button>
+          {!readOnly && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-6 w-6 p-0 hover:bg-muted"
+              onClick={() => openSearchDialog("recommendations")}
+            >
+              <Plus className="h-3 w-3" />
+            </Button>
+          )}
         </div>
         <div className="relative">
           <Button
@@ -858,7 +865,7 @@ export default function ProfileBooksSection(_: ProfileBooksSectionProps) {
           </Button>
           <div
             ref={scrollContainerRefs.recommendations}
-            className="flex gap-2 overflow-x-auto scrollbar-hide"
+            className="flex gap-4 overflow-x-auto scrollbar-hide"
             style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
           >
             {limitedRecommendations.length > 0
@@ -879,16 +886,18 @@ export default function ProfileBooksSection(_: ProfileBooksSectionProps) {
                           target.src = "/placeholder.svg";
                         }}
                       />
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="absolute top-1 right-1 h-6 w-6 p-0 bg-black/50 hover:bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity"
-                        onClick={() =>
-                          handleRemoveItem("recommendations", book.id)
-                        }
-                      >
-                        <X className="h-3 w-3 text-white" />
-                      </Button>
+                      {!readOnly && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="absolute top-1 right-1 h-6 w-6 p-0 bg-black/50 hover:bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity"
+                          onClick={() =>
+                            handleRemoveItem("recommendations", book.id)
+                          }
+                        >
+                          <X className="h-3 w-3 text-white" />
+                        </Button>
+                      )}
                     </div>
                     <div className="mt-2 text-center">
                       <p className="text-sm font-semibold leading-tight">
@@ -940,14 +949,16 @@ export default function ProfileBooksSection(_: ProfileBooksSectionProps) {
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <h3 className="text-lg font-semibold">Ratings</h3>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => openSearchDialog("ratings")}
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Add Rating
-          </Button>
+          {!readOnly && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => openSearchDialog("ratings")}
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Add Rating
+            </Button>
+          )}
         </div>
         <div className="relative">
           <Button
@@ -960,7 +971,7 @@ export default function ProfileBooksSection(_: ProfileBooksSectionProps) {
           </Button>
           <div
             ref={scrollContainerRefs.ratings}
-            className="flex gap-2 overflow-x-auto scrollbar-hide"
+            className="flex gap-4 overflow-x-auto scrollbar-hide"
             style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
           >
             {Object.keys(safeBooksProfile.ratings).length > 0
@@ -999,14 +1010,16 @@ export default function ProfileBooksSection(_: ProfileBooksSectionProps) {
                               target.src = "/placeholder.svg";
                             }}
                           />
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="absolute top-1 right-1 h-6 w-6 p-0 bg-black/50 hover:bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity"
-                            onClick={() => handleRemoveRating(bookId)}
-                          >
-                            <X className="h-3 w-3 text-white" />
-                          </Button>
+                          {!readOnly && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="absolute top-1 right-1 h-6 w-6 p-0 bg-black/50 hover:bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity"
+                              onClick={() => handleRemoveRating(bookId)}
+                            >
+                              <X className="h-3 w-3 text-white" />
+                            </Button>
+                          )}
                           <div className="absolute bottom-1 left-1 right-1 flex justify-center gap-1 p-2 bg-black/50 rounded-md">
                             {renderInteractiveStars(bookId, rating)}
                           </div>

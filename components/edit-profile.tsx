@@ -1,13 +1,13 @@
-"use client"
+"use client";
 
-import type React from "react"
+import type React from "react";
 
-import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { Switch } from "@/components/ui/switch"
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
 import {
   Dialog,
   DialogContent,
@@ -15,19 +15,25 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog"
-import type { UserProfile } from "@/hooks/use-profile"
-import { Loader2 } from "lucide-react"
+} from "@/components/ui/dialog";
+import type { UserProfile } from "@/hooks/use-profile";
+import { Loader2 } from "lucide-react";
 
 interface EditProfileDialogProps {
-  open: boolean
-  onOpenChange: (open: boolean) => void
-  profile: UserProfile
-  onSave: (updates: Partial<UserProfile>) => Promise<void>
-  saving: boolean
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  profile: UserProfile;
+  onSave: (updates: Partial<UserProfile>) => Promise<void>;
+  saving: boolean;
 }
 
-export function EditProfileDialog({ open, onOpenChange, profile, onSave, saving }: EditProfileDialogProps) {
+export function EditProfileDialog({
+  open,
+  onOpenChange,
+  profile,
+  onSave,
+  saving,
+}: EditProfileDialogProps) {
   const [formData, setFormData] = useState({
     displayName: profile.displayName,
     username: profile.username,
@@ -36,36 +42,44 @@ export function EditProfileDialog({ open, onOpenChange, profile, onSave, saving 
     website: profile.website,
     tagline: profile.tagline,
     isPublic: profile.isPublic,
+    visibleSections: {
+      music: profile.visibleSections?.music ?? true,
+      movies: profile.visibleSections?.movies ?? true,
+      series: profile.visibleSections?.series ?? true,
+      books: profile.visibleSections?.books ?? true,
+    },
     socialLinks: {
       twitter: profile.socialLinks.twitter || "",
       instagram: profile.socialLinks.instagram || "",
       linkedin: profile.socialLinks.linkedin || "",
       github: profile.socialLinks.github || "",
     },
-  })
+  });
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
 
     // Clean up social links (remove empty ones)
     const cleanSocialLinks = Object.fromEntries(
-      Object.entries(formData.socialLinks).filter(([_, value]) => value.trim() !== ""),
-    )
+      Object.entries(formData.socialLinks).filter(
+        ([_, value]) => value.trim() !== ""
+      )
+    );
 
     try {
       await onSave({
         ...formData,
         socialLinks: cleanSocialLinks,
-      })
-      onOpenChange(false)
+      });
+      onOpenChange(false);
     } catch (error) {
-      console.error("Failed to save profile:", error)
+      console.error("Failed to save profile:", error);
     }
-  }
+  };
 
   const updateFormData = (field: string, value: any) => {
-    setFormData((prev) => ({ ...prev, [field]: value }))
-  }
+    setFormData((prev) => ({ ...prev, [field]: value }));
+  };
 
   const updateSocialLink = (platform: string, value: string) => {
     setFormData((prev) => ({
@@ -74,15 +88,27 @@ export function EditProfileDialog({ open, onOpenChange, profile, onSave, saving 
         ...prev.socialLinks,
         [platform]: value,
       },
-    }))
-  }
+    }));
+  };
+
+  const updateVisibleSection = (section: string, value: boolean) => {
+    setFormData((prev) => ({
+      ...prev,
+      visibleSections: {
+        ...prev.visibleSections,
+        [section]: value,
+      },
+    }));
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Edit Profile</DialogTitle>
-          <DialogDescription>Make changes to your profile here. Click save when you're done.</DialogDescription>
+          <DialogDescription>
+            Make changes to your profile here. Click save when you're done.
+          </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -170,7 +196,9 @@ export function EditProfileDialog({ open, onOpenChange, profile, onSave, saving 
                 <Input
                   id="instagram"
                   value={formData.socialLinks.instagram}
-                  onChange={(e) => updateSocialLink("instagram", e.target.value)}
+                  onChange={(e) =>
+                    updateSocialLink("instagram", e.target.value)
+                  }
                   placeholder="@username"
                 />
               </div>
@@ -199,6 +227,52 @@ export function EditProfileDialog({ open, onOpenChange, profile, onSave, saving 
             </div>
           </div>
 
+          <div className="space-y-4">
+            <Label>Profile Sections</Label>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="music"
+                  checked={formData.visibleSections.music}
+                  onCheckedChange={(checked) =>
+                    updateVisibleSection("music", checked)
+                  }
+                />
+                <Label htmlFor="music">Show Music Section</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="movies"
+                  checked={formData.visibleSections.movies}
+                  onCheckedChange={(checked) =>
+                    updateVisibleSection("movies", checked)
+                  }
+                />
+                <Label htmlFor="movies">Show Movies Section</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="series"
+                  checked={formData.visibleSections.series}
+                  onCheckedChange={(checked) =>
+                    updateVisibleSection("series", checked)
+                  }
+                />
+                <Label htmlFor="series">Show Series Section</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="books"
+                  checked={formData.visibleSections.books}
+                  onCheckedChange={(checked) =>
+                    updateVisibleSection("books", checked)
+                  }
+                />
+                <Label htmlFor="books">Show Books Section</Label>
+              </div>
+            </div>
+          </div>
+
           <div className="flex items-center space-x-2">
             <Switch
               id="isPublic"
@@ -209,7 +283,11 @@ export function EditProfileDialog({ open, onOpenChange, profile, onSave, saving 
           </div>
 
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+            >
               Cancel
             </Button>
             <Button type="submit" disabled={saving}>
@@ -220,5 +298,5 @@ export function EditProfileDialog({ open, onOpenChange, profile, onSave, saving 
         </form>
       </DialogContent>
     </Dialog>
-  )
+  );
 }

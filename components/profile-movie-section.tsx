@@ -29,7 +29,8 @@ import { useMovieProfile, type TMDBMovie } from "@/hooks/use-movie-profile";
 import { useCurrentUser } from "@/hooks/use-current-user";
 
 interface ProfileMovieSectionProps {
-  // Optional future props for wiring real data
+  userId?: string;
+  readOnly?: boolean;
 }
 
 // No placeholder data - only show actual content
@@ -56,8 +57,12 @@ const getTextContent = (text: any): string => {
   return "";
 };
 
-export default function ProfileMovieSection(_: ProfileMovieSectionProps) {
+export default function ProfileMovieSection({
+  userId,
+  readOnly = false,
+}: ProfileMovieSectionProps) {
   const { user } = useCurrentUser();
+  const targetUserId = userId || user?.uid;
   const {
     movieProfile,
     loading,
@@ -75,7 +80,7 @@ export default function ProfileMovieSection(_: ProfileMovieSectionProps) {
     removeRating,
     searchMovie,
     searchDirector,
-  } = useMovieProfile(user?.uid);
+  } = useMovieProfile(targetUserId);
 
   // Search states
   const [searchQuery, setSearchQuery] = useState("");
@@ -207,12 +212,16 @@ export default function ProfileMovieSection(_: ProfileMovieSectionProps) {
       return (
         <Star
           key={i}
-          className={`h-4 w-4 cursor-pointer transition-colors ${
+          className={`h-4 w-4 transition-colors ${
             isFullStar ? "fill-yellow-400 text-yellow-400" : "text-gray-300"
-          }`}
-          onMouseEnter={() => handleRatingHover(movieId, starValue)}
-          onMouseLeave={handleRatingLeave}
-          onClick={() => handleRatingClick(movieId, starValue)}
+          } ${!readOnly ? "cursor-pointer" : ""}`}
+          onMouseEnter={
+            !readOnly ? () => handleRatingHover(movieId, starValue) : undefined
+          }
+          onMouseLeave={!readOnly ? handleRatingLeave : undefined}
+          onClick={
+            !readOnly ? () => handleRatingClick(movieId, starValue) : undefined
+          }
         />
       );
     });
@@ -450,18 +459,10 @@ export default function ProfileMovieSection(_: ProfileMovieSectionProps) {
     }
   };
 
-  // Handle add to list click
-  const handleAddToListClick = (movie: TMDBMovie) => {
-    // Add to watchlist if not already there
-    if (!safeMovieProfile.watchlist?.find((m) => m.id === movie.id)) {
-      addToWatchlist(movie);
-    }
-  };
-
   // Show loading state
   if (loading) {
     return (
-      <div className="space-y-5 max-w-4xl mx-auto">
+      <div className="space-y-5 max-w-5xl mx-auto">
         <div className="grid grid-cols-3 gap-3 sm:gap-4">
           {[1, 2, 3].map((i) => (
             <div key={i} className="animate-pulse">
@@ -485,7 +486,7 @@ export default function ProfileMovieSection(_: ProfileMovieSectionProps) {
   // Show error state
   if (error) {
     return (
-      <div className="space-y-5 max-w-4xl mx-auto">
+      <div className="space-y-5 max-w-5xl mx-auto">
         <div className="text-center p-8">
           <div className="text-red-500 mb-4">
             Error loading movie profile: {error}
@@ -501,7 +502,7 @@ export default function ProfileMovieSection(_: ProfileMovieSectionProps) {
   // Show setup instructions if no TMDB API key
   if (!process.env.NEXT_PUBLIC_TMDB_API_KEY) {
     return (
-      <div className="space-y-5 max-w-4xl mx-auto">
+      <div className="space-y-5 max-w-5xl mx-auto">
         <div className="text-center p-8">
           <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 mb-4">
             <h3 className="text-lg font-semibold text-yellow-800 mb-2">
@@ -594,7 +595,7 @@ export default function ProfileMovieSection(_: ProfileMovieSectionProps) {
   const limitedRatings = safeMovieProfile.ratings || [];
 
   return (
-    <div className="space-y-5 max-w-4xl mx-auto">
+    <div className="space-y-0 max-w-3xl mx-auto">
       <div>
         {/* currently watching - simplified format */}
         <div>
@@ -602,14 +603,16 @@ export default function ProfileMovieSection(_: ProfileMovieSectionProps) {
             <p className="text-sm font-medium text-muted-foreground">
               currently watching
             </p>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-6 w-6 p-0 hover:bg-muted"
-              onClick={() => openSearchDialog("recentlyWatched")}
-            >
-              <Plus className="h-3 w-3" />
-            </Button>
+            {!readOnly && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-6 w-6 p-0 hover:bg-muted"
+                onClick={() => openSearchDialog("recentlyWatched")}
+              >
+                <Plus className="h-3 w-3" />
+              </Button>
+            )}
           </div>
           {currentRecentlyWatched ? (
             <div className="relative">
@@ -678,16 +681,6 @@ export default function ProfileMovieSection(_: ProfileMovieSectionProps) {
                     >
                       trailer
                     </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="h-7 text-xs px-3"
-                      onClick={() =>
-                        handleAddToListClick(currentRecentlyWatched)
-                      }
-                    >
-                      add to list
-                    </Button>
                   </div>
                 </div>
               </div>
@@ -747,17 +740,19 @@ export default function ProfileMovieSection(_: ProfileMovieSectionProps) {
       </div>
 
       {/* favorite movies */}
-      <div>
+      <div className="mt-2">
         <div className="flex items-center justify-between mb-3">
           <p className="text-sm font-medium text-muted-foreground">favorite</p>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-6 w-6 p-0 hover:bg-muted"
-            onClick={() => openSearchDialog("favoriteMovies")}
-          >
-            <Plus className="h-3 w-3" />
-          </Button>
+          {!readOnly && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-6 w-6 p-0 hover:bg-muted"
+              onClick={() => openSearchDialog("favoriteMovies")}
+            >
+              <Plus className="h-3 w-3" />
+            </Button>
+          )}
         </div>
         <div className="relative">
           <Button
@@ -770,7 +765,7 @@ export default function ProfileMovieSection(_: ProfileMovieSectionProps) {
           </Button>
           <div
             ref={scrollContainerRefs.favoriteMovies}
-            className="flex gap-2 overflow-x-auto scrollbar-hide"
+            className="flex gap-4 overflow-x-auto scrollbar-hide"
             style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
           >
             {limitedFavoriteMovies.length > 0
@@ -791,16 +786,18 @@ export default function ProfileMovieSection(_: ProfileMovieSectionProps) {
                           target.src = "/placeholder.svg";
                         }}
                       />
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="absolute top-1 right-1 h-6 w-6 p-0 bg-black/50 hover:bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity"
-                        onClick={() =>
-                          handleRemoveItem("favoriteMovies", movie.id)
-                        }
-                      >
-                        <X className="h-3 w-3 text-white" />
-                      </Button>
+                      {!readOnly && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="absolute top-1 right-1 h-6 w-6 p-0 bg-black/50 hover:bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity"
+                          onClick={() =>
+                            handleRemoveItem("favoriteMovies", movie.id)
+                          }
+                        >
+                          <X className="h-3 w-3 text-white" />
+                        </Button>
+                      )}
                     </div>
                     <div className="mt-2 text-center">
                       <p className="text-sm font-semibold leading-tight">
@@ -849,17 +846,19 @@ export default function ProfileMovieSection(_: ProfileMovieSectionProps) {
       </div>
 
       {/* watchlist */}
-      <div>
+      <div className="mt-2">
         <div className="flex items-center justify-between mb-3">
           <p className="text-sm font-medium text-muted-foreground">watchlist</p>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-6 w-6 p-0 hover:bg-muted"
-            onClick={() => openSearchDialog("watchlist")}
-          >
-            <Plus className="h-3 w-3" />
-          </Button>
+          {!readOnly && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-6 w-6 p-0 hover:bg-muted"
+              onClick={() => openSearchDialog("watchlist")}
+            >
+              <Plus className="h-3 w-3" />
+            </Button>
+          )}
         </div>
         <div className="relative">
           <Button
@@ -872,7 +871,7 @@ export default function ProfileMovieSection(_: ProfileMovieSectionProps) {
           </Button>
           <div
             ref={scrollContainerRefs.watchlist}
-            className="flex gap-2 overflow-x-auto scrollbar-hide"
+            className="flex gap-4 overflow-x-auto scrollbar-hide"
             style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
           >
             {limitedWatchlist.length > 0
@@ -893,14 +892,18 @@ export default function ProfileMovieSection(_: ProfileMovieSectionProps) {
                           target.src = "/placeholder.svg";
                         }}
                       />
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="absolute top-1 right-1 h-6 w-6 p-0 bg-black/50 hover:bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity"
-                        onClick={() => handleRemoveItem("watchlist", movie.id)}
-                      >
-                        <X className="h-3 w-3 text-white" />
-                      </Button>
+                      {!readOnly && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="absolute top-1 right-1 h-6 w-6 p-0 bg-black/50 hover:bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity"
+                          onClick={() =>
+                            handleRemoveItem("watchlist", movie.id)
+                          }
+                        >
+                          <X className="h-3 w-3 text-white" />
+                        </Button>
+                      )}
                     </div>
                     <div className="mt-2 text-center">
                       <p className="text-sm font-semibold leading-tight">
@@ -949,19 +952,21 @@ export default function ProfileMovieSection(_: ProfileMovieSectionProps) {
       </div>
 
       {/* recommendations */}
-      <div>
+      <div className="mt-2">
         <div className="flex items-center justify-between mb-3">
           <p className="text-sm font-medium text-muted-foreground">
             recommendation
           </p>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-6 w-6 p-0 hover:bg-muted"
-            onClick={() => openSearchDialog("recommendation")}
-          >
-            <Plus className="h-3 w-3" />
-          </Button>
+          {!readOnly && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-6 w-6 p-0 hover:bg-muted"
+              onClick={() => openSearchDialog("recommendation")}
+            >
+              <Plus className="h-3 w-3" />
+            </Button>
+          )}
         </div>
         <div className="relative">
           <Button
@@ -974,7 +979,7 @@ export default function ProfileMovieSection(_: ProfileMovieSectionProps) {
           </Button>
           <div
             ref={scrollContainerRefs.recommendations}
-            className="flex gap-2 overflow-x-auto scrollbar-hide"
+            className="flex gap-4 overflow-x-auto scrollbar-hide"
             style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
           >
             {limitedRecommendations.length > 0
@@ -995,16 +1000,18 @@ export default function ProfileMovieSection(_: ProfileMovieSectionProps) {
                           target.src = "/placeholder.svg";
                         }}
                       />
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="absolute top-1 right-1 h-6 w-6 p-0 bg-black/50 hover:bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity"
-                        onClick={() =>
-                          handleRemoveItem("recommendation", movie.id)
-                        }
-                      >
-                        <X className="h-3 w-3 text-white" />
-                      </Button>
+                      {!readOnly && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="absolute top-1 right-1 h-6 w-6 p-0 bg-black/50 hover:bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity"
+                          onClick={() =>
+                            handleRemoveItem("recommendation", movie.id)
+                          }
+                        >
+                          <X className="h-3 w-3 text-white" />
+                        </Button>
+                      )}
                     </div>
                     <div className="mt-2 text-center">
                       <p className="text-sm font-semibold leading-tight">
@@ -1056,14 +1063,16 @@ export default function ProfileMovieSection(_: ProfileMovieSectionProps) {
       <div>
         <div className="flex items-center justify-between mb-3">
           <p className="text-sm font-medium text-muted-foreground">rating</p>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-6 w-6 p-0 hover:bg-muted"
-            onClick={() => openSearchDialog("rating")}
-          >
-            <Plus className="h-3 w-3" />
-          </Button>
+          {!readOnly && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-6 w-6 p-0 hover:bg-muted"
+              onClick={() => openSearchDialog("rating")}
+            >
+              <Plus className="h-3 w-3" />
+            </Button>
+          )}
         </div>
         <div className="relative">
           <Button
@@ -1076,7 +1085,7 @@ export default function ProfileMovieSection(_: ProfileMovieSectionProps) {
           </Button>
           <div
             ref={scrollContainerRefs.ratings}
-            className="flex gap-2 overflow-x-auto scrollbar-hide"
+            className="flex gap-4 overflow-x-auto scrollbar-hide"
             style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
           >
             {limitedRatings.length > 0
@@ -1097,16 +1106,18 @@ export default function ProfileMovieSection(_: ProfileMovieSectionProps) {
                           target.src = "/placeholder.svg";
                         }}
                       />
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="absolute top-1 right-1 h-6 w-6 p-0 bg-black/50 hover:bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity"
-                        onClick={() =>
-                          handleRemoveItem("rating", rating.movie.id)
-                        }
-                      >
-                        <X className="h-3 w-3 text-white" />
-                      </Button>
+                      {!readOnly && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="absolute top-1 right-1 h-6 w-6 p-0 bg-black/50 hover:bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity"
+                          onClick={() =>
+                            handleRemoveItem("rating", rating.movie.id)
+                          }
+                        >
+                          <X className="h-3 w-3 text-white" />
+                        </Button>
+                      )}
                       <div className="absolute bottom-1 left-1 right-1 flex justify-center gap-1 p-2 bg-black/50 rounded-md">
                         {renderInteractiveStars(rating.movie.id, rating.rating)}
                       </div>

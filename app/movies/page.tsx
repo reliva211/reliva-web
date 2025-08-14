@@ -2,6 +2,8 @@
 
 import { useEffect, useState, useMemo } from "react";
 import Image from "next/image";
+import { SafeImage } from "@/components/safe-image";
+import { DebugImage } from "@/components/debug-image";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
@@ -126,10 +128,27 @@ export default function MoviesPage() {
         // Fetch movies
         const moviesRef = collection(db, "users", user.uid, "movies");
         const moviesSnapshot = await getDocs(moviesRef);
-        const moviesData = moviesSnapshot.docs.map((doc) => ({
-          id: parseInt(doc.id),
-          ...doc.data(),
-        })) as Movie[];
+        const moviesData = moviesSnapshot.docs.map((doc) => {
+          const data = doc.data();
+          console.log("Raw movie data from DB:", data);
+
+          const movieData = {
+            id: parseInt(doc.id),
+            ...data,
+            // Ensure cover is never empty
+            cover:
+              data.cover && data.cover.trim() !== ""
+                ? data.cover
+                : "/placeholder.svg",
+            // Ensure title is never empty
+            title: data.title || "Unknown Title",
+          };
+
+          console.log("Processed movie data:", movieData);
+          return movieData;
+        }) as Movie[];
+
+        console.log("Final fetched movies data:", moviesData);
         setSavedMovies(moviesData);
 
         // Fetch collections
@@ -668,24 +687,35 @@ function MovieCard({
 }) {
   const [showDropdown, setShowDropdown] = useState(false);
 
+  // Validate search result data
+  const validatedMovie = {
+    ...movie,
+    cover:
+      movie.cover && movie.cover.trim() !== ""
+        ? movie.cover
+        : "/placeholder.svg",
+    title: movie.title || "Unknown Title",
+  };
+
   if (viewMode === "list") {
     return (
       <Card className="flex items-center space-x-4 p-4 hover:shadow-lg transition-shadow">
         <div className="relative w-16 h-24 flex-shrink-0">
-          <Image
-            src={movie.cover}
-            alt={movie.title}
-            fill
+          <DebugImage
+            src={validatedMovie.cover}
+            alt={validatedMovie.title}
             className="object-cover rounded"
           />
         </div>
         <div className="flex-1 min-w-0">
-          <h3 className="font-semibold truncate">{movie.title}</h3>
-          <p className="text-sm text-muted-foreground">{movie.year}</p>
-          {movie.rating && (
+          <h3 className="font-semibold truncate">{validatedMovie.title}</h3>
+          <p className="text-sm text-muted-foreground">{validatedMovie.year}</p>
+          {validatedMovie.rating && (
             <div className="flex items-center gap-1 mt-1">
               <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-              <span className="text-sm">{movie.rating.toFixed(1)}</span>
+              <span className="text-sm">
+                {validatedMovie.rating.toFixed(1)}
+              </span>
             </div>
           )}
         </div>
@@ -721,8 +751,8 @@ function MovieCard({
     <Card className="group relative overflow-hidden hover:shadow-xl transition-all duration-300">
       <div className="relative aspect-[2/3]">
         <Image
-          src={movie.cover}
-          alt={movie.title}
+          src={validatedMovie.cover}
+          alt={validatedMovie.title}
           fill
           className="object-cover transition-transform group-hover:scale-105"
         />
@@ -739,7 +769,9 @@ function MovieCard({
                 {collections.map((collection) => (
                   <DropdownMenuItem
                     key={collection.id}
-                    onClick={() => onAddToCollection(movie, collection.id)}
+                    onClick={() =>
+                      onAddToCollection(validatedMovie, collection.id)
+                    }
                   >
                     <div className="flex items-center gap-2">
                       <div
@@ -755,24 +787,45 @@ function MovieCard({
             </DropdownMenu>
 
             <Button size="sm" variant="secondary" asChild>
-              <Link href={`/movies/${movie.id}`}>View Details</Link>
+              <Link href={`/movies/${validatedMovie.id}`}>View Details</Link>
             </Button>
           </div>
         </div>
       </div>
       <CardContent className="p-3">
-        <h3 className="font-semibold text-sm truncate">{movie.title}</h3>
-        <p className="text-xs text-muted-foreground">{movie.year}</p>
-        {movie.rating && (
+        <h3 className="font-semibold text-sm truncate">
+          {validatedMovie.title}
+        </h3>
+        <p className="text-xs text-muted-foreground">{validatedMovie.year}</p>
+        {validatedMovie.rating && (
           <div className="flex items-center gap-1 mt-1">
             <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-            <span className="text-xs">{movie.rating.toFixed(1)}</span>
+            <span className="text-xs">{validatedMovie.rating.toFixed(1)}</span>
           </div>
         )}
       </CardContent>
     </Card>
   );
 }
+
+// Helper function to validate and fix movie data
+const validateMovieData = (movie: Movie): Movie => {
+  // Ensure cover is never empty or invalid
+  let cover = "/placeholder.svg";
+  if (
+    movie.cover &&
+    typeof movie.cover === "string" &&
+    movie.cover.trim() !== ""
+  ) {
+    cover = movie.cover;
+  }
+
+  return {
+    ...movie,
+    cover,
+    title: movie.title || "Unknown Title",
+  };
+};
 
 // Saved Movie Card Component
 function SavedMovieCard({
@@ -788,28 +841,38 @@ function SavedMovieCard({
 }) {
   const [showDropdown, setShowDropdown] = useState(false);
 
+  // Validate movie data to ensure cover is never empty
+  const validatedMovie = validateMovieData(movie);
+
   if (viewMode === "list") {
     return (
       <Card className="flex items-center space-x-4 p-4 hover:shadow-lg transition-shadow">
         <div className="relative w-16 h-24 flex-shrink-0">
           <Image
-            src={movie.cover}
-            alt={movie.title}
+            src={validatedMovie.cover}
+            alt={validatedMovie.title}
             fill
             className="object-cover rounded"
+            onError={(e) => {
+              console.log("Image failed to load:", validatedMovie.cover);
+              const target = e.target as HTMLImageElement;
+              target.src = "/placeholder.svg";
+            }}
           />
         </div>
         <div className="flex-1 min-w-0">
-          <h3 className="font-semibold truncate">{movie.title}</h3>
-          <p className="text-sm text-muted-foreground">{movie.year}</p>
-          {movie.rating && (
+          <h3 className="font-semibold truncate">{validatedMovie.title}</h3>
+          <p className="text-sm text-muted-foreground">{validatedMovie.year}</p>
+          {validatedMovie.rating && (
             <div className="flex items-center gap-1 mt-1">
               <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-              <span className="text-sm">{movie.rating.toFixed(1)}</span>
+              <span className="text-sm">
+                {validatedMovie.rating.toFixed(1)}
+              </span>
             </div>
           )}
           <div className="flex flex-wrap gap-1 mt-2">
-            {movie.collections?.map((collectionId) => {
+            {validatedMovie.collections?.map((collectionId) => {
               const collection = collections.find((c) => c.id === collectionId);
               return collection ? (
                 <Badge key={collectionId} variant="outline" className="text-xs">
@@ -827,15 +890,17 @@ function SavedMovieCard({
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuItem asChild>
-              <Link href={`/movies/${movie.id}`}>View Details</Link>
+              <Link href={`/movies/${validatedMovie.id}`}>View Details</Link>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            {movie.collections?.map((collectionId) => {
+            {validatedMovie.collections?.map((collectionId) => {
               const collection = collections.find((c) => c.id === collectionId);
               return collection ? (
                 <DropdownMenuItem
                   key={collectionId}
-                  onClick={() => onRemoveFromCollection(movie.id, collectionId)}
+                  onClick={() =>
+                    onRemoveFromCollection(validatedMovie.id, collectionId)
+                  }
                 >
                   Remove from {collection.name}
                 </DropdownMenuItem>
@@ -851,8 +916,8 @@ function SavedMovieCard({
     <Card className="group relative overflow-hidden hover:shadow-xl transition-all duration-300">
       <div className="relative aspect-[2/3]">
         <Image
-          src={movie.cover}
-          alt={movie.title}
+          src={validatedMovie.cover}
+          alt={validatedMovie.title}
           fill
           className="object-cover transition-transform group-hover:scale-105"
         />
@@ -865,10 +930,10 @@ function SavedMovieCard({
             </DropdownMenuTrigger>
             <DropdownMenuContent>
               <DropdownMenuItem asChild>
-                <Link href={`/movies/${movie.id}`}>View Details</Link>
+                <Link href={`/movies/${validatedMovie.id}`}>View Details</Link>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              {movie.collections?.map((collectionId) => {
+              {validatedMovie.collections?.map((collectionId) => {
                 const collection = collections.find(
                   (c) => c.id === collectionId
                 );
@@ -876,7 +941,7 @@ function SavedMovieCard({
                   <DropdownMenuItem
                     key={collectionId}
                     onClick={() =>
-                      onRemoveFromCollection(movie.id, collectionId)
+                      onRemoveFromCollection(validatedMovie.id, collectionId)
                     }
                   >
                     Remove from {collection.name}
@@ -888,16 +953,18 @@ function SavedMovieCard({
         </div>
       </div>
       <CardContent className="p-3">
-        <h3 className="font-semibold text-sm truncate">{movie.title}</h3>
-        <p className="text-xs text-muted-foreground">{movie.year}</p>
-        {movie.rating && (
+        <h3 className="font-semibold text-sm truncate">
+          {validatedMovie.title}
+        </h3>
+        <p className="text-xs text-muted-foreground">{validatedMovie.year}</p>
+        {validatedMovie.rating && (
           <div className="flex items-center gap-1 mt-1">
             <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-            <span className="text-xs">{movie.rating.toFixed(1)}</span>
+            <span className="text-xs">{validatedMovie.rating.toFixed(1)}</span>
           </div>
         )}
         <div className="flex flex-wrap gap-1 mt-2">
-          {movie.collections?.slice(0, 2).map((collectionId) => {
+          {validatedMovie.collections?.slice(0, 2).map((collectionId) => {
             const collection = collections.find((c) => c.id === collectionId);
             return collection ? (
               <Badge key={collectionId} variant="outline" className="text-xs">
@@ -905,11 +972,12 @@ function SavedMovieCard({
               </Badge>
             ) : null;
           })}
-          {movie.collections && movie.collections.length > 2 && (
-            <Badge variant="outline" className="text-xs">
-              +{movie.collections.length - 2}
-            </Badge>
-          )}
+          {validatedMovie.collections &&
+            validatedMovie.collections.length > 2 && (
+              <Badge variant="outline" className="text-xs">
+                +{validatedMovie.collections.length - 2}
+              </Badge>
+            )}
         </div>
       </CardContent>
     </Card>
