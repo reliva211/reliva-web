@@ -24,9 +24,15 @@ export interface GoogleBook {
     publishedDate?: string;
     imageLinks?: {
       thumbnail?: string;
+      smallThumbnail?: string;
     };
     averageRating?: number;
     description?: string;
+    pageCount?: number;
+    categories?: string[];
+    language?: string;
+    publisher?: string;
+    industryIdentifiers?: { type: string; identifier: string }[];
   };
 }
 
@@ -77,10 +83,69 @@ class SearchService {
 
   async searchBooks(query: string): Promise<GoogleBook[]> {
     // Google Books API doesn't require an API key for basic searches
+    // Use more specific query parameters for better results
     const response = await fetch(
       `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(
         query
-      )}&maxResults=20`
+      )}&maxResults=20&printType=books&orderBy=relevance&fields=items(id,volumeInfo(title,authors,publishedDate,imageLinks,averageRating,description,pageCount,categories,language,publisher,industryIdentifiers))`
+    );
+
+    if (!response.ok) {
+      throw new Error(`Google Books API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return data.items || [];
+  }
+
+  async searchBooksDetailed(query: string): Promise<GoogleBook[]> {
+    // More detailed search with better field selection for full descriptions
+    const response = await fetch(
+      `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(
+        query
+      )}&maxResults=10&printType=books&orderBy=relevance&fields=items(id,volumeInfo(title,authors,publishedDate,imageLinks,averageRating,description,pageCount,categories,language,publisher,industryIdentifiers,subtitle,previewLink))`
+    );
+
+    if (!response.ok) {
+      throw new Error(`Google Books API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return data.items || [];
+  }
+
+  async getBookById(volumeId: string): Promise<GoogleBook | null> {
+    try {
+      const response = await fetch(
+        `https://www.googleapis.com/books/v1/volumes/${volumeId}?fields=id,volumeInfo(title,authors,publishedDate,imageLinks,averageRating,description,pageCount,categories,language,publisher,industryIdentifiers,subtitle,previewLink)`
+      );
+
+      if (!response.ok) {
+        throw new Error(`Google Books API error: ${response.status}`);
+      }
+
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error("Error fetching book by ID:", error);
+      return null;
+    }
+  }
+
+  async searchBooksByTitleAndAuthor(
+    title: string,
+    author?: string
+  ): Promise<GoogleBook[]> {
+    // More specific search using title and author for better results
+    let query = `intitle:"${title}"`;
+    if (author) {
+      query += `+inauthor:"${author}"`;
+    }
+
+    const response = await fetch(
+      `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(
+        query
+      )}&maxResults=5&printType=books&orderBy=relevance&fields=items(id,volumeInfo(title,authors,publishedDate,imageLinks,averageRating,description,pageCount,categories,language,publisher,industryIdentifiers,subtitle,previewLink))`
     );
 
     if (!response.ok) {

@@ -102,7 +102,9 @@ export default function MoviesPage() {
   const [newCollectionIsPublic, setNewCollectionIsPublic] = useState(false);
   const [selectedGenre, setSelectedGenre] = useState<string>("");
   const [isGenreSearching, setIsGenreSearching] = useState(false);
-  const [sortBy, setSortBy] = useState<"title" | "year" | "rating" | "added">("added");
+  const [sortBy, setSortBy] = useState<"title" | "year" | "rating" | "added">(
+    "added"
+  );
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
 
@@ -124,24 +126,29 @@ export default function MoviesPage() {
         // Fetch movies
         const moviesRef = collection(db, "users", user.uid, "movies");
         const moviesSnapshot = await getDocs(moviesRef);
-        const moviesData = moviesSnapshot.docs.map(doc => ({
+        const moviesData = moviesSnapshot.docs.map((doc) => ({
           id: parseInt(doc.id),
-          ...doc.data()
+          ...doc.data(),
         })) as Movie[];
         setSavedMovies(moviesData);
 
         // Fetch collections
-        const collectionsRef = collection(db, "users", user.uid, "movieCollections");
+        const collectionsRef = collection(
+          db,
+          "users",
+          user.uid,
+          "movieCollections"
+        );
         const collectionsSnapshot = await getDocs(collectionsRef);
-        const collectionsData = collectionsSnapshot.docs.map(doc => ({
+        const collectionsData = collectionsSnapshot.docs.map((doc) => ({
           id: doc.id,
-          ...doc.data()
+          ...doc.data(),
         })) as Collection[];
 
         // Create default collections if they don't exist
-        const existingNames = collectionsData.map(col => col.name);
+        const existingNames = collectionsData.map((col) => col.name);
         const missingDefaults = defaultCollections.filter(
-          col => !existingNames.includes(col.name)
+          (col) => !existingNames.includes(col.name)
         );
 
         if (missingDefaults.length > 0) {
@@ -150,9 +157,9 @@ export default function MoviesPage() {
           }
           // Refetch collections
           const newSnapshot = await getDocs(collectionsRef);
-          const allCollections = newSnapshot.docs.map(doc => ({
+          const allCollections = newSnapshot.docs.map((doc) => ({
             id: doc.id,
-            ...doc.data()
+            ...doc.data(),
           })) as Collection[];
           setCollections(allCollections);
         } else {
@@ -194,22 +201,33 @@ export default function MoviesPage() {
   };
 
   // Add movie to collection
-  const addMovieToCollection = async (movie: SearchResult, collectionId: string) => {
+  const addMovieToCollection = async (
+    movie: SearchResult,
+    collectionId: string
+  ) => {
     if (!user?.uid) return;
 
     try {
       // Check if movie already exists
-      const existingMovie = savedMovies.find(m => m.id === movie.id);
-      
+      const existingMovie = savedMovies.find((m) => m.id === movie.id);
+
       if (existingMovie) {
         // Update existing movie with new collection
-        const updatedCollections = [...(existingMovie.collections || []), collectionId];
-        await updateDoc(doc(db, "users", user.uid, "movies", movie.id.toString()), {
-          collections: updatedCollections
-        });
-        setSavedMovies(prev => prev.map(m => 
-          m.id === movie.id ? { ...m, collections: updatedCollections } : m
-        ));
+        const updatedCollections = [
+          ...(existingMovie.collections || []),
+          collectionId,
+        ];
+        await updateDoc(
+          doc(db, "users", user.uid, "movies", movie.id.toString()),
+          {
+            collections: updatedCollections,
+          }
+        );
+        setSavedMovies((prev) =>
+          prev.map((m) =>
+            m.id === movie.id ? { ...m, collections: updatedCollections } : m
+          )
+        );
       } else {
         // Create new movie
         const movieData: Movie = {
@@ -225,8 +243,11 @@ export default function MoviesPage() {
           release_date: movie.release_date || "",
         };
 
-        await setDoc(doc(db, "users", user.uid, "movies", movie.id.toString()), movieData);
-        setSavedMovies(prev => [...prev, movieData]);
+        await setDoc(
+          doc(db, "users", user.uid, "movies", movie.id.toString()),
+          movieData
+        );
+        setSavedMovies((prev) => [...prev, movieData]);
       }
     } catch (error) {
       console.error("Error adding movie to collection:", error);
@@ -234,27 +255,38 @@ export default function MoviesPage() {
   };
 
   // Remove movie from collection
-  const removeMovieFromCollection = async (movieId: number, collectionId: string) => {
+  const removeMovieFromCollection = async (
+    movieId: number,
+    collectionId: string
+  ) => {
     if (!user?.uid) return;
 
     try {
-      const movie = savedMovies.find(m => m.id === movieId);
+      const movie = savedMovies.find((m) => m.id === movieId);
       if (!movie) return;
 
-      const updatedCollections = movie.collections?.filter(id => id !== collectionId) || [];
-      
+      const updatedCollections =
+        movie.collections?.filter((id) => id !== collectionId) || [];
+
       if (updatedCollections.length === 0) {
         // Remove movie entirely if no collections left
-        await deleteDoc(doc(db, "users", user.uid, "movies", movieId.toString()));
-        setSavedMovies(prev => prev.filter(m => m.id !== movieId));
+        await deleteDoc(
+          doc(db, "users", user.uid, "movies", movieId.toString())
+        );
+        setSavedMovies((prev) => prev.filter((m) => m.id !== movieId));
       } else {
         // Update movie with remaining collections
-        await updateDoc(doc(db, "users", user.uid, "movies", movieId.toString()), {
-          collections: updatedCollections
-        });
-        setSavedMovies(prev => prev.map(m => 
-          m.id === movieId ? { ...m, collections: updatedCollections } : m
-        ));
+        await updateDoc(
+          doc(db, "users", user.uid, "movies", movieId.toString()),
+          {
+            collections: updatedCollections,
+          }
+        );
+        setSavedMovies((prev) =>
+          prev.map((m) =>
+            m.id === movieId ? { ...m, collections: updatedCollections } : m
+          )
+        );
       }
     } catch (error) {
       console.error("Error removing movie from collection:", error);
@@ -280,14 +312,21 @@ export default function MoviesPage() {
         name: newCollectionName.trim(),
         isPublic: newCollectionIsPublic,
         isDefault: false,
-        color: `bg-${['blue', 'green', 'yellow', 'purple', 'red', 'pink', 'indigo'][Math.floor(Math.random() * 7)]}-500`
+        color: `bg-${
+          ["blue", "green", "yellow", "purple", "red", "pink", "indigo"][
+            Math.floor(Math.random() * 7)
+          ]
+        }-500`,
       };
 
-      const docRef = await addDoc(collection(db, "users", user.uid, "movieCollections"), collectionData);
-      
+      const docRef = await addDoc(
+        collection(db, "users", user.uid, "movieCollections"),
+        collectionData
+      );
+
       const newCollection = { id: docRef.id, ...collectionData };
-      setCollections(prev => [...prev, newCollection]);
-      
+      setCollections((prev) => [...prev, newCollection]);
+
       setNewCollectionName("");
       setNewCollectionIsPublic(false);
       setCreateCollectionOpen(false);
@@ -299,10 +338,10 @@ export default function MoviesPage() {
   // Filter and sort movies
   const filteredAndSortedMovies = useMemo(() => {
     let filtered = savedMovies;
-    
+
     // Filter by collection
     if (selectedCollection !== "all") {
-      filtered = savedMovies.filter(movie => 
+      filtered = savedMovies.filter((movie) =>
         movie.collections?.includes(selectedCollection)
       );
     }
@@ -310,7 +349,7 @@ export default function MoviesPage() {
     // Sort movies
     filtered.sort((a, b) => {
       let aValue: any, bValue: any;
-      
+
       switch (sortBy) {
         case "title":
           aValue = a.title.toLowerCase();
@@ -343,7 +382,7 @@ export default function MoviesPage() {
 
   // Get collection info
   const getCollectionInfo = (collectionId: string) => {
-    return collections.find(col => col.id === collectionId);
+    return collections.find((col) => col.id === collectionId);
   };
 
   return (
@@ -354,15 +393,23 @@ export default function MoviesPage() {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-3xl font-bold">Movies</h1>
-              <p className="text-muted-foreground">Discover and organize your favorite films</p>
+              <p className="text-muted-foreground">
+                Discover and organize your favorite films
+              </p>
             </div>
             <div className="flex items-center gap-2">
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => setViewMode(viewMode === "grid" ? "list" : "grid")}
+                onClick={() =>
+                  setViewMode(viewMode === "grid" ? "list" : "grid")
+                }
               >
-                {viewMode === "grid" ? <List className="h-4 w-4" /> : <Grid3X3 className="h-4 w-4" />}
+                {viewMode === "grid" ? (
+                  <List className="h-4 w-4" />
+                ) : (
+                  <Grid3X3 className="h-4 w-4" />
+                )}
               </Button>
             </div>
           </div>
@@ -403,7 +450,10 @@ export default function MoviesPage() {
             {/* Sort Controls */}
             {searchResults.length === 0 && (
               <div className="flex items-center gap-2">
-                <Select value={sortBy} onValueChange={(value: any) => setSortBy(value)}>
+                <Select
+                  value={sortBy}
+                  onValueChange={(value: any) => setSortBy(value)}
+                >
                   <SelectTrigger className="w-40">
                     <SortAsc className="h-4 w-4 mr-2" />
                     <SelectValue />
@@ -415,13 +465,19 @@ export default function MoviesPage() {
                     <SelectItem value="rating">Rating</SelectItem>
                   </SelectContent>
                 </Select>
-                
+
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => setSortOrder(sortOrder === "asc" ? "desc" : "asc")}
+                  onClick={() =>
+                    setSortOrder(sortOrder === "asc" ? "desc" : "asc")
+                  }
                 >
-                  {sortOrder === "asc" ? <SortAsc className="h-4 w-4" /> : <SortDesc className="h-4 w-4" />}
+                  {sortOrder === "asc" ? (
+                    <SortAsc className="h-4 w-4" />
+                  ) : (
+                    <SortDesc className="h-4 w-4" />
+                  )}
                 </Button>
               </div>
             )}
@@ -430,10 +486,10 @@ export default function MoviesPage() {
           {/* Collections Tabs */}
           <div className="flex items-center gap-2 overflow-x-auto pb-2">
             {collections.map((collection) => {
-              const movieCount = savedMovies.filter(movie => 
+              const movieCount = savedMovies.filter((movie) =>
                 movie.collections?.includes(collection.id)
               ).length;
-              
+
               return (
                 <button
                   key={collection.id}
@@ -444,14 +500,23 @@ export default function MoviesPage() {
                       : "hover:bg-accent"
                   }`}
                 >
-                  <div className={`w-3 h-3 rounded-full ${collection.color || 'bg-gray-500'}`} />
+                  <div
+                    className={`w-3 h-3 rounded-full ${
+                      collection.color || "bg-gray-500"
+                    }`}
+                  />
                   <span className="font-medium">{collection.name}</span>
-                  <Badge variant="secondary" className="ml-1">{movieCount}</Badge>
+                  <Badge variant="secondary" className="ml-1">
+                    {movieCount}
+                  </Badge>
                 </button>
               );
             })}
-            
-            <Dialog open={isCreateCollectionOpen} onOpenChange={setCreateCollectionOpen}>
+
+            <Dialog
+              open={isCreateCollectionOpen}
+              onOpenChange={setCreateCollectionOpen}
+            >
               <DialogTrigger asChild>
                 <Button variant="outline" size="sm">
                   <Plus className="h-4 w-4" />
@@ -478,13 +543,18 @@ export default function MoviesPage() {
                     <Checkbox
                       id="public"
                       checked={newCollectionIsPublic}
-                      onCheckedChange={(checked) => setNewCollectionIsPublic(!!checked)}
+                      onCheckedChange={(checked) =>
+                        setNewCollectionIsPublic(!!checked)
+                      }
                     />
                     <Label htmlFor="public">Make collection public</Label>
                   </div>
                 </div>
                 <DialogFooter>
-                  <Button onClick={createCollection} disabled={!newCollectionName.trim()}>
+                  <Button
+                    onClick={createCollection}
+                    disabled={!newCollectionName.trim()}
+                  >
                     Create Collection
                   </Button>
                 </DialogFooter>
@@ -505,21 +575,26 @@ export default function MoviesPage() {
           ) : searchResults.length > 0 ? (
             <div>
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-2xl font-bold">Search Results ({searchResults.length})</h2>
+                <h2 className="text-2xl font-bold">
+                  Search Results ({searchResults.length})
+                </h2>
                 <Button variant="outline" onClick={clearSearch}>
                   Clear Search
                 </Button>
               </div>
-              <div className={viewMode === "grid" 
-                ? "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4"
-                : "space-y-4"
-              }>
+              <div
+                className={
+                  viewMode === "grid"
+                    ? "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4"
+                    : "space-y-4"
+                }
+              >
                 {searchResults.map((movie) => (
                   <MovieCard
                     key={movie.id}
                     movie={movie}
                     collections={collections}
-                    isInCollections={savedMovies.some(m => m.id === movie.id)}
+                    isInCollections={savedMovies.some((m) => m.id === movie.id)}
                     onAddToCollection={addMovieToCollection}
                     viewMode={viewMode}
                   />
@@ -531,10 +606,9 @@ export default function MoviesPage() {
               <Film className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
               <h3 className="text-lg font-semibold mb-2">No movies found</h3>
               <p className="text-muted-foreground mb-4">
-                {searchQuery 
+                {searchQuery
                   ? "Try a different search term"
-                  : "Start by searching for movies"
-                }
+                  : "Start by searching for movies"}
               </p>
               {!searchQuery && (
                 <Button onClick={() => setSearchQuery("")}>
@@ -546,16 +620,20 @@ export default function MoviesPage() {
             <div>
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-2xl font-bold">
-                  {selectedCollection === "all" 
-                    ? "All Movies" 
-                    : getCollectionInfo(selectedCollection)?.name || "Movies"
-                  } ({filteredAndSortedMovies.length})
+                  {selectedCollection === "all"
+                    ? "All Movies"
+                    : getCollectionInfo(selectedCollection)?.name ||
+                      "Movies"}{" "}
+                  ({filteredAndSortedMovies.length})
                 </h2>
               </div>
-              <div className={viewMode === "grid" 
-                ? "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4"
-                : "space-y-4"
-              }>
+              <div
+                className={
+                  viewMode === "grid"
+                    ? "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4"
+                    : "space-y-4"
+                }
+              >
                 {filteredAndSortedMovies.map((movie) => (
                   <SavedMovieCard
                     key={movie.id}
@@ -575,12 +653,12 @@ export default function MoviesPage() {
 }
 
 // Movie Card Component for Search Results
-function MovieCard({ 
-  movie, 
-  collections, 
-  isInCollections, 
-  onAddToCollection, 
-  viewMode 
+function MovieCard({
+  movie,
+  collections,
+  isInCollections,
+  onAddToCollection,
+  viewMode,
 }: {
   movie: SearchResult;
   collections: Collection[];
@@ -624,7 +702,11 @@ function MovieCard({
                 onClick={() => onAddToCollection(movie, collection.id)}
               >
                 <div className="flex items-center gap-2">
-                  <div className={`w-3 h-3 rounded-full ${collection.color || 'bg-gray-500'}`} />
+                  <div
+                    className={`w-3 h-3 rounded-full ${
+                      collection.color || "bg-gray-500"
+                    }`}
+                  />
                   {collection.name}
                 </div>
               </DropdownMenuItem>
@@ -660,22 +742,20 @@ function MovieCard({
                     onClick={() => onAddToCollection(movie, collection.id)}
                   >
                     <div className="flex items-center gap-2">
-                      <div className={`w-3 h-3 rounded-full ${collection.color || 'bg-gray-500'}`} />
+                      <div
+                        className={`w-3 h-3 rounded-full ${
+                          collection.color || "bg-gray-500"
+                        }`}
+                      />
                       {collection.name}
                     </div>
                   </DropdownMenuItem>
                 ))}
               </DropdownMenuContent>
             </DropdownMenu>
-            
-            <Button 
-              size="sm" 
-              variant="secondary"
-              asChild
-            >
-              <Link href={`/movies/${movie.id}`}>
-                View Details
-              </Link>
+
+            <Button size="sm" variant="secondary" asChild>
+              <Link href={`/movies/${movie.id}`}>View Details</Link>
             </Button>
           </div>
         </div>
@@ -695,11 +775,11 @@ function MovieCard({
 }
 
 // Saved Movie Card Component
-function SavedMovieCard({ 
-  movie, 
-  collections, 
-  onRemoveFromCollection, 
-  viewMode 
+function SavedMovieCard({
+  movie,
+  collections,
+  onRemoveFromCollection,
+  viewMode,
 }: {
   movie: Movie;
   collections: Collection[];
@@ -730,7 +810,7 @@ function SavedMovieCard({
           )}
           <div className="flex flex-wrap gap-1 mt-2">
             {movie.collections?.map((collectionId) => {
-              const collection = collections.find(c => c.id === collectionId);
+              const collection = collections.find((c) => c.id === collectionId);
               return collection ? (
                 <Badge key={collectionId} variant="outline" className="text-xs">
                   {collection.name}
@@ -747,13 +827,11 @@ function SavedMovieCard({
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuItem asChild>
-              <Link href={`/movies/${movie.id}`}>
-                View Details
-              </Link>
+              <Link href={`/movies/${movie.id}`}>View Details</Link>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             {movie.collections?.map((collectionId) => {
-              const collection = collections.find(c => c.id === collectionId);
+              const collection = collections.find((c) => c.id === collectionId);
               return collection ? (
                 <DropdownMenuItem
                   key={collectionId}
@@ -787,17 +865,19 @@ function SavedMovieCard({
             </DropdownMenuTrigger>
             <DropdownMenuContent>
               <DropdownMenuItem asChild>
-                <Link href={`/movies/${movie.id}`}>
-                  View Details
-                </Link>
+                <Link href={`/movies/${movie.id}`}>View Details</Link>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               {movie.collections?.map((collectionId) => {
-                const collection = collections.find(c => c.id === collectionId);
+                const collection = collections.find(
+                  (c) => c.id === collectionId
+                );
                 return collection ? (
                   <DropdownMenuItem
                     key={collectionId}
-                    onClick={() => onRemoveFromCollection(movie.id, collectionId)}
+                    onClick={() =>
+                      onRemoveFromCollection(movie.id, collectionId)
+                    }
                   >
                     Remove from {collection.name}
                   </DropdownMenuItem>
@@ -818,7 +898,7 @@ function SavedMovieCard({
         )}
         <div className="flex flex-wrap gap-1 mt-2">
           {movie.collections?.slice(0, 2).map((collectionId) => {
-            const collection = collections.find(c => c.id === collectionId);
+            const collection = collections.find((c) => c.id === collectionId);
             return collection ? (
               <Badge key={collectionId} variant="outline" className="text-xs">
                 {collection.name}
@@ -834,4 +914,4 @@ function SavedMovieCard({
       </CardContent>
     </Card>
   );
-} 
+}

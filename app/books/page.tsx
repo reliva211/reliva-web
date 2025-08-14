@@ -93,15 +93,17 @@ interface SearchResult {
 const searchBooks = async (query: string): Promise<SearchResult[]> => {
   try {
     const response = await fetch(
-      `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}&maxResults=20`
+      `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(
+        query
+      )}&maxResults=20`
     );
 
     if (!response.ok) {
-      throw new Error('Failed to fetch books');
+      throw new Error("Failed to fetch books");
     }
 
     const data = await response.json();
-    
+
     if (!data.items) {
       return [];
     }
@@ -115,7 +117,7 @@ const searchBooks = async (query: string): Promise<SearchResult[]> => {
           year = date.getFullYear();
         }
       }
-      
+
       return {
         id: book.id,
         title: info.title || "Unknown Title",
@@ -128,7 +130,7 @@ const searchBooks = async (query: string): Promise<SearchResult[]> => {
       };
     });
   } catch (error) {
-    console.error('Error searching books:', error);
+    console.error("Error searching books:", error);
     return [];
   }
 };
@@ -146,7 +148,9 @@ export default function BooksPage() {
   const [newCollectionIsPublic, setNewCollectionIsPublic] = useState(false);
   const [selectedGenre, setSelectedGenre] = useState<string>("");
   const [isGenreSearching, setIsGenreSearching] = useState(false);
-  const [sortBy, setSortBy] = useState<"title" | "year" | "rating" | "added">("added");
+  const [sortBy, setSortBy] = useState<"title" | "year" | "rating" | "added">(
+    "added"
+  );
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
 
@@ -168,24 +172,29 @@ export default function BooksPage() {
         // Fetch books
         const booksRef = collection(db, "users", user.uid, "books");
         const booksSnapshot = await getDocs(booksRef);
-        const booksData = booksSnapshot.docs.map(doc => ({
+        const booksData = booksSnapshot.docs.map((doc) => ({
           id: doc.id,
-          ...doc.data()
+          ...doc.data(),
         })) as Book[];
         setSavedBooks(booksData);
 
         // Fetch collections
-        const collectionsRef = collection(db, "users", user.uid, "bookCollections");
+        const collectionsRef = collection(
+          db,
+          "users",
+          user.uid,
+          "bookCollections"
+        );
         const collectionsSnapshot = await getDocs(collectionsRef);
-        const collectionsData = collectionsSnapshot.docs.map(doc => ({
+        const collectionsData = collectionsSnapshot.docs.map((doc) => ({
           id: doc.id,
-          ...doc.data()
+          ...doc.data(),
         })) as Collection[];
 
         // Create default collections if they don't exist
-        const existingNames = collectionsData.map(col => col.name);
+        const existingNames = collectionsData.map((col) => col.name);
         const missingDefaults = defaultCollections.filter(
-          col => !existingNames.includes(col.name)
+          (col) => !existingNames.includes(col.name)
         );
 
         if (missingDefaults.length > 0) {
@@ -194,9 +203,9 @@ export default function BooksPage() {
           }
           // Refetch collections
           const newSnapshot = await getDocs(collectionsRef);
-          const allCollections = newSnapshot.docs.map(doc => ({
+          const allCollections = newSnapshot.docs.map((doc) => ({
             id: doc.id,
-            ...doc.data()
+            ...doc.data(),
           })) as Collection[];
           setCollections(allCollections);
         } else {
@@ -248,44 +257,54 @@ export default function BooksPage() {
   };
 
   // Add book to collection
-  const addBookToCollection = async (book: SearchResult, collectionId: string) => {
+  const addBookToCollection = async (
+    book: SearchResult,
+    collectionId: string
+  ) => {
     if (!user?.uid) return;
 
     try {
       // Check if book already exists
-      const existingBook = savedBooks.find(b => b.id === book.id);
-      
+      const existingBook = savedBooks.find((b) => b.id === book.id);
+
       // Get the "All Books" collection
-      const allBooksCollection = collections.find(col => col.name === "All Books");
-      
+      const allBooksCollection = collections.find(
+        (col) => col.name === "All Books"
+      );
+
       if (existingBook) {
         let updatedCollections = [...(existingBook.collections || [])];
-        
+
         // Always add to "All Books" if it exists
-        if (allBooksCollection && !updatedCollections.includes(allBooksCollection.id)) {
+        if (
+          allBooksCollection &&
+          !updatedCollections.includes(allBooksCollection.id)
+        ) {
           updatedCollections.push(allBooksCollection.id);
         }
-        
+
         // Add to specific collection if not already there
         if (!updatedCollections.includes(collectionId)) {
           updatedCollections.push(collectionId);
         }
-        
+
         await updateDoc(doc(db, "users", user.uid, "books", book.id), {
-          collections: updatedCollections
+          collections: updatedCollections,
         });
-        setSavedBooks(prev => prev.map(b => 
-          b.id === book.id ? { ...b, collections: updatedCollections } : b
-        ));
+        setSavedBooks((prev) =>
+          prev.map((b) =>
+            b.id === book.id ? { ...b, collections: updatedCollections } : b
+          )
+        );
       } else {
         // Create new book
         let bookCollections = [collectionId];
-        
+
         // Always add to "All Books" if it exists
         if (allBooksCollection) {
           bookCollections.push(allBooksCollection.id);
         }
-        
+
         const bookData: Book = {
           id: book.id,
           title: book.title,
@@ -301,7 +320,7 @@ export default function BooksPage() {
         };
 
         await setDoc(doc(db, "users", user.uid, "books", book.id), bookData);
-        setSavedBooks(prev => [...prev, bookData]);
+        setSavedBooks((prev) => [...prev, bookData]);
       }
     } catch (error) {
       console.error("Error adding book to collection:", error);
@@ -309,27 +328,33 @@ export default function BooksPage() {
   };
 
   // Remove book from collection
-  const removeBookFromCollection = async (bookId: string, collectionId: string) => {
+  const removeBookFromCollection = async (
+    bookId: string,
+    collectionId: string
+  ) => {
     if (!user?.uid) return;
 
     try {
-      const book = savedBooks.find(b => b.id === bookId);
+      const book = savedBooks.find((b) => b.id === bookId);
       if (!book) return;
 
-      const updatedCollections = book.collections?.filter(id => id !== collectionId) || [];
-      
+      const updatedCollections =
+        book.collections?.filter((id) => id !== collectionId) || [];
+
       if (updatedCollections.length === 0) {
         // Remove book entirely if no collections left
         await deleteDoc(doc(db, "users", user.uid, "books", bookId));
-        setSavedBooks(prev => prev.filter(b => b.id !== bookId));
+        setSavedBooks((prev) => prev.filter((b) => b.id !== bookId));
       } else {
         // Update book with remaining collections
         await updateDoc(doc(db, "users", user.uid, "books", bookId), {
-          collections: updatedCollections
+          collections: updatedCollections,
         });
-        setSavedBooks(prev => prev.map(b => 
-          b.id === bookId ? { ...b, collections: updatedCollections } : b
-        ));
+        setSavedBooks((prev) =>
+          prev.map((b) =>
+            b.id === bookId ? { ...b, collections: updatedCollections } : b
+          )
+        );
       }
     } catch (error) {
       console.error("Error removing book from collection:", error);
@@ -345,14 +370,21 @@ export default function BooksPage() {
         name: newCollectionName.trim(),
         isPublic: newCollectionIsPublic,
         isDefault: false,
-        color: `bg-${['blue', 'green', 'yellow', 'purple', 'red', 'pink', 'indigo'][Math.floor(Math.random() * 7)]}-500`
+        color: `bg-${
+          ["blue", "green", "yellow", "purple", "red", "pink", "indigo"][
+            Math.floor(Math.random() * 7)
+          ]
+        }-500`,
       };
 
-      const docRef = await addDoc(collection(db, "users", user.uid, "bookCollections"), collectionData);
-      
+      const docRef = await addDoc(
+        collection(db, "users", user.uid, "bookCollections"),
+        collectionData
+      );
+
       const newCollection = { id: docRef.id, ...collectionData };
-      setCollections(prev => [...prev, newCollection]);
-      
+      setCollections((prev) => [...prev, newCollection]);
+
       setNewCollectionName("");
       setNewCollectionIsPublic(false);
       setCreateCollectionOpen(false);
@@ -364,10 +396,10 @@ export default function BooksPage() {
   // Filter and sort books
   const filteredAndSortedBooks = useMemo(() => {
     let filtered = savedBooks;
-    
+
     // Filter by collection
     if (selectedCollection !== "all") {
-      filtered = savedBooks.filter(book => 
+      filtered = savedBooks.filter((book) =>
         book.collections?.includes(selectedCollection)
       );
     }
@@ -375,7 +407,7 @@ export default function BooksPage() {
     // Sort books
     filtered.sort((a, b) => {
       let aValue: any, bValue: any;
-      
+
       switch (sortBy) {
         case "title":
           aValue = a.title.toLowerCase();
@@ -404,7 +436,7 @@ export default function BooksPage() {
 
   // Get collection info
   const getCollectionInfo = (collectionId: string) => {
-    return collections.find(col => col.id === collectionId);
+    return collections.find((col) => col.id === collectionId);
   };
 
   return (
@@ -415,15 +447,23 @@ export default function BooksPage() {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-3xl font-bold">Books</h1>
-              <p className="text-muted-foreground">Discover and organize your favorite books</p>
+              <p className="text-muted-foreground">
+                Discover and organize your favorite books
+              </p>
             </div>
             <div className="flex items-center gap-2">
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => setViewMode(viewMode === "grid" ? "list" : "grid")}
+                onClick={() =>
+                  setViewMode(viewMode === "grid" ? "list" : "grid")
+                }
               >
-                {viewMode === "grid" ? <List className="h-4 w-4" /> : <Grid3X3 className="h-4 w-4" />}
+                {viewMode === "grid" ? (
+                  <List className="h-4 w-4" />
+                ) : (
+                  <Grid3X3 className="h-4 w-4" />
+                )}
               </Button>
             </div>
           </div>
@@ -464,7 +504,10 @@ export default function BooksPage() {
             {/* Sort Controls */}
             {searchResults.length === 0 && (
               <div className="flex items-center gap-2">
-                <Select value={sortBy} onValueChange={(value: any) => setSortBy(value)}>
+                <Select
+                  value={sortBy}
+                  onValueChange={(value: any) => setSortBy(value)}
+                >
                   <SelectTrigger className="w-40">
                     <SortAsc className="h-4 w-4 mr-2" />
                     <SelectValue />
@@ -475,13 +518,19 @@ export default function BooksPage() {
                     <SelectItem value="year">Year</SelectItem>
                   </SelectContent>
                 </Select>
-                
+
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => setSortOrder(sortOrder === "asc" ? "desc" : "asc")}
+                  onClick={() =>
+                    setSortOrder(sortOrder === "asc" ? "desc" : "asc")
+                  }
                 >
-                  {sortOrder === "asc" ? <SortAsc className="h-4 w-4" /> : <SortDesc className="h-4 w-4" />}
+                  {sortOrder === "asc" ? (
+                    <SortAsc className="h-4 w-4" />
+                  ) : (
+                    <SortDesc className="h-4 w-4" />
+                  )}
                 </Button>
               </div>
             )}
@@ -490,10 +539,10 @@ export default function BooksPage() {
           {/* Collections Tabs */}
           <div className="flex items-center gap-2 overflow-x-auto pb-2">
             {collections.map((collection) => {
-              const bookCount = savedBooks.filter(book => 
+              const bookCount = savedBooks.filter((book) =>
                 book.collections?.includes(collection.id)
               ).length;
-              
+
               return (
                 <button
                   key={collection.id}
@@ -504,14 +553,23 @@ export default function BooksPage() {
                       : "hover:bg-accent"
                   }`}
                 >
-                  <div className={`w-3 h-3 rounded-full ${collection.color || 'bg-gray-500'}`} />
+                  <div
+                    className={`w-3 h-3 rounded-full ${
+                      collection.color || "bg-gray-500"
+                    }`}
+                  />
                   <span className="font-medium">{collection.name}</span>
-                  <Badge variant="secondary" className="ml-1">{bookCount}</Badge>
+                  <Badge variant="secondary" className="ml-1">
+                    {bookCount}
+                  </Badge>
                 </button>
               );
             })}
-            
-            <Dialog open={isCreateCollectionOpen} onOpenChange={setCreateCollectionOpen}>
+
+            <Dialog
+              open={isCreateCollectionOpen}
+              onOpenChange={setCreateCollectionOpen}
+            >
               <DialogTrigger asChild>
                 <Button variant="outline" size="sm">
                   <Plus className="h-4 w-4" />
@@ -538,13 +596,18 @@ export default function BooksPage() {
                     <Checkbox
                       id="public"
                       checked={newCollectionIsPublic}
-                      onCheckedChange={(checked) => setNewCollectionIsPublic(!!checked)}
+                      onCheckedChange={(checked) =>
+                        setNewCollectionIsPublic(!!checked)
+                      }
                     />
                     <Label htmlFor="public">Make collection public</Label>
                   </div>
                 </div>
                 <DialogFooter>
-                  <Button onClick={createCollection} disabled={!newCollectionName.trim()}>
+                  <Button
+                    onClick={createCollection}
+                    disabled={!newCollectionName.trim()}
+                  >
                     Create Collection
                   </Button>
                 </DialogFooter>
@@ -565,21 +628,26 @@ export default function BooksPage() {
           ) : searchResults.length > 0 ? (
             <div>
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-2xl font-bold">Search Results ({searchResults.length})</h2>
+                <h2 className="text-2xl font-bold">
+                  Search Results ({searchResults.length})
+                </h2>
                 <Button variant="outline" onClick={clearSearch}>
                   Clear Search
                 </Button>
               </div>
-              <div className={viewMode === "grid" 
-                ? "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4"
-                : "space-y-4"
-              }>
+              <div
+                className={
+                  viewMode === "grid"
+                    ? "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4"
+                    : "space-y-4"
+                }
+              >
                 {searchResults.map((book) => (
                   <BookCard
                     key={book.id}
                     book={book}
                     collections={collections}
-                    isInCollections={savedBooks.some(b => b.id === book.id)}
+                    isInCollections={savedBooks.some((b) => b.id === book.id)}
                     onAddToCollection={addBookToCollection}
                     viewMode={viewMode}
                   />
@@ -591,31 +659,32 @@ export default function BooksPage() {
               <BookOpen className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
               <h3 className="text-lg font-semibold mb-2">No books found</h3>
               <p className="text-muted-foreground mb-4">
-                {searchQuery 
+                {searchQuery
                   ? "Try a different search term"
-                  : "Start by searching for books"
-                }
+                  : "Start by searching for books"}
               </p>
               {!searchQuery && (
-                <Button onClick={() => setSearchQuery("")}>
-                  Search Books
-                </Button>
+                <Button onClick={() => setSearchQuery("")}>Search Books</Button>
               )}
             </div>
           ) : (
             <div>
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-2xl font-bold">
-                  {selectedCollection === "all" 
-                    ? "All Books" 
-                    : getCollectionInfo(selectedCollection)?.name || "Books"
-                  } ({filteredAndSortedBooks.length})
+                  {selectedCollection === "all"
+                    ? "All Books"
+                    : getCollectionInfo(selectedCollection)?.name ||
+                      "Books"}{" "}
+                  ({filteredAndSortedBooks.length})
                 </h2>
               </div>
-              <div className={viewMode === "grid" 
-                ? "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4"
-                : "space-y-4"
-              }>
+              <div
+                className={
+                  viewMode === "grid"
+                    ? "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4"
+                    : "space-y-4"
+                }
+              >
                 {filteredAndSortedBooks.map((book) => (
                   <SavedBookCard
                     key={book.id}
@@ -635,12 +704,12 @@ export default function BooksPage() {
 }
 
 // Book Card Component for Search Results
-function BookCard({ 
-  book, 
-  collections, 
-  isInCollections, 
-  onAddToCollection, 
-  viewMode 
+function BookCard({
+  book,
+  collections,
+  isInCollections,
+  onAddToCollection,
+  viewMode,
 }: {
   book: SearchResult;
   collections: Collection[];
@@ -662,7 +731,7 @@ function BookCard({
         <div className="flex-1 min-w-0">
           <h3 className="font-semibold truncate">{book.title}</h3>
           <p className="text-sm text-muted-foreground">{book.author}</p>
-          <p className="text-sm text-muted-foreground">{book.year || 'N/A'}</p>
+          <p className="text-sm text-muted-foreground">{book.year || "N/A"}</p>
         </div>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -677,7 +746,11 @@ function BookCard({
                 onClick={() => onAddToCollection(book, collection.id)}
               >
                 <div className="flex items-center gap-2">
-                  <div className={`w-3 h-3 rounded-full ${collection.color || 'bg-gray-500'}`} />
+                  <div
+                    className={`w-3 h-3 rounded-full ${
+                      collection.color || "bg-gray-500"
+                    }`}
+                  />
                   {collection.name}
                 </div>
               </DropdownMenuItem>
@@ -713,22 +786,20 @@ function BookCard({
                     onClick={() => onAddToCollection(book, collection.id)}
                   >
                     <div className="flex items-center gap-2">
-                      <div className={`w-3 h-3 rounded-full ${collection.color || 'bg-gray-500'}`} />
+                      <div
+                        className={`w-3 h-3 rounded-full ${
+                          collection.color || "bg-gray-500"
+                        }`}
+                      />
                       {collection.name}
                     </div>
                   </DropdownMenuItem>
                 ))}
               </DropdownMenuContent>
             </DropdownMenu>
-            
-            <Button 
-              size="sm" 
-              variant="secondary"
-              asChild
-            >
-              <Link href={`/books/${book.id}`}>
-                View Details
-              </Link>
+
+            <Button size="sm" variant="secondary" asChild>
+              <Link href={`/books/${book.id}`}>View Details</Link>
             </Button>
           </div>
         </div>
@@ -736,18 +807,18 @@ function BookCard({
       <CardContent className="p-3">
         <h3 className="font-semibold text-sm truncate">{book.title}</h3>
         <p className="text-xs text-muted-foreground">{book.author}</p>
-        <p className="text-xs text-muted-foreground">{book.year || 'N/A'}</p>
+        <p className="text-xs text-muted-foreground">{book.year || "N/A"}</p>
       </CardContent>
     </Card>
   );
 }
 
 // Saved Book Card Component
-function SavedBookCard({ 
-  book, 
-  collections, 
-  onRemoveFromCollection, 
-  viewMode 
+function SavedBookCard({
+  book,
+  collections,
+  onRemoveFromCollection,
+  viewMode,
 }: {
   book: Book;
   collections: Collection[];
@@ -768,10 +839,10 @@ function SavedBookCard({
         <div className="flex-1 min-w-0">
           <h3 className="font-semibold truncate">{book.title}</h3>
           <p className="text-sm text-muted-foreground">{book.author}</p>
-          <p className="text-sm text-muted-foreground">{book.year || 'N/A'}</p>
+          <p className="text-sm text-muted-foreground">{book.year || "N/A"}</p>
           <div className="flex flex-wrap gap-1 mt-2">
             {book.collections?.map((collectionId) => {
-              const collection = collections.find(c => c.id === collectionId);
+              const collection = collections.find((c) => c.id === collectionId);
               return collection ? (
                 <Badge key={collectionId} variant="outline" className="text-xs">
                   {collection.name}
@@ -788,7 +859,7 @@ function SavedBookCard({
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             {book.collections?.map((collectionId) => {
-              const collection = collections.find(c => c.id === collectionId);
+              const collection = collections.find((c) => c.id === collectionId);
               return collection ? (
                 <DropdownMenuItem
                   key={collectionId}
@@ -822,11 +893,15 @@ function SavedBookCard({
             </DropdownMenuTrigger>
             <DropdownMenuContent>
               {book.collections?.map((collectionId) => {
-                const collection = collections.find(c => c.id === collectionId);
+                const collection = collections.find(
+                  (c) => c.id === collectionId
+                );
                 return collection ? (
                   <DropdownMenuItem
                     key={collectionId}
-                    onClick={() => onRemoveFromCollection(book.id, collectionId)}
+                    onClick={() =>
+                      onRemoveFromCollection(book.id, collectionId)
+                    }
                   >
                     Remove from {collection.name}
                   </DropdownMenuItem>
@@ -839,10 +914,10 @@ function SavedBookCard({
       <CardContent className="p-3">
         <h3 className="font-semibold text-sm truncate">{book.title}</h3>
         <p className="text-xs text-muted-foreground">{book.author}</p>
-        <p className="text-xs text-muted-foreground">{book.year || 'N/A'}</p>
+        <p className="text-xs text-muted-foreground">{book.year || "N/A"}</p>
         <div className="flex flex-wrap gap-1 mt-2">
           {book.collections?.slice(0, 2).map((collectionId) => {
-            const collection = collections.find(c => c.id === collectionId);
+            const collection = collections.find((c) => c.id === collectionId);
             return collection ? (
               <Badge key={collectionId} variant="outline" className="text-xs">
                 {collection.name}

@@ -93,8 +93,6 @@ interface SearchResult {
   number_of_episodes: number;
 }
 
-
-
 export default function SeriesPage() {
   const { user } = useCurrentUser();
   const [searchQuery, setSearchQuery] = useState("");
@@ -108,7 +106,9 @@ export default function SeriesPage() {
   const [newCollectionIsPublic, setNewCollectionIsPublic] = useState(false);
   const [selectedGenre, setSelectedGenre] = useState<string>("");
   const [isGenreSearching, setIsGenreSearching] = useState(false);
-  const [sortBy, setSortBy] = useState<"title" | "year" | "rating" | "added">("added");
+  const [sortBy, setSortBy] = useState<"title" | "year" | "rating" | "added">(
+    "added"
+  );
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
 
@@ -130,24 +130,29 @@ export default function SeriesPage() {
         // Fetch series
         const seriesRef = collection(db, "users", user.uid, "series");
         const seriesSnapshot = await getDocs(seriesRef);
-        const seriesData = seriesSnapshot.docs.map(doc => ({
+        const seriesData = seriesSnapshot.docs.map((doc) => ({
           id: parseInt(doc.id),
-          ...doc.data()
+          ...doc.data(),
         })) as Series[];
         setSavedSeries(seriesData);
 
         // Fetch collections
-        const collectionsRef = collection(db, "users", user.uid, "seriesCollections");
+        const collectionsRef = collection(
+          db,
+          "users",
+          user.uid,
+          "seriesCollections"
+        );
         const collectionsSnapshot = await getDocs(collectionsRef);
-        const collectionsData = collectionsSnapshot.docs.map(doc => ({
+        const collectionsData = collectionsSnapshot.docs.map((doc) => ({
           id: doc.id,
-          ...doc.data()
+          ...doc.data(),
         })) as Collection[];
 
         // Create default collections if they don't exist
-        const existingNames = collectionsData.map(col => col.name);
+        const existingNames = collectionsData.map((col) => col.name);
         const missingDefaults = defaultCollections.filter(
-          col => !existingNames.includes(col.name)
+          (col) => !existingNames.includes(col.name)
         );
 
         if (missingDefaults.length > 0) {
@@ -156,9 +161,9 @@ export default function SeriesPage() {
           }
           // Refetch collections
           const newSnapshot = await getDocs(collectionsRef);
-          const allCollections = newSnapshot.docs.map(doc => ({
+          const allCollections = newSnapshot.docs.map((doc) => ({
             id: doc.id,
-            ...doc.data()
+            ...doc.data(),
           })) as Collection[];
           setCollections(allCollections);
         } else {
@@ -210,22 +215,33 @@ export default function SeriesPage() {
   };
 
   // Add series to collection
-  const addSeriesToCollection = async (series: SearchResult, collectionId: string) => {
+  const addSeriesToCollection = async (
+    series: SearchResult,
+    collectionId: string
+  ) => {
     if (!user?.uid) return;
 
     try {
       // Check if series already exists
-      const existingSeries = savedSeries.find(s => s.id === series.id);
-      
+      const existingSeries = savedSeries.find((s) => s.id === series.id);
+
       if (existingSeries) {
         // Update existing series with new collection
-        const updatedCollections = [...(existingSeries.collections || []), collectionId];
-        await updateDoc(doc(db, "users", user.uid, "series", series.id.toString()), {
-          collections: updatedCollections
-        });
-        setSavedSeries(prev => prev.map(s => 
-          s.id === series.id ? { ...s, collections: updatedCollections } : s
-        ));
+        const updatedCollections = [
+          ...(existingSeries.collections || []),
+          collectionId,
+        ];
+        await updateDoc(
+          doc(db, "users", user.uid, "series", series.id.toString()),
+          {
+            collections: updatedCollections,
+          }
+        );
+        setSavedSeries((prev) =>
+          prev.map((s) =>
+            s.id === series.id ? { ...s, collections: updatedCollections } : s
+          )
+        );
       } else {
         // Create new series
         const seriesData: Series = {
@@ -243,8 +259,11 @@ export default function SeriesPage() {
           number_of_episodes: series.number_of_episodes || 1,
         };
 
-        await setDoc(doc(db, "users", user.uid, "series", series.id.toString()), seriesData);
-        setSavedSeries(prev => [...prev, seriesData]);
+        await setDoc(
+          doc(db, "users", user.uid, "series", series.id.toString()),
+          seriesData
+        );
+        setSavedSeries((prev) => [...prev, seriesData]);
       }
     } catch (error) {
       console.error("Error adding series to collection:", error);
@@ -252,27 +271,38 @@ export default function SeriesPage() {
   };
 
   // Remove series from collection
-  const removeSeriesFromCollection = async (seriesId: number, collectionId: string) => {
+  const removeSeriesFromCollection = async (
+    seriesId: number,
+    collectionId: string
+  ) => {
     if (!user?.uid) return;
 
     try {
-      const series = savedSeries.find(s => s.id === seriesId);
+      const series = savedSeries.find((s) => s.id === seriesId);
       if (!series) return;
 
-      const updatedCollections = series.collections?.filter(id => id !== collectionId) || [];
-      
+      const updatedCollections =
+        series.collections?.filter((id) => id !== collectionId) || [];
+
       if (updatedCollections.length === 0) {
         // Remove series entirely if no collections left
-        await deleteDoc(doc(db, "users", user.uid, "series", seriesId.toString()));
-        setSavedSeries(prev => prev.filter(s => s.id !== seriesId));
+        await deleteDoc(
+          doc(db, "users", user.uid, "series", seriesId.toString())
+        );
+        setSavedSeries((prev) => prev.filter((s) => s.id !== seriesId));
       } else {
         // Update series with remaining collections
-        await updateDoc(doc(db, "users", user.uid, "series", seriesId.toString()), {
-          collections: updatedCollections
-        });
-        setSavedSeries(prev => prev.map(s => 
-          s.id === seriesId ? { ...s, collections: updatedCollections } : s
-        ));
+        await updateDoc(
+          doc(db, "users", user.uid, "series", seriesId.toString()),
+          {
+            collections: updatedCollections,
+          }
+        );
+        setSavedSeries((prev) =>
+          prev.map((s) =>
+            s.id === seriesId ? { ...s, collections: updatedCollections } : s
+          )
+        );
       }
     } catch (error) {
       console.error("Error removing series from collection:", error);
@@ -288,14 +318,21 @@ export default function SeriesPage() {
         name: newCollectionName.trim(),
         isPublic: newCollectionIsPublic,
         isDefault: false,
-        color: `bg-${['blue', 'green', 'yellow', 'purple', 'red', 'pink', 'indigo'][Math.floor(Math.random() * 7)]}-500`
+        color: `bg-${
+          ["blue", "green", "yellow", "purple", "red", "pink", "indigo"][
+            Math.floor(Math.random() * 7)
+          ]
+        }-500`,
       };
 
-      const docRef = await addDoc(collection(db, "users", user.uid, "seriesCollections"), collectionData);
-      
+      const docRef = await addDoc(
+        collection(db, "users", user.uid, "seriesCollections"),
+        collectionData
+      );
+
       const newCollection = { id: docRef.id, ...collectionData };
-      setCollections(prev => [...prev, newCollection]);
-      
+      setCollections((prev) => [...prev, newCollection]);
+
       setNewCollectionName("");
       setNewCollectionIsPublic(false);
       setCreateCollectionOpen(false);
@@ -307,10 +344,10 @@ export default function SeriesPage() {
   // Filter and sort series
   const filteredAndSortedSeries = useMemo(() => {
     let filtered = savedSeries;
-    
+
     // Filter by collection
     if (selectedCollection !== "all") {
-      filtered = savedSeries.filter(series => 
+      filtered = savedSeries.filter((series) =>
         series.collections?.includes(selectedCollection)
       );
     }
@@ -318,7 +355,7 @@ export default function SeriesPage() {
     // Sort series
     filtered.sort((a, b) => {
       let aValue: any, bValue: any;
-      
+
       switch (sortBy) {
         case "title":
           aValue = a.title.toLowerCase();
@@ -351,7 +388,7 @@ export default function SeriesPage() {
 
   // Get collection info
   const getCollectionInfo = (collectionId: string) => {
-    return collections.find(col => col.id === collectionId);
+    return collections.find((col) => col.id === collectionId);
   };
 
   return (
@@ -362,15 +399,23 @@ export default function SeriesPage() {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-3xl font-bold">Series</h1>
-              <p className="text-muted-foreground">Discover and organize your favorite TV shows</p>
+              <p className="text-muted-foreground">
+                Discover and organize your favorite TV shows
+              </p>
             </div>
             <div className="flex items-center gap-2">
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => setViewMode(viewMode === "grid" ? "list" : "grid")}
+                onClick={() =>
+                  setViewMode(viewMode === "grid" ? "list" : "grid")
+                }
               >
-                {viewMode === "grid" ? <List className="h-4 w-4" /> : <Grid3X3 className="h-4 w-4" />}
+                {viewMode === "grid" ? (
+                  <List className="h-4 w-4" />
+                ) : (
+                  <Grid3X3 className="h-4 w-4" />
+                )}
               </Button>
             </div>
           </div>
@@ -411,7 +456,10 @@ export default function SeriesPage() {
             {/* Sort Controls */}
             {searchResults.length === 0 && (
               <div className="flex items-center gap-2">
-                <Select value={sortBy} onValueChange={(value: any) => setSortBy(value)}>
+                <Select
+                  value={sortBy}
+                  onValueChange={(value: any) => setSortBy(value)}
+                >
                   <SelectTrigger className="w-40">
                     <SortAsc className="h-4 w-4 mr-2" />
                     <SelectValue />
@@ -423,13 +471,19 @@ export default function SeriesPage() {
                     <SelectItem value="rating">Rating</SelectItem>
                   </SelectContent>
                 </Select>
-                
+
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => setSortOrder(sortOrder === "asc" ? "desc" : "asc")}
+                  onClick={() =>
+                    setSortOrder(sortOrder === "asc" ? "desc" : "asc")
+                  }
                 >
-                  {sortOrder === "asc" ? <SortAsc className="h-4 w-4" /> : <SortDesc className="h-4 w-4" />}
+                  {sortOrder === "asc" ? (
+                    <SortAsc className="h-4 w-4" />
+                  ) : (
+                    <SortDesc className="h-4 w-4" />
+                  )}
                 </Button>
               </div>
             )}
@@ -448,14 +502,16 @@ export default function SeriesPage() {
             >
               <div className="w-3 h-3 rounded-full bg-blue-500" />
               <span className="font-medium">All Series</span>
-              <Badge variant="secondary" className="ml-1">{savedSeries.length}</Badge>
+              <Badge variant="secondary" className="ml-1">
+                {savedSeries.length}
+              </Badge>
             </button>
-            
+
             {collections.map((collection) => {
-              const seriesCount = savedSeries.filter(series => 
+              const seriesCount = savedSeries.filter((series) =>
                 series.collections?.includes(collection.id)
               ).length;
-              
+
               return (
                 <button
                   key={collection.id}
@@ -466,14 +522,23 @@ export default function SeriesPage() {
                       : "hover:bg-accent"
                   }`}
                 >
-                  <div className={`w-3 h-3 rounded-full ${collection.color || 'bg-gray-500'}`} />
+                  <div
+                    className={`w-3 h-3 rounded-full ${
+                      collection.color || "bg-gray-500"
+                    }`}
+                  />
                   <span className="font-medium">{collection.name}</span>
-                  <Badge variant="secondary" className="ml-1">{seriesCount}</Badge>
+                  <Badge variant="secondary" className="ml-1">
+                    {seriesCount}
+                  </Badge>
                 </button>
               );
             })}
-            
-            <Dialog open={isCreateCollectionOpen} onOpenChange={setCreateCollectionOpen}>
+
+            <Dialog
+              open={isCreateCollectionOpen}
+              onOpenChange={setCreateCollectionOpen}
+            >
               <DialogTrigger asChild>
                 <Button variant="outline" size="sm">
                   <Plus className="h-4 w-4" />
@@ -500,13 +565,18 @@ export default function SeriesPage() {
                     <Checkbox
                       id="public"
                       checked={newCollectionIsPublic}
-                      onCheckedChange={(checked) => setNewCollectionIsPublic(!!checked)}
+                      onCheckedChange={(checked) =>
+                        setNewCollectionIsPublic(!!checked)
+                      }
                     />
                     <Label htmlFor="public">Make collection public</Label>
                   </div>
                 </div>
                 <DialogFooter>
-                  <Button onClick={createCollection} disabled={!newCollectionName.trim()}>
+                  <Button
+                    onClick={createCollection}
+                    disabled={!newCollectionName.trim()}
+                  >
                     Create Collection
                   </Button>
                 </DialogFooter>
@@ -527,21 +597,28 @@ export default function SeriesPage() {
           ) : searchResults.length > 0 ? (
             <div>
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-2xl font-bold">Search Results ({searchResults.length})</h2>
+                <h2 className="text-2xl font-bold">
+                  Search Results ({searchResults.length})
+                </h2>
                 <Button variant="outline" onClick={clearSearch}>
                   Clear Search
                 </Button>
               </div>
-              <div className={viewMode === "grid" 
-                ? "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4"
-                : "space-y-4"
-              }>
+              <div
+                className={
+                  viewMode === "grid"
+                    ? "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4"
+                    : "space-y-4"
+                }
+              >
                 {searchResults.map((series) => (
                   <SeriesCard
                     key={series.id}
                     series={series}
                     collections={collections}
-                    isInCollections={savedSeries.some(s => s.id === series.id)}
+                    isInCollections={savedSeries.some(
+                      (s) => s.id === series.id
+                    )}
                     onAddToCollection={addSeriesToCollection}
                     viewMode={viewMode}
                   />
@@ -553,10 +630,9 @@ export default function SeriesPage() {
               <Tv className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
               <h3 className="text-lg font-semibold mb-2">No series found</h3>
               <p className="text-muted-foreground mb-4">
-                {searchQuery 
+                {searchQuery
                   ? "Try a different search term"
-                  : "Start by searching for series"
-                }
+                  : "Start by searching for series"}
               </p>
               {!searchQuery && (
                 <Button onClick={() => setSearchQuery("")}>
@@ -568,16 +644,20 @@ export default function SeriesPage() {
             <div>
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-2xl font-bold">
-                  {selectedCollection === "all" 
-                    ? "All Series" 
-                    : getCollectionInfo(selectedCollection)?.name || "Series"
-                  } ({filteredAndSortedSeries.length})
+                  {selectedCollection === "all"
+                    ? "All Series"
+                    : getCollectionInfo(selectedCollection)?.name ||
+                      "Series"}{" "}
+                  ({filteredAndSortedSeries.length})
                 </h2>
               </div>
-              <div className={viewMode === "grid" 
-                ? "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4"
-                : "space-y-4"
-              }>
+              <div
+                className={
+                  viewMode === "grid"
+                    ? "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4"
+                    : "space-y-4"
+                }
+              >
                 {filteredAndSortedSeries.map((series) => (
                   <SavedSeriesCard
                     key={series.id}
@@ -597,12 +677,12 @@ export default function SeriesPage() {
 }
 
 // Series Card Component for Search Results
-function SeriesCard({ 
-  series, 
-  collections, 
-  isInCollections, 
-  onAddToCollection, 
-  viewMode 
+function SeriesCard({
+  series,
+  collections,
+  isInCollections,
+  onAddToCollection,
+  viewMode,
 }: {
   series: SearchResult;
   collections: Collection[];
@@ -623,7 +703,9 @@ function SeriesCard({
         </div>
         <div className="flex-1 min-w-0">
           <h3 className="font-semibold truncate">{series.title}</h3>
-          <p className="text-sm text-muted-foreground">{series.year || 'N/A'}</p>
+          <p className="text-sm text-muted-foreground">
+            {series.year || "N/A"}
+          </p>
           {series.rating && (
             <div className="flex items-center gap-1 mt-1">
               <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
@@ -632,7 +714,8 @@ function SeriesCard({
           )}
           {series.number_of_seasons && (
             <p className="text-xs text-muted-foreground mt-1">
-              {series.number_of_seasons} season{series.number_of_seasons > 1 ? 's' : ''}
+              {series.number_of_seasons} season
+              {series.number_of_seasons > 1 ? "s" : ""}
             </p>
           )}
         </div>
@@ -649,7 +732,11 @@ function SeriesCard({
                 onClick={() => onAddToCollection(series, collection.id)}
               >
                 <div className="flex items-center gap-2">
-                  <div className={`w-3 h-3 rounded-full ${collection.color || 'bg-gray-500'}`} />
+                  <div
+                    className={`w-3 h-3 rounded-full ${
+                      collection.color || "bg-gray-500"
+                    }`}
+                  />
                   {collection.name}
                 </div>
               </DropdownMenuItem>
@@ -685,29 +772,27 @@ function SeriesCard({
                     onClick={() => onAddToCollection(series, collection.id)}
                   >
                     <div className="flex items-center gap-2">
-                      <div className={`w-3 h-3 rounded-full ${collection.color || 'bg-gray-500'}`} />
+                      <div
+                        className={`w-3 h-3 rounded-full ${
+                          collection.color || "bg-gray-500"
+                        }`}
+                      />
                       {collection.name}
                     </div>
                   </DropdownMenuItem>
                 ))}
               </DropdownMenuContent>
             </DropdownMenu>
-            
-            <Button 
-              size="sm" 
-              variant="secondary"
-              asChild
-            >
-              <Link href={`/series/${series.id}`}>
-                View Details
-              </Link>
+
+            <Button size="sm" variant="secondary" asChild>
+              <Link href={`/series/${series.id}`}>View Details</Link>
             </Button>
           </div>
         </div>
       </div>
       <CardContent className="p-3">
         <h3 className="font-semibold text-sm truncate">{series.title}</h3>
-        <p className="text-xs text-muted-foreground">{series.year || 'N/A'}</p>
+        <p className="text-xs text-muted-foreground">{series.year || "N/A"}</p>
         {series.rating && (
           <div className="flex items-center gap-1 mt-1">
             <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
@@ -716,7 +801,8 @@ function SeriesCard({
         )}
         {series.number_of_seasons && (
           <p className="text-xs text-muted-foreground mt-1">
-            {series.number_of_seasons} season{series.number_of_seasons > 1 ? 's' : ''}
+            {series.number_of_seasons} season
+            {series.number_of_seasons > 1 ? "s" : ""}
           </p>
         )}
       </CardContent>
@@ -725,11 +811,11 @@ function SeriesCard({
 }
 
 // Saved Series Card Component
-function SavedSeriesCard({ 
-  series, 
-  collections, 
-  onRemoveFromCollection, 
-  viewMode 
+function SavedSeriesCard({
+  series,
+  collections,
+  onRemoveFromCollection,
+  viewMode,
 }: {
   series: Series;
   collections: Collection[];
@@ -749,7 +835,9 @@ function SavedSeriesCard({
         </div>
         <div className="flex-1 min-w-0">
           <h3 className="font-semibold truncate">{series.title}</h3>
-          <p className="text-sm text-muted-foreground">{series.year || 'N/A'}</p>
+          <p className="text-sm text-muted-foreground">
+            {series.year || "N/A"}
+          </p>
           {series.rating && (
             <div className="flex items-center gap-1 mt-1">
               <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
@@ -758,7 +846,7 @@ function SavedSeriesCard({
           )}
           <div className="flex flex-wrap gap-1 mt-2">
             {series.collections?.map((collectionId) => {
-              const collection = collections.find(c => c.id === collectionId);
+              const collection = collections.find((c) => c.id === collectionId);
               return collection ? (
                 <Badge key={collectionId} variant="outline" className="text-xs">
                   {collection.name}
@@ -775,17 +863,17 @@ function SavedSeriesCard({
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuItem asChild>
-              <Link href={`/series/${series.id}`}>
-                View Details
-              </Link>
+              <Link href={`/series/${series.id}`}>View Details</Link>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             {series.collections?.map((collectionId) => {
-              const collection = collections.find(c => c.id === collectionId);
+              const collection = collections.find((c) => c.id === collectionId);
               return collection ? (
                 <DropdownMenuItem
                   key={collectionId}
-                  onClick={() => onRemoveFromCollection(series.id, collectionId)}
+                  onClick={() =>
+                    onRemoveFromCollection(series.id, collectionId)
+                  }
                 >
                   Remove from {collection.name}
                 </DropdownMenuItem>
@@ -815,17 +903,19 @@ function SavedSeriesCard({
             </DropdownMenuTrigger>
             <DropdownMenuContent>
               <DropdownMenuItem asChild>
-                <Link href={`/series/${series.id}`}>
-                  View Details
-                </Link>
+                <Link href={`/series/${series.id}`}>View Details</Link>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               {series.collections?.map((collectionId) => {
-                const collection = collections.find(c => c.id === collectionId);
+                const collection = collections.find(
+                  (c) => c.id === collectionId
+                );
                 return collection ? (
                   <DropdownMenuItem
                     key={collectionId}
-                    onClick={() => onRemoveFromCollection(series.id, collectionId)}
+                    onClick={() =>
+                      onRemoveFromCollection(series.id, collectionId)
+                    }
                   >
                     Remove from {collection.name}
                   </DropdownMenuItem>
@@ -837,7 +927,7 @@ function SavedSeriesCard({
       </div>
       <CardContent className="p-3">
         <h3 className="font-semibold text-sm truncate">{series.title}</h3>
-        <p className="text-xs text-muted-foreground">{series.year || 'N/A'}</p>
+        <p className="text-xs text-muted-foreground">{series.year || "N/A"}</p>
         {series.rating && (
           <div className="flex items-center gap-1 mt-1">
             <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
@@ -846,7 +936,7 @@ function SavedSeriesCard({
         )}
         <div className="flex flex-wrap gap-1 mt-2">
           {series.collections?.slice(0, 2).map((collectionId) => {
-            const collection = collections.find(c => c.id === collectionId);
+            const collection = collections.find((c) => c.id === collectionId);
             return collection ? (
               <Badge key={collectionId} variant="outline" className="text-xs">
                 {collection.name}

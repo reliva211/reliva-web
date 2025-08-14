@@ -50,8 +50,6 @@ import { ReviewsSection } from "@/components/reviews-section";
 import { EnhancedMediaBar } from "@/components/enhanced-media-bar";
 import ProfileMusicSection from "@/components/profile-music-section";
 import ProfileMovieSection from "@/components/profile-movie-section";
-import ProfileSeriesSection from "@/components/profile-series-section";
-import ProfileBooksSection from "@/components/profile-books-section";
 import ErrorBoundary from "@/components/error-boundary";
 import { DebugPanel } from "@/components/debug-panel";
 import { db } from "@/lib/firebase";
@@ -118,7 +116,7 @@ export default function ProfilePage() {
   const [selectedBookSection, setSelectedBookSection] = useState<string>("");
   const [selectedMusicSection, setSelectedMusicSection] = useState<string>("");
 
-  const { profile, loading, saving, updateProfile, uploadImage } = useProfile(
+  const { profile, loading, updateProfile, uploadImage } = useProfile(
     user?.uid
   );
 
@@ -806,17 +804,6 @@ export default function ProfilePage() {
     );
   }
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Loading your profile...</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <ErrorBoundary>
       <div className="min-h-screen bg-background">
@@ -827,8 +814,8 @@ export default function ProfilePage() {
             <ImageUpload onUpload={handleAvatarUpload}>
               <Avatar className="w-16 h-16 sm:w-20 sm:h-20 border-2 border-border cursor-pointer">
                 <AvatarImage
-                  src={profile?.avatarUrl || "/placeholder.svg"}
-                  alt={profile?.displayName || user?.displayName || "User"}
+                  src={profile?.avatarUrl || "/placeholder-user.jpg"}
+                  alt={user.displayName || "User"}
                 />
                 <AvatarFallback className="text-sm sm:text-lg">
                   <User className="h-6 w-6 sm:h-8 sm:w-8" />
@@ -839,12 +826,9 @@ export default function ProfilePage() {
             {/* User Info */}
             <div className="w-full max-w-md">
               <h1 className="text-xl sm:text-2xl font-bold mb-1">
-                {profile?.displayName || user?.displayName || "Your Name"}
+                Srikanth Jeeguru
               </h1>
-              <p className="text-sm text-muted-foreground mb-3">
-                {profile?.bio ||
-                  "Add your bio to let others know more about you!"}
-              </p>
+              <p className="text-sm text-muted-foreground mb-3">bio</p>
               <div className="flex justify-center gap-2">
                 <Button
                   variant="ghost"
@@ -884,7 +868,7 @@ export default function ProfilePage() {
                 value="movie-profile"
                 className="text-xs sm:text-sm py-2 h-10 data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:text-primary rounded-none"
               >
-                movies
+                movie profile
               </TabsTrigger>
               <TabsTrigger
                 value="series"
@@ -905,19 +889,500 @@ export default function ProfilePage() {
               <ProfileMusicSection />
             </TabsContent>
 
-            {/* Movies Tab */}
+            {/* Movie Profile Tab */}
             <TabsContent value="movie-profile" className="mt-6">
               <ProfileMovieSection />
             </TabsContent>
 
             {/* Series Tab */}
-            <TabsContent value="series" className="mt-6">
-              <ProfileSeriesSection />
+            <TabsContent value="series" className="mt-6 space-y-6">
+              {/* Currently Watching Section - Clean Horizontal List */}
+              <div>
+                <h3 className="text-sm font-medium text-muted-foreground mb-4">
+                  currently watching
+                </h3>
+                <div className="flex items-center gap-4">
+                  <div className="aspect-[2/3] w-32 bg-muted rounded-md overflow-hidden flex-shrink-0">
+                    <Image
+                      src="https://image.tmdb.org/t/p/w500/ggFHVNu6YYI5L9pCfOacjizRGt.jpg"
+                      alt="Breaking Bad"
+                      width={128}
+                      height={192}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h4 className="font-medium text-sm mb-1">suits</h4>
+                    <p className="text-xs text-muted-foreground mb-2">
+                      description... cast etc. def...
+                    </p>
+                    <div className="flex items-center gap-3">
+                      <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                        <Heart className="h-3 w-3" />
+                      </Button>
+                      <span className="text-xs text-muted-foreground">
+                        trailer
+                      </span>
+                      <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                        <Plus className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 w-8 p-0 flex-shrink-0"
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+
+              {/* Favorites Section */}
+              <div className="bg-card border border-border rounded-lg p-4 shadow-sm">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-sm font-medium text-muted-foreground">
+                    favorite
+                  </h3>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-muted-foreground">
+                      5 items
+                    </span>
+                    <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                      <Plus className="h-3 w-3" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 w-6 p-0 text-xs"
+                    >
+                      View
+                    </Button>
+                  </div>
+                </div>
+                <div className="grid grid-cols-5 gap-2">
+                  {[
+                    {
+                      id: "1399",
+                      title: "Game of Thrones",
+                      year: 2011,
+                      cover:
+                        "https://image.tmdb.org/t/p/w500/u3bZgnGQ9T01sWNhyveQz0wH0Hl.jpg",
+                    },
+                    {
+                      id: "2316",
+                      title: "The Office",
+                      year: 2005,
+                      cover:
+                        "https://image.tmdb.org/t/p/w500/qWnJzyZhyy74gjpSjIXWmuk0ifX.jpg",
+                    },
+                    {
+                      id: "1668",
+                      title: "Friends",
+                      year: 1994,
+                      cover:
+                        "https://image.tmdb.org/t/p/w500/f496cm9enuEsZkSPzCwnTESEK5s.jpg",
+                    },
+                    {
+                      id: "1398",
+                      title: "The Sopranos",
+                      year: 1999,
+                      cover:
+                        "https://image.tmdb.org/t/p/w500/7gO7l4aHZzJbTqHd0qKqKqKqKqKq.jpg",
+                    },
+                    {
+                      id: "1438",
+                      title: "The Wire",
+                      year: 2002,
+                      cover:
+                        "https://image.tmdb.org/t/p/w500/7gO7l4aHZzJbTqHd0qKqKqKqKqKq.jpg",
+                    },
+                  ].map((series) => (
+                    <div key={series.id}>
+                      <div className="aspect-[2/3] w-full bg-muted rounded-md overflow-hidden">
+                        <Image
+                          src={series.cover}
+                          alt={series.title}
+                          width={100}
+                          height={150}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Watchlist Section */}
+              <div className="bg-card border border-border rounded-lg p-4 shadow-sm">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-sm font-medium text-muted-foreground">
+                    watchlist
+                  </h3>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-muted-foreground">
+                      items
+                    </span>
+                    <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                      <Plus className="h-3 w-3" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 w-6 p-0 text-xs"
+                    >
+                      View
+                    </Button>
+                  </div>
+                </div>
+                <div className="flex gap-4">
+                  <div className="flex flex-col gap-2">
+                    {[
+                      {
+                        id: "1",
+                        title: "House of the Dragon",
+                        cover:
+                          "https://image.tmdb.org/t/p/w500/z2yahl2uefxDCl0nogcRBstwruJ.jpg",
+                      },
+                      {
+                        id: "2",
+                        title: "The Last of Us",
+                        cover:
+                          "https://image.tmdb.org/t/p/w500/uKvVjHNqB5VmOrdxqAt2F7J78ED.jpg",
+                      },
+                    ].map((series) => (
+                      <div
+                        key={series.id}
+                        className="aspect-[2/3] w-12 bg-muted rounded-md overflow-hidden"
+                      >
+                        <Image
+                          src={series.cover}
+                          alt={series.title}
+                          width={48}
+                          height={72}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                  <div className="flex-1 bg-muted/20 rounded-md p-3">
+                    <p className="text-xs text-muted-foreground">
+                      More watchlist items...
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Collections Section */}
+              <div className="bg-card border border-border rounded-lg p-4 shadow-sm">
+                <h3 className="text-sm font-medium text-muted-foreground mb-4">
+                  collections
+                </h3>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-xs">
+                    <span>crime dramas</span>
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <span>8 series</span>
+                      <span>245 likes</span>
+                      <span>89 comments</span>
+                    </div>
+                  </div>
+                  <div className="text-xs">
+                    <span>comedy classics</span>
+                  </div>
+                  <div className="text-xs">
+                    <span>sci-fi adventures</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Watched Section */}
+              <div className="bg-card border border-border rounded-lg p-4 shadow-sm">
+                <h3 className="text-sm font-medium text-muted-foreground mb-4">
+                  Watched
+                </h3>
+                <div className="grid grid-cols-6 gap-1">
+                  {[
+                    "https://image.tmdb.org/t/p/w500/ggFHVNu6YYI5L9pCfOacjizRGt.jpg",
+                    "https://image.tmdb.org/t/p/w500/49WJfeN0moxb9IPfGn8AIqMGskD.jpg",
+                    "https://image.tmdb.org/t/p/w500/7k9sxGzJbqjKqQjJZqJZqJZqJZqJ.jpg",
+                    "https://image.tmdb.org/t/p/w500/sWgBv7LV2PRoQgkxwlibdGXKq1q.jpg",
+                    "https://image.tmdb.org/t/p/w500/7vjaCdMw15FEbXyLQTVa04URsPm.jpg",
+                    "https://image.tmdb.org/t/p/w500/9PFonBhy4cQy7Jz20NpMygczOkv.jpg",
+                    "https://image.tmdb.org/t/p/w500/u3bZgnGQ9T01sWNhyveQz0wH0Hl.jpg",
+                    "https://image.tmdb.org/t/p/w500/qWnJzyZhyy74gjpSjIXWmuk0ifX.jpg",
+                    "https://image.tmdb.org/t/p/w500/f496cm9enuEsZkSPzCwnTESEK5s.jpg",
+                    "https://image.tmdb.org/t/p/w500/z2yahl2uefxDCl0nogcRBstwruJ.jpg",
+                  ].map((cover, index) => (
+                    <div
+                      key={index}
+                      className="aspect-[2/3] w-full bg-muted rounded-md overflow-hidden"
+                    >
+                      <Image
+                        src={cover}
+                        alt="Series"
+                        width={50}
+                        height={75}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Recent Reviews Section */}
+              <div className="bg-card border border-border rounded-lg p-4 shadow-sm">
+                <h3 className="text-sm font-medium text-muted-foreground mb-4">
+                  recent reviews
+                </h3>
+                <div className="h-24 bg-muted/20 rounded-md flex items-center justify-center">
+                  <p className="text-xs text-muted-foreground">
+                    Recent reviews will appear here
+                  </p>
+                </div>
+              </div>
             </TabsContent>
 
             {/* Books Tab */}
-            <TabsContent value="books" className="mt-6">
-              <ProfileBooksSection />
+            <TabsContent value="books" className="mt-6 space-y-6">
+              {/* Currently Reading Section - Clean Horizontal List */}
+              <div>
+                <h3 className="text-sm font-medium text-muted-foreground mb-4">
+                  currently reading
+                </h3>
+                <div className="flex items-center gap-4">
+                  <div className="aspect-[2/3] w-32 bg-muted rounded-md overflow-hidden flex-shrink-0">
+                    <Image
+                      src="https://images-na.ssl-images-amazon.com/images/S/compressed.photo.goodreads.com/books/1674739970i/32620332.jpg"
+                      alt="The Seven Husbands of Evelyn Hugo"
+                      width={128}
+                      height={192}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h4 className="font-medium text-sm mb-1">
+                      The Seven Husbands of Evelyn Hugo
+                    </h4>
+                    <p className="text-xs text-muted-foreground mb-2">
+                      description... cast etc. def...
+                    </p>
+                    <div className="flex items-center gap-3">
+                      <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                        <Heart className="h-3 w-3" />
+                      </Button>
+                      <span className="text-xs text-muted-foreground">
+                        read
+                      </span>
+                      <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                        <Plus className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 w-8 p-0 flex-shrink-0"
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+
+              {/* Favorites Section */}
+              <div className="bg-card border border-border rounded-lg p-4 shadow-sm">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-sm font-medium text-muted-foreground">
+                    favorite
+                  </h3>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-muted-foreground">
+                      5 items
+                    </span>
+                    <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                      <Plus className="h-3 w-3" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 w-6 p-0 text-xs"
+                    >
+                      View
+                    </Button>
+                  </div>
+                </div>
+                <div className="grid grid-cols-5 gap-2">
+                  {[
+                    {
+                      id: "1",
+                      title: "The Great Gatsby",
+                      year: 1925,
+                      cover:
+                        "https://images-na.ssl-images-amazon.com/images/S/compressed.photo.goodreads.com/books/1490528560i/4671.jpg",
+                    },
+                    {
+                      id: "2",
+                      title: "1984",
+                      year: 1949,
+                      cover:
+                        "https://images-na.ssl-images-amazon.com/images/S/compressed.photo.goodreads.com/books/1532714506i/40961427.jpg",
+                    },
+                    {
+                      id: "3",
+                      title: "To Kill a Mockingbird",
+                      year: 1960,
+                      cover:
+                        "https://images-na.ssl-images-amazon.com/images/S/compressed.photo.goodreads.com/books/1553383690i/2657.jpg",
+                    },
+                    {
+                      id: "4",
+                      title: "Pride and Prejudice",
+                      year: 1813,
+                      cover:
+                        "https://images-na.ssl-images-amazon.com/images/S/compressed.photo.goodreads.com/books/1320399351i/1885.jpg",
+                    },
+                    {
+                      id: "5",
+                      title: "The Hobbit",
+                      year: 1937,
+                      cover:
+                        "https://images-na.ssl-images-amazon.com/images/S/compressed.photo.goodreads.com/books/1546071216i/5907.jpg",
+                    },
+                  ].map((book) => (
+                    <div key={book.id}>
+                      <div className="aspect-[2/3] w-full bg-muted rounded-md overflow-hidden">
+                        <Image
+                          src={book.cover}
+                          alt={book.title}
+                          width={100}
+                          height={150}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Reading List Section */}
+              <div className="bg-card border border-border rounded-lg p-4 shadow-sm">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-sm font-medium text-muted-foreground">
+                    reading list
+                  </h3>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-muted-foreground">
+                      items
+                    </span>
+                    <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                      <Plus className="h-3 w-3" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 w-6 p-0 text-xs"
+                    >
+                      View
+                    </Button>
+                  </div>
+                </div>
+                <div className="flex gap-4">
+                  <div className="flex flex-col gap-2">
+                    {[
+                      {
+                        id: "1",
+                        title: "The Lincoln Highway",
+                        cover:
+                          "https://images-na.ssl-images-amazon.com/images/S/compressed.photo.goodreads.com/books/1634158558i/58819501.jpg",
+                      },
+                      {
+                        id: "2",
+                        title: "Cloud Cuckoo Land",
+                        cover:
+                          "https://images-na.ssl-images-amazon.com/images/S/compressed.photo.goodreads.com/books/1634158558i/56707975.jpg",
+                      },
+                    ].map((book) => (
+                      <div
+                        key={book.id}
+                        className="aspect-[2/3] w-12 bg-muted rounded-md overflow-hidden"
+                      >
+                        <Image
+                          src={book.cover}
+                          alt={book.title}
+                          width={48}
+                          height={72}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                  <div className="flex-1 bg-muted/20 rounded-md p-3">
+                    <p className="text-xs text-muted-foreground">
+                      More reading list items...
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Collections Section */}
+              <div className="bg-card border border-border rounded-lg p-4 shadow-sm">
+                <h3 className="text-sm font-medium text-muted-foreground mb-4">
+                  collections
+                </h3>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-xs">
+                    <span>classic literature</span>
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <span>15 books</span>
+                      <span>342 likes</span>
+                      <span>156 comments</span>
+                    </div>
+                  </div>
+                  <div className="text-xs">
+                    <span>science fiction</span>
+                  </div>
+                  <div className="text-xs">
+                    <span>mystery & thriller</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Read Section */}
+              <div className="bg-card border border-border rounded-lg p-4 shadow-sm">
+                <h3 className="text-sm font-medium text-muted-foreground mb-4">
+                  Read
+                </h3>
+                <div className="grid grid-cols-6 gap-1">
+                  {getBooksBySection("read")
+                    .slice(0, 10)
+                    .map((book) => (
+                      <div
+                        key={book.id}
+                        className="aspect-[2/3] w-full bg-muted rounded-md overflow-hidden"
+                      >
+                        <Image
+                          src={book.cover || "/placeholder.svg"}
+                          alt={book.title}
+                          width={50}
+                          height={75}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    ))}
+                </div>
+              </div>
+
+              {/* Recent Reviews Section */}
+              <div className="bg-card border border-border rounded-lg p-4 shadow-sm">
+                <h3 className="text-sm font-medium text-muted-foreground mb-4">
+                  recent reviews
+                </h3>
+                <div className="h-24 bg-muted/20 rounded-md flex items-center justify-center">
+                  <p className="text-xs text-muted-foreground">
+                    Recent reviews will appear here
+                  </p>
+                </div>
+              </div>
             </TabsContent>
           </Tabs>
         </div>
@@ -1016,7 +1481,7 @@ export default function ProfilePage() {
             onOpenChange={setEditDialogOpen}
             profile={profile}
             onSave={updateProfile}
-            saving={saving}
+            saving={loading}
           />
         )}
 

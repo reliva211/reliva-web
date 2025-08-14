@@ -83,8 +83,12 @@ export default function RecommendationsPage() {
   const { user: currentUser, loading: authLoading } = useCurrentUser();
   const router = useRouter();
   const { toast } = useToast();
-  const [activeCategory, setActiveCategory] = useState<"movies" | "books" | "series">("movies");
-  const [selectedSource, setSelectedSource] = useState<"friends" | "all">("all");
+  const [activeCategory, setActiveCategory] = useState<
+    "movies" | "books" | "series"
+  >("movies");
+  const [selectedSource, setSelectedSource] = useState<"friends" | "all">(
+    "all"
+  );
   const [addingItems, setAddingItems] = useState<Set<string>>(new Set());
 
   const {
@@ -129,13 +133,16 @@ export default function RecommendationsPage() {
       .substring(0, 2);
   };
 
-  const handleAddToCollection = async (item: Movie | Book | Series, category: string) => {
+  const handleAddToCollection = async (
+    item: Movie | Book | Series,
+    category: string
+  ) => {
     const itemId = `${category}-${item.id}`;
-    setAddingItems(prev => new Set(prev).add(itemId));
+    setAddingItems((prev) => new Set(prev).add(itemId));
 
     try {
       let success = false;
-      
+
       switch (category) {
         case "movies":
           success = await addMovieToCollection(item as Movie);
@@ -151,7 +158,9 @@ export default function RecommendationsPage() {
       if (success) {
         toast({
           title: "Added to collection",
-          description: `${(item as any).title} has been added to your ${category} collection.`,
+          description: `${
+            (item as any).title
+          } has been added to your ${category} collection.`,
         });
       } else {
         toast({
@@ -167,7 +176,7 @@ export default function RecommendationsPage() {
         variant: "destructive",
       });
     } finally {
-      setAddingItems(prev => {
+      setAddingItems((prev) => {
         const newSet = new Set(prev);
         newSet.delete(itemId);
         return newSet;
@@ -236,7 +245,10 @@ export default function RecommendationsPage() {
                 onChange={() => setSelectedSource("friends")}
                 className="w-4 h-4 text-primary"
               />
-              <label htmlFor="friends" className="text-sm font-medium cursor-pointer">
+              <label
+                htmlFor="friends"
+                className="text-sm font-medium cursor-pointer"
+              >
                 From Friends
               </label>
             </div>
@@ -250,7 +262,10 @@ export default function RecommendationsPage() {
                 onChange={() => setSelectedSource("all")}
                 className="w-4 h-4 text-primary"
               />
-              <label htmlFor="all" className="text-sm font-medium cursor-pointer">
+              <label
+                htmlFor="all"
+                className="text-sm font-medium cursor-pointer"
+              >
                 From All Users
               </label>
             </div>
@@ -263,19 +278,25 @@ export default function RecommendationsPage() {
             <div className="flex items-center justify-center py-12">
               <div className="text-center">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-                <p className="text-muted-foreground">Loading recommendations...</p>
+                <p className="text-muted-foreground">
+                  Loading recommendations...
+                </p>
               </div>
             </div>
           ) : error ? (
             <div className="text-center py-12">
               <Users className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-semibold mb-2">Error loading recommendations</h3>
+              <h3 className="text-lg font-semibold mb-2">
+                Error loading recommendations
+              </h3>
               <p className="text-muted-foreground">{error}</p>
             </div>
           ) : recommendations.length === 0 ? (
             <div className="text-center py-12">
               <Users className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-semibold mb-2">No recommendations yet</h3>
+              <h3 className="text-lg font-semibold mb-2">
+                No recommendations yet
+              </h3>
               <p className="text-muted-foreground">
                 Start following other users to see their recommendations
               </p>
@@ -283,10 +304,10 @@ export default function RecommendationsPage() {
           ) : (
             <div className="space-y-4">
               {recommendations
-                .filter(userRec => getItemCount(userRec) > 0)
+                .filter((userRec) => getItemCount(userRec) > 0)
                 .map((userRec) => {
                   const items = getItemsByCategory(userRec);
-                  
+
                   return (
                     <Card key={userRec.user.uid} className="overflow-hidden">
                       <CardContent className="p-0">
@@ -304,7 +325,9 @@ export default function RecommendationsPage() {
                                 {userRec.user.displayName}
                               </h3>
                               <p className="text-sm text-muted-foreground">
-                                {items.length} {activeCategory.slice(0, -1)}{items.length !== 1 ? 's' : ''} in their collection
+                                {items.length} {activeCategory.slice(0, -1)}
+                                {items.length !== 1 ? "s" : ""} in their
+                                collection
                               </p>
                             </div>
                           </div>
@@ -324,13 +347,22 @@ export default function RecommendationsPage() {
                                   />
                                   <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                                     <div className="flex flex-col gap-2">
-                                      <Button 
-                                        size="sm" 
+                                      <Button
+                                        size="sm"
                                         variant="secondary"
-                                        onClick={() => handleAddToCollection(item, activeCategory)}
-                                        disabled={addingItems.has(`${activeCategory}-${item.id}`)}
+                                        onClick={() =>
+                                          handleAddToCollection(
+                                            item,
+                                            activeCategory
+                                          )
+                                        }
+                                        disabled={addingItems.has(
+                                          `${activeCategory}-${item.id}`
+                                        )}
                                       >
-                                        {addingItems.has(`${activeCategory}-${item.id}`) ? (
+                                        {addingItems.has(
+                                          `${activeCategory}-${item.id}`
+                                        ) ? (
                                           <>
                                             <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-1"></div>
                                             Adding...
@@ -342,12 +374,14 @@ export default function RecommendationsPage() {
                                           </>
                                         )}
                                       </Button>
-                                      <Button 
-                                        size="sm" 
+                                      <Button
+                                        size="sm"
                                         variant="secondary"
                                         asChild
                                       >
-                                        <Link href={`/${activeCategory}/${item.id}`}>
+                                        <Link
+                                          href={`/${activeCategory}/${item.id}`}
+                                        >
                                           View Details
                                         </Link>
                                       </Button>
@@ -359,16 +393,17 @@ export default function RecommendationsPage() {
                                     {item.title || "Unknown Title"}
                                   </h4>
                                   <p className="text-xs text-muted-foreground">
-                                    {activeCategory === "books" 
-                                      ? (item as Book).author 
-                                      : (item as Movie | Series).year || "N/A"
-                                    }
+                                    {activeCategory === "books"
+                                      ? (item as Book).author
+                                      : (item as Movie | Series).year || "N/A"}
                                   </p>
                                   {(item as Movie | Series).rating && (
                                     <div className="flex items-center gap-1 mt-1">
                                       <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
                                       <span className="text-xs">
-                                        {(item as Movie | Series).rating?.toFixed(1)}
+                                        {(
+                                          item as Movie | Series
+                                        ).rating?.toFixed(1)}
                                       </span>
                                     </div>
                                   )}
@@ -395,4 +430,4 @@ export default function RecommendationsPage() {
       <Toaster />
     </div>
   );
-} 
+}

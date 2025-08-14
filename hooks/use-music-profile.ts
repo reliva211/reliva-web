@@ -19,6 +19,17 @@ export interface SaavnSong {
   duration?: string;
   language?: string;
   year?: string;
+  // Additional artist structure for compatibility
+  artists?: {
+    primary: Array<{
+      id: string;
+      name: string;
+    }>;
+  };
+  // Additional artist fields for better extraction
+  artist?: string;
+  featuredArtists?: string;
+  singer?: string;
 }
 
 export interface SaavnAlbum {
@@ -29,6 +40,17 @@ export interface SaavnAlbum {
   year?: string;
   language?: string;
   songCount?: number;
+  // Additional artist structure for compatibility
+  artists?: {
+    primary: Array<{
+      id: string;
+      name: string;
+    }>;
+  };
+  // Additional artist fields for better extraction
+  artist?: string;
+  featuredArtists?: string;
+  singer?: string;
 }
 
 export interface SaavnArtist {
@@ -76,17 +98,44 @@ export function useMusicProfile(userId: string | undefined) {
 
       if (!musicSnapshot.empty) {
         const musicData = musicSnapshot.docs[0].data();
-        
+
         // Validate and sanitize the data
         const validatedProfile = {
-          currentObsession: musicData.currentObsession && typeof musicData.currentObsession === 'object' ? musicData.currentObsession : null,
-          favoriteArtist: musicData.favoriteArtist && typeof musicData.favoriteArtist === 'object' ? musicData.favoriteArtist : null,
-          favoriteSong: musicData.favoriteSong && typeof musicData.favoriteSong === 'object' ? musicData.favoriteSong : null,
-          favoriteAlbums: Array.isArray(musicData.favoriteAlbums) ? musicData.favoriteAlbums.filter(album => album && typeof album === 'object') : [],
-          recommendations: Array.isArray(musicData.recommendations) ? musicData.recommendations.filter(song => song && typeof song === 'object') : [],
-          ratings: Array.isArray(musicData.ratings) ? musicData.ratings.filter(rating => rating && typeof rating === 'object' && rating.song && rating.rating) : [],
+          currentObsession:
+            musicData.currentObsession &&
+            typeof musicData.currentObsession === "object"
+              ? musicData.currentObsession
+              : null,
+          favoriteArtist:
+            musicData.favoriteArtist &&
+            typeof musicData.favoriteArtist === "object"
+              ? musicData.favoriteArtist
+              : null,
+          favoriteSong:
+            musicData.favoriteSong && typeof musicData.favoriteSong === "object"
+              ? musicData.favoriteSong
+              : null,
+          favoriteAlbums: Array.isArray(musicData.favoriteAlbums)
+            ? musicData.favoriteAlbums.filter(
+                (album) => album && typeof album === "object"
+              )
+            : [],
+          recommendations: Array.isArray(musicData.recommendations)
+            ? musicData.recommendations.filter(
+                (song) => song && typeof song === "object"
+              )
+            : [],
+          ratings: Array.isArray(musicData.ratings)
+            ? musicData.ratings.filter(
+                (rating) =>
+                  rating &&
+                  typeof rating === "object" &&
+                  rating.song &&
+                  rating.rating
+              )
+            : [],
         };
-        
+
         setMusicProfile(validatedProfile);
       }
     } catch (err) {
@@ -166,8 +215,8 @@ export function useMusicProfile(userId: string | undefined) {
       updatedAlbums.push(album);
     }
 
-    // Keep only 4 albums
-    const finalAlbums = updatedAlbums.slice(0, 4);
+    // Keep only 15 albums
+    const finalAlbums = updatedAlbums.slice(0, 15);
     await saveMusicProfile({ favoriteAlbums: finalAlbums });
   };
 
@@ -190,8 +239,8 @@ export function useMusicProfile(userId: string | undefined) {
       updatedRecommendations.push(song);
     }
 
-    // Keep only 4 recommendations
-    const finalRecommendations = updatedRecommendations.slice(0, 4);
+    // Keep only 15 recommendations
+    const finalRecommendations = updatedRecommendations.slice(0, 15);
     await saveMusicProfile({ recommendations: finalRecommendations });
   };
 
@@ -214,8 +263,8 @@ export function useMusicProfile(userId: string | undefined) {
       updatedRatings.push({ song, rating });
     }
 
-    // Keep only 4 ratings
-    const finalRatings = updatedRatings.slice(0, 4);
+    // Keep only 15 ratings
+    const finalRatings = updatedRatings.slice(0, 15);
     await saveMusicProfile({ ratings: finalRatings });
   };
 

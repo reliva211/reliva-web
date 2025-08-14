@@ -1,18 +1,18 @@
-"use client"
-import { useSession } from "next-auth/react"
-import { useEffect, useState } from "react"
-import { getUserPlaylists } from "@/lib/spotify"
+"use client";
+import { useSession } from "next-auth/react";
+import { useEffect, useState } from "react";
+import { getUserPlaylists } from "@/lib/spotify";
 import React from "react";
 
 export default function Dashboard() {
-  const { data: session } = useSession()
-  const [playlists, setPlaylists] = useState<any[]>([])
+  const { data: session } = useSession();
+  const [playlists, setPlaylists] = useState<any[]>([]);
 
   useEffect(() => {
     if (session?.accessToken) {
-      getUserPlaylists(session.accessToken).then(setPlaylists)
+      getUserPlaylists(session.accessToken).then(setPlaylists);
     }
-  }, [session])
+  }, [session]);
 
   return (
     <div>
@@ -21,9 +21,11 @@ export default function Dashboard() {
         <div key={p.id}>
           <img src={p.images?.[0]?.url} alt={p.name} width={100} />
           <p>{p.name}</p>
-          <a href={p.external_urls.spotify} target="_blank">Open in Spotify</a>
+          <a href={p.external_urls.spotify} target="_blank">
+            Open in Spotify
+          </a>
         </div>
       ))}
     </div>
-  )
+  );
 }
