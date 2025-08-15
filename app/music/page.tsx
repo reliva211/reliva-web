@@ -18,6 +18,8 @@ import {
   Heart,
   TrendingUp,
   Filter,
+  UserPlus,
+  UserMinus,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -34,6 +36,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AudioPlayer } from "@/components/audio-player";
 import { Recommendations } from "@/components/recommendations";
 import { cn } from "@/lib/utils";
+import { useMusicCollections } from "@/hooks/use-music-collections";
+import { useToast } from "@/hooks/use-toast";
 
 interface Song {
   id: string;
@@ -88,7 +92,7 @@ interface Artist {
     quality: string;
     url: string;
   }>;
-  type: string;
+  type?: string;
 }
 
 interface SearchResponse {
@@ -108,7 +112,6 @@ export default function MusicApp() {
   const [artists, setArtists] = useState<Artist[]>([]);
   const [loading, setLoading] = useState(false);
   const [ratings, setRatings] = useState<Record<string, number>>({});
-  const [myList, setMyList] = useState<Set<string>>(new Set());
   const [selectedSong, setSelectedSong] = useState<Song | null>(null);
   const [selectedAlbum, setSelectedAlbum] = useState<Album | null>(null);
   const [showSongDetails, setShowSongDetails] = useState(false);
@@ -124,30 +127,55 @@ export default function MusicApp() {
   const [searchType, setSearchType] = useState<"song" | "album" | "artist">(
     "song"
   );
+  const [showSearchDropdown, setShowSearchDropdown] = useState(false);
 
-  // Load ratings and my list from localStorage on component mount
+  // Music collections hook
+  const {
+    followedArtists,
+    likedSongs,
+    likedAlbums,
+    loading: collectionsLoading,
+    followArtist,
+    unfollowArtist,
+    likeSong,
+    unlikeSong,
+    likeAlbum,
+    unlikeAlbum,
+    isArtistFollowed,
+    isSongLiked,
+    isAlbumLiked,
+  } = useMusicCollections();
+
+  const { toast } = useToast();
+
+  // Load ratings from localStorage on component mount
   useEffect(() => {
     const savedRatings = localStorage.getItem("songRatings");
-    const savedMyList = localStorage.getItem("myList");
 
     if (savedRatings) {
       setRatings(JSON.parse(savedRatings));
     }
+  }, []);
 
-    if (savedMyList) {
-      setMyList(new Set(JSON.parse(savedMyList)));
-    }
+  // Click outside handler to close search dropdown
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (!target.closest('.search-container')) {
+        setShowSearchDropdown(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
   }, []);
 
   // Save ratings to localStorage whenever ratings change
   useEffect(() => {
     localStorage.setItem("songRatings", JSON.stringify(ratings));
   }, [ratings]);
-
-  // Save my list to localStorage whenever myList changes
-  useEffect(() => {
-    localStorage.setItem("myList", JSON.stringify(Array.from(myList)));
-  }, [myList]);
 
   const searchSongs = async (page = 1, append = false) => {
     if (!searchQuery.trim()) return;
@@ -318,6 +346,23 @@ export default function MusicApp() {
     }
   };
 
+  // Clear search results when search query changes
+  const handleSearchQueryChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newQuery = e.target.value;
+    setSearchQuery(newQuery);
+    
+    // Clear results and hide dropdown when query changes
+    if (newQuery.trim() === "") {
+      setSongs([]);
+      setAlbums([]);
+      setArtists([]);
+      setShowSearchDropdown(false);
+    } else {
+      // Hide dropdown when typing (will show only after Enter)
+      setShowSearchDropdown(false);
+    }
+  };
+
   const rateSong = (songId: string, rating: number) => {
     setRatings((prev) => ({
       ...prev,
@@ -338,16 +383,113 @@ export default function MusicApp() {
     );
   };
 
-  const toggleMyList = (songId: string) => {
-    setMyList((prev) => {
-      const newSet = new Set(prev);
-      if (newSet.has(songId)) {
-        newSet.delete(songId);
+  const handleLikeSong = async (song: Song) => {
+    try {
+      if (isSongLiked(song.id)) {
+        await unlikeSong(song.id);
+        toast({
+          title: "Song removed from liked songs",
+          description: `${song.name} has been removed from your liked songs.`,
+        });
       } else {
-        newSet.add(songId);
+        // Ensure all fields have proper values
+        const musicSong = {
+          id: song.id,
+          name: song.name || "Unknown Song",
+          artists: song.artists || { primary: [] },
+          image: song.image || [],
+          album: song.album || { name: "Unknown Album" },
+          duration: song.duration || 0,
+          year: song.year || "Unknown",
+          language: song.language || "Unknown",
+          playCount: song.playCount || 0,
+          downloadUrl: song.downloadUrl || [],
+        };
+        await likeSong(musicSong);
+        toast({
+          title: "Song added to liked songs",
+          description: `${song.name} has been added to your liked songs.`,
+        });
       }
-      return newSet;
-    });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update liked songs. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleFollowArtist = async (artist: Artist) => {
+    try {
+      if (isArtistFollowed(artist.id)) {
+        await unfollowArtist(artist.id);
+        toast({
+          title: "Artist unfollowed",
+          description: `You have unfollowed ${artist.name}.`,
+        });
+      } else {
+        // Ensure all fields have proper values
+        const musicArtist = {
+          id: artist.id,
+          name: artist.name || "Unknown Artist",
+          image: artist.image || [],
+          type: artist.type || "Artist",
+          language: "Unknown",
+          description: "",
+        };
+        await followArtist(musicArtist);
+        toast({
+          title: "Artist followed",
+          description: `You are now following ${artist.name}.`,
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update followed artists. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleLikeAlbum = async (album: Album) => {
+    try {
+      if (isAlbumLiked(album.id)) {
+        await unlikeAlbum(album.id);
+        toast({
+          title: "Album removed from liked albums",
+          description: `${album.name} has been removed from your liked albums.`,
+        });
+      } else {
+        // Convert Album to MusicAlbum format with proper fallbacks
+        const musicAlbum = {
+          id: album.id,
+          name: album.name || "Unknown Album",
+          artists: album.artists || { primary: [] },
+          image: album.image || [],
+          year: album.year || "Unknown",
+          language: album.language || "Unknown",
+          songCount: album.songCount || 0,
+          playCount: album.playCount || 0,
+          songs: album.songs?.map(song => ({
+            ...song,
+            addedAt: new Date().toISOString()
+          })) || [],
+        };
+        await likeAlbum(musicAlbum);
+        toast({
+          title: "Album added to liked albums",
+          description: `${album.name} has been added to your liked albums.`,
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update liked albums. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const openSongDetails = (song: Song) => {
@@ -402,17 +544,17 @@ export default function MusicApp() {
   };
 
   const handleSearch = () => {
+    if (!searchQuery.trim()) return;
+    
     setCurrentPage(1);
     setAlbumPage(1);
     setArtistPage(1);
 
-    if (activeTab === "songs") {
+    // Search all types and show results in dropdown
       searchSongs(1, false);
-    } else if (activeTab === "albums") {
       searchAlbums(1, false);
-    } else if (activeTab === "artists") {
       searchArtists(1, false);
-    }
+    setShowSearchDropdown(true);
   };
 
   const loadMoreSongs = () => {
@@ -435,13 +577,6 @@ export default function MusicApp() {
 
   const handleTabChange = (value: string) => {
     setActiveTab(value);
-    if (value === "songs" && songs.length === 0 && searchQuery) {
-      searchSongs(1, false);
-    } else if (value === "albums" && albums.length === 0 && searchQuery) {
-      searchAlbums(1, false);
-    } else if (value === "artists" && artists.length === 0 && searchQuery) {
-      searchArtists(1, false);
-    }
   };
 
   const getImageUrl = (images: any[]) => {
@@ -472,8 +607,9 @@ export default function MusicApp() {
           </div>
         </div>
 
-        {/* Search Bar - Clean and centered */}
-        <div className="max-w-2xl mx-auto mb-12">
+                 {/* Search Bar with Dropdown Results */}
+         <div className="max-w-2xl mx-auto mb-8 search-container">
+           <div className="relative">
           <div className="flex gap-3">
             <div className="relative flex-1">
               <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
@@ -481,7 +617,7 @@ export default function MusicApp() {
                 type="text"
                 placeholder="Search for songs, albums, or artists..."
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                   onChange={handleSearchQueryChange}
                 onKeyPress={handleKeyPress}
                 className="pl-12 pr-4 py-3 text-lg bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white placeholder:text-gray-500 focus:border-blue-500 dark:focus:border-blue-400 rounded-xl shadow-sm"
               />
@@ -494,10 +630,227 @@ export default function MusicApp() {
               {loading ? "Searching..." : "search"}
             </Button>
           </div>
-        </div>
 
-        {/* Navigation Tabs - Matching the image */}
-        <div className="mb-8">
+             {/* Search Results Dropdown */}
+             {showSearchDropdown && searchQuery.trim() && (songs.length > 0 || albums.length > 0 || artists.length > 0) && (
+               <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg z-50 max-h-96 overflow-y-auto">
+                 <div className="p-4">
+                   {/* Artists Results */}
+                   {artists.length > 0 && (
+                     <div className="mb-4">
+                       <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-2 flex items-center gap-2">
+                         <Users className="w-4 h-4" />
+                         Artists ({artists.length})
+                       </h3>
+                       <div className="space-y-2">
+                         {artists.slice(0, 3).map((artist) => (
+                           <div
+                             key={artist.id}
+                             className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors cursor-pointer group"
+                           >
+                             <img
+                               src={getImageUrl(artist.image)}
+                               alt={artist.name}
+                               className="w-10 h-10 rounded-lg object-cover"
+                             />
+                             <div className="flex-1 min-w-0">
+                               <h4 className="font-medium text-gray-900 dark:text-white truncate text-sm">
+                                 {artist.name}
+                               </h4>
+                               <p className="text-xs text-gray-500 dark:text-gray-400 capitalize">
+                                 {artist.type || "Artist"}
+                               </p>
+        </div>
+                             <Button
+                               size="sm"
+                               className={`${
+                                 isArtistFollowed(artist.id)
+                                   ? "bg-red-600 hover:bg-red-700 text-white"
+                                   : "bg-white text-black hover:bg-gray-100 border border-gray-300"
+                               } text-xs px-2 py-1`}
+                               onClick={(e) => {
+                                 e.stopPropagation();
+                                 handleFollowArtist(artist);
+                               }}
+                             >
+                               {isArtistFollowed(artist.id) ? (
+                                 <>
+                                   <UserMinus className="w-3 h-3 mr-1" />
+                                   Unfollow
+                                 </>
+                               ) : (
+                                 <>
+                                   <UserPlus className="w-3 h-3 mr-1" />
+                                   Follow
+                                 </>
+                               )}
+                             </Button>
+                           </div>
+                         ))}
+                       </div>
+                     </div>
+                   )}
+
+                   {/* Albums Results */}
+                   {albums.length > 0 && (
+                     <div className="mb-4">
+                       <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-2 flex items-center gap-2">
+                         <Disc className="w-4 h-4" />
+                         Albums ({albums.length})
+                       </h3>
+                       <div className="space-y-2">
+                         {albums.slice(0, 3).map((album) => (
+                           <div
+                             key={album.id}
+                             className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors cursor-pointer group"
+                             onClick={() => fetchAlbumDetails(album.id)}
+                           >
+                             <img
+                               src={getImageUrl(album.image)}
+                               alt={album.name}
+                               className="w-10 h-10 rounded-lg object-cover"
+                             />
+                             <div className="flex-1 min-w-0">
+                               <h4 className="font-medium text-gray-900 dark:text-white truncate text-sm">
+                                 {album.name}
+                               </h4>
+                               <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                                 {album.artists?.primary
+                                   ?.map((artist) => artist.name)
+                                   .join(", ") || "Unknown Artist"}
+                               </p>
+                             </div>
+                             <div className="flex gap-1">
+                               <Button
+                                 size="sm"
+                                 className="bg-white text-black hover:bg-gray-100 border border-gray-300 text-xs px-2 py-1"
+                                 onClick={(e) => {
+                                   e.stopPropagation();
+                                   playAlbum(album);
+                                 }}
+                               >
+                                 <Play className="w-3 h-3" />
+                               </Button>
+                               <Button
+                                 size="sm"
+                                 className={`${
+                                   isAlbumLiked(album.id)
+                                     ? "bg-red-600 hover:bg-red-700 text-white"
+                                     : "bg-white text-black hover:bg-gray-100 border border-gray-300"
+                                 } text-xs px-2 py-1`}
+                                 onClick={(e) => {
+                                   e.stopPropagation();
+                                   handleLikeAlbum(album);
+                                 }}
+                               >
+                                 <Heart className={`w-3 h-3 ${
+                                   isAlbumLiked(album.id) ? "fill-current" : ""
+                                 }`} />
+                               </Button>
+                             </div>
+                           </div>
+                         ))}
+                       </div>
+                     </div>
+                   )}
+
+                   {/* Songs Results */}
+                   {songs.length > 0 && (
+                     <div>
+                       <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-2 flex items-center gap-2">
+                         <Music className="w-4 h-4" />
+                         Songs ({songs.length})
+                       </h3>
+                       <div className="space-y-2">
+                         {songs.slice(0, 5).map((song) => (
+                           <div
+                             key={song.id}
+                             className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors cursor-pointer group"
+                             onClick={() => openSongDetails(song)}
+                           >
+                             <img
+                               src={getImageUrl(song.image)}
+                               alt={song.name}
+                               className="w-10 h-10 rounded-lg object-cover"
+                             />
+                             <div className="flex-1 min-w-0">
+                               <h4 className="font-medium text-gray-900 dark:text-white truncate text-sm">
+                                 {song.name}
+                               </h4>
+                               <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                                 {song.artists?.primary
+                                   ?.map((artist) => artist.name)
+                                   .join(", ") || "Unknown Artist"}
+                               </p>
+                             </div>
+                             <div className="flex items-center gap-2">
+                               <span className="text-xs text-gray-400">
+                                 {formatDuration(song.duration)}
+                               </span>
+                               <Button
+                                 size="sm"
+                                 className="bg-white text-black hover:bg-gray-100 border border-gray-300 text-xs px-2 py-1"
+                                 onClick={(e) => {
+                                   e.stopPropagation();
+                                   playSong(song);
+                                 }}
+                               >
+                                 <Play className="w-3 h-3" />
+                               </Button>
+                               <Button
+                                 size="sm"
+                                 className={`${
+                                   isSongLiked(song.id)
+                                     ? "text-red-500 hover:text-red-600"
+                                     : "text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+                                 } text-xs px-2 py-1`}
+                                 onClick={(e) => {
+                                   e.stopPropagation();
+                                   handleLikeSong(song);
+                                 }}
+                               >
+                                 <Heart className={`w-3 h-3 ${
+                                   isSongLiked(song.id) ? "fill-red-500 text-red-500" : ""
+                                 }`} />
+                               </Button>
+                             </div>
+                           </div>
+                         ))}
+                       </div>
+                     </div>
+                   )}
+                 </div>
+               </div>
+             )}
+
+             {/* No Results */}
+             {showSearchDropdown && searchQuery.trim() && !loading && songs.length === 0 && albums.length === 0 && artists.length === 0 && (
+               <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg z-50 p-4">
+                 <div className="text-center py-4">
+                   <Music className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                   <p className="text-sm text-gray-500 dark:text-gray-400">
+                     No results found for "{searchQuery}"
+                   </p>
+                 </div>
+               </div>
+             )}
+
+             {/* Loading State */}
+             {showSearchDropdown && loading && searchQuery.trim() && (
+               <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg z-50 p-4">
+                 <div className="text-center py-4">
+                   <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500 mx-auto mb-2"></div>
+                   <p className="text-sm text-gray-500 dark:text-gray-400">
+                     Searching...
+                   </p>
+                 </div>
+               </div>
+             )}
+           </div>
+         </div>
+
+         {/* Navigation Tabs - Now positioned under search bar */}
+         <div className="max-w-2xl mx-auto mb-8">
           <div className="flex flex-wrap gap-6 text-gray-600 dark:text-gray-300">
             <button
               onClick={() => handleTabChange("discover")}
@@ -539,16 +892,7 @@ export default function MusicApp() {
             >
               songs
             </button>
-            <button
-              onClick={() => handleTabChange("liked")}
-              className={cn(
-                "text-lg font-medium transition-colors hover:text-gray-900 dark:hover:text-white",
-                activeTab === "liked" &&
-                  "text-gray-900 dark:text-white underline decoration-gray-400 underline-offset-4"
-              )}
-            >
-              liked
-            </button>
+
             <button
               onClick={() => handleTabChange("recommended")}
               className={cn(
@@ -564,7 +908,7 @@ export default function MusicApp() {
 
         {/* Content Sections */}
         <div className="space-y-8">
-          {/* Discover Tab - Recommendations */}
+          {/* Discover Tab - Recommendations Only */}
           {activeTab === "discover" && (
             <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg border border-gray-200 dark:border-gray-700">
               <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
@@ -573,33 +917,55 @@ export default function MusicApp() {
               <Recommendations
                 currentSong={currentSong}
                 ratings={ratings}
-                myList={myList}
+                myList={new Set(likedSongs.map(s => s.id))}
                 onPlaySong={playSong}
-                onToggleMyList={toggleMyList}
+                onToggleMyList={(songId) => {
+                  const song = likedSongs.find(s => s.id === songId);
+                  if (song) {
+                    handleLikeSong(song);
+                  }
+                }}
                 onRateSong={rateSong}
               />
             </div>
           )}
 
-          {/* Artists Tab */}
+          {/* Artists Tab - Show Followed Artists */}
           {activeTab === "artists" && (
             <div className="space-y-6">
               <div className="flex items-center justify-between">
                 <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-                  Artists
+                  Followed Artists
                 </h2>
-                {artists.length > 0 && (
+                {followedArtists.length > 0 && (
                   <Badge
                     variant="outline"
                     className="text-gray-600 dark:text-gray-300"
                   >
-                    {artists.length} artists found
+                    {followedArtists.length} artists followed
                   </Badge>
                 )}
               </div>
 
+              {followedArtists.length === 0 ? (
+                <div className="text-center py-12">
+                  <Users className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                  <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+                    No followed artists yet
+                  </h3>
+                  <p className="text-gray-500 dark:text-gray-400 mb-4">
+                    Start exploring and follow your favorite artists!
+                  </p>
+                  <Button
+                    onClick={() => handleTabChange("discover")}
+                    className="bg-blue-600 hover:bg-blue-700 text-white"
+                  >
+                    Discover Artists
+                  </Button>
+                </div>
+              ) : (
               <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                {artists.map((artist) => (
+                  {followedArtists.map((artist) => (
                   <Card
                     key={artist.id}
                     className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:shadow-lg transition-all cursor-pointer group"
@@ -614,10 +980,14 @@ export default function MusicApp() {
                         <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-xl flex items-center justify-center">
                           <Button
                             size="sm"
-                            className="bg-white text-black hover:bg-gray-100"
-                          >
-                            <Users className="w-4 h-4 mr-2" />
-                            View
+                              className="bg-red-600 hover:bg-red-700 text-white"
+                                                             onClick={(e) => {
+                                 e.stopPropagation();
+                                 handleFollowArtist(artist);
+                               }}
+                            >
+                              <UserMinus className="w-4 h-4 mr-2" />
+                              Unfollow
                           </Button>
                         </div>
                       </div>
@@ -635,42 +1005,47 @@ export default function MusicApp() {
                     </CardHeader>
                   </Card>
                 ))}
-              </div>
-
-              {artists.length > 0 && hasMoreArtists && (
-                <div className="text-center">
-                  <Button
-                    onClick={loadMoreArtists}
-                    disabled={loading}
-                    variant="outline"
-                    className="border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
-                  >
-                    {loading ? "Loading..." : "Load More Artists"}
-                  </Button>
                 </div>
               )}
             </div>
           )}
 
-          {/* Albums Tab */}
+          {/* Albums Tab - Show Liked Albums */}
           {activeTab === "albums" && (
             <div className="space-y-6">
               <div className="flex items-center justify-between">
                 <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-                  Albums
+                  Liked Albums
                 </h2>
-                {albums.length > 0 && (
+                {likedAlbums.length > 0 && (
                   <Badge
                     variant="outline"
                     className="text-gray-600 dark:text-gray-300"
                   >
-                    {albums.length} albums found
+                    {likedAlbums.length} albums liked
                   </Badge>
                 )}
               </div>
 
+              {likedAlbums.length === 0 ? (
+                <div className="text-center py-12">
+                  <Disc className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                  <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+                    No liked albums yet
+                  </h3>
+                  <p className="text-gray-500 dark:text-gray-400 mb-4">
+                    Start exploring and like your favorite albums!
+                  </p>
+                  <Button
+                    onClick={() => handleTabChange("discover")}
+                    className="bg-blue-600 hover:bg-blue-700 text-white"
+                  >
+                    Discover Albums
+                  </Button>
+                </div>
+              ) : (
               <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                {albums.map((album) => (
+                  {likedAlbums.map((album) => (
                   <Card
                     key={album.id}
                     className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:shadow-lg transition-all cursor-pointer group"
@@ -683,7 +1058,7 @@ export default function MusicApp() {
                           alt={album.name}
                           className="w-full aspect-square rounded-xl object-cover"
                         />
-                        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-xl flex items-center justify-center">
+                          <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-xl flex items-center justify-center gap-2">
                           <Button
                             size="sm"
                             className="bg-white text-black hover:bg-gray-100"
@@ -694,6 +1069,17 @@ export default function MusicApp() {
                           >
                             <Play className="w-4 h-4 mr-2" />
                             Play
+                          </Button>
+                            <Button
+                              size="sm"
+                              className="bg-red-600 hover:bg-red-700 text-white"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleLikeAlbum(album);
+                              }}
+                            >
+                              <Heart className="w-4 h-4 mr-2" />
+                              Unlike
                           </Button>
                         </div>
                       </div>
@@ -717,161 +1103,47 @@ export default function MusicApp() {
                     </CardHeader>
                   </Card>
                 ))}
-              </div>
-
-              {albums.length > 0 && hasMoreAlbums && (
-                <div className="text-center">
-                  <Button
-                    onClick={loadMoreAlbums}
-                    disabled={loading}
-                    variant="outline"
-                    className="border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
-                  >
-                    {loading ? "Loading..." : "Load More Albums"}
-                  </Button>
                 </div>
               )}
             </div>
           )}
 
-          {/* Songs Tab */}
+          {/* Songs Tab - Show Liked Songs */}
           {activeTab === "songs" && (
-            <div className="space-y-6">
-              <div className="flex items-center justify-between">
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-                  Songs
-                </h2>
-                {songs.length > 0 && (
-                  <Badge
-                    variant="outline"
-                    className="text-gray-600 dark:text-gray-300"
-                  >
-                    {songs.length} songs found
-                  </Badge>
-                )}
-              </div>
-
-              <div className="grid gap-4">
-                {songs.map((song) => (
-                  <Card
-                    key={song.id}
-                    className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:shadow-md transition-all cursor-pointer group"
-                    onClick={() => openSongDetails(song)}
-                  >
-                    <CardContent className="p-4">
-                      <div className="flex items-center gap-4">
-                        <div className="relative">
-                          <img
-                            src={getImageUrl(song.image)}
-                            alt={song.name}
-                            className="w-16 h-16 rounded-lg object-cover"
-                          />
-                          <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center">
-                            <Button
-                              size="sm"
-                              className="bg-white text-black hover:bg-gray-100"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                playSong(song);
-                              }}
-                            >
-                              <Play className="w-4 h-4" />
-                            </Button>
-                          </div>
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <h3
-                            className="font-semibold text-gray-900 dark:text-white truncate"
-                            title={song.name}
-                          >
-                            {song.name}
-                          </h3>
-                          <p className="text-sm text-gray-500 dark:text-gray-400 truncate">
-                            {song.artists?.primary
-                              ?.map((artist) => artist.name)
-                              .join(", ") || "Unknown Artist"}
-                          </p>
-                          <p className="text-xs text-gray-400 truncate">
-                            {song.album?.name}
-                          </p>
-                        </div>
-                        <div className="flex items-center gap-4">
-                          <div className="text-sm text-gray-500 dark:text-gray-400">
-                            {formatDuration(song.duration)}
-                          </div>
-                          <StarRating
-                            songId={song.id}
-                            currentRating={ratings[song.id] || 0}
-                          />
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              toggleMyList(song.id);
-                            }}
-                          >
-                            {myList.has(song.id) ? (
-                              <Heart className="w-5 h-5 fill-red-500 text-red-500" />
-                            ) : (
-                              <Heart className="w-5 h-5" />
-                            )}
-                          </Button>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-
-              {songs.length > 0 && hasMoreSongs && (
-                <div className="text-center">
-                  <Button
-                    onClick={loadMoreSongs}
-                    disabled={loading}
-                    variant="outline"
-                    className="border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
-                  >
-                    {loading ? "Loading..." : "Load More Songs"}
-                  </Button>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Liked Tab */}
-          {activeTab === "liked" && (
             <div className="space-y-6">
               <div className="flex items-center justify-between">
                 <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
                   Liked Songs
                 </h2>
-                {myList.size > 0 && (
+                {likedSongs.length > 0 && (
                   <Badge
                     variant="outline"
                     className="text-gray-600 dark:text-gray-300"
                   >
-                    {myList.size} songs
+                    {likedSongs.length} songs liked
                   </Badge>
                 )}
               </div>
 
-              {myList.size === 0 ? (
+              {likedSongs.length === 0 ? (
                 <div className="text-center py-12">
-                  <Heart className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                  <Music className="w-16 h-16 text-gray-400 mx-auto mb-4" />
                   <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
                     No liked songs yet
                   </h3>
-                  <p className="text-gray-500 dark:text-gray-400">
+                  <p className="text-gray-500 dark:text-gray-400 mb-4">
                     Start exploring and like your favorite songs!
                   </p>
+                  <Button
+                    onClick={() => handleTabChange("discover")}
+                    className="bg-blue-600 hover:bg-blue-700 text-white"
+                  >
+                    Discover Songs
+                  </Button>
                 </div>
               ) : (
                 <div className="grid gap-4">
-                  {songs
-                    .filter((song) => myList.has(song.id))
-                    .map((song) => (
+                  {likedSongs.map((song) => (
                       <Card
                         key={song.id}
                         className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:shadow-md transition-all cursor-pointer group"
@@ -928,7 +1200,7 @@ export default function MusicApp() {
                                 className="text-red-500 hover:text-red-600"
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  toggleMyList(song.id);
+                                handleLikeSong(song);
                                 }}
                               >
                                 <Heart className="w-5 h-5 fill-red-500 text-red-500" />
@@ -942,6 +1214,8 @@ export default function MusicApp() {
               )}
             </div>
           )}
+
+
 
           {/* Recommended Tab */}
           {activeTab === "recommended" && (
@@ -957,9 +1231,14 @@ export default function MusicApp() {
                 <Recommendations
                   currentSong={currentSong}
                   ratings={ratings}
-                  myList={myList}
+                myList={new Set(likedSongs.map(s => s.id))}
                   onPlaySong={playSong}
-                  onToggleMyList={toggleMyList}
+                onToggleMyList={(songId) => {
+                  const song = likedSongs.find(s => s.id === songId);
+                  if (song) {
+                    handleLikeSong(song);
+                  }
+                }}
                   onRateSong={rateSong}
                 />
               </div>
@@ -967,34 +1246,7 @@ export default function MusicApp() {
           )}
         </div>
 
-        {/* No Results */}
-        {((activeTab === "songs" && songs.length === 0) ||
-          (activeTab === "albums" && albums.length === 0) ||
-          (activeTab === "artists" && artists.length === 0)) &&
-          !loading &&
-          searchQuery &&
-          !["discover", "liked", "recommended"].includes(activeTab) && (
-            <div className="text-center py-12">
-              <Music className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-                No {activeTab} found
-              </h3>
-              <p className="text-gray-500 dark:text-gray-400">
-                Try searching with different keywords
-              </p>
-            </div>
-          )}
 
-        {/* Loading State */}
-        {loading &&
-          !["discover", "liked", "recommended"].includes(activeTab) && (
-            <div className="text-center py-12">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
-              <p className="text-gray-600 dark:text-gray-400">
-                Searching for {activeTab}...
-              </p>
-            </div>
-          )}
       </div>
 
       {/* Song Details Modal */}
@@ -1082,13 +1334,13 @@ export default function MusicApp() {
                   <Button
                     variant="outline"
                     className={`border-gray-300 dark:border-gray-600 ${
-                      myList.has(selectedSong.id)
+                      isSongLiked(selectedSong.id)
                         ? "bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 border-red-300 dark:border-red-600"
                         : "text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
                     }`}
-                    onClick={() => toggleMyList(selectedSong.id)}
+                    onClick={() => handleLikeSong(selectedSong)}
                   >
-                    {myList.has(selectedSong.id) ? (
+                    {isSongLiked(selectedSong.id) ? (
                       <>
                         <Heart className="w-4 h-4 mr-2 fill-red-500 text-red-500" />
                         Liked
@@ -1232,10 +1484,10 @@ export default function MusicApp() {
                           className="opacity-0 group-hover:opacity-100 transition-opacity"
                           onClick={(e) => {
                             e.stopPropagation();
-                            toggleMyList(song.id);
+                            handleLikeSong(song);
                           }}
                         >
-                          {myList.has(song.id) ? (
+                          {isSongLiked(song.id) ? (
                             <Heart className="w-4 h-4 fill-red-500 text-red-500" />
                           ) : (
                             <Heart className="w-4 h-4" />
