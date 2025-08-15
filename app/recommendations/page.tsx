@@ -86,9 +86,6 @@ export default function RecommendationsPage() {
   const [activeCategory, setActiveCategory] = useState<
     "movies" | "books" | "series"
   >("movies");
-  const [selectedSource, setSelectedSource] = useState<"friends" | "all">(
-    "all"
-  );
   const [addingItems, setAddingItems] = useState<Set<string>>(new Set());
 
   const {
@@ -98,7 +95,7 @@ export default function RecommendationsPage() {
     addMovieToCollection,
     addBookToCollection,
     addSeriesToCollection,
-  } = useRecommendations(selectedSource);
+  } = useRecommendations("all"); // Always use "all" to show all following users
 
   useEffect(() => {
     if (!authLoading && currentUser === null) {
@@ -206,7 +203,7 @@ export default function RecommendationsPage() {
             Recommendations
           </h1>
           <p className="text-lg text-muted-foreground">
-            Discover content from other users' collections
+            Discover content from people you follow
           </p>
         </div>
 
@@ -230,46 +227,6 @@ export default function RecommendationsPage() {
               {label}
             </button>
           ))}
-        </div>
-
-        {/* Source Filter */}
-        <div className="mb-6">
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2">
-              <input
-                type="radio"
-                id="friends"
-                name="source"
-                value="friends"
-                checked={selectedSource === "friends"}
-                onChange={() => setSelectedSource("friends")}
-                className="w-4 h-4 text-primary"
-              />
-              <label
-                htmlFor="friends"
-                className="text-sm font-medium cursor-pointer"
-              >
-                From Friends
-              </label>
-            </div>
-            <div className="flex items-center gap-2">
-              <input
-                type="radio"
-                id="all"
-                name="source"
-                value="all"
-                checked={selectedSource === "all"}
-                onChange={() => setSelectedSource("all")}
-                className="w-4 h-4 text-primary"
-              />
-              <label
-                htmlFor="all"
-                className="text-sm font-medium cursor-pointer"
-              >
-                From All Users
-              </label>
-            </div>
-          </div>
         </div>
 
         {/* Content */}
@@ -297,9 +254,16 @@ export default function RecommendationsPage() {
               <h3 className="text-lg font-semibold mb-2">
                 No recommendations yet
               </h3>
-              <p className="text-muted-foreground">
-                Start following other users to see their recommendations
+              <p className="text-muted-foreground mb-6">
+                You need to follow other users to see their recommendations
               </p>
+              <Button 
+                onClick={() => router.push('/users')} 
+                className="bg-primary text-primary-foreground hover:bg-primary/90"
+              >
+                <Users className="w-4 h-4 mr-2" />
+                Discover People
+              </Button>
             </div>
           ) : (
             <div className="space-y-4">

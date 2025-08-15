@@ -6,6 +6,7 @@ import {
   setDoc,
   doc,
   updateDoc,
+  getDoc,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 
@@ -65,7 +66,7 @@ interface UserRecommendation {
   series: Series[];
 }
 
-export function useRecommendations(selectedSource: "friends" | "all" = "all") {
+export function useRecommendations() {
   const { user: currentUser } = useCurrentUser();
   const [recommendations, setRecommendations] = useState<UserRecommendation[]>([]);
   const [loading, setLoading] = useState(true);
@@ -78,25 +79,54 @@ export function useRecommendations(selectedSource: "friends" | "all" = "all") {
       setLoading(true);
       setError(null);
       
-      // Get all users (in a real app, you'd filter by friends)
-      const usersRef = collection(db, "users");
-      const usersSnapshot = await getDocs(usersRef);
-      let allUsers = usersSnapshot.docs
-        .map(doc => ({ uid: doc.id, ...doc.data() } as User))
-        .filter(user => user.uid !== currentUser.uid); // Exclude current user
+      // Get current user's following list
+      const currentUserRef = doc(db, "users", currentUser.uid);
+      const currentUserSnap = await getDoc(currentUserRef);
       
-      // Filter by source (friends vs all users)
-      if (selectedSource === "friends") {
-        // TODO: Implement actual friends logic
-        // For now, just show a subset of users as "friends"
-        allUsers = allUsers.slice(0, Math.min(3, allUsers.length));
+      if (!currentUserSnap.exists()) {
+        setError("Current user not found");
+        setLoading(false);
+        return;
       }
-      
 
+      const currentUserData = currentUserSnap.data();
+      const followingList = currentUserData.following || [];
+
+      // If user is not following anyone, return empty results
+      if (followingList.length === 0) {
+        setRecommendations([]);
+        setLoading(false);
+        return;
+      }
+
+      // Get only the users that the current user follows
+      const followingUsersRef = collection(db, "users");
+      const followingUsersSnapshot = await getDocs(followingUsersRef);
+      let followingUsers = followingUsersSnapshot.docs
+        .map(doc => ({ uid: doc.id, ...doc.data() } as User))
+        .filter(user => followingList.includes(user.uid)); // Only include followed users
+      
+      console.log(`Found ${followingUsers.length} following users for ${currentUser.uid}`);
+      
+      // Additional validation: ensure all following users are real and not test users
+      const validFollowingUsers = followingUsers.filter(user => {
+        const isValid = !user.uid.startsWith('test_user_') && 
+                       user.uid !== 'user1' && 
+                       user.uid !== 'user2' && 
+                       user.uid !== 'user3' &&
+                       user.uid !== 'current_user_id';
+        
+        if (!isValid) {
+          console.log(`Filtering out test user: ${user.uid}`);
+        }
+        return isValid;
+      });
+      
+      console.log(`After filtering test users: ${validFollowingUsers.length} valid users`);
 
       const userRecommendations: UserRecommendation[] = [];
 
-      for (const user of allUsers) {
+      for (const user of validFollowingUsers) {
         try {
           // Fetch user's movies
           const moviesRef = collection(db, "users", user.uid, "movies");
@@ -113,8 +143,6 @@ export function useRecommendations(selectedSource: "friends" | "all" = "all") {
             id: doc.id,
             ...doc.data()
           })) as Book[];
-          
-
 
           // Fetch user's series
           const seriesRef = collection(db, "users", user.uid, "series");
@@ -234,7 +262,7 @@ export function useRecommendations(selectedSource: "friends" | "all" = "all") {
 
   useEffect(() => {
     fetchRecommendations();
-  }, [currentUser, selectedSource]);
+  }, [currentUser]);
 
   return {
     recommendations,

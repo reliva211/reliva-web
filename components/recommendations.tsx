@@ -4,7 +4,8 @@ import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Play, Star, Plus, Check, TrendingUp, Heart, Clock, RefreshCw } from "lucide-react"
+import { Play, Star, Plus, Check, TrendingUp, Heart, Clock, RefreshCw, Users } from "lucide-react"
+import { useCurrentUser } from "@/hooks/use-current-user"
 
 interface Song {
   id: string
@@ -45,40 +46,54 @@ export function Recommendations({
   onToggleMyList,
   onRateSong,
 }: RecommendationsProps) {
+  const { user: currentUser } = useCurrentUser()
   const [recommendations, setRecommendations] = useState<Song[]>([])
   const [trendingSongs, setTrendingSongs] = useState<Song[]>([])
   const [basedOnRatings, setBasedOnRatings] = useState<Song[]>([])
   const [loading, setLoading] = useState(false)
   const [activeTab, setActiveTab] = useState<"trending" | "similar" | "rated">("trending")
+  const [noFollowingMessage, setNoFollowingMessage] = useState<string | null>(null)
 
   // Get trending songs
   useEffect(() => {
-    fetchTrendingSongs()
-  }, [])
+    if (currentUser?.uid) {
+      fetchTrendingSongs()
+    }
+  }, [currentUser])
 
   // Get recommendations based on current song
   useEffect(() => {
-    if (currentSong) {
+    if (currentSong && currentUser?.uid) {
       fetchSimilarSongs(currentSong.id)
     }
-  }, [currentSong])
+  }, [currentSong, currentUser])
 
   // Get recommendations based on highly rated songs
   useEffect(() => {
-    const highlyRatedSongs = Object.entries(ratings)
-      .filter(([_, rating]) => rating >= 4)
-      .map(([songId]) => songId)
+    if (currentUser?.uid) {
+      const highlyRatedSongs = Object.entries(ratings)
+        .filter(([_, rating]) => rating >= 4)
+        .map(([songId]) => songId)
 
-    if (highlyRatedSongs.length > 0) {
-      fetchBasedOnRatings(highlyRatedSongs[0]) // Use the first highly rated song
+      if (highlyRatedSongs.length > 0) {
+        fetchBasedOnRatings(highlyRatedSongs[0]) // Use the first highly rated song
+      }
     }
-  }, [ratings])
+  }, [ratings, currentUser])
 
   const fetchTrendingSongs = async () => {
+    if (!currentUser?.uid) return
+    
     setLoading(true)
     try {
-      const response = await fetch("/api/recommendations?limit=12")
+      const response = await fetch(`/api/recommendations?userId=${currentUser.uid}&limit=12`)
       const data = await response.json()
+
+      if (data.message && data.results.length === 0) {
+        setNoFollowingMessage(data.message)
+        setTrendingSongs([])
+        return
+      }
 
       let results: Song[] = []
       if (data.data?.results) {
@@ -90,6 +105,7 @@ export function Recommendations({
       }
 
       setTrendingSongs(results.slice(0, 12))
+      setNoFollowingMessage(null)
     } catch (error) {
       console.error("Error fetching trending songs:", error)
     } finally {
@@ -98,8 +114,10 @@ export function Recommendations({
   }
 
   const fetchSimilarSongs = async (songId: string) => {
+    if (!currentUser?.uid) return
+    
     try {
-      const response = await fetch(`/api/recommendations?songId=${songId}&limit=8`)
+      const response = await fetch(`/api/recommendations?userId=${currentUser.uid}&songId=${songId}&limit=8`)
       const data = await response.json()
 
       let results: Song[] = []
@@ -118,8 +136,10 @@ export function Recommendations({
   }
 
   const fetchBasedOnRatings = async (songId: string) => {
+    if (!currentUser?.uid) return
+    
     try {
-      const response = await fetch(`/api/recommendations?songId=${songId}&limit=8`)
+      const response = await fetch(`/api/recommendations?userId=${currentUser.uid}&songId=${songId}&limit=8`)
       const data = await response.json()
 
       let results: Song[] = []
@@ -178,7 +198,7 @@ export function Recommendations({
   const getTabTitle = () => {
     switch (activeTab) {
       case "trending":
-        return "Trending Now"
+        return "From People You Follow"
       case "similar":
         return currentSong ? `Similar to "${currentSong.name}"` : "Similar Songs"
       case "rated":
@@ -191,14 +211,39 @@ export function Recommendations({
   const getTabIcon = () => {
     switch (activeTab) {
       case "trending":
-        return <TrendingUp className="w-4 h-4" />
+        return <Users className="w-4 h-4" />
       case "similar":
         return <RefreshCw className="w-4 h-4" />
       case "rated":
         return <Heart className="w-4 h-4" />
       default:
-        return <TrendingUp className="w-4 h-4" />
+        return <Users className="w-4 h-4" />
     }
+  }
+
+  // Show message when user is not following anyone
+  if (noFollowingMessage && activeTab === "trending") {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center gap-2">
+          <Users className="w-4 h-4" />
+          <h2 className="text-2xl font-bold text-white">From People You Follow</h2>
+        </div>
+        
+        <div className="text-center py-12">
+          <Users className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-white mb-2">No Recommendations Yet</h3>
+          <p className="text-gray-400 mb-6">{noFollowingMessage}</p>
+          <Button 
+            onClick={() => window.location.href = '/users'} 
+            className="bg-white text-black hover:bg-gray-100"
+          >
+            <Users className="w-4 h-4 mr-2" />
+            Discover People
+          </Button>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -218,8 +263,8 @@ export function Recommendations({
               activeTab === "trending" ? "bg-white text-black" : "border-gray-600 text-white hover:bg-gray-800"
             }
           >
-            <TrendingUp className="w-4 h-4 mr-1" />
-            Trending
+            <Users className="w-4 h-4 mr-1" />
+            Following
           </Button>
           {currentSong && (
             <Button

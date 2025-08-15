@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import {
   collection,
   getDocs,
@@ -42,6 +43,7 @@ interface UserData {
 }
 
 export default function UsersPage() {
+  const router = useRouter();
   const { user: currentUser, loading: currentUserLoading } = useCurrentUser();
   const {
     followers,
