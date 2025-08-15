@@ -36,9 +36,7 @@ export async function GET(request: NextRequest) {
         )}&page=${page}&limit=${limit}`;
         break;
       default:
-        endpoint = `https://jiosavan-api-with-playlist.vercel.app/api/search/songs?query=${encodeURIComponent(
-          query
-        )}&page=${page}&limit=${limit}`;
+        endpoint = `https://jiosavan-api-with-playlist.vercel.app/api/modules?language={english}&page=${page}&limit=${limit}`;
     }
 
     console.log("Using JioSaavn API endpoint:", endpoint);
