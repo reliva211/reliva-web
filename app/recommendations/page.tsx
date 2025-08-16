@@ -203,7 +203,7 @@ export default function RecommendationsPage() {
             Recommendations
           </h1>
           <p className="text-base text-muted-foreground">
-            Discover content from people you follow
+            Discover recommendations from people you follow
           </p>
         </div>
 
@@ -297,9 +297,9 @@ export default function RecommendationsPage() {
                                 {userRec.user.displayName}
                               </h3>
                           <p className="text-xs text-muted-foreground">
-                                {items.length} {activeCategory.slice(0, -1)}
-                            {items.length !== 1 ? "s" : ""} in their collection
-                              </p>
+                            {items.length} {activeCategory.slice(0, -1)}
+                            {items.length !== 1 ? "s" : ""} in their recommendations
+                          </p>
                           </div>
                         </div>
 

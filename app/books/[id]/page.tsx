@@ -72,6 +72,15 @@ export default function BookDetailPage({
   const [isSavingToList, setIsSavingToList] = useState(false);
   const [activeTab, setActiveTab] = useState("all");
 
+  // Default collections for books
+  const defaultCollections = [
+    { name: "Reading", isDefault: true, color: "bg-green-500" },
+    { name: "Completed", isDefault: true, color: "bg-yellow-500" },
+    { name: "To Read", isDefault: true, color: "bg-purple-500" },
+    { name: "Dropped", isDefault: true, color: "bg-red-500" },
+    { name: "Recommendations", isDefault: true, color: "bg-blue-500" },
+  ];
+
   useEffect(() => {
     if (!authLoading && user === null) {
       router.replace("/login");
@@ -106,13 +115,33 @@ export default function BookDetailPage({
     const fetchUserLists = async () => {
       if (!user?.uid) return;
       try {
-        const listsRef = collection(db, "users", user.uid, "bookLists");
+        const listsRef = collection(db, "users", user.uid, "bookCollections");
         const snapshot = await getDocs(listsRef);
-        const lists = snapshot.docs.map((doc) => ({
+        const listsData = snapshot.docs.map((doc) => ({
           id: doc.id,
           ...doc.data(),
         })) as UserList[];
-        setUserLists(lists);
+
+        // Create default collections if they don't exist
+        const existingNames = listsData.map((col) => col.name);
+        const missingDefaults = defaultCollections.filter(
+          (col) => !existingNames.includes(col.name)
+        );
+
+        if (missingDefaults.length > 0) {
+          for (const defaultCol of missingDefaults) {
+            await addDoc(listsRef, defaultCol);
+          }
+          // Refetch collections
+          const newSnapshot = await getDocs(listsRef);
+          const allLists = newSnapshot.docs.map((doc) => ({
+            id: doc.id,
+            ...doc.data(),
+          })) as UserList[];
+          setUserLists(allLists);
+        } else {
+          setUserLists(listsData);
+        }
       } catch (err) {
         console.error("Error fetching user lists:", err);
       }
@@ -127,17 +156,8 @@ export default function BookDetailPage({
 
     setIsSavingToList(true);
     try {
-      const listDocRef = doc(
-        db,
-        "users",
-        user.uid,
-        "bookLists",
-        selectedListId
-      );
-      const booksColRef = collection(listDocRef, "books");
-      const bookDocRef = doc(booksColRef, resolvedParams.id);
-
-      await setDoc(bookDocRef, {
+      // Add book to the main books collection
+      const bookData = {
         id: resolvedParams.id,
         title: book.title,
         author: book.authors?.join(", ") || "Unknown Author",
@@ -145,8 +165,47 @@ export default function BookDetailPage({
         cover: book.imageLinks?.thumbnail || "/placeholder.svg",
         rating: book.averageRating || 0,
         notes: "",
-        listId: selectedListId,
-      });
+        status: "To Read",
+        collections: [selectedListId],
+        overview: book.description || "",
+        publishedDate: book.publishedDate || "",
+        pageCount: book.pageCount || 0,
+      };
+
+      await setDoc(
+        doc(db, "users", user.uid, "books", resolvedParams.id),
+        bookData
+      );
+
+      // If adding to Recommendations collection, also add to the recommendations subcollection
+      const selectedCollection = userLists.find(list => list.id === selectedListId);
+      if (selectedCollection && selectedCollection.name === "Recommendations") {
+        try {
+          const recommendationsRef = collection(
+            db,
+            "users",
+            user.uid,
+            "bookRecommendations"
+          );
+          await setDoc(
+            doc(recommendationsRef, resolvedParams.id),
+            {
+              id: resolvedParams.id,
+              title: book.title,
+              author: book.authors?.join(", ") || "Unknown Author",
+              year: new Date(book.publishedDate).getFullYear(),
+              cover: book.imageLinks?.thumbnail || "/placeholder.svg",
+              overview: book.description || "",
+              publishedDate: book.publishedDate || "",
+              pageCount: book.pageCount || 0,
+              addedAt: new Date(),
+              isPublic: true,
+            }
+          );
+        } catch (error) {
+          console.error("Error adding to recommendations subcollection:", error);
+        }
+      }
 
       setAddToListOpen(false);
       setSelectedListId("");

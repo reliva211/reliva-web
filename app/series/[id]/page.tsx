@@ -97,6 +97,14 @@ export default function SeriesDetailPage({
   const [trailerOpen, setTrailerOpen] = useState(false);
   const [selectedTrailer, setSelectedTrailer] = useState<Video | null>(null);
 
+  // Default collections for series
+  const defaultCollections = [
+    { name: "Watched", isDefault: true, color: "bg-green-500" },
+    { name: "Watchlist", isDefault: true, color: "bg-purple-500" },
+    { name: "Dropped", isDefault: true, color: "bg-red-500" },
+    { name: "Recommendations", isDefault: true, color: "bg-blue-500" },
+  ];
+
   useEffect(() => {
     if (!authLoading && user === null) {
       router.replace("/login");
@@ -132,13 +140,33 @@ export default function SeriesDetailPage({
     const fetchUserLists = async () => {
       if (!user?.uid) return;
       try {
-        const listsRef = collection(db, "users", user.uid, "seriesLists");
+        const listsRef = collection(db, "users", user.uid, "seriesCollections");
         const snapshot = await getDocs(listsRef);
-        const lists = snapshot.docs.map((doc) => ({
+        const listsData = snapshot.docs.map((doc) => ({
           id: doc.id,
           ...doc.data(),
         })) as UserList[];
-        setUserLists(lists);
+
+        // Create default collections if they don't exist
+        const existingNames = listsData.map((col) => col.name);
+        const missingDefaults = defaultCollections.filter(
+          (col) => !existingNames.includes(col.name)
+        );
+
+        if (missingDefaults.length > 0) {
+          for (const defaultCol of missingDefaults) {
+            await addDoc(listsRef, defaultCol);
+          }
+          // Refetch collections
+          const newSnapshot = await getDocs(listsRef);
+          const allLists = newSnapshot.docs.map((doc) => ({
+            id: doc.id,
+            ...doc.data(),
+          })) as UserList[];
+          setUserLists(allLists);
+        } else {
+          setUserLists(listsData);
+        }
       } catch (err) {
         console.error("Error fetching user lists:", err);
       }
@@ -153,17 +181,8 @@ export default function SeriesDetailPage({
 
     setIsSavingToList(true);
     try {
-      const listDocRef = doc(
-        db,
-        "users",
-        user.uid,
-        "seriesLists",
-        selectedListId
-      );
-      const seriesColRef = collection(listDocRef, "series");
-      const seriesDocRef = doc(seriesColRef, String(series.id));
-
-      await setDoc(seriesDocRef, {
+      // Add series to the main series collection
+      const seriesData = {
         id: series.id,
         title: series.name,
         year: new Date(series.first_air_date).getFullYear(),
@@ -172,8 +191,50 @@ export default function SeriesDetailPage({
           : "/placeholder.svg",
         rating: series.vote_average,
         notes: "",
-        listId: selectedListId,
-      });
+        status: "Watchlist",
+        collections: [selectedListId],
+        overview: series.overview || "",
+        first_air_date: series.first_air_date || "",
+        number_of_seasons: series.number_of_seasons || 1,
+        number_of_episodes: series.number_of_episodes || 1,
+      };
+
+      await setDoc(
+        doc(db, "users", user.uid, "series", String(series.id)),
+        seriesData
+      );
+
+      // If adding to Recommendations collection, also add to the recommendations subcollection
+      const selectedCollection = userLists.find(list => list.id === selectedListId);
+      if (selectedCollection && selectedCollection.name === "Recommendations") {
+        try {
+          const recommendationsRef = collection(
+            db,
+            "users",
+            user.uid,
+            "seriesRecommendations"
+          );
+          await setDoc(
+            doc(recommendationsRef, String(series.id)),
+            {
+              id: series.id,
+              title: series.name,
+              year: new Date(series.first_air_date).getFullYear(),
+              cover: series.poster_path
+                ? `https://image.tmdb.org/t/p/w300${series.poster_path}`
+                : "/placeholder.svg",
+              overview: series.overview || "",
+              first_air_date: series.first_air_date || "",
+              number_of_seasons: series.number_of_seasons || 1,
+              number_of_episodes: series.number_of_episodes || 1,
+              addedAt: new Date(),
+              isPublic: true,
+            }
+          );
+        } catch (error) {
+          console.error("Error adding to recommendations subcollection:", error);
+        }
+      }
 
       setAddToListOpen(false);
       setSelectedListId("");

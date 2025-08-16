@@ -96,6 +96,14 @@ export default function MovieDetailPage({
   const [trailerOpen, setTrailerOpen] = useState(false);
   const [selectedTrailer, setSelectedTrailer] = useState<Video | null>(null);
 
+  // Default collections for movies
+  const defaultCollections = [
+    { name: "Watched", isDefault: true, color: "bg-green-500" },
+    { name: "Watchlist", isDefault: true, color: "bg-purple-500" },
+    { name: "Dropped", isDefault: true, color: "bg-red-500" },
+    { name: "Recommendations", isDefault: true, color: "bg-blue-500" },
+  ];
+
   useEffect(() => {
     if (!authLoading && user === null) {
       router.replace("/login");
@@ -131,13 +139,33 @@ export default function MovieDetailPage({
     const fetchUserLists = async () => {
       if (!user?.uid) return;
       try {
-        const listsRef = collection(db, "users", user.uid, "movieLists");
+        const listsRef = collection(db, "users", user.uid, "movieCollections");
         const snapshot = await getDocs(listsRef);
-        const lists = snapshot.docs.map((doc) => ({
+        const listsData = snapshot.docs.map((doc) => ({
           id: doc.id,
           ...doc.data(),
         })) as UserList[];
-        setUserLists(lists);
+
+        // Create default collections if they don't exist
+        const existingNames = listsData.map((col) => col.name);
+        const missingDefaults = defaultCollections.filter(
+          (col) => !existingNames.includes(col.name)
+        );
+
+        if (missingDefaults.length > 0) {
+          for (const defaultCol of missingDefaults) {
+            await addDoc(listsRef, defaultCol);
+          }
+          // Refetch collections
+          const newSnapshot = await getDocs(listsRef);
+          const allLists = newSnapshot.docs.map((doc) => ({
+            id: doc.id,
+            ...doc.data(),
+          })) as UserList[];
+          setUserLists(allLists);
+        } else {
+          setUserLists(listsData);
+        }
       } catch (err) {
         console.error("Error fetching user lists:", err);
       }
@@ -152,17 +180,8 @@ export default function MovieDetailPage({
 
     setIsSavingToList(true);
     try {
-      const listDocRef = doc(
-        db,
-        "users",
-        user.uid,
-        "movieLists",
-        selectedListId
-      );
-      const moviesColRef = collection(listDocRef, "movies");
-      const movieDocRef = doc(moviesColRef, String(movie.id));
-
-      await setDoc(movieDocRef, {
+      // Add movie to the main movies collection
+      const movieData = {
         id: movie.id,
         title: movie.title,
         year: new Date(movie.release_date).getFullYear(),
@@ -171,8 +190,46 @@ export default function MovieDetailPage({
           : "/placeholder.svg",
         rating: movie.vote_average,
         notes: "",
-        listId: selectedListId,
-      });
+        status: "Watchlist",
+        collections: [selectedListId],
+        overview: movie.overview || "",
+        release_date: movie.release_date || "",
+      };
+
+      await setDoc(
+        doc(db, "users", user.uid, "movies", String(movie.id)),
+        movieData
+      );
+
+      // If adding to Recommendations collection, also add to the recommendations subcollection
+      const selectedCollection = userLists.find(list => list.id === selectedListId);
+      if (selectedCollection && selectedCollection.name === "Recommendations") {
+        try {
+          const recommendationsRef = collection(
+            db,
+            "users",
+            user.uid,
+            "movieRecommendations"
+          );
+          await setDoc(
+            doc(recommendationsRef, String(movie.id)),
+            {
+              id: movie.id,
+              title: movie.title,
+              year: new Date(movie.release_date).getFullYear(),
+              cover: movie.poster_path
+                ? `https://image.tmdb.org/t/p/w300${movie.poster_path}`
+                : "/placeholder.svg",
+              overview: movie.overview || "",
+              release_date: movie.release_date || "",
+              addedAt: new Date(),
+              isPublic: true,
+            }
+          );
+        } catch (error) {
+          console.error("Error adding to recommendations subcollection:", error);
+        }
+      }
 
       setAddToListOpen(false);
       setSelectedListId("");

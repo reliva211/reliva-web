@@ -135,32 +135,32 @@ export function useRecommendations() {
 
       for (const user of validFollowingUsers) {
         try {
-          // Fetch user's movies
-          const moviesRef = collection(db, "users", user.uid, "movies");
-          const moviesSnapshot = await getDocs(moviesRef);
-          const movies = moviesSnapshot.docs.map((doc) => ({
+          // Fetch user's movie recommendations (only from Recommendations collection)
+          const movieRecommendationsRef = collection(db, "users", user.uid, "movieRecommendations");
+          const movieRecommendationsSnapshot = await getDocs(movieRecommendationsRef);
+          const movieRecommendations = movieRecommendationsSnapshot.docs.map((doc) => ({
             id: parseInt(doc.id),
             ...doc.data(),
           })) as Movie[];
 
-          // Fetch user's books
-          const booksRef = collection(db, "users", user.uid, "books");
-          const booksSnapshot = await getDocs(booksRef);
-          const books = booksSnapshot.docs.map((doc) => ({
+          // Fetch user's book recommendations (only from Recommendations collection)
+          const bookRecommendationsRef = collection(db, "users", user.uid, "bookRecommendations");
+          const bookRecommendationsSnapshot = await getDocs(bookRecommendationsRef);
+          const bookRecommendations = bookRecommendationsSnapshot.docs.map((doc) => ({
             id: doc.id,
             ...doc.data(),
           })) as Book[];
 
-          // Fetch user's series
-          const seriesRef = collection(db, "users", user.uid, "series");
-          const seriesSnapshot = await getDocs(seriesRef);
-          const series = seriesSnapshot.docs.map((doc) => ({
+          // Fetch user's series recommendations (only from Recommendations collection)
+          const seriesRecommendationsRef = collection(db, "users", user.uid, "seriesRecommendations");
+          const seriesRecommendationsSnapshot = await getDocs(seriesRecommendationsRef);
+          const seriesRecommendations = seriesRecommendationsSnapshot.docs.map((doc) => ({
             id: parseInt(doc.id),
             ...doc.data(),
           })) as Series[];
 
-          // Only add users who have items in their collections
-          if (movies.length > 0 || books.length > 0 || series.length > 0) {
+          // Only add users who have recommendations in their Recommendations collections
+          if (movieRecommendations.length > 0 || bookRecommendations.length > 0 || seriesRecommendations.length > 0) {
             // Try to get user name from various possible fields
             let displayName =
               user.displayName ||
@@ -175,13 +175,13 @@ export function useRecommendations() {
                 displayName: displayName,
                 photoURL: user.photoURL || user.avatar || user.profilePicture,
               },
-              movies,
-              books,
-              series,
+              movies: movieRecommendations,
+              books: bookRecommendations,
+              series: seriesRecommendations,
             });
           }
         } catch (error) {
-          console.error(`Error fetching data for user ${user.uid}:`, error);
+          console.error(`Error fetching recommendations for user ${user.uid}:`, error);
         }
       }
 
