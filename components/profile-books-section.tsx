@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -693,30 +694,16 @@ export default function ProfileBooksSection({
                     </div>
                   </div>
                 ))
-              : // Show placeholder items when empty
-                Array.from({ length: 4 }, (_, idx) => (
-                  <div
-                    key={`placeholder-favorite-book-${idx}`}
-                    className="flex-shrink-0 w-32"
-                  >
+              : // Show single Add screen when empty
+                (
+                  <div className="flex-shrink-0 w-32">
                     <div className="aspect-[2/3] w-full bg-black/20 rounded-md border border-border/30 flex items-center justify-center">
-                      <div className="text-center">
-                        <Plus className="h-8 w-8 mx-auto mb-2 text-muted-foreground/50" />
-                        <p className="text-xs text-muted-foreground/50">
-                          Add Book
-                        </p>
+                      <div className="text-center flex items-center justify-center h-full">
+                        <p className="text-sm text-muted-foreground/50">Add</p>
                       </div>
                     </div>
-                    <div className="mt-2 text-center">
-                      <p className="text-sm font-semibold leading-tight text-muted-foreground/50">
-                        Book Title
-                      </p>
-                      <p className="text-xs text-muted-foreground/50 leading-tight mt-1">
-                        Author Name
-                      </p>
-                    </div>
                   </div>
-                ))}
+                )}
           </div>
           <Button
             variant="ghost"
@@ -802,29 +789,15 @@ export default function ProfileBooksSection({
                   </div>
                 ))
               : // Show placeholder items when empty
-                Array.from({ length: 4 }, (_, idx) => (
-                  <div
-                    key={`placeholder-reading-list-${idx}`}
-                    className="flex-shrink-0 w-32"
-                  >
+                (
+                  <div className="flex-shrink-0 w-32">
                     <div className="aspect-[2/3] w-full bg-black/20 rounded-md border border-border/30 flex items-center justify-center">
-                      <div className="text-center">
-                        <Plus className="h-8 w-8 mx-auto mb-2 text-muted-foreground/50" />
-                        <p className="text-xs text-muted-foreground/50">
-                          Add Book
-                        </p>
+                      <div className="text-center flex items-center justify-center h-full">
+                        <p className="text-sm text-muted-foreground/50">Add</p>
                       </div>
                     </div>
-                    <div className="mt-2 text-center">
-                      <p className="text-sm font-semibold leading-tight text-muted-foreground/50">
-                        Book Title
-                      </p>
-                      <p className="text-xs text-muted-foreground/50 leading-tight mt-1">
-                        Author Name
-                      </p>
-                    </div>
                   </div>
-                ))}
+                )}
           </div>
           <Button
             variant="ghost"
@@ -872,32 +845,22 @@ export default function ProfileBooksSection({
               ? limitedRecommendations.map((book, idx) => (
                   <div
                     key={book.id || idx}
-                    className="relative group flex-shrink-0 w-32"
+                    className="relative flex-shrink-0 w-32"
                   >
                     <div className="aspect-[2/3] w-full bg-muted rounded-md overflow-hidden">
-                      <Image
-                        src={book.cover || "/placeholder.svg"}
-                        alt={book.title || "Book"}
-                        width={128}
-                        height={192}
-                        className="w-full h-full object-cover"
-                        onError={(e) => {
-                          const target = e.target as HTMLImageElement;
-                          target.src = "/placeholder.svg";
-                        }}
-                      />
-                      {!readOnly && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="absolute top-1 right-1 h-6 w-6 p-0 bg-black/50 hover:bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity"
-                          onClick={() =>
-                            handleRemoveItem("recommendations", book.id)
-                          }
-                        >
-                          <X className="h-3 w-3 text-white" />
-                        </Button>
-                      )}
+                      <Link href={`/books/${book.id}`}>
+                        <Image
+                          src={book.cover || "/placeholder.svg"}
+                          alt={book.title || "Book"}
+                          width={128}
+                          height={192}
+                          className="w-full h-full object-cover cursor-pointer"
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            target.src = "/placeholder.svg";
+                          }}
+                        />
+                      </Link>
                     </div>
                     <div className="mt-2 text-center">
                       <p className="text-sm font-semibold leading-tight">
@@ -910,29 +873,15 @@ export default function ProfileBooksSection({
                   </div>
                 ))
               : // Show placeholder items when empty
-                Array.from({ length: 4 }, (_, idx) => (
-                  <div
-                    key={`placeholder-recommendation-${idx}`}
-                    className="flex-shrink-0 w-32"
-                  >
+                (
+                  <div className="flex-shrink-0 w-32">
                     <div className="aspect-[2/3] w-full bg-black/20 rounded-md border border-border/30 flex items-center justify-center">
-                      <div className="text-center">
-                        <Plus className="h-8 w-8 mx-auto mb-2 text-muted-foreground/50" />
-                        <p className="text-xs text-muted-foreground/50">
-                          Add Book
-                        </p>
+                      <div className="text-center flex items-center justify-center h-full">
+                        <p className="text-sm text-muted-foreground/50">Add</p>
                       </div>
                     </div>
-                    <div className="mt-2 text-center">
-                      <p className="text-sm font-semibold leading-tight text-muted-foreground/50">
-                        Book Title
-                      </p>
-                      <p className="text-xs text-muted-foreground/50 leading-tight mt-1">
-                        Author Name
-                      </p>
-                    </div>
                   </div>
-                ))}
+                )}
           </div>
           <Button
             variant="ghost"
@@ -1030,29 +979,15 @@ export default function ProfileBooksSection({
                   })
                   .filter(Boolean)
               : // Show placeholder items when empty
-                Array.from({ length: 4 }, (_, idx) => (
-                  <div
-                    key={`placeholder-rating-${idx}`}
-                    className="flex-shrink-0 w-32"
-                  >
+                (
+                  <div className="flex-shrink-0 w-32">
                     <div className="aspect-[2/3] w-full bg-black/20 rounded-md border border-border/30 flex items-center justify-center">
-                      <div className="text-center">
-                        <Plus className="h-8 w-8 mx-auto mb-2 text-muted-foreground/50" />
-                        <p className="text-xs text-muted-foreground/50">
-                          Add Book
-                        </p>
+                      <div className="text-center flex items-center justify-center h-full">
+                        <p className="text-sm text-muted-foreground/50">Add</p>
                       </div>
                     </div>
-                    <div className="mt-2 text-center">
-                      <p className="text-sm font-semibold leading-tight text-muted-foreground/50">
-                        Book Title
-                      </p>
-                      <p className="text-xs text-muted-foreground/50 leading-tight mt-1">
-                        Author Name
-                      </p>
-                    </div>
                   </div>
-                ))}
+                )}
           </div>
           <Button
             variant="ghost"

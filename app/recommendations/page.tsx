@@ -47,7 +47,7 @@ interface Book {
   id: string;
   title: string;
   author: string;
-  year: number;
+  year?: number;
   cover: string;
   status?: string;
   notes?: string;
@@ -95,7 +95,7 @@ export default function RecommendationsPage() {
     addMovieToCollection,
     addBookToCollection,
     addSeriesToCollection,
-  } = useRecommendations("all"); // Always use "all" to show all following users
+  } = useRecommendations(); // Always use "all" to show all following users
 
   useEffect(() => {
     if (!authLoading && currentUser === null) {
@@ -142,13 +142,13 @@ export default function RecommendationsPage() {
 
       switch (category) {
         case "movies":
-          success = await addMovieToCollection(item as Movie);
+          success = (await addMovieToCollection(item as Movie)) || false;
           break;
         case "books":
-          success = await addBookToCollection(item as Book);
+          success = (await addBookToCollection(item as Book)) || false;
           break;
         case "series":
-          success = await addSeriesToCollection(item as Series);
+          success = (await addSeriesToCollection(item as Series)) || false;
           break;
       }
 
@@ -196,19 +196,19 @@ export default function RecommendationsPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 dark:from-gray-900 dark:via-black dark:to-gray-900">
-      <div className="max-w-7xl mx-auto px-4 py-8">
+      <div className="max-w-7xl mx-auto px-4 py-8 ml-8 pl-6">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">
+        <div className="mb-6">
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-1">
             Recommendations
           </h1>
-          <p className="text-lg text-muted-foreground">
+          <p className="text-base text-muted-foreground">
             Discover content from people you follow
           </p>
         </div>
 
         {/* Category Tabs */}
-        <div className="flex space-x-8 mb-6 border-b border-gray-200 dark:border-gray-700">
+        <div className="flex space-x-6 mb-4 border-b border-gray-200 dark:border-gray-700">
           {[
             { key: "movies", label: "Movies", icon: Film },
             { key: "books", label: "Books", icon: BookOpen },
@@ -217,184 +217,131 @@ export default function RecommendationsPage() {
             <button
               key={key}
               onClick={() => setActiveCategory(key as any)}
-              className={`flex items-center gap-2 pb-2 px-1 text-sm font-medium transition-colors ${
+              className={`flex items-center gap-1.5 pb-1.5 px-1 text-xs font-medium transition-colors ${
                 activeCategory === key
                   ? "text-primary border-b-2 border-primary"
                   : "text-muted-foreground hover:text-primary"
               }`}
             >
-              <Icon className="w-4 h-4" />
+              <Icon className="w-3 h-3" />
               {label}
             </button>
           ))}
         </div>
 
         {/* Content */}
-        <div className="space-y-6">
+        <div className="space-y-4">
           {loading ? (
-            <div className="flex items-center justify-center py-12">
+            <div className="flex items-center justify-center py-8">
               <div className="text-center">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-                <p className="text-muted-foreground">
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary mx-auto mb-3"></div>
+                <p className="text-muted-foreground text-sm">
                   Loading recommendations...
                 </p>
               </div>
             </div>
           ) : error ? (
-            <div className="text-center py-12">
-              <Users className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-semibold mb-2">
+            <div className="text-center py-8">
+              <Users className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
+              <h3 className="text-base font-semibold mb-1">
                 Error loading recommendations
               </h3>
-              <p className="text-muted-foreground">{error}</p>
+              <p className="text-muted-foreground text-sm">{error}</p>
             </div>
           ) : recommendations.length === 0 ? (
-            <div className="text-center py-12">
-              <Users className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-semibold mb-2">
+            <div className="text-center py-8">
+              <Users className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
+              <h3 className="text-base font-semibold mb-1">
                 No recommendations yet
               </h3>
-              <p className="text-muted-foreground mb-6">
+              <p className="text-muted-foreground mb-4 text-sm">
                 You need to follow other users to see their recommendations
               </p>
               <Button 
-                onClick={() => router.push('/users')} 
-                className="bg-primary text-primary-foreground hover:bg-primary/90"
+                onClick={() => router.push("/users")}
+                className="bg-primary text-primary-foreground hover:bg-primary/90 text-sm"
               >
-                <Users className="w-4 h-4 mr-2" />
-                Discover People
+                <Users className="w-3 h-3 mr-1.5" />
+                Friends
               </Button>
             </div>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-3">
               {recommendations
                 .filter((userRec) => getItemCount(userRec) > 0)
                 .map((userRec) => {
                   const items = getItemsByCategory(userRec);
 
                   return (
-                    <Card key={userRec.user.uid} className="overflow-hidden">
-                      <CardContent className="p-0">
+                    <div key={userRec.user.uid} className="space-y-4">
                         {/* User Header */}
-                        <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
                           <div className="flex items-center gap-3">
                             <Avatar
-                              className="h-10 w-10 cursor-pointer hover:opacity-80 transition-opacity"
+                          className="h-9 w-9 cursor-pointer hover:opacity-80 transition-opacity ring-2 ring-primary/20"
                               onClick={() =>
                                 router.push(`/users/${userRec.user.uid}`)
                               }
                             >
                               <AvatarImage src={userRec.user.photoURL} />
-                              <AvatarFallback>
+                          <AvatarFallback className="bg-primary/10 text-primary font-semibold text-xs">
                                 {getUserInitials(userRec.user.displayName)}
                               </AvatarFallback>
                             </Avatar>
                             <div>
                               <h3
-                                className="font-semibold text-gray-900 dark:text-white cursor-pointer hover:underline"
+                            className="text-lg font-semibold text-gray-900 dark:text-white cursor-pointer hover:text-primary transition-colors"
                                 onClick={() =>
                                   router.push(`/users/${userRec.user.uid}`)
                                 }
                               >
                                 {userRec.user.displayName}
                               </h3>
-                              <p className="text-sm text-muted-foreground">
+                          <p className="text-xs text-muted-foreground">
                                 {items.length} {activeCategory.slice(0, -1)}
-                                {items.length !== 1 ? "s" : ""} in their
-                                collection
+                            {items.length !== 1 ? "s" : ""} in their collection
                               </p>
-                            </div>
                           </div>
                         </div>
 
                         {/* Items Grid */}
-                        <div className="p-4">
-                          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+                      <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
                             {items.slice(0, 12).map((item) => (
-                              <div key={item.id} className="group relative">
-                                <div className="relative aspect-[2/3] rounded-lg overflow-hidden">
+                          <div key={item.id} className="group flex-shrink-0">
+                            <div className="relative w-[156px] h-[231px] rounded-md overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900">
+                              <Link href={`/${activeCategory}/${item.id}`}>
                                   <Image
                                     src={item.cover || "/placeholder.svg"}
                                     alt={item.title || "Unknown"}
                                     fill
-                                    className="object-cover transition-transform group-hover:scale-105"
-                                  />
-                                  <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                    <div className="flex flex-col gap-2">
-                                      <Button
-                                        size="sm"
-                                        variant="secondary"
-                                        onClick={() =>
-                                          handleAddToCollection(
-                                            item,
-                                            activeCategory
-                                          )
-                                        }
-                                        disabled={addingItems.has(
-                                          `${activeCategory}-${item.id}`
-                                        )}
-                                      >
-                                        {addingItems.has(
-                                          `${activeCategory}-${item.id}`
-                                        ) ? (
-                                          <>
-                                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-1"></div>
-                                            Adding...
-                                          </>
-                                        ) : (
-                                          <>
-                                            <Plus className="h-4 w-4 mr-1" />
-                                            Add to List
-                                          </>
-                                        )}
-                                      </Button>
-                                      <Button
-                                        size="sm"
-                                        variant="secondary"
-                                        asChild
-                                      >
-                                        <Link
-                                          href={`/${activeCategory}/${item.id}`}
-                                        >
-                                          View Details
+                                  className="object-cover cursor-pointer transition-transform duration-300 group-hover:scale-105"
+                                />
                                         </Link>
-                                      </Button>
                                     </div>
-                                  </div>
-                                </div>
-                                <div className="mt-2">
-                                  <h4 className="font-semibold text-sm truncate">
+                            <div className="mt-1.5 space-y-0.5">
+                              <h4 className="font-medium text-xs truncate text-gray-900 dark:text-white leading-tight">
                                     {item.title || "Unknown Title"}
                                   </h4>
-                                  <p className="text-xs text-muted-foreground">
+                              <p className="text-xs text-muted-foreground leading-tight">
                                     {activeCategory === "books"
                                       ? (item as Book).author
                                       : (item as Movie | Series).year || "N/A"}
                                   </p>
-                                  {(item as Movie | Series).rating && (
-                                    <div className="flex items-center gap-1 mt-1">
-                                      <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-                                      <span className="text-xs">
-                                        {(
-                                          item as Movie | Series
-                                        ).rating?.toFixed(1)}
-                                      </span>
-                                    </div>
-                                  )}
                                 </div>
                               </div>
                             ))}
                           </div>
                           {items.length > 12 && (
-                            <div className="text-center mt-4">
-                              <Button variant="outline" size="sm">
+                        <div className="text-center pt-3">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-primary hover:text-primary/80 text-xs"
+                          >
                                 View all {items.length} items
                               </Button>
                             </div>
                           )}
                         </div>
-                      </CardContent>
-                    </Card>
                   );
                 })}
             </div>

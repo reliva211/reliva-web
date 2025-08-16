@@ -21,6 +21,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
 import {
   Search,
   User,
@@ -29,6 +30,14 @@ import {
   UserPlus,
   UserCheck,
   ArrowRight,
+  Sparkles,
+  TrendingUp,
+  Heart,
+  MessageCircle,
+  MoreHorizontal,
+  Filter,
+  MapPin,
+  Calendar,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -40,6 +49,9 @@ interface UserData {
   followers?: string[];
   following?: string[];
   createdAt?: any;
+  bio?: string;
+  avatarUrl?: string;
+  tagline?: string;
 }
 
 export default function UsersPage() {
@@ -58,6 +70,8 @@ export default function UsersPage() {
   >({});
   const [hasSearched, setHasSearched] = useState(false);
   const [activeTab, setActiveTab] = useState("discover");
+  const [suggestedUsers, setSuggestedUsers] = useState<UserData[]>([]);
+  const [loadingSuggested, setLoadingSuggested] = useState(false);
 
   // Debounced search function
   useEffect(() => {
@@ -72,6 +86,57 @@ export default function UsersPage() {
 
     return () => clearTimeout(timeoutId);
   }, [searchQuery]);
+
+  // Load suggested users on component mount
+  useEffect(() => {
+    if (!currentUserLoading && currentUser) {
+      loadSuggestedUsers();
+    }
+  }, [currentUserLoading, currentUser]);
+
+  // Load suggested users (users not followed by current user)
+  const loadSuggestedUsers = async () => {
+    setLoadingSuggested(true);
+    try {
+      const usersRef = collection(db, "users");
+      const usersSnapshot = await getDocs(usersRef);
+      const allUsers: UserData[] = [];
+
+      usersSnapshot.forEach((doc) => {
+        const userData = doc.data() as UserData;
+        // Filter out current user and users already followed
+        if (
+          userData.uid !== currentUser?.uid &&
+          currentUser?.uid &&
+          !(userData.followers || []).includes(currentUser.uid)
+        ) {
+          allUsers.push({
+            ...userData,
+            followers: userData.followers || [],
+            following: userData.following || [],
+          });
+        }
+      });
+
+      // Sort by follower count and take top 6
+      const sortedUsers = allUsers
+        .sort((a, b) => (b.followers?.length || 0) - (a.followers?.length || 0))
+        .slice(0, 6);
+
+      setSuggestedUsers(sortedUsers);
+
+      // Initialize following states for suggested users
+      const followingStatesMap: Record<string, boolean> = {};
+      sortedUsers.forEach((user) => {
+        followingStatesMap[user.uid] = false;
+      });
+      setFollowingStates((prev) => ({ ...prev, ...followingStatesMap }));
+    } catch (error) {
+      console.error("Error loading suggested users:", error);
+    } finally {
+      setLoadingSuggested(false);
+    }
+  };
 
   // Perform fuzzy search
   const performSearch = async (query: string) => {
@@ -117,7 +182,7 @@ export default function UsersPage() {
           ? (user.followers || []).includes(currentUser.uid)
           : false;
       });
-      setFollowingStates(followingStatesMap);
+      setFollowingStates((prev) => ({ ...prev, ...followingStatesMap }));
     } catch (error) {
       console.error("Error searching users:", error);
     } finally {
@@ -155,9 +220,9 @@ export default function UsersPage() {
 
     try {
       const isFollowing = followingStates[targetUserId];
-      const targetUser = searchResults.find(
-        (user) => user.uid === targetUserId
-      );
+      const targetUser =
+        searchResults.find((user) => user.uid === targetUserId) ||
+        suggestedUsers.find((user) => user.uid === targetUserId);
 
       if (!targetUser) return;
 
@@ -202,6 +267,21 @@ export default function UsersPage() {
           return user;
         })
       );
+
+      // Update suggested users
+      setSuggestedUsers((prev) =>
+        prev.map((user) => {
+          if (user.uid === targetUserId) {
+            return {
+              ...user,
+              followers: isFollowing
+                ? (user.followers || []).filter((id) => id !== currentUser.uid)
+                : [...(user.followers || []), currentUser.uid],
+            };
+          }
+          return user;
+        })
+      );
     } catch (error) {
       console.error("Error updating follow status:", error);
     }
@@ -222,123 +302,325 @@ export default function UsersPage() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      {/* Header */}
+      {/* Enhanced Header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">People</h1>
-        <p className="text-muted-foreground">
+        <div className="flex items-center gap-3 mb-3">
+          <div className="p-2 bg-gradient-to-br from-primary/20 to-primary/10 rounded-xl">
+            <Users className="h-6 w-6 text-primary" />
+          </div>
+          <div>
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text">
+              People
+            </h1>
+            <p className="text-muted-foreground text-sm">
           Discover, connect, and manage your network on Reliva
         </p>
+          </div>
+        </div>
       </div>
 
-      {/* Tabs */}
+      {/* Enhanced Tabs - Positioned at extreme left */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-3 mb-8">
-          <TabsTrigger value="discover">Discover People</TabsTrigger>
-          <TabsTrigger value="following">
+        <TabsList className="flex justify-start w-full mb-8 bg-muted/50 p-1 rounded-xl ml-0">
+          <TabsTrigger
+            value="discover"
+            className="data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-lg transition-all duration-200"
+          >
+            <Sparkles className="h-4 w-4 mr-2" />
+            Discover
+          </TabsTrigger>
+          <TabsTrigger
+            value="following"
+            className="data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-lg transition-all duration-200"
+          >
+            <UserCheck className="h-4 w-4 mr-2" />
             Following ({following.length})
           </TabsTrigger>
-          <TabsTrigger value="followers">
+          <TabsTrigger
+            value="followers"
+            className="data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-lg transition-all duration-200"
+          >
+            <Users className="h-4 w-4 mr-2" />
             Followers ({followers.length})
           </TabsTrigger>
         </TabsList>
 
-        {/* Discover Tab */}
-        <TabsContent value="discover" className="space-y-6">
-          {/* Search Input */}
-          <div className="mb-6">
-            <div className="relative max-w-md">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+        {/* Enhanced Discover Tab */}
+        <TabsContent value="discover" className="space-y-8">
+          {/* Enhanced Search Input */}
+          <div className="relative">
+            <div className="relative max-w-md mx-auto">
+              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
               <Input
                 type="text"
-                placeholder="Search by name or username (min 2 characters)..."
+                placeholder="Search people by name or username..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10"
+                className="pl-12 pr-12 h-12 rounded-xl border-2 focus:border-primary/50 transition-all duration-200 bg-background/50 backdrop-blur-sm shadow-sm"
               />
               {searching && (
-                <Loader2 className="absolute right-3 top-1/2 transform -translate-y-1/2 animate-spin h-4 w-4 text-muted-foreground" />
+                <Loader2 className="absolute right-4 top-1/2 transform -translate-y-1/2 animate-spin h-4 w-4 text-primary" />
               )}
             </div>
             {searchQuery.length > 0 && searchQuery.length < 2 && (
-              <p className="text-sm text-muted-foreground mt-2">
+              <p className="text-sm text-muted-foreground mt-2 text-center">
                 Enter at least 2 characters to search
               </p>
             )}
           </div>
 
-          {/* Search Results */}
+          {/* Search Results or Suggested Users */}
           {!hasSearched ? (
+            <div className="space-y-6">
+              {/* Suggested Users Section */}
+              <div className="space-y-4">
+                <div className="flex items-center gap-2 mb-6">
+                  <TrendingUp className="h-5 w-5 text-primary" />
+                  <h2 className="text-xl font-semibold">Suggested for you</h2>
+                </div>
+
+                {loadingSuggested ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {[...Array(6)].map((_, i) => (
+                      <Card
+                        key={i}
+                        className="border-0 bg-gradient-to-br from-card to-card/50 backdrop-blur-sm"
+                      >
+                        <CardContent className="p-6">
+                          <div className="flex items-start gap-4">
+                            <div className="h-16 w-16 bg-muted rounded-full animate-pulse" />
+                            <div className="flex-1 space-y-3">
+                              <div className="h-4 bg-muted rounded animate-pulse" />
+                              <div className="h-3 bg-muted rounded w-2/3 animate-pulse" />
+                              <div className="h-3 bg-muted rounded w-1/2 animate-pulse" />
+                              <div className="h-9 bg-muted rounded animate-pulse" />
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                ) : suggestedUsers.length === 0 ? (
             <div className="text-center py-12">
-              <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-semibold mb-2">Start Searching</h3>
+                    <Users className="h-16 w-16 text-muted-foreground/50 mx-auto mb-4" />
+                    <h3 className="text-lg font-semibold mb-2">
+                      No suggestions yet
+                    </h3>
               <p className="text-muted-foreground">
-                Enter a name or username to find users
-              </p>
+                      Start following people to get personalized suggestions
+                    </p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {suggestedUsers.map((user) => (
+                      <Card
+                        key={user.uid}
+                        className="border-0 bg-gradient-to-br from-card to-card/50 backdrop-blur-sm"
+                      >
+                        <CardContent className="p-6">
+                          <div className="flex items-start gap-4">
+                            <Avatar
+                              className="h-16 w-16 cursor-pointer ring-2 ring-primary/20"
+                              onClick={() => router.push(`/users/${user.uid}`)}
+                            >
+                              <AvatarImage
+                                src={user.avatarUrl || ""}
+                                alt={user.fullName || user.username}
+                              />
+                              <AvatarFallback className="bg-gradient-to-br from-primary/20 to-primary/10 text-primary font-semibold">
+                                {(user.fullName || user.username)
+                                  .charAt(0)
+                                  .toUpperCase()}
+                              </AvatarFallback>
+                            </Avatar>
+
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-start justify-between mb-2">
+                                <div className="flex-1 min-w-0">
+                                  <h3
+                                    className="font-semibold text-base truncate cursor-pointer"
+                                    onClick={() =>
+                                      router.push(`/users/${user.uid}`)
+                                    }
+                                  >
+                                    {user.fullName || "No name"}
+                                  </h3>
+                                  <p className="text-sm text-muted-foreground truncate">
+                                    @{user.username}
+                                  </p>
+                                </div>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="opacity-0"
+                                >
+                                  <MoreHorizontal className="h-4 w-4" />
+                                </Button>
+                              </div>
+
+                              {user.tagline && (
+                                <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
+                                  {user.tagline}
+                                </p>
+                              )}
+
+                              <div className="flex items-center gap-4 mb-4 text-xs text-muted-foreground">
+                                <span className="flex items-center gap-1 bg-muted/50 px-2 py-1 rounded-full">
+                                  <Heart className="h-3 w-3 text-primary" />
+                                  {(user.followers || []).length} followers
+                                </span>
+                                <span className="flex items-center gap-1 bg-muted/50 px-2 py-1 rounded-full">
+                                  <User className="h-3 w-3 text-primary" />
+                                  {(user.following || []).length} following
+                                </span>
+                              </div>
+
+                              <Button
+                                variant={
+                                  followingStates[user.uid]
+                                    ? "outline"
+                                    : "default"
+                                }
+                                size="sm"
+                                onClick={() => handleFollowToggle(user.uid)}
+                                disabled={!currentUser}
+                                className="w-full h-9 rounded-lg transition-all duration-200"
+                              >
+                                {followingStates[user.uid] ? (
+                                  <>
+                                    <UserCheck className="h-4 w-4 mr-2" />
+                                    Following
+                                  </>
+                                ) : (
+                                  <>
+                                    <UserPlus className="h-4 w-4 mr-2" />
+                                    Follow
+                                  </>
+                                )}
+                              </Button>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           ) : searchResults.length === 0 ? (
-            <div className="text-center py-12">
-              <User className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-semibold mb-2">
+            <div className="text-center py-16">
+              <div className="relative">
+                <User className="h-20 w-20 text-muted-foreground/30 mx-auto mb-6" />
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <Search className="h-8 w-8 text-muted-foreground/50" />
+                </div>
+              </div>
+              <h3 className="text-xl font-semibold mb-3">
                 {searching ? "Searching..." : "No users found"}
               </h3>
-              <p className="text-muted-foreground">
+              <p className="text-muted-foreground mb-6 max-w-md mx-auto">
                 {searching
-                  ? "Looking for users..."
-                  : "Try adjusting your search terms"}
+                  ? "Looking for users that match your search..."
+                  : "Try adjusting your search terms or browse our suggested users"}
               </p>
+              {!searching && (
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setSearchQuery("");
+                    setHasSearched(false);
+                  }}
+                  className="rounded-lg"
+                >
+                  <ArrowRight className="h-4 w-4 mr-2 rotate-180" />
+                  Back to Suggestions
+                </Button>
+              )}
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-semibold">
+                  Search Results ({searchResults.length})
+                </h3>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setSearchQuery("");
+                    setHasSearched(false);
+                  }}
+                  className="text-muted-foreground"
+                >
+                  <ArrowRight className="h-4 w-4 mr-2 rotate-180" />
+                  Back to Suggestions
+                </Button>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {searchResults.map((user) => (
                 <Card
                   key={user.uid}
-                  className="hover:shadow-md transition-shadow"
+                    className="border-0 bg-gradient-to-br from-card to-card/50 backdrop-blur-sm"
                 >
-                  <CardHeader className="pb-3">
-                    <div className="flex items-center space-x-3">
+                    <CardContent className="p-6">
+                      <div className="flex items-start gap-4">
                       <Avatar
-                        className="h-12 w-12 cursor-pointer hover:opacity-80 transition-opacity"
+                          className="h-16 w-16 cursor-pointer ring-2 ring-primary/20"
                         onClick={() => router.push(`/users/${user.uid}`)}
                       >
                         <AvatarImage
-                          src=""
+                            src={user.avatarUrl || ""}
                           alt={user.fullName || user.username}
                         />
-                        <AvatarFallback>
-                          <User className="h-6 w-6" />
+                          <AvatarFallback className="bg-gradient-to-br from-primary/20 to-primary/10 text-primary font-semibold">
+                            {(user.fullName || user.username)
+                              .charAt(0)
+                              .toUpperCase()}
                         </AvatarFallback>
                       </Avatar>
+
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-start justify-between mb-2">
                       <div className="flex-1 min-w-0">
                         <h3
-                          className="font-semibold text-sm truncate cursor-pointer hover:underline"
-                          onClick={() => router.push(`/users/${user.uid}`)}
+                                className="font-semibold text-base truncate cursor-pointer"
+                                onClick={() =>
+                                  router.push(`/users/${user.uid}`)
+                                }
                         >
                           {user.fullName || "No name"}
                         </h3>
-                        <p className="text-xs text-muted-foreground truncate">
+                              <p className="text-sm text-muted-foreground truncate">
                           @{user.username}
                         </p>
                       </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="pt-0">
-                    {/* Following/Followers Count */}
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="text-xs text-muted-foreground">
-                        <span className="font-medium">
-                          {(user.followers || []).length}
-                        </span>{" "}
-                        followers
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        <span className="font-medium">
-                          {(user.following || []).length}
-                        </span>{" "}
-                        following
-                      </div>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="opacity-0"
+                            >
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
                     </div>
 
-                    {/* Follow Button */}
+                          {user.tagline && (
+                            <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
+                              {user.tagline}
+                            </p>
+                          )}
+
+                          <div className="flex items-center gap-4 mb-4 text-xs text-muted-foreground">
+                            <span className="flex items-center gap-1">
+                              <Heart className="h-3 w-3" />
+                              {(user.followers || []).length} followers
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <User className="h-3 w-3" />
+                              {(user.following || []).length} following
+                            </span>
+                    </div>
+
                     <Button
                       variant={
                         followingStates[user.uid] ? "outline" : "default"
@@ -346,18 +628,31 @@ export default function UsersPage() {
                       size="sm"
                       onClick={() => handleFollowToggle(user.uid)}
                       disabled={!currentUser}
-                      className="w-full"
-                    >
-                      {followingStates[user.uid] ? "Following" : "Follow"}
+                            className="w-full h-9 rounded-lg transition-all duration-200"
+                          >
+                            {followingStates[user.uid] ? (
+                              <>
+                                <UserCheck className="h-4 w-4 mr-2" />
+                                Following
+                              </>
+                            ) : (
+                              <>
+                                <UserPlus className="h-4 w-4 mr-2" />
+                                Follow
+                              </>
+                            )}
                     </Button>
+                        </div>
+                      </div>
                   </CardContent>
                 </Card>
               ))}
+              </div>
             </div>
           )}
         </TabsContent>
 
-        {/* Following Tab */}
+        {/* Enhanced Following Tab */}
         <TabsContent value="following" className="space-y-6">
           {connectionsLoading ? (
             <div className="flex items-center justify-center py-12">
@@ -367,55 +662,72 @@ export default function UsersPage() {
               </div>
             </div>
           ) : following.length === 0 ? (
-            <div className="text-center py-12">
-              <UserPlus className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-semibold mb-2">
+            <div className="text-center py-16">
+              <div className="relative mb-6">
+                <UserPlus className="h-20 w-20 text-muted-foreground/30 mx-auto" />
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <Heart className="h-8 w-8 text-muted-foreground/50" />
+                </div>
+              </div>
+              <h3 className="text-xl font-semibold mb-3">
                 Not following anyone yet
               </h3>
-              <p className="text-muted-foreground mb-4">
-                Start following people to see their reviews in your feed
+              <p className="text-muted-foreground mb-6 max-w-md mx-auto">
+                Start following people to see their reviews in your feed and get
+                personalized recommendations
               </p>
-              <Button onClick={() => setActiveTab("discover")}>
-                Discover People
+              <Button
+                onClick={() => setActiveTab("discover")}
+                className="rounded-lg"
+              >
+                <Sparkles className="h-4 w-4 mr-2" />
+                Friends
               </Button>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {following.map((user) => (
                 <Card
                   key={user.uid}
-                  className="hover:shadow-md transition-shadow"
+                  className="border-0 bg-gradient-to-br from-card to-card/50 backdrop-blur-sm"
                 >
-                  <CardHeader className="pb-3">
-                    <div className="flex items-center space-x-3">
+                  <CardContent className="p-6">
+                    <div className="flex items-start gap-4">
                       <Avatar
-                        className="h-12 w-12 cursor-pointer hover:opacity-80 transition-opacity"
+                        className="h-16 w-16 cursor-pointer hover:opacity-80 transition-opacity ring-2 ring-primary/20 group-hover:ring-primary/40"
                         onClick={() => router.push(`/users/${user.uid}`)}
                       >
                         <AvatarImage
                           src={user.avatarUrl || ""}
                           alt={user.fullName || user.username}
                         />
-                        <AvatarFallback>
-                          <User className="h-6 w-6" />
+                        <AvatarFallback className="bg-gradient-to-br from-primary/20 to-primary/10 text-primary font-semibold">
+                          {(user.fullName || user.username)
+                            .charAt(0)
+                            .toUpperCase()}
                         </AvatarFallback>
                       </Avatar>
+
                       <div className="flex-1 min-w-0">
-                        <h3 className="font-semibold text-sm truncate">
+                        <div className="flex items-start justify-between mb-2">
+                          <div className="flex-1 min-w-0">
+                            <h3 className="font-semibold text-base truncate">
                           {user.fullName || "No name"}
                         </h3>
-                        <p className="text-xs text-muted-foreground truncate">
+                            <p className="text-sm text-muted-foreground truncate">
                           @{user.username}
                         </p>
                       </div>
+                          <Badge variant="secondary" className="text-xs">
+                            Following
+                          </Badge>
                     </div>
-                  </CardHeader>
-                  <CardContent className="pt-0">
-                    <div className="flex gap-2">
+
+                        <div className="flex gap-2 mt-4">
                       <Button
                         variant="outline"
                         size="sm"
-                        className="flex-1"
+                            className="flex-1 h-9 rounded-lg"
                         asChild
                       >
                         <Link href={`/users/${user.uid}`}>
@@ -423,6 +735,8 @@ export default function UsersPage() {
                           View Profile
                         </Link>
                       </Button>
+                        </div>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
@@ -431,7 +745,7 @@ export default function UsersPage() {
           )}
         </TabsContent>
 
-        {/* Followers Tab */}
+        {/* Enhanced Followers Tab */}
         <TabsContent value="followers" className="space-y-6">
           {connectionsLoading ? (
             <div className="flex items-center justify-center py-12">
@@ -441,13 +755,19 @@ export default function UsersPage() {
               </div>
             </div>
           ) : followers.length === 0 ? (
-            <div className="text-center py-12">
-              <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-semibold mb-2">No followers yet</h3>
-              <p className="text-muted-foreground mb-4">
-                Start sharing reviews to attract followers
+            <div className="text-center py-16">
+              <div className="relative mb-6">
+                <Users className="h-20 w-20 text-muted-foreground/30 mx-auto" />
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <Heart className="h-8 w-8 text-muted-foreground/50" />
+                </div>
+              </div>
+              <h3 className="text-xl font-semibold mb-3">No followers yet</h3>
+              <p className="text-muted-foreground mb-6 max-w-md mx-auto">
+                Start sharing reviews and engaging with the community to attract
+                followers
               </p>
-              <Button asChild>
+              <Button asChild className="rounded-lg">
                 <Link href="/reviews">
                   <ArrowRight className="h-4 w-4 mr-2" />
                   Write a Review
@@ -455,39 +775,49 @@ export default function UsersPage() {
               </Button>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {followers.map((user) => (
                 <Card
                   key={user.uid}
-                  className="hover:shadow-md transition-shadow"
+                  className="border-0 bg-gradient-to-br from-card to-card/50 backdrop-blur-sm"
                 >
-                  <CardHeader className="pb-3">
-                    <div className="flex items-center space-x-3">
-                      <Avatar className="h-12 w-12">
+                  <CardContent className="p-6">
+                    <div className="flex items-start gap-4">
+                      <Avatar
+                        className="h-16 w-16 cursor-pointer hover:opacity-80 transition-opacity ring-2 ring-primary/20 group-hover:ring-primary/40"
+                        onClick={() => router.push(`/users/${user.uid}`)}
+                      >
                         <AvatarImage
                           src={user.avatarUrl || ""}
                           alt={user.fullName || user.username}
                         />
-                        <AvatarFallback>
-                          <User className="h-6 w-6" />
+                        <AvatarFallback className="bg-gradient-to-br from-primary/20 to-primary/10 text-primary font-semibold">
+                          {(user.fullName || user.username)
+                            .charAt(0)
+                            .toUpperCase()}
                         </AvatarFallback>
                       </Avatar>
+
                       <div className="flex-1 min-w-0">
-                        <h3 className="font-semibold text-sm truncate">
+                        <div className="flex items-start justify-between mb-2">
+                          <div className="flex-1 min-w-0">
+                            <h3 className="font-semibold text-base truncate">
                           {user.fullName || "No name"}
                         </h3>
-                        <p className="text-xs text-muted-foreground truncate">
+                            <p className="text-sm text-muted-foreground truncate">
                           @{user.username}
                         </p>
                       </div>
+                          <Badge variant="outline" className="text-xs">
+                            Follower
+                          </Badge>
                     </div>
-                  </CardHeader>
-                  <CardContent className="pt-0">
-                    <div className="flex gap-2">
+
+                        <div className="flex gap-2 mt-4">
                       <Button
                         variant="outline"
                         size="sm"
-                        className="flex-1"
+                            className="flex-1 h-9 rounded-lg"
                         asChild
                       >
                         <Link href={`/users/${user.uid}`}>
@@ -495,6 +825,8 @@ export default function UsersPage() {
                           View Profile
                         </Link>
                       </Button>
+                        </div>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>

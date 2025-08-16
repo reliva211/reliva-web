@@ -1,0 +1,313 @@
+/* Mobile Responsive Styles for Discover Sections */
+
+/* Base mobile optimizations */
+@media (max-width: 640px) {
+  /* Improve touch targets */
+  button,
+  [role="button"],
+  .cursor-pointer {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  /* Optimize text sizes for mobile */
+  .text-xs {
+    font-size: 0.75rem;
+    line-height: 1rem;
+  }
+
+  .text-sm {
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+  }
+
+  /* Improve scrolling performance */
+  .overflow-x-auto {
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+  }
+
+  /* Optimize grid layouts for mobile */
+  .grid {
+    gap: 0.75rem;
+  }
+
+  /* Improve card layouts */
+  .card {
+    border-radius: 0.75rem;
+  }
+
+  /* Optimize input fields */
+  input,
+  textarea,
+  select {
+    font-size: 16px; /* Prevents zoom on iOS */
+  }
+
+  /* Improve button spacing */
+  .btn-group > * + * {
+    margin-left: 0.5rem;
+  }
+
+  /* Optimize horizontal scrolling containers */
+  .scroll-container {
+    scroll-snap-type: x mandatory;
+    scroll-padding: 1rem;
+  }
+
+  .scroll-container > * {
+    scroll-snap-align: start;
+  }
+
+  /* Improve navigation tabs */
+  .nav-tabs {
+    gap: 0.5rem;
+    padding: 0 1rem;
+  }
+
+  .nav-tab {
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+    white-space: nowrap;
+  }
+
+  /* Optimize search forms */
+  .search-form {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .search-input {
+    height: 2.75rem;
+    padding-left: 2.5rem;
+  }
+
+  .search-button {
+    height: 2.75rem;
+    padding: 0 1.5rem;
+  }
+
+  /* Improve collection cards */
+  .collection-card {
+    width: 140px;
+    flex-shrink: 0;
+  }
+
+  .collection-card img {
+    aspect-ratio: 2/3;
+    object-fit: cover;
+  }
+
+  /* Optimize loading states */
+  .loading-skeleton {
+    border-radius: 0.5rem;
+  }
+
+  /* Improve error states */
+  .error-state {
+    padding: 2rem 1rem;
+    text-align: center;
+  }
+
+  /* Optimize modal dialogs */
+  .modal-content {
+    margin: 1rem;
+    max-width: calc(100vw - 2rem);
+    max-height: calc(100vh - 2rem);
+  }
+
+  /* Improve dropdown menus */
+  .dropdown-menu {
+    min-width: 200px;
+    max-width: calc(100vw - 2rem);
+  }
+
+  /* Optimize badges */
+  .badge {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+  }
+
+  /* Improve tooltips */
+  .tooltip {
+    font-size: 0.75rem;
+    max-width: 200px;
+  }
+
+  /* Optimize pagination */
+  .pagination {
+    gap: 0.25rem;
+  }
+
+  .pagination-button {
+    min-width: 2.5rem;
+    height: 2.5rem;
+  }
+}
+
+/* Tablet optimizations */
+@media (min-width: 641px) and (max-width: 1024px) {
+  /* Improve grid layouts for tablets */
+  .grid {
+    gap: 1rem;
+  }
+
+  /* Optimize collection cards for tablets */
+  .collection-card {
+    width: 180px;
+  }
+
+  /* Improve search forms for tablets */
+  .search-form {
+    flex-direction: row;
+    gap: 1rem;
+  }
+
+  /* Optimize navigation tabs for tablets */
+  .nav-tabs {
+    gap: 0.75rem;
+  }
+
+  .nav-tab {
+    padding: 0.75rem 1.5rem;
+    font-size: 1rem;
+  }
+}
+
+/* Large screen optimizations */
+@media (min-width: 1025px) {
+  /* Optimize for larger screens */
+  .collection-card {
+    width: 220px;
+  }
+
+  .nav-tabs {
+    gap: 1rem;
+  }
+
+  .nav-tab {
+    padding: 1rem 2rem;
+    font-size: 1.125rem;
+  }
+}
+
+/* Touch device optimizations */
+@media (hover: none) and (pointer: coarse) {
+  /* Improve touch interactions */
+  button:hover,
+  [role="button"]:hover {
+    transform: none;
+  }
+
+  /* Optimize scrolling */
+  .scroll-container {
+    scroll-snap-type: x mandatory;
+  }
+
+  /* Improve focus states for touch */
+  button:focus,
+  input:focus,
+  [role="button"]:focus {
+    outline: 2px solid #3b82f6;
+    outline-offset: 2px;
+  }
+}
+
+/* High DPI display optimizations */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+  /* Ensure crisp images */
+  img {
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: crisp-edges;
+  }
+}
+
+/* Dark mode optimizations for mobile */
+@media (prefers-color-scheme: dark) {
+  /* Improve contrast on mobile */
+  .text-gray-400 {
+    color: #9ca3af;
+  }
+
+  .text-gray-300 {
+    color: #d1d5db;
+  }
+
+  /* Improve button contrast */
+  .btn-outline {
+    border-color: #4b5563;
+  }
+
+  .btn-outline:hover {
+    background-color: #374151;
+    border-color: #6b7280;
+  }
+}
+
+/* Accessibility improvements for mobile */
+@media (prefers-reduced-motion: reduce) {
+  /* Disable animations for users who prefer reduced motion */
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Landscape orientation optimizations */
+@media (orientation: landscape) and (max-height: 500px) {
+  /* Optimize for landscape mobile */
+  .header {
+    padding: 0.5rem 1rem;
+  }
+
+  .header h1 {
+    font-size: 1.5rem;
+  }
+
+  .header p {
+    font-size: 0.875rem;
+    margin-top: 0.25rem;
+  }
+
+  .search-form {
+    margin-bottom: 1rem;
+  }
+
+  .nav-tabs {
+    padding: 0.5rem 1rem;
+  }
+}
+
+/* Print styles for discover sections */
+@media print {
+  /* Hide interactive elements when printing */
+  button,
+  [role="button"],
+  .search-form,
+  .nav-tabs {
+    display: none !important;
+  }
+
+  /* Optimize layout for printing */
+  .container {
+    max-width: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .grid {
+    display: block;
+  }
+
+  .collection-card {
+    display: inline-block;
+    width: 200px;
+    margin: 0.5rem;
+    page-break-inside: avoid;
+  }
+}
+

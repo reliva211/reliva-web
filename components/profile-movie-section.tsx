@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -768,71 +769,57 @@ export default function ProfileMovieSection({
             className="flex gap-4 overflow-x-auto scrollbar-hide"
             style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
           >
-            {limitedFavoriteMovies.length > 0
-              ? limitedFavoriteMovies.map((movie, idx) => (
-                  <div
-                    key={movie.id || idx}
-                    className="relative group flex-shrink-0 w-32"
-                  >
-                    <div className="aspect-[2/3] w-full bg-muted rounded-md overflow-hidden">
-                      <Image
-                        src={movie.cover || "/placeholder.svg"}
-                        alt={movie.title || "Movie"}
-                        width={128}
-                        height={192}
-                        className="w-full h-full object-cover"
-                        onError={(e) => {
-                          const target = e.target as HTMLImageElement;
-                          target.src = "/placeholder.svg";
-                        }}
-                      />
-                      {!readOnly && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="absolute top-1 right-1 h-6 w-6 p-0 bg-black/50 hover:bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity"
-                          onClick={() =>
-                            handleRemoveItem("favoriteMovies", movie.id)
-                          }
-                        >
-                          <X className="h-3 w-3 text-white" />
-                        </Button>
-                      )}
-                    </div>
-                    <div className="mt-2 text-center">
-                      <p className="text-sm font-semibold leading-tight">
-                        {getTextContent(movie.title) || "Unknown Movie"}
-                      </p>
-                      <p className="text-xs text-muted-foreground leading-tight mt-1">
-                        {movie.year || "Unknown Year"}
-                      </p>
-                    </div>
+            {limitedFavoriteMovies.length > 0 ? (
+              limitedFavoriteMovies.map((movie, idx) => (
+                <div
+                  key={movie.id || idx}
+                  className="relative group flex-shrink-0 w-32"
+                >
+                  <div className="aspect-[2/3] w-full bg-muted rounded-md overflow-hidden">
+                    <Image
+                      src={movie.cover || "/placeholder.svg"}
+                      alt={movie.title || "Movie"}
+                      width={128}
+                      height={192}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.src = "/placeholder.svg";
+                      }}
+                    />
+                    {!readOnly && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="absolute top-1 right-1 h-6 w-6 p-0 bg-black/50 hover:bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity"
+                        onClick={() =>
+                          handleRemoveItem("favoriteMovies", movie.id)
+                        }
+                      >
+                        <X className="h-3 w-3 text-white" />
+                      </Button>
+                    )}
                   </div>
-                ))
-              : // Show placeholder items when empty
-                Array.from({ length: 4 }, (_, idx) => (
-                  <div
-                    key={`placeholder-favorite-movie-${idx}`}
-                    className="flex-shrink-0 w-32"
-                  >
-                    <div className="aspect-[2/3] w-full bg-black/20 rounded-md border border-border/30 flex items-center justify-center">
-                      <div className="text-center">
-                        <Plus className="h-8 w-8 mx-auto mb-2 text-muted-foreground/50" />
-                        <p className="text-xs text-muted-foreground/50">
-                          Add Movie
-                        </p>
-                      </div>
-                    </div>
-                    <div className="mt-2 text-center">
-                      <p className="text-sm font-semibold leading-tight text-muted-foreground/50">
-                        Movie Title
-                      </p>
-                      <p className="text-xs text-muted-foreground/50 leading-tight mt-1">
-                        Year
-                      </p>
-                    </div>
+                  <div className="mt-2 text-center">
+                    <p className="text-sm font-semibold leading-tight">
+                      {getTextContent(movie.title) || "Unknown Movie"}
+                    </p>
+                    <p className="text-xs text-muted-foreground leading-tight mt-1">
+                      {movie.year || "Unknown Year"}
+                    </p>
                   </div>
-                ))}
+                </div>
+              ))
+            ) : (
+              // Show single Add screen when empty
+              <div className="flex-shrink-0 w-32">
+                <div className="aspect-[2/3] w-full bg-black/20 rounded-md border border-border/30 flex items-center justify-center">
+                  <div className="text-center flex items-center justify-center h-full">
+                    <p className="text-sm text-muted-foreground/50">Add</p>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
           <Button
             variant="ghost"
@@ -874,71 +861,55 @@ export default function ProfileMovieSection({
             className="flex gap-4 overflow-x-auto scrollbar-hide"
             style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
           >
-            {limitedWatchlist.length > 0
-              ? limitedWatchlist.map((movie, idx) => (
-                  <div
-                    key={movie.id || idx}
-                    className="relative group flex-shrink-0 w-32"
-                  >
-                    <div className="aspect-[2/3] w-full bg-muted rounded-md overflow-hidden">
-                      <Image
-                        src={movie.cover || "/placeholder.svg"}
-                        alt={movie.title || "Movie"}
-                        width={128}
-                        height={192}
-                        className="w-full h-full object-cover"
-                        onError={(e) => {
-                          const target = e.target as HTMLImageElement;
-                          target.src = "/placeholder.svg";
-                        }}
-                      />
-                      {!readOnly && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="absolute top-1 right-1 h-6 w-6 p-0 bg-black/50 hover:bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity"
-                          onClick={() =>
-                            handleRemoveItem("watchlist", movie.id)
-                          }
-                        >
-                          <X className="h-3 w-3 text-white" />
-                        </Button>
-                      )}
-                    </div>
-                    <div className="mt-2 text-center">
-                      <p className="text-sm font-semibold leading-tight">
-                        {getTextContent(movie.title) || "Unknown Movie"}
-                      </p>
-                      <p className="text-xs text-muted-foreground leading-tight mt-1">
-                        {movie.year || "Unknown Year"}
-                      </p>
-                    </div>
+            {limitedWatchlist.length > 0 ? (
+              limitedWatchlist.map((movie, idx) => (
+                <div
+                  key={movie.id || idx}
+                  className="relative group flex-shrink-0 w-32"
+                >
+                  <div className="aspect-[2/3] w-full bg-muted rounded-md overflow-hidden">
+                    <Image
+                      src={movie.cover || "/placeholder.svg"}
+                      alt={movie.title || "Movie"}
+                      width={128}
+                      height={192}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.src = "/placeholder.svg";
+                      }}
+                    />
+                    {!readOnly && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="absolute top-1 right-1 h-6 w-6 p-0 bg-black/50 hover:bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity"
+                        onClick={() => handleRemoveItem("watchlist", movie.id)}
+                      >
+                        <X className="h-3 w-3 text-white" />
+                      </Button>
+                    )}
                   </div>
-                ))
-              : // Show placeholder items when empty
-                Array.from({ length: 4 }, (_, idx) => (
-                  <div
-                    key={`placeholder-watchlist-${idx}`}
-                    className="flex-shrink-0 w-32"
-                  >
-                    <div className="aspect-[2/3] w-full bg-black/20 rounded-md border border-border/30 flex items-center justify-center">
-                      <div className="text-center">
-                        <Plus className="h-8 w-8 mx-auto mb-2 text-muted-foreground/50" />
-                        <p className="text-xs text-muted-foreground/50">
-                          Add Movie
-                        </p>
-                      </div>
-                    </div>
-                    <div className="mt-2 text-center">
-                      <p className="text-sm font-semibold leading-tight text-muted-foreground/50">
-                        Movie Title
-                      </p>
-                      <p className="text-xs text-muted-foreground/50 leading-tight mt-1">
-                        Year
-                      </p>
-                    </div>
+                  <div className="mt-2 text-center">
+                    <p className="text-sm font-semibold leading-tight">
+                      {getTextContent(movie.title) || "Unknown Movie"}
+                    </p>
+                    <p className="text-xs text-muted-foreground leading-tight mt-1">
+                      {movie.year || "Unknown Year"}
+                    </p>
                   </div>
-                ))}
+                </div>
+              ))
+            ) : (
+              // Show placeholder items when empty
+              <div className="flex-shrink-0 w-32">
+                <div className="aspect-[2/3] w-full bg-black/20 rounded-md border border-border/30 flex items-center justify-center">
+                  <div className="text-center flex items-center justify-center h-full">
+                    <p className="text-sm text-muted-foreground/50">Add</p>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
           <Button
             variant="ghost"
@@ -982,71 +953,47 @@ export default function ProfileMovieSection({
             className="flex gap-4 overflow-x-auto scrollbar-hide"
             style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
           >
-            {limitedRecommendations.length > 0
-              ? limitedRecommendations.map((movie, idx) => (
-                  <div
-                    key={movie.id || idx}
-                    className="relative group flex-shrink-0 w-32"
-                  >
-                    <div className="aspect-[2/3] w-full bg-muted rounded-md overflow-hidden">
+            {limitedRecommendations.length > 0 ? (
+              limitedRecommendations.map((movie, idx) => (
+                <div
+                  key={movie.id || idx}
+                  className="relative flex-shrink-0 w-32"
+                >
+                  <div className="aspect-[2/3] w-full bg-muted rounded-md overflow-hidden">
+                    <Link href={`/movies/${movie.id}`}>
                       <Image
                         src={movie.cover || "/placeholder.svg"}
                         alt={movie.title || "Movie"}
                         width={128}
                         height={192}
-                        className="w-full h-full object-cover"
+                        className="w-full h-full object-cover cursor-pointer"
                         onError={(e) => {
                           const target = e.target as HTMLImageElement;
                           target.src = "/placeholder.svg";
                         }}
                       />
-                      {!readOnly && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="absolute top-1 right-1 h-6 w-6 p-0 bg-black/50 hover:bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity"
-                          onClick={() =>
-                            handleRemoveItem("recommendation", movie.id)
-                          }
-                        >
-                          <X className="h-3 w-3 text-white" />
-                        </Button>
-                      )}
-                    </div>
-                    <div className="mt-2 text-center">
-                      <p className="text-sm font-semibold leading-tight">
-                        {getTextContent(movie.title) || "Unknown Movie"}
-                      </p>
-                      <p className="text-xs text-muted-foreground leading-tight mt-1">
-                        {movie.year || "Unknown Year"}
-                      </p>
-                    </div>
+                    </Link>
                   </div>
-                ))
-              : // Show placeholder items when empty
-                Array.from({ length: 4 }, (_, idx) => (
-                  <div
-                    key={`placeholder-recommendation-${idx}`}
-                    className="flex-shrink-0 w-32"
-                  >
-                    <div className="aspect-[2/3] w-full bg-black/20 rounded-md border border-border/30 flex items-center justify-center">
-                      <div className="text-center">
-                        <Plus className="h-8 w-8 mx-auto mb-2 text-muted-foreground/50" />
-                        <p className="text-xs text-muted-foreground/50">
-                          Add Movie
-                        </p>
-                      </div>
-                    </div>
-                    <div className="mt-2 text-center">
-                      <p className="text-sm font-semibold leading-tight text-muted-foreground/50">
-                        Movie Title
-                      </p>
-                      <p className="text-xs text-muted-foreground/50 leading-tight mt-1">
-                        Year
-                      </p>
-                    </div>
+                  <div className="mt-2 text-center">
+                    <p className="text-sm font-semibold leading-tight">
+                      {getTextContent(movie.title) || "Unknown Movie"}
+                    </p>
+                    <p className="text-xs text-muted-foreground leading-tight mt-1">
+                      {movie.year || "Unknown Year"}
+                    </p>
                   </div>
-                ))}
+                </div>
+              ))
+            ) : (
+              // Show placeholder items when empty
+              <div className="flex-shrink-0 w-32">
+                <div className="aspect-[2/3] w-full bg-black/20 rounded-md border border-border/30 flex items-center justify-center">
+                  <div className="text-center flex items-center justify-center h-full">
+                    <p className="text-sm text-muted-foreground/50">Add</p>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
           <Button
             variant="ghost"
@@ -1088,67 +1035,53 @@ export default function ProfileMovieSection({
             className="flex gap-4 overflow-x-auto scrollbar-hide"
             style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
           >
-            {limitedRatings.length > 0
-              ? limitedRatings.map((rating, idx) => (
-                  <div
-                    key={rating.movie.id || idx}
-                    className="relative group flex-shrink-0 w-32"
-                  >
-                    <div className="aspect-[2/3] w-full bg-muted rounded-md overflow-hidden">
-                      <Image
-                        src={rating.movie.cover || "/placeholder.svg"}
-                        alt={rating.movie.title || "Movie"}
-                        width={128}
-                        height={192}
-                        className="w-full h-full object-cover"
-                        onError={(e) => {
-                          const target = e.target as HTMLImageElement;
-                          target.src = "/placeholder.svg";
-                        }}
-                      />
-                      {!readOnly && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="absolute top-1 right-1 h-6 w-6 p-0 bg-black/50 hover:bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity"
-                          onClick={() =>
-                            handleRemoveItem("rating", rating.movie.id)
-                          }
-                        >
-                          <X className="h-3 w-3 text-white" />
-                        </Button>
-                      )}
-                      <div className="absolute bottom-1 left-1 right-1 flex justify-center gap-1 p-2 bg-black/50 rounded-md">
-                        {renderInteractiveStars(rating.movie.id, rating.rating)}
-                      </div>
-                    </div>
-                    {/* Removed name and year display - only poster and rating shown */}
-                  </div>
-                ))
-              : // Show placeholder items when empty
-                Array.from({ length: 4 }, (_, idx) => (
-                  <div
-                    key={`placeholder-rating-${idx}`}
-                    className="flex-shrink-0 w-32"
-                  >
-                    <div className="aspect-[2/3] w-full bg-black/20 rounded-md border border-border/30 flex items-center justify-center">
-                      <div className="text-center">
-                        <Plus className="h-8 w-8 mx-auto mb-2 text-muted-foreground/50" />
-                        <p className="text-xs text-muted-foreground/50">
-                          Add Movie
-                        </p>
-                      </div>
-                    </div>
-                    <div className="mt-2 text-center">
-                      <p className="text-sm font-semibold leading-tight text-muted-foreground/50">
-                        Movie Title
-                      </p>
-                      <p className="text-xs text-muted-foreground/50 leading-tight mt-1">
-                        Year
-                      </p>
+            {limitedRatings.length > 0 ? (
+              limitedRatings.map((rating, idx) => (
+                <div
+                  key={rating.movie.id || idx}
+                  className="relative group flex-shrink-0 w-32"
+                >
+                  <div className="aspect-[2/3] w-full bg-muted rounded-md overflow-hidden">
+                    <Image
+                      src={rating.movie.cover || "/placeholder.svg"}
+                      alt={rating.movie.title || "Movie"}
+                      width={128}
+                      height={192}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.src = "/placeholder.svg";
+                      }}
+                    />
+                    {!readOnly && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="absolute top-1 right-1 h-6 w-6 p-0 bg-black/50 hover:bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity"
+                        onClick={() =>
+                          handleRemoveItem("rating", rating.movie.id)
+                        }
+                      >
+                        <X className="h-3 w-3 text-white" />
+                      </Button>
+                    )}
+                    <div className="absolute bottom-1 left-1 right-1 flex justify-center gap-1 p-2 bg-black/50 rounded-md">
+                      {renderInteractiveStars(rating.movie.id, rating.rating)}
                     </div>
                   </div>
-                ))}
+                  {/* Removed name and year display - only poster and rating shown */}
+                </div>
+              ))
+            ) : (
+              // Show placeholder items when empty
+              <div className="flex-shrink-0 w-32">
+                <div className="aspect-[2/3] w-full bg-black/20 rounded-md border border-border/30 flex items-center justify-center">
+                  <div className="text-center flex items-center justify-center h-full">
+                    <p className="text-sm text-muted-foreground/50">Add</p>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
           <Button
             variant="ghost"

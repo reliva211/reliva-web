@@ -16,6 +16,8 @@ import {
   Grid3X3,
   List,
   MoreHorizontal,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import {
   Dialog,
@@ -54,6 +56,7 @@ import {
   addDoc,
 } from "firebase/firestore";
 import { useCurrentUser } from "@/hooks/use-current-user";
+import { useTrendingBooks } from "@/hooks/use-trending-books";
 import Link from "next/link";
 
 interface Book {
@@ -142,7 +145,7 @@ export default function BooksPage() {
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [savedBooks, setSavedBooks] = useState<Book[]>([]);
   const [collections, setCollections] = useState<Collection[]>([]);
-  const [selectedCollection, setSelectedCollection] = useState<string>("all");
+  const [selectedCollection, setSelectedCollection] = useState<string>("");
   const [isCreateCollectionOpen, setCreateCollectionOpen] = useState(false);
   const [newCollectionName, setNewCollectionName] = useState("");
   const [newCollectionIsPublic, setNewCollectionIsPublic] = useState(false);
@@ -153,14 +156,23 @@ export default function BooksPage() {
   );
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [showDiscover, setShowDiscover] = useState(true);
+
+  // Use optimized trending books hook
+  const {
+    books: trendingBooks,
+    loading: isLoadingTrending,
+    error: trendingError,
+    fetchBooks: fetchTrendingBooks,
+  } = useTrendingBooks();
 
   // Default collections for books
   const defaultCollections = [
-    { name: "All Books", isDefault: true, color: "bg-blue-500" },
     { name: "Reading", isDefault: true, color: "bg-green-500" },
     { name: "Completed", isDefault: true, color: "bg-yellow-500" },
     { name: "To Read", isDefault: true, color: "bg-purple-500" },
     { name: "Dropped", isDefault: true, color: "bg-red-500" },
+    { name: "Recommendations", isDefault: true, color: "bg-blue-500" },
   ];
 
   // Fetch user's books and collections
@@ -209,7 +221,21 @@ export default function BooksPage() {
           })) as Collection[];
           setCollections(allCollections);
         } else {
-          setCollections(collectionsData);
+          // Remove duplicate collections by name (keep the first one)
+          const uniqueCollections = collectionsData.reduce((acc, current) => {
+            const x = acc.find((item) => item.name === current.name);
+            if (!x) {
+              return acc.concat([current]);
+            } else {
+              return acc;
+            }
+          }, [] as Collection[]);
+          setCollections(uniqueCollections);
+
+          // Clean up duplicates in the database if we found any
+          if (uniqueCollections.length < collectionsData.length) {
+            await cleanupDuplicateCollections();
+          }
         }
       } catch (error) {
         console.error("Error fetching user data:", error);
@@ -218,6 +244,48 @@ export default function BooksPage() {
 
     fetchUserData();
   }, [user]);
+
+  // Clean up duplicate collections
+  const cleanupDuplicateCollections = async () => {
+    if (!user?.uid) return;
+
+    try {
+      const collectionsRef = collection(
+        db,
+        "users",
+        user.uid,
+        "bookCollections"
+      );
+      const collectionsSnapshot = await getDocs(collectionsRef);
+      const collectionsData = collectionsSnapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      })) as Collection[];
+
+      // Group collections by name
+      const groupedCollections = collectionsData.reduce((acc, collection) => {
+        if (!acc[collection.name]) {
+          acc[collection.name] = [];
+        }
+        acc[collection.name].push(collection);
+        return acc;
+      }, {} as Record<string, Collection[]>);
+
+      // Remove duplicates (keep the first one, delete the rest)
+      for (const [name, duplicates] of Object.entries(groupedCollections)) {
+        if (duplicates.length > 1) {
+          // Keep the first one, delete the rest
+          for (let i = 1; i < duplicates.length; i++) {
+            await deleteDoc(
+              doc(db, "users", user.uid, "bookCollections", duplicates[i].id)
+            );
+          }
+        }
+      }
+    } catch (error) {
+      console.error("Error cleaning up duplicate collections:", error);
+    }
+  };
 
   // Enhanced fuzzy search
   const handleSearch = async (e: React.FormEvent) => {
@@ -256,6 +324,59 @@ export default function BooksPage() {
     setIsGenreSearching(false);
   };
 
+  // Filter and sort books
+  const filteredAndSortedBooks = useMemo(() => {
+    let filtered = savedBooks;
+
+    // Filter by collection - only show books if a collection is selected
+    if (selectedCollection && selectedCollection !== "") {
+      filtered = savedBooks.filter((book) =>
+        book.collections?.includes(selectedCollection)
+      );
+    } else {
+      // If no collection is selected, show no books
+      filtered = [];
+    }
+
+    // Sort books
+    filtered.sort((a, b) => {
+      let aValue: any, bValue: any;
+
+      switch (sortBy) {
+        case "title":
+          aValue = a.title.toLowerCase();
+          bValue = b.title.toLowerCase();
+          break;
+        case "year":
+          aValue = a.year;
+          bValue = b.year;
+          break;
+        case "rating":
+          aValue = a.year; // Using year as rating for books
+          bValue = b.year;
+          break;
+        case "added":
+        default:
+          aValue = a.id;
+          bValue = b.id;
+          break;
+      }
+
+      if (sortOrder === "asc") {
+        return aValue > bValue ? 1 : -1;
+      } else {
+        return aValue < bValue ? 1 : -1;
+      }
+    });
+
+    return filtered;
+  }, [savedBooks, selectedCollection, sortBy, sortOrder]);
+
+  // Get collection info
+  const getCollectionInfo = (collectionId: string) => {
+    return collections.find((col) => col.id === collectionId);
+  };
+
   // Add book to collection
   const addBookToCollection = async (
     book: SearchResult,
@@ -267,27 +388,12 @@ export default function BooksPage() {
       // Check if book already exists
       const existingBook = savedBooks.find((b) => b.id === book.id);
 
-      // Get the "All Books" collection
-      const allBooksCollection = collections.find(
-        (col) => col.name === "All Books"
-      );
-
       if (existingBook) {
-        let updatedCollections = [...(existingBook.collections || [])];
-
-        // Always add to "All Books" if it exists
-        if (
-          allBooksCollection &&
-          !updatedCollections.includes(allBooksCollection.id)
-        ) {
-          updatedCollections.push(allBooksCollection.id);
-        }
-
-        // Add to specific collection if not already there
-        if (!updatedCollections.includes(collectionId)) {
-          updatedCollections.push(collectionId);
-        }
-
+        // Update existing book with new collection
+        const updatedCollections = [
+          ...(existingBook.collections || []),
+          collectionId,
+        ];
         await updateDoc(doc(db, "users", user.uid, "books", book.id), {
           collections: updatedCollections,
         });
@@ -298,13 +404,6 @@ export default function BooksPage() {
         );
       } else {
         // Create new book
-        let bookCollections = [collectionId];
-
-        // Always add to "All Books" if it exists
-        if (allBooksCollection) {
-          bookCollections.push(allBooksCollection.id);
-        }
-
         const bookData: Book = {
           id: book.id,
           title: book.title,
@@ -313,7 +412,7 @@ export default function BooksPage() {
           cover: book.cover,
           status: "To Read",
           notes: "",
-          collections: bookCollections,
+          collections: [collectionId],
           overview: book.overview || "",
           publishedDate: book.publishedDate || "",
           pageCount: book.pageCount || 0,
@@ -393,151 +492,80 @@ export default function BooksPage() {
     }
   };
 
-  // Filter and sort books
-  const filteredAndSortedBooks = useMemo(() => {
-    let filtered = savedBooks;
-
-    // Filter by collection
-    if (selectedCollection !== "all") {
-      filtered = savedBooks.filter((book) =>
-        book.collections?.includes(selectedCollection)
-      );
-    }
-
-    // Sort books
-    filtered.sort((a, b) => {
-      let aValue: any, bValue: any;
-
-      switch (sortBy) {
-        case "title":
-          aValue = a.title.toLowerCase();
-          bValue = b.title.toLowerCase();
-          break;
-        case "year":
-          aValue = a.year;
-          bValue = b.year;
-          break;
-        case "added":
-        default:
-          aValue = a.id;
-          bValue = b.id;
-          break;
-      }
-
-      if (sortOrder === "asc") {
-        return aValue > bValue ? 1 : -1;
-      } else {
-        return aValue < bValue ? 1 : -1;
-      }
-    });
-
-    return filtered;
-  }, [savedBooks, selectedCollection, sortBy, sortOrder]);
-
-  // Get collection info
-  const getCollectionInfo = (collectionId: string) => {
-    return collections.find((col) => col.id === collectionId);
-  };
-
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black">
       {/* Header */}
-      <div className="border-b bg-card">
-        <div className="container mx-auto px-4 py-6">
+      <div className="border-b border-gray-800 bg-gradient-to-r from-gray-900/95 to-gray-800/95 backdrop-blur-sm">
+        <div className="container mx-auto px-4 sm:px-6 py-6 sm:py-8">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold">Books</h1>
-              <p className="text-muted-foreground">
+              <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold bg-gradient-to-r from-white via-gray-200 to-gray-400 bg-clip-text text-transparent">
+                Books
+              </h1>
+              <p className="text-gray-400 mt-1 sm:mt-2 text-sm sm:text-lg">
                 Discover and organize your favorite books
               </p>
-            </div>
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() =>
-                  setViewMode(viewMode === "grid" ? "list" : "grid")
-                }
-              >
-                {viewMode === "grid" ? (
-                  <List className="h-4 w-4" />
-                ) : (
-                  <Grid3X3 className="h-4 w-4" />
-                )}
-              </Button>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="container mx-auto px-4 py-6">
+      <div className="container mx-auto px-4 sm:px-6 py-6 sm:py-8">
         {/* Search and Filters */}
-        <div className="mb-8">
-          <div className="flex flex-col lg:flex-row gap-4 mb-6">
+        <div className="mb-8 sm:mb-10">
+          <div className="flex flex-col gap-4 sm:gap-6 mb-6 sm:mb-8">
             {/* Search */}
             <div className="flex-1">
-              <form onSubmit={handleSearch} className="flex gap-2">
+              <form
+                onSubmit={handleSearch}
+                className="flex flex-col sm:flex-row gap-3"
+              >
                 <div className="relative flex-1">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Search className="absolute left-3 sm:left-4 top-1/2 transform -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 text-gray-400" />
                   <Input
                     placeholder="Search books..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-10"
+                    className="pl-10 sm:pl-12 h-11 sm:h-12 bg-gray-800/50 border-gray-700 text-white placeholder:text-gray-400 focus:border-gray-500 focus:ring-gray-500 rounded-xl text-sm sm:text-base"
                   />
                   {searchQuery && (
                     <button
                       type="button"
                       onClick={clearSearch}
-                      className="absolute right-3 top-1/2 transform -translate-y-1/2"
+                      className="absolute right-3 sm:right-4 top-1/2 transform -translate-y-1/2"
                     >
-                      <X className="h-4 w-4 text-muted-foreground" />
+                      <X className="h-4 w-4 sm:h-5 sm:w-5 text-gray-400 hover:text-white transition-colors" />
                     </button>
                   )}
                 </div>
-                <Button type="submit" disabled={isSearching}>
+                <Button
+                  type="submit"
+                  disabled={isSearching}
+                  className="h-11 sm:h-12 px-6 sm:px-8 bg-gradient-to-r from-gray-800 to-gray-700 hover:from-gray-700 hover:to-gray-600 text-white font-semibold rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl border border-gray-600 text-sm sm:text-base"
+                >
                   {isSearching ? "Searching..." : "Search"}
                 </Button>
               </form>
             </div>
-
-            {/* Sort Controls */}
-            {searchResults.length === 0 && (
-              <div className="flex items-center gap-2">
-                <Select
-                  value={sortBy}
-                  onValueChange={(value: any) => setSortBy(value)}
-                >
-                  <SelectTrigger className="w-40">
-                    <SortAsc className="h-4 w-4 mr-2" />
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="added">Date Added</SelectItem>
-                    <SelectItem value="title">Title</SelectItem>
-                    <SelectItem value="year">Year</SelectItem>
-                  </SelectContent>
-                </Select>
-
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() =>
-                    setSortOrder(sortOrder === "asc" ? "desc" : "asc")
-                  }
-                >
-                  {sortOrder === "asc" ? (
-                    <SortAsc className="h-4 w-4" />
-                  ) : (
-                    <SortDesc className="h-4 w-4" />
-                  )}
-                </Button>
-              </div>
-            )}
           </div>
 
           {/* Collections Tabs */}
-          <div className="flex items-center gap-2 overflow-x-auto pb-2">
+          <div className="flex items-center gap-2 sm:gap-3 overflow-x-auto pb-4 scrollbar-hide">
+            {/* Trending Tab */}
+            <button
+              onClick={() => {
+                setShowDiscover(true);
+                setSelectedCollection("");
+              }}
+              className={`flex items-center gap-2 sm:gap-3 px-4 sm:px-6 py-2 sm:py-3 rounded-xl transition-all duration-300 whitespace-nowrap font-medium text-sm sm:text-base ${
+                showDiscover
+                  ? "bg-gradient-to-r from-gray-800 to-gray-700 text-white shadow-lg border border-gray-600"
+                  : "hover:bg-gray-800/50 text-gray-300 hover:text-white"
+              }`}
+            >
+              <span>Trending</span>
+            </button>
+
             {collections.map((collection) => {
               const bookCount = savedBooks.filter((book) =>
                 book.collections?.includes(collection.id)
@@ -546,20 +574,27 @@ export default function BooksPage() {
               return (
                 <button
                   key={collection.id}
-                  onClick={() => handleCollectionSelect(collection.id)}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all whitespace-nowrap ${
+                  onClick={() => {
+                    handleCollectionSelect(collection.id);
+                    setShowDiscover(false);
+                  }}
+                  className={`flex items-center gap-2 sm:gap-3 px-4 sm:px-6 py-2 sm:py-3 rounded-xl transition-all duration-300 whitespace-nowrap font-medium text-sm sm:text-base ${
                     selectedCollection === collection.id
-                      ? "bg-primary text-primary-foreground shadow-md"
-                      : "hover:bg-accent"
+                      ? "bg-gradient-to-r from-gray-800 to-gray-700 text-white shadow-lg border border-gray-600"
+                      : "hover:bg-gray-800/50 text-gray-300 hover:text-white"
                   }`}
                 >
-                  <div
-                    className={`w-3 h-3 rounded-full ${
-                      collection.color || "bg-gray-500"
+                  <span className="truncate max-w-[80px] sm:max-w-none">
+                    {collection.name}
+                  </span>
+                  <Badge
+                    variant="secondary"
+                    className={`ml-1 text-xs ${
+                      selectedCollection === collection.id
+                        ? "bg-white/20 text-white"
+                        : "bg-gray-700 text-gray-300"
                     }`}
-                  />
-                  <span className="font-medium">{collection.name}</span>
-                  <Badge variant="secondary" className="ml-1">
+                  >
                     {bookCount}
                   </Badge>
                 </button>
@@ -571,25 +606,34 @@ export default function BooksPage() {
               onOpenChange={setCreateCollectionOpen}
             >
               <DialogTrigger asChild>
-                <Button variant="outline" size="sm">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-10 w-10 border-gray-700 hover:bg-gray-800 rounded-xl"
+                >
                   <Plus className="h-4 w-4" />
                 </Button>
               </DialogTrigger>
-              <DialogContent>
+              <DialogContent className="bg-gray-800 border-gray-700">
                 <DialogHeader>
-                  <DialogTitle>Create New Collection</DialogTitle>
-                  <DialogDescription>
+                  <DialogTitle className="text-white">
+                    Create New Collection
+                  </DialogTitle>
+                  <DialogDescription className="text-gray-400">
                     Create a new collection to organize your books.
                   </DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4">
                   <div>
-                    <Label htmlFor="name">Collection Name</Label>
+                    <Label htmlFor="name" className="text-gray-300">
+                      Collection Name
+                    </Label>
                     <Input
                       id="name"
                       value={newCollectionName}
                       onChange={(e) => setNewCollectionName(e.target.value)}
                       placeholder="Enter collection name..."
+                      className="bg-gray-700 border-gray-600 text-white placeholder:text-gray-400"
                     />
                   </div>
                   <div className="flex items-center space-x-2">
@@ -600,13 +644,16 @@ export default function BooksPage() {
                         setNewCollectionIsPublic(!!checked)
                       }
                     />
-                    <Label htmlFor="public">Make collection public</Label>
+                    <Label htmlFor="public" className="text-gray-300">
+                      Make collection public
+                    </Label>
                   </div>
                 </div>
                 <DialogFooter>
                   <Button
                     onClick={createCollection}
                     disabled={!newCollectionName.trim()}
+                    className="bg-gradient-to-r from-green-600 to-green-500 hover:from-green-500 hover:to-green-400"
                   >
                     Create Collection
                   </Button>
@@ -617,29 +664,158 @@ export default function BooksPage() {
         </div>
 
         {/* Content */}
-        <div className="space-y-6">
+        <div className="space-y-8">
+          {/* Discover Section */}
+          {showDiscover && searchResults.length === 0 && (
+            <div className="space-y-8">
+              {/* Google Books Trending */}
+              <div>
+                <div className="flex items-center justify-between mb-4 sm:mb-6">
+                  <div>
+                    <h2 className="text-xl sm:text-2xl md:text-3xl font-bold bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
+                      Popular Books
+                    </h2>
+                    <p className="text-gray-400 mt-1 sm:mt-2 text-sm sm:text-base">
+                      Trending books from Google Books
+                    </p>
+                  </div>
+                </div>
+
+                {isLoadingTrending ? (
+                  <div className="flex items-center justify-center py-16">
+                    <div className="text-center space-y-4">
+                      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto" />
+                      <p className="text-gray-400 text-lg">
+                        Loading trending books...
+                      </p>
+                    </div>
+                  </div>
+                ) : trendingBooks.length > 0 ? (
+                  <div className="relative w-full overflow-hidden">
+                    {/* Left Arrow */}
+                    <button
+                      onClick={() => {
+                        const container = document.getElementById(
+                          "trending-books-container"
+                        );
+                        if (container) {
+                          container.scrollBy({
+                            left: -300,
+                            behavior: "smooth",
+                          });
+                        }
+                      }}
+                      className="absolute left-1 sm:left-2 top-1/2 transform -translate-y-1/2 z-30 bg-black/80 hover:bg-black text-white rounded-full p-2 sm:p-4 transition-all duration-300 backdrop-blur-md shadow-2xl border border-white/10 hover:scale-110"
+                    >
+                      <ChevronLeft className="h-4 w-4 sm:h-6 sm:w-6" />
+                    </button>
+
+                    {/* Right Arrow */}
+                    <button
+                      onClick={() => {
+                        const container = document.getElementById(
+                          "trending-books-container"
+                        );
+                        if (container) {
+                          container.scrollBy({ left: 300, behavior: "smooth" });
+                        }
+                      }}
+                      className="absolute right-1 sm:right-2 top-1/2 transform -translate-y-1/2 z-30 bg-black/80 hover:bg-black text-white rounded-full p-2 sm:p-4 transition-all duration-300 backdrop-blur-md shadow-2xl border border-white/10 hover:scale-110"
+                    >
+                      <ChevronRight className="h-4 w-4 sm:h-6 sm:w-6" />
+                    </button>
+
+                    {/* Books Container with Horizontal Scrolling */}
+                    <div
+                      id="trending-books-container"
+                      className="flex gap-3 sm:gap-4 overflow-x-auto px-4 sm:px-8 py-4 sm:py-6 scrollbar-hide"
+                    >
+                      {trendingBooks.map((book) => (
+                        <div
+                          key={book.id}
+                          className="flex-shrink-0 w-[140px] sm:w-[180px] md:w-[220px]"
+                        >
+                          <div className="relative aspect-[2/3] rounded-xl overflow-hidden bg-gradient-to-br from-gray-800 to-gray-900 shadow-2xl">
+                            <Link href={`/books/${book.id}`}>
+                              <Image
+                                src={book.cover || "/placeholder.svg"}
+                                alt={book.title || "Unknown"}
+                                fill
+                                className="object-cover cursor-pointer"
+                              />
+                            </Link>
+                          </div>
+                          <div className="mt-3 sm:mt-4 space-y-1 sm:space-y-2">
+                            <h4 className="font-bold text-xs sm:text-sm truncate text-white">
+                              {book.title || "Unknown Title"}
+                            </h4>
+                            <p className="text-xs text-gray-400 font-medium truncate">
+                              {book.author || "Unknown Author"}
+                            </p>
+                            <p className="text-xs text-gray-400 font-medium">
+                              {book.year || "N/A"}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-center py-20">
+                    <div className="space-y-6">
+                      <BookOpen className="h-20 w-20 text-gray-400 mx-auto" />
+                      <div>
+                        <h3 className="text-xl font-bold mb-2 text-white">
+                          No trending books
+                        </h3>
+                        <p className="text-gray-400 text-lg">
+                          Unable to load trending books at the moment
+                        </p>
+                      </div>
+                      <Button
+                        onClick={() => fetchTrendingBooks(true)}
+                        className="bg-gradient-to-r from-green-600 to-green-500 hover:from-green-500 hover:to-green-400 text-white px-6 py-3 rounded-xl font-semibold transition-all duration-200"
+                      >
+                        Try Again
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
           {isSearching ? (
-            <div className="flex items-center justify-center py-12">
-              <div className="text-center">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-                <p className="text-muted-foreground">Searching books...</p>
+            <div className="flex items-center justify-center py-16">
+              <div className="text-center space-y-4">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto" />
+                <p className="text-gray-400 text-lg">Searching books...</p>
               </div>
             </div>
           ) : searchResults.length > 0 ? (
             <div>
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-2xl font-bold">
-                  Search Results ({searchResults.length})
-                </h2>
-                <Button variant="outline" onClick={clearSearch}>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 sm:gap-0 mb-6">
+                <div>
+                  <h2 className="text-xl sm:text-2xl md:text-3xl font-bold bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
+                    Search Results ({searchResults.length})
+                  </h2>
+                  <p className="text-gray-400 mt-1 sm:mt-2 text-sm sm:text-base">
+                    Books matching your search
+                  </p>
+                </div>
+                <Button
+                  variant="outline"
+                  onClick={clearSearch}
+                  className="border-gray-600 hover:bg-gray-800 hover:border-gray-500 transition-all duration-200 text-sm sm:text-base px-4 sm:px-6 py-2 sm:py-3"
+                >
                   Clear Search
                 </Button>
               </div>
               <div
                 className={
                   viewMode === "grid"
-                    ? "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4"
-                    : "space-y-4"
+                    ? "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4 md:gap-6"
+                    : "space-y-3 sm:space-y-4"
                 }
               >
                 {searchResults.map((book) => (
@@ -654,35 +830,28 @@ export default function BooksPage() {
                 ))}
               </div>
             </div>
-          ) : filteredAndSortedBooks.length === 0 ? (
-            <div className="text-center py-12">
-              <BookOpen className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-semibold mb-2">No books found</h3>
-              <p className="text-muted-foreground mb-4">
-                {searchQuery
-                  ? "Try a different search term"
-                  : "Start by searching for books"}
-              </p>
-              {!searchQuery && (
-                <Button onClick={() => setSearchQuery("")}>Search Books</Button>
-              )}
-            </div>
-          ) : (
+          ) : filteredAndSortedBooks.length > 0 ? (
             <div>
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-2xl font-bold">
-                  {selectedCollection === "all"
-                    ? "All Books"
-                    : getCollectionInfo(selectedCollection)?.name ||
-                      "Books"}{" "}
-                  ({filteredAndSortedBooks.length})
-                </h2>
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h2 className="text-xl sm:text-2xl md:text-3xl font-bold bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
+                    {getCollectionInfo(selectedCollection)?.name || "Books"} (
+                    {filteredAndSortedBooks.length})
+                  </h2>
+                  <p className="text-gray-400 mt-1 sm:mt-2 text-sm sm:text-base">
+                    Your{" "}
+                    {getCollectionInfo(
+                      selectedCollection
+                    )?.name?.toLowerCase() || "books"}{" "}
+                    collection
+                  </p>
+                </div>
               </div>
               <div
                 className={
                   viewMode === "grid"
-                    ? "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4"
-                    : "space-y-4"
+                    ? "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4 md:gap-6"
+                    : "space-y-3 sm:space-y-4"
                 }
               >
                 {filteredAndSortedBooks.map((book) => (
@@ -696,7 +865,7 @@ export default function BooksPage() {
                 ))}
               </div>
             </div>
-          )}
+          ) : null}
         </div>
       </div>
     </div>
@@ -719,14 +888,16 @@ function BookCard({
 }) {
   if (viewMode === "list") {
     return (
-      <Card className="flex items-center space-x-4 p-4 hover:shadow-lg transition-shadow">
+      <Card className="flex items-center space-x-4 p-4">
         <div className="relative w-16 h-24 flex-shrink-0">
-          <Image
-            src={book.cover}
-            alt={book.title}
-            fill
-            className="object-cover rounded"
-          />
+          <Link href={`/books/${book.id}`}>
+            <Image
+              src={book.cover}
+              alt={book.title}
+              fill
+              className="object-cover rounded cursor-pointer"
+            />
+          </Link>
         </div>
         <div className="flex-1 min-w-0">
           <h3 className="font-semibold truncate">{book.title}</h3>
@@ -762,47 +933,16 @@ function BookCard({
   }
 
   return (
-    <Card className="group relative overflow-hidden hover:shadow-xl transition-all duration-300">
+    <Card className="relative overflow-hidden">
       <div className="relative aspect-[2/3]">
-        <Image
-          src={book.cover}
-          alt={book.title}
-          fill
-          className="object-cover transition-transform group-hover:scale-105"
-        />
-        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-          <div className="flex flex-col gap-2">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button size="sm" variant="secondary">
-                  <Plus className="h-4 w-4 mr-1" />
-                  Add to Collection
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent>
-                {collections.map((collection) => (
-                  <DropdownMenuItem
-                    key={collection.id}
-                    onClick={() => onAddToCollection(book, collection.id)}
-                  >
-                    <div className="flex items-center gap-2">
-                      <div
-                        className={`w-3 h-3 rounded-full ${
-                          collection.color || "bg-gray-500"
-                        }`}
-                      />
-                      {collection.name}
-                    </div>
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-
-            <Button size="sm" variant="secondary" asChild>
-              <Link href={`/books/${book.id}`}>View Details</Link>
-            </Button>
-          </div>
-        </div>
+        <Link href={`/books/${book.id}`}>
+          <Image
+            src={book.cover}
+            alt={book.title}
+            fill
+            className="object-cover cursor-pointer"
+          />
+        </Link>
       </div>
       <CardContent className="p-3">
         <h3 className="font-semibold text-sm truncate">{book.title}</h3>
@@ -827,14 +967,16 @@ function SavedBookCard({
 }) {
   if (viewMode === "list") {
     return (
-      <Card className="flex items-center space-x-4 p-4 hover:shadow-lg transition-shadow">
+      <Card className="flex items-center space-x-4 p-4">
         <div className="relative w-16 h-24 flex-shrink-0">
-          <Image
-            src={book.cover}
-            alt={book.title}
-            fill
-            className="object-cover rounded"
-          />
+          <Link href={`/books/${book.id}`}>
+            <Image
+              src={book.cover}
+              alt={book.title}
+              fill
+              className="object-cover rounded cursor-pointer"
+            />
+          </Link>
         </div>
         <div className="flex-1 min-w-0">
           <h3 className="font-semibold truncate">{book.title}</h3>
@@ -876,40 +1018,16 @@ function SavedBookCard({
   }
 
   return (
-    <Card className="group relative overflow-hidden hover:shadow-xl transition-all duration-300">
+    <Card className="relative overflow-hidden">
       <div className="relative aspect-[2/3]">
-        <Image
-          src={book.cover}
-          alt={book.title}
-          fill
-          className="object-cover transition-transform group-hover:scale-105"
-        />
-        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button size="sm" variant="secondary">
-                <MoreHorizontal className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent>
-              {book.collections?.map((collectionId) => {
-                const collection = collections.find(
-                  (c) => c.id === collectionId
-                );
-                return collection ? (
-                  <DropdownMenuItem
-                    key={collectionId}
-                    onClick={() =>
-                      onRemoveFromCollection(book.id, collectionId)
-                    }
-                  >
-                    Remove from {collection.name}
-                  </DropdownMenuItem>
-                ) : null;
-              })}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
+        <Link href={`/books/${book.id}`}>
+          <Image
+            src={book.cover}
+            alt={book.title}
+            fill
+            className="object-cover cursor-pointer"
+          />
+        </Link>
       </div>
       <CardContent className="p-3">
         <h3 className="font-semibold text-sm truncate">{book.title}</h3>

@@ -113,10 +113,7 @@ export function MovieCard({
   const BadgeIcon = styles.badgeIcon;
 
   return (
-    <div
-      className={`cursor-pointer transition-transform hover:scale-105 ${className}`}
-      onClick={handleClick}
-    >
+    <div className={`cursor-pointer ${className}`} onClick={handleClick}>
       <div
         className={`relative aspect-[2/3] rounded-lg overflow-hidden ${styles.container}`}
       >

@@ -34,7 +34,7 @@ interface Book {
   id: string;
   title: string;
   author: string;
-  year: number;
+  year?: number;
   cover: string;
   status?: string;
   notes?: string;
@@ -68,7 +68,9 @@ interface UserRecommendation {
 
 export function useRecommendations() {
   const { user: currentUser } = useCurrentUser();
-  const [recommendations, setRecommendations] = useState<UserRecommendation[]>([]);
+  const [recommendations, setRecommendations] = useState<UserRecommendation[]>(
+    []
+  );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -78,11 +80,11 @@ export function useRecommendations() {
     try {
       setLoading(true);
       setError(null);
-      
+
       // Get current user's following list
       const currentUserRef = doc(db, "users", currentUser.uid);
       const currentUserSnap = await getDoc(currentUserRef);
-      
+
       if (!currentUserSnap.exists()) {
         setError("Current user not found");
         setLoading(false);
@@ -103,26 +105,31 @@ export function useRecommendations() {
       const followingUsersRef = collection(db, "users");
       const followingUsersSnapshot = await getDocs(followingUsersRef);
       let followingUsers = followingUsersSnapshot.docs
-        .map(doc => ({ uid: doc.id, ...doc.data() } as User))
-        .filter(user => followingList.includes(user.uid)); // Only include followed users
-      
-      console.log(`Found ${followingUsers.length} following users for ${currentUser.uid}`);
-      
+        .map((doc) => ({ uid: doc.id, ...doc.data() } as User))
+        .filter((user) => followingList.includes(user.uid)); // Only include followed users
+
+      console.log(
+        `Found ${followingUsers.length} following users for ${currentUser.uid}`
+      );
+
       // Additional validation: ensure all following users are real and not test users
-      const validFollowingUsers = followingUsers.filter(user => {
-        const isValid = !user.uid.startsWith('test_user_') && 
-                       user.uid !== 'user1' && 
-                       user.uid !== 'user2' && 
-                       user.uid !== 'user3' &&
-                       user.uid !== 'current_user_id';
-        
+      const validFollowingUsers = followingUsers.filter((user) => {
+        const isValid =
+          !user.uid.startsWith("test_user_") &&
+          user.uid !== "user1" &&
+          user.uid !== "user2" &&
+          user.uid !== "user3" &&
+          user.uid !== "current_user_id";
+
         if (!isValid) {
           console.log(`Filtering out test user: ${user.uid}`);
         }
         return isValid;
       });
-      
-      console.log(`After filtering test users: ${validFollowingUsers.length} valid users`);
+
+      console.log(
+        `After filtering test users: ${validFollowingUsers.length} valid users`
+      );
 
       const userRecommendations: UserRecommendation[] = [];
 
@@ -131,32 +138,37 @@ export function useRecommendations() {
           // Fetch user's movies
           const moviesRef = collection(db, "users", user.uid, "movies");
           const moviesSnapshot = await getDocs(moviesRef);
-          const movies = moviesSnapshot.docs.map(doc => ({
+          const movies = moviesSnapshot.docs.map((doc) => ({
             id: parseInt(doc.id),
-            ...doc.data()
+            ...doc.data(),
           })) as Movie[];
 
           // Fetch user's books
           const booksRef = collection(db, "users", user.uid, "books");
           const booksSnapshot = await getDocs(booksRef);
-          const books = booksSnapshot.docs.map(doc => ({
+          const books = booksSnapshot.docs.map((doc) => ({
             id: doc.id,
-            ...doc.data()
+            ...doc.data(),
           })) as Book[];
 
           // Fetch user's series
           const seriesRef = collection(db, "users", user.uid, "series");
           const seriesSnapshot = await getDocs(seriesRef);
-          const series = seriesSnapshot.docs.map(doc => ({
+          const series = seriesSnapshot.docs.map((doc) => ({
             id: parseInt(doc.id),
-            ...doc.data()
+            ...doc.data(),
           })) as Series[];
 
           // Only add users who have items in their collections
           if (movies.length > 0 || books.length > 0 || series.length > 0) {
             // Try to get user name from various possible fields
-            let displayName = user.displayName || user.name || user.username || user.email?.split('@')[0] || `User ${user.uid.slice(0, 8)}`;
-            
+            let displayName =
+              user.displayName ||
+              user.name ||
+              user.username ||
+              user.email?.split("@")[0] ||
+              `User ${user.uid.slice(0, 8)}`;
+
             userRecommendations.push({
               user: {
                 ...user,
@@ -165,7 +177,7 @@ export function useRecommendations() {
               },
               movies,
               books,
-              series
+              series,
             });
           }
         } catch (error) {
@@ -182,7 +194,10 @@ export function useRecommendations() {
     }
   };
 
-  const addMovieToCollection = async (movie: Movie, collectionId: string = "Watchlist") => {
+  const addMovieToCollection = async (
+    movie: Movie,
+    collectionId: string = "Watchlist"
+  ) => {
     if (!currentUser?.uid) return;
 
     try {
@@ -199,7 +214,10 @@ export function useRecommendations() {
         release_date: movie.release_date || "",
       };
 
-      await setDoc(doc(db, "users", currentUser.uid, "movies", movie.id.toString()), movieData);
+      await setDoc(
+        doc(db, "users", currentUser.uid, "movies", movie.id.toString()),
+        movieData
+      );
       return true;
     } catch (error) {
       console.error("Error adding movie to collection:", error);
@@ -207,7 +225,10 @@ export function useRecommendations() {
     }
   };
 
-  const addBookToCollection = async (book: Book, collectionId: string = "To Read") => {
+  const addBookToCollection = async (
+    book: Book,
+    collectionId: string = "To Read"
+  ) => {
     if (!currentUser?.uid) return;
 
     try {
@@ -215,7 +236,7 @@ export function useRecommendations() {
         id: book.id,
         title: book.title,
         author: book.author,
-        year: book.year,
+        year: book.year || 0,
         cover: book.cover,
         status: collectionId,
         notes: "",
@@ -225,7 +246,10 @@ export function useRecommendations() {
         pageCount: book.pageCount || 0,
       };
 
-      await setDoc(doc(db, "users", currentUser.uid, "books", book.id), bookData);
+      await setDoc(
+        doc(db, "users", currentUser.uid, "books", book.id),
+        bookData
+      );
       return true;
     } catch (error) {
       console.error("Error adding book to collection:", error);
@@ -233,7 +257,10 @@ export function useRecommendations() {
     }
   };
 
-  const addSeriesToCollection = async (series: Series, collectionId: string = "Watchlist") => {
+  const addSeriesToCollection = async (
+    series: Series,
+    collectionId: string = "Watchlist"
+  ) => {
     if (!currentUser?.uid) return;
 
     try {
@@ -252,7 +279,10 @@ export function useRecommendations() {
         number_of_episodes: series.number_of_episodes || 0,
       };
 
-      await setDoc(doc(db, "users", currentUser.uid, "series", series.id.toString()), seriesData);
+      await setDoc(
+        doc(db, "users", currentUser.uid, "series", series.id.toString()),
+        seriesData
+      );
       return true;
     } catch (error) {
       console.error("Error adding series to collection:", error);
@@ -273,4 +303,4 @@ export function useRecommendations() {
     addBookToCollection,
     addSeriesToCollection,
   };
-} 
+}

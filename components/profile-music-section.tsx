@@ -21,6 +21,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Heart,
+  Edit,
 } from "lucide-react";
 import {
   useMusicProfile,
@@ -602,15 +603,15 @@ export default function ProfileMusicSection({
     ratings: [],
   };
 
-  // Limit items to 15 per section
+  // Limit items to 4 per section
   const limitedFavoriteAlbums =
-    safeMusicProfile.favoriteAlbums?.slice(0, 5) || [];
+    safeMusicProfile.favoriteAlbums?.slice(0, 4) || [];
   const limitedRecommendations =
-    safeMusicProfile.recommendations?.slice(0, 20) || [];
-  const limitedRatings = safeMusicProfile.ratings || [];
+    safeMusicProfile.recommendations?.slice(0, 4) || [];
+  const limitedRatings = safeMusicProfile.ratings?.slice(0, 4) || [];
 
   return (
-    <div className="space-y-0 max-w-3xl mx-auto">
+    <div className="space-y-0 max-w-4xl mx-auto">
       <div className="grid grid-cols-3 gap-2 sm:gap-3">
         {/* current obsession - card */}
         <div className="flex flex-col">
@@ -618,45 +619,50 @@ export default function ProfileMusicSection({
             <p className="text-sm font-medium text-muted-foreground">
               current obsession
             </p>
-            {!readOnly && (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-6 w-6 p-0 hover:bg-muted"
-                onClick={() => openSearchDialog("currentObsession")}
-              >
-                <Plus className="h-3 w-3" />
-              </Button>
-            )}
           </div>
           <div className="flex flex-col items-center flex-1">
             {safeMusicProfile.currentObsession ? (
               <>
-                <div className="w-40 h-40 sm:w-48 sm:h-48 lg:w-56 lg:h-56 bg-muted rounded-md overflow-hidden">
-                  <Image
-                    src={
-                      getImageUrl(safeMusicProfile.currentObsession.image) ||
-                      PLACEHOLDER.currentObsession.cover
-                    }
-                    alt={
-                      getTextContent(safeMusicProfile.currentObsession?.name) ||
-                      PLACEHOLDER.currentObsession.title
-                    }
-                    width={224}
-                    height={224}
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      const target = e.target as HTMLImageElement;
-                      target.src = PLACEHOLDER.currentObsession.cover;
-                    }}
-                  />
+                <div className="relative group">
+                  <div className="w-48 h-48 sm:w-56 sm:h-56 lg:w-64 lg:h-64 bg-muted rounded-md overflow-hidden">
+                    <Image
+                      src={
+                        getImageUrl(safeMusicProfile.currentObsession.image) ||
+                        PLACEHOLDER.currentObsession.cover
+                      }
+                      alt={
+                        getTextContent(
+                          safeMusicProfile.currentObsession?.name
+                        ) || PLACEHOLDER.currentObsession.title
+                      }
+                      width={256}
+                      height={256}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.src = PLACEHOLDER.currentObsession.cover;
+                      }}
+                    />
+                  </div>
+                  {!readOnly && (
+                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-md flex items-center justify-center">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 w-8 p-0 bg-white/20 hover:bg-white/30 text-white"
+                        onClick={() => openSearchDialog("currentObsession")}
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  )}
                 </div>
-                <div className="mt-3 text-center">
-                  <p className="text-sm font-semibold leading-tight">
+                <div className="mt-3 text-center w-full">
+                  <p className="text-sm font-semibold leading-tight px-2">
                     {getTextContent(safeMusicProfile.currentObsession.name) ||
                       "Unknown Song"}
                   </p>
-                  <p className="text-xs text-muted-foreground leading-tight mt-1">
+                  <p className="text-xs text-muted-foreground leading-tight mt-1 px-2">
                     {getTextContent(
                       safeMusicProfile.currentObsession.primaryArtists ||
                         safeMusicProfile.currentObsession.artists?.primary
@@ -665,12 +671,11 @@ export default function ProfileMusicSection({
                         "Unknown Artist"
                     )}
                   </p>
-                  {/* Like and add to list buttons removed from current obsession */}
                 </div>
               </>
             ) : (
               <>
-                <div className="w-40 h-40 sm:w-48 sm:h-48 lg:w-56 lg:h-56 bg-black/20 rounded-md border border-border/30 flex items-center justify-center">
+                <div className="w-48 h-48 sm:w-56 sm:h-56 lg:w-64 lg:h-64 bg-black/20 rounded-md border border-border/30 flex items-center justify-center">
                   <div className="text-center">
                     <Plus className="h-16 w-16 mx-auto mb-4 text-muted-foreground/50" />
                     <p className="text-sm text-muted-foreground/50">
@@ -678,11 +683,11 @@ export default function ProfileMusicSection({
                     </p>
                   </div>
                 </div>
-                <div className="mt-3 text-center">
-                  <p className="text-sm font-semibold leading-tight text-muted-foreground/50">
+                <div className="mt-3 text-center w-full">
+                  <p className="text-sm font-semibold leading-tight text-muted-foreground/50 px-2">
                     Song Name
                   </p>
-                  <p className="text-xs text-muted-foreground/50 leading-tight mt-1">
+                  <p className="text-xs text-muted-foreground/50 leading-tight mt-1 px-2">
                     Artist Name
                   </p>
                 </div>
@@ -697,41 +702,45 @@ export default function ProfileMusicSection({
             <p className="text-sm font-medium text-muted-foreground">
               favorite artist
             </p>
-            {!readOnly && (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-6 w-6 p-0 hover:bg-muted"
-                onClick={() => openSearchDialog("favoriteArtist")}
-              >
-                <Plus className="h-3 w-3" />
-              </Button>
-            )}
           </div>
           <div className="flex flex-col items-center flex-1">
             {safeMusicProfile.favoriteArtist ? (
               <>
-                <div className="w-40 h-40 sm:w-48 sm:h-48 lg:w-56 lg:h-56 rounded-full overflow-hidden border-2 border-border/30 shadow-sm">
-                  <Image
-                    src={
-                      getImageUrl(safeMusicProfile.favoriteArtist.image) ||
-                      PLACEHOLDER.favoriteArtist.avatar
-                    }
-                    alt={
-                      getTextContent(safeMusicProfile.favoriteArtist?.name) ||
-                      PLACEHOLDER.favoriteArtist.name
-                    }
-                    width={224}
-                    height={224}
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      const target = e.target as HTMLImageElement;
-                      target.src = PLACEHOLDER.favoriteArtist.avatar;
-                    }}
-                  />
+                <div className="relative group">
+                  <div className="w-48 h-48 sm:w-56 sm:h-56 lg:w-64 lg:h-64 rounded-full overflow-hidden border-2 border-border/30 shadow-sm">
+                    <Image
+                      src={
+                        getImageUrl(safeMusicProfile.favoriteArtist.image) ||
+                        PLACEHOLDER.favoriteArtist.avatar
+                      }
+                      alt={
+                        getTextContent(safeMusicProfile.favoriteArtist?.name) ||
+                        PLACEHOLDER.favoriteArtist.name
+                      }
+                      width={256}
+                      height={256}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.src = PLACEHOLDER.favoriteArtist.avatar;
+                      }}
+                    />
+                  </div>
+                  {!readOnly && (
+                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-full flex items-center justify-center">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 w-8 p-0 bg-white/20 hover:bg-white/30 text-white"
+                        onClick={() => openSearchDialog("favoriteArtist")}
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  )}
                 </div>
-                <div className="mt-3 text-center">
-                  <p className="text-sm font-medium leading-tight">
+                <div className="mt-3 text-center w-full">
+                  <p className="text-sm font-medium leading-tight px-2">
                     {getTextContent(safeMusicProfile.favoriteArtist?.name) ||
                       PLACEHOLDER.favoriteArtist.name}
                   </p>
@@ -739,7 +748,7 @@ export default function ProfileMusicSection({
               </>
             ) : (
               <>
-                <div className="w-40 h-40 sm:w-48 sm:h-48 lg:w-56 lg:h-56 rounded-full bg-black/20 border-2 border-border/30 shadow-sm flex items-center justify-center">
+                <div className="w-48 h-48 sm:w-56 sm:h-56 lg:w-64 lg:h-64 rounded-full bg-black/20 border-2 border-border/30 shadow-sm flex items-center justify-center">
                   <div className="text-center">
                     <Plus className="h-16 w-16 mx-auto mb-4 text-muted-foreground/50" />
                     <p className="text-sm text-muted-foreground/50">
@@ -747,8 +756,8 @@ export default function ProfileMusicSection({
                     </p>
                   </div>
                 </div>
-                <div className="mt-3 text-center">
-                  <p className="text-sm font-medium leading-tight text-muted-foreground/50">
+                <div className="mt-3 text-center w-full">
+                  <p className="text-sm font-medium leading-tight text-muted-foreground/50 px-2">
                     Artist Name
                   </p>
                 </div>
@@ -763,45 +772,49 @@ export default function ProfileMusicSection({
             <p className="text-sm font-medium text-muted-foreground">
               favorite song
             </p>
-            {!readOnly && (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-6 w-6 p-0 hover:bg-muted"
-                onClick={() => openSearchDialog("favoriteSong")}
-              >
-                <Plus className="h-3 w-3" />
-              </Button>
-            )}
           </div>
           <div className="flex flex-col items-center flex-1">
             {safeMusicProfile.favoriteSong ? (
               <>
-                <div className="w-40 h-40 sm:w-48 sm:h-48 lg:w-56 lg:h-56 bg-muted rounded-md overflow-hidden">
-                  <Image
-                    src={
-                      getImageUrl(safeMusicProfile.favoriteSong.image) ||
-                      PLACEHOLDER.favoriteSong.cover
-                    }
-                    alt={
-                      getTextContent(safeMusicProfile.favoriteSong?.name) ||
-                      PLACEHOLDER.favoriteSong.title
-                    }
-                    width={224}
-                    height={224}
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      const target = e.target as HTMLImageElement;
-                      target.src = PLACEHOLDER.favoriteSong.cover;
-                    }}
-                  />
+                <div className="relative group">
+                  <div className="w-48 h-48 sm:w-56 sm:h-56 lg:w-64 lg:h-64 bg-muted rounded-md overflow-hidden">
+                    <Image
+                      src={
+                        getImageUrl(safeMusicProfile.favoriteSong.image) ||
+                        PLACEHOLDER.favoriteSong.cover
+                      }
+                      alt={
+                        getTextContent(safeMusicProfile.favoriteSong?.name) ||
+                        PLACEHOLDER.favoriteSong.title
+                      }
+                      width={256}
+                      height={256}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.src = PLACEHOLDER.favoriteSong.cover;
+                      }}
+                    />
+                  </div>
+                  {!readOnly && (
+                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-md flex items-center justify-center">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 w-8 p-0 bg-white/20 hover:bg-white/30 text-white"
+                        onClick={() => openSearchDialog("favoriteSong")}
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  )}
                 </div>
-                <div className="mt-3 text-center">
-                  <p className="text-sm font-semibold leading-tight">
+                <div className="mt-3 text-center w-full">
+                  <p className="text-sm font-semibold leading-tight px-2">
                     {getTextContent(safeMusicProfile.favoriteSong.name) ||
                       "Unknown Song"}
                   </p>
-                  <p className="text-xs text-muted-foreground leading-tight mt-1">
+                  <p className="text-xs text-muted-foreground leading-tight mt-1 px-2">
                     {getTextContent(
                       safeMusicProfile.favoriteSong.primaryArtists ||
                         safeMusicProfile.favoriteSong.artists?.primary
@@ -814,7 +827,7 @@ export default function ProfileMusicSection({
               </>
             ) : (
               <>
-                <div className="w-40 h-40 sm:w-48 sm:h-48 lg:w-56 lg:h-56 bg-black/20 rounded-md border border-border/30 flex items-center justify-center">
+                <div className="w-48 h-48 sm:w-56 sm:h-56 lg:w-64 lg:h-64 bg-black/20 rounded-md border border-border/30 flex items-center justify-center">
                   <div className="text-center">
                     <Plus className="h-16 w-16 mx-auto mb-4 text-muted-foreground/50" />
                     <p className="text-sm text-muted-foreground/50">
@@ -822,11 +835,11 @@ export default function ProfileMusicSection({
                     </p>
                   </div>
                 </div>
-                <div className="mt-3 text-center">
-                  <p className="text-sm font-semibold leading-tight text-muted-foreground/50">
+                <div className="mt-3 text-center w-full">
+                  <p className="text-sm font-semibold leading-tight text-muted-foreground/50 px-2">
                     Song Name
                   </p>
-                  <p className="text-xs text-muted-foreground/50 leading-tight mt-1">
+                  <p className="text-xs text-muted-foreground/50 leading-tight mt-1 px-2">
                     Artist Name
                   </p>
                 </div>
@@ -836,350 +849,246 @@ export default function ProfileMusicSection({
         </div>
       </div>
 
-      {/* playlists note */}
-      <div>
-        <p className="text-sm font-medium text-muted-foreground mb-2">
-          playlists
-        </p>
-        <p className="text-[11px] text-muted-foreground">
-          share your spotify, apple music, youtube music playlists (coming
-          soon).
-        </p>
-      </div>
-
       {/* favorite albums */}
-      <div className="mt-2">
+      <div className="mt-8 mb-16">
         <div className="flex items-center justify-between mb-0">
           <p className="text-sm font-medium text-muted-foreground">
             favorite albums
           </p>
-          {!readOnly && (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-6 w-6 p-0 hover:bg-muted"
-              onClick={() => openSearchDialog("album")}
-            >
-              <Plus className="h-3 w-3" />
-            </Button>
-          )}
         </div>
         <div className="relative">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="absolute left-0 top-1/2 -translate-y-1/2 z-10 h-8 w-8 p-0 bg-black/50 hover:bg-black/70 text-white rounded-full"
-            onClick={() => scrollLeft(scrollContainerRefs.favoriteAlbums)}
-          >
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
           <div
             ref={scrollContainerRefs.favoriteAlbums}
-            className="flex gap-4 overflow-x-auto scrollbar-hide pb-2 px-8"
-            style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+            className="grid grid-cols-4 gap-8 pb-2 items-center justify-items-center"
           >
-            {limitedFavoriteAlbums.length > 0
-              ? limitedFavoriteAlbums.map((album, idx) => (
-                  <div
-                    key={album.id || idx}
-                    className="relative group flex-shrink-0"
-                  >
-                    <div className="aspect-square w-40 bg-muted rounded-md overflow-hidden">
-                      <Image
-                        src={
-                          getImageUrl(album.image) ||
-                          PLACEHOLDER.favoriteAlbums[0].cover
-                        }
-                        alt={album.name || "Album"}
-                        width={160}
-                        height={160}
-                        className="w-full h-full object-cover"
-                        onError={(e) => {
-                          const target = e.target as HTMLImageElement;
-                          target.src = PLACEHOLDER.favoriteAlbums[0].cover;
-                        }}
-                      />
-                      {!readOnly && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="absolute top-1 right-1 h-6 w-6 p-0 bg-black/50 hover:bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity"
-                          onClick={() => handleRemoveItem("album", album.id)}
-                        >
-                          <X className="h-3 w-3 text-white" />
-                        </Button>
+            {limitedFavoriteAlbums.length > 0 ? (
+              limitedFavoriteAlbums.map((album, idx) => (
+                <div key={album.id || idx} className="relative group">
+                  <div className="aspect-square w-48 bg-muted rounded-md overflow-hidden">
+                    <Image
+                      src={
+                        getImageUrl(album.image) ||
+                        PLACEHOLDER.favoriteAlbums[0].cover
+                      }
+                      alt={album.name || "Album"}
+                      width={192}
+                      height={192}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.src = PLACEHOLDER.favoriteAlbums[0].cover;
+                      }}
+                    />
+                    {!readOnly && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="absolute top-2 right-2 h-6 w-6 p-0 bg-black/50 hover:bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity"
+                        onClick={() => openSearchDialog("album")}
+                      >
+                        <Edit className="h-3 w-3 text-white" />
+                      </Button>
+                    )}
+                  </div>
+                  <div className="mt-2 text-center">
+                    <p className="text-sm font-semibold leading-tight">
+                      {getTextContent(album.name) || "Unknown Album"}
+                    </p>
+                    <p className="text-xs text-muted-foreground leading-tight mt-1">
+                      {getTextContent(
+                        album.primaryArtists ||
+                          album.artists?.primary
+                            ?.map((artist: any) => artist.name)
+                            .join(", ") ||
+                          album.artist ||
+                          album.featuredArtists ||
+                          album.singer ||
+                          "Unknown Artist"
                       )}
-                    </div>
-                    <div className="mt-2 text-center">
-                      <p className="text-sm font-semibold leading-tight">
-                        {getTextContent(album.name) || "Unknown Album"}
-                      </p>
-                      <p className="text-xs text-muted-foreground leading-tight mt-1">
-                        {getTextContent(
-                          album.primaryArtists ||
-                            album.artists?.primary
-                              ?.map((artist: any) => artist.name)
-                              .join(", ") ||
-                            album.artist ||
-                            album.featuredArtists ||
-                            album.singer ||
-                            "Unknown Artist"
-                        )}
-                      </p>
-                    </div>
+                    </p>
                   </div>
-                ))
-              : // Show placeholder items when empty
-                Array.from({ length: 4 }, (_, idx) => (
-                  <div
-                    key={`placeholder-album-${idx}`}
-                    className="flex-shrink-0"
+                </div>
+              ))
+            ) : (
+              // Show single Add screen when empty
+              <div className="flex flex-col items-center justify-center min-h-[200px] w-full">
+                <div className="aspect-square w-48 bg-transparent rounded-md border-2 border-dashed border-gray-600 flex flex-col items-center justify-center mb-3">
+                  <p className="text-sm text-gray-400 mb-1 text-center">Add</p>
+                  <p className="text-xs text-gray-500 text-center">
+                    No favorite albums
+                  </p>
+                </div>
+                {!readOnly && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="text-xs"
+                    onClick={() => openSearchDialog("album")}
                   >
-                    <div className="aspect-square w-40 bg-black/20 rounded-md border border-border/30 flex items-center justify-center">
-                      <div className="text-center">
-                        <Plus className="h-8 w-8 mx-auto mb-2 text-muted-foreground/50" />
-                        <p className="text-xs text-muted-foreground/50">
-                          Add Album
-                        </p>
-                      </div>
-                    </div>
-                    <div className="mt-2 text-center">
-                      <p className="text-sm font-semibold leading-tight text-muted-foreground/50">
-                        Album Name
-                      </p>
-                      <p className="text-xs text-muted-foreground/50 leading-tight mt-1">
-                        Artist Name
-                      </p>
-                    </div>
-                  </div>
-                ))}
+                    <Plus className="h-3 w-3 mr-1" />
+                    Add Album
+                  </Button>
+                )}
+              </div>
+            )}
           </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="absolute right-0 top-1/2 -translate-y-1/2 z-10 h-8 w-8 p-0 bg-black/50 hover:bg-black/70 text-white rounded-full"
-            onClick={() => scrollRight(scrollContainerRefs.favoriteAlbums)}
-          >
-            <ChevronRight className="h-4 w-4" />
-          </Button>
         </div>
       </div>
 
       {/* recommendations */}
-      <div className="mt-2">
-        <div className="flex items-center justify-between mb-0">
+      <div className="mt-2 mb-24">
+        <div className="flex items-center justify-between mb-0 mt-5">
           <p className="text-sm font-medium text-muted-foreground">
             recommendations
           </p>
-          {!readOnly && (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-6 w-6 p-0 hover:bg-muted"
-              onClick={() => openSearchDialog("recommendation")}
-            >
-              <Plus className="h-3 w-3" />
-            </Button>
-          )}
         </div>
         <div className="relative">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="absolute left-0 top-1/2 -translate-y-1/2 z-10 h-8 w-8 p-0 bg-black/50 hover:bg-black/70 text-white rounded-full"
-            onClick={() => scrollLeft(scrollContainerRefs.recommendations)}
-          >
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
           <div
             ref={scrollContainerRefs.recommendations}
-            className="flex gap-4 overflow-x-auto scrollbar-hide pb-2 px-8"
-            style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+            className="grid grid-cols-4 gap-8 pb-2 items-center justify-items-center"
           >
-            {limitedRecommendations.length > 0
-              ? limitedRecommendations.map((song, idx) => (
-                  <div
-                    key={song.id || idx}
-                    className="relative group flex-shrink-0"
-                  >
-                    <div className="aspect-square w-40 bg-muted rounded-md overflow-hidden">
-                      <Image
-                        src={
-                          getImageUrl(song.image) ||
-                          PLACEHOLDER.recommendations[0].cover
-                        }
-                        alt={song.name || "Song"}
-                        width={160}
-                        height={160}
-                        className="w-full h-full object-cover"
-                        onError={(e) => {
-                          const target = e.target as HTMLImageElement;
-                          target.src = PLACEHOLDER.recommendations[0].cover;
-                        }}
-                      />
-                      {!readOnly && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="absolute top-1 right-1 h-6 w-6 p-0 bg-black/50 hover:bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity"
-                          onClick={() =>
-                            handleRemoveItem("recommendation", song.id)
-                          }
-                        >
-                          <X className="h-3 w-3 text-white" />
-                        </Button>
+            {limitedRecommendations.length > 0 ? (
+              limitedRecommendations.map((song, idx) => (
+                <div key={song.id || idx} className="relative group">
+                  <div className="aspect-square w-48 bg-muted rounded-md overflow-hidden">
+                    <Image
+                      src={
+                        getImageUrl(song.image) ||
+                        PLACEHOLDER.recommendations[0].cover
+                      }
+                      alt={song.name || "Song"}
+                      width={192}
+                      height={192}
+                      className="w-full h-full object-cover cursor-pointer"
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.src = PLACEHOLDER.recommendations[0].cover;
+                      }}
+                    />
+                    {!readOnly && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="absolute top-2 right-2 h-6 w-6 p-0 bg-black/50 hover:bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity"
+                        onClick={() => openSearchDialog("recommendation")}
+                      >
+                        <Edit className="h-3 w-3 text-white" />
+                      </Button>
+                    )}
+                  </div>
+                  <div className="mt-2 text-center">
+                    <p className="text-sm font-semibold leading-tight">
+                      {getTextContent(song.name) || "Unknown Song"}
+                    </p>
+                    <p className="text-xs text-muted-foreground leading-tight mt-1">
+                      {getTextContent(
+                        song.primaryArtists ||
+                          song.artists?.primary
+                            ?.map((artist: any) => artist.name)
+                            .join(", ") ||
+                          song.artist ||
+                          song.featuredArtists ||
+                          song.singer ||
+                          "Unknown Artist"
                       )}
-                    </div>
-                    <div className="mt-2 text-center">
-                      <p className="text-sm font-semibold leading-tight">
-                        {getTextContent(song.name) || "Unknown Song"}
-                      </p>
-                      <p className="text-xs text-muted-foreground leading-tight mt-1">
-                        {getTextContent(
-                          song.primaryArtists ||
-                            song.artists?.primary
-                              ?.map((artist: any) => artist.name)
-                              .join(", ") ||
-                            song.artist ||
-                            song.featuredArtists ||
-                            song.singer ||
-                            "Unknown Artist"
-                        )}
-                      </p>
-                    </div>
+                    </p>
                   </div>
-                ))
-              : // Show placeholder items when empty
-                Array.from({ length: 4 }, (_, idx) => (
-                  <div
-                    key={`placeholder-recommendation-${idx}`}
-                    className="flex-shrink-0"
+                </div>
+              ))
+            ) : (
+              // Show placeholder items when empty
+              <div className="flex flex-col items-center justify-center min-h-[200px] w-full">
+                <div className="aspect-square w-48 bg-transparent rounded-md border-2 border-dashed border-gray-600 flex flex-col items-center justify-center mb-3">
+                  <p className="text-sm text-gray-400 mb-1 text-center">Add</p>
+                  <p className="text-xs text-gray-500 text-center">
+                    No recommendations
+                  </p>
+                </div>
+                {!readOnly && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="text-xs"
+                    onClick={() => openSearchDialog("recommendation")}
                   >
-                    <div className="aspect-square w-40 bg-black/20 rounded-md border border-border/30 flex items-center justify-center">
-                      <div className="text-center">
-                        <Plus className="h-8 w-8 mx-auto mb-2 text-muted-foreground/50" />
-                        <p className="text-xs text-muted-foreground/50">
-                          Add Song
-                        </p>
-                      </div>
-                    </div>
-                    <div className="mt-2 text-center">
-                      <p className="text-sm font-semibold leading-tight text-muted-foreground/50">
-                        Song Name
-                      </p>
-                      <p className="text-xs text-muted-foreground/50 leading-tight mt-1">
-                        Artist Name
-                      </p>
-                    </div>
-                  </div>
-                ))}
+                    <Plus className="h-3 w-3 mr-1" />
+                    Add Recommendation
+                  </Button>
+                )}
+              </div>
+            )}
           </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="absolute right-0 top-1/2 -translate-y-1/2 z-10 h-8 w-8 p-0 bg-black/50 hover:bg-black/70 text-white rounded-full"
-            onClick={() => scrollRight(scrollContainerRefs.recommendations)}
-          >
-            <ChevronRight className="h-4 w-4" />
-          </Button>
         </div>
       </div>
 
       {/* rating */}
-      <div>
+      <div className="mb-16">
         <div className="flex items-center justify-between mb-3">
           <p className="text-sm font-medium text-muted-foreground">rating</p>
-          {!readOnly && (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-6 w-6 p-0 hover:bg-muted"
-              onClick={() => openSearchDialog("rating")}
-            >
-              <Plus className="h-3 w-3" />
-            </Button>
-          )}
         </div>
         <div className="relative">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="absolute left-0 top-1/2 -translate-y-1/2 z-10 h-8 w-8 p-0 bg-black/50 hover:bg-black/70 text-white rounded-full"
-            onClick={() => scrollLeft(scrollContainerRefs.ratings)}
-          >
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
           <div
             ref={scrollContainerRefs.ratings}
-            className="flex gap-4 overflow-x-auto scrollbar-hide pb-2 px-8"
-            style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+            className="grid grid-cols-4 gap-8 pb-2 items-center justify-items-center"
           >
-            {limitedRatings.length > 0
-              ? limitedRatings.map((rating, idx) => (
-                  <div
-                    key={rating.song.id || idx}
-                    className="relative group flex-shrink-0"
-                  >
-                    <div className="aspect-square w-40 bg-muted rounded-md overflow-hidden">
-                      <Image
-                        src={
-                          getImageUrl(rating.song.image) ||
-                          PLACEHOLDER.ratings[0].cover
-                        }
-                        alt={rating.song.name || "Song"}
-                        width={160}
-                        height={160}
-                        className="w-full h-full object-cover"
-                        onError={(e) => {
-                          const target = e.target as HTMLImageElement;
-                          target.src = PLACEHOLDER.ratings[0].cover;
-                        }}
-                      />
-                      {!readOnly && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="absolute top-1 right-1 h-6 w-6 p-0 bg-black/50 hover:bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity"
-                          onClick={() =>
-                            handleRemoveItem("rating", rating.song.id)
-                          }
-                        >
-                          <X className="h-3 w-3 text-white" />
-                        </Button>
-                      )}
-                      <div className="absolute bottom-1 left-1 right-1 flex justify-center gap-1 p-2 bg-black/50 rounded-md">
-                        {renderInteractiveStars(rating.song.id, rating.rating)}
-                      </div>
+            {limitedRatings.length > 0 ? (
+              limitedRatings.map((rating, idx) => (
+                <div key={rating.song.id || idx} className="relative group">
+                  <div className="aspect-square w-48 bg-muted rounded-md overflow-hidden">
+                    <Image
+                      src={
+                        getImageUrl(rating.song.image) ||
+                        PLACEHOLDER.ratings[0].cover
+                      }
+                      alt={rating.song.name || "Song"}
+                      width={192}
+                      height={192}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.src = PLACEHOLDER.ratings[0].cover;
+                      }}
+                    />
+                    {!readOnly && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="absolute top-2 right-2 h-6 w-6 p-0 bg-black/50 hover:bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity"
+                        onClick={() => openSearchDialog("rating")}
+                      >
+                        <Edit className="h-3 w-3 text-white" />
+                      </Button>
+                    )}
+                    <div className="absolute bottom-1 left-1 right-1 flex justify-center gap-1 p-2 bg-black/50 rounded-md">
+                      {renderInteractiveStars(rating.song.id, rating.rating)}
                     </div>
-                    {/* Removed name and artist display - only poster and rating shown */}
                   </div>
-                ))
-              : // Show placeholder items when empty
-                Array.from({ length: 4 }, (_, idx) => (
-                  <div
-                    key={`placeholder-rating-${idx}`}
-                    className="flex-shrink-0"
+                  {/* Removed name and artist display - only poster and rating shown */}
+                </div>
+              ))
+            ) : (
+              // Show placeholder items when empty
+              <div className="flex flex-col items-center justify-center min-h-[200px] w-full">
+                <div className="aspect-square w-48 bg-transparent rounded-md border-2 border-dashed border-gray-600 flex flex-col items-center justify-center mb-3">
+                  <p className="text-sm text-gray-400 mb-1 text-center">Add</p>
+                  <p className="text-xs text-gray-500 text-center">
+                    No ratings
+                  </p>
+                </div>
+                {!readOnly && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="text-xs"
+                    onClick={() => openSearchDialog("rating")}
                   >
-                    <div className="aspect-square w-40 bg-black/20 rounded-md border border-border/30 flex items-center justify-center">
-                      <div className="text-center">
-                        <Plus className="h-8 w-8 mx-auto mb-2 text-muted-foreground/50" />
-                        <p className="text-xs text-muted-foreground/50">
-                          Add Song
-                        </p>
-                      </div>
-                    </div>
-                    {/* Removed placeholder text - only poster shown */}
-                  </div>
-                ))}
+                    <Plus className="h-3 w-3 mr-1" />
+                    Add Rating
+                  </Button>
+                )}
+              </div>
+            )}
           </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="absolute right-0 top-1/2 -translate-y-1/2 z-10 h-8 w-8 p-0 bg-black/50 hover:bg-black/70 text-white rounded-full"
-            onClick={() => scrollRight(scrollContainerRefs.ratings)}
-          >
-            <ChevronRight className="h-4 w-4" />
-          </Button>
         </div>
       </div>
 

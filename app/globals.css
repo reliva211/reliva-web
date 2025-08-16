@@ -161,3 +161,87 @@
 .scrollable-container::-webkit-scrollbar-button {
   display: none !important;
 }
+
+/* Complete scrollbar elimination for trending series */
+#trending-series-container {
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+
+#trending-series-container::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+#trending-series-container::-webkit-scrollbar-track {
+  display: none !important;
+}
+
+#trending-series-container::-webkit-scrollbar-thumb {
+  display: none !important;
+}
+
+#trending-series-container::-webkit-scrollbar-corner {
+  display: none !important;
+}
+
+#trending-series-container::-webkit-scrollbar-button {
+  display: none !important;
+}
+
+/* Complete scrollbar elimination for trending movies */
+#trending-movies-container {
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+
+#trending-movies-container::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+#trending-movies-container::-webkit-scrollbar-track {
+  display: none !important;
+}
+
+#trending-movies-container::-webkit-scrollbar-thumb {
+  display: none !important;
+}
+
+#trending-movies-container::-webkit-scrollbar-corner {
+  display: none !important;
+}
+
+#trending-movies-container::-webkit-scrollbar-button {
+  display: none !important;
+}
+
+/* Complete scrollbar elimination for trending books */
+#trending-books-container {
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+
+#trending-books-container::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+#trending-books-container::-webkit-scrollbar-track {
+  display: none !important;
+}
+
+#trending-books-container::-webkit-scrollbar-thumb {
+  display: none !important;
+}
+
+#trending-books-container::-webkit-scrollbar-corner {
+  display: none !important;
+}
+
+#trending-books-container::-webkit-scrollbar-button {
+  display: none !important;
+}

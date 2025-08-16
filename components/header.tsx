@@ -101,8 +101,12 @@ export default function Sidebar({ isLandingPage = false }: SidebarProps) {
   const navigationItems = [
     { href: "/", label: "Home", icon: Home },
     { href: "/recommendations", label: "Recommendations", icon: TrendingUp },
-    { href: "/users", label: "Discover People", icon: Users },
-    { href: "/notifications", label: "Notifications", icon: Bell, badge: unreadCount },
+    { href: "/users", label: "Friends", icon: Users },
+    {
+      href: "/notifications",
+      label: "Notifications",
+      icon: Bell,
+    },
     { href: "/profile", label: "Profile", icon: User },
     { href: "/contact", label: "About Us", icon: HelpCircle },
     { href: "#", label: "Logout", icon: LogOut, onClick: handleLogoutClick },
@@ -373,7 +377,6 @@ export default function Sidebar({ isLandingPage = false }: SidebarProps) {
                   {navigationItems.slice(1, 4).map((item) => {
                     const Icon = item.icon;
                     const isActive = pathname === item.href;
-                    const badge = (item as any).badge;
 
                     const linkContent = (
                       <Link
@@ -381,7 +384,7 @@ export default function Sidebar({ isLandingPage = false }: SidebarProps) {
                         href={item.href}
                         onClick={() => setIsMobileOpen(false)}
                         className={cn(
-                          "flex items-center gap-3 rounded-lg text-sm font-medium transition-all duration-200 hover:bg-accent hover:text-accent-foreground relative",
+                          "flex items-center gap-3 rounded-lg text-sm font-medium transition-all duration-200 hover:bg-accent hover:text-accent-foreground",
                           isCollapsed
                             ? "justify-center px-2 py-3"
                             : "px-4 py-3",
@@ -390,19 +393,12 @@ export default function Sidebar({ isLandingPage = false }: SidebarProps) {
                             : "text-muted-foreground"
                         )}
                       >
-                        <div className="relative">
-                          <Icon
-                            className={cn(
-                              "flex-shrink-0 transition-all duration-200",
-                              isCollapsed ? "h-5 w-5" : "h-5 w-5"
-                            )}
-                          />
-                          {badge > 0 && (
-                            <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-red-500 text-white text-xs flex items-center justify-center font-medium">
-                              {badge > 99 ? "99+" : badge}
-                            </span>
+                        <Icon
+                          className={cn(
+                            "flex-shrink-0 transition-all duration-200",
+                            isCollapsed ? "h-5 w-5" : "h-5 w-5"
                           )}
-                        </div>
+                        />
                         {!isCollapsed && (
                           <span className="truncate">{item.label}</span>
                         )}
@@ -444,18 +440,14 @@ export default function Sidebar({ isLandingPage = false }: SidebarProps) {
                             isCollapsed ? "h-5 w-5" : "h-5 w-5"
                           )}
                         />
-                        {!isCollapsed && (
-                          <span className="truncate">Post</span>
-                        )}
+                        {!isCollapsed && <span className="truncate">Post</span>}
                       </Link>
                     );
 
                     return isCollapsed ? (
                       <Tooltip>
                         <TooltipTrigger asChild>{linkContent}</TooltipTrigger>
-                        <TooltipContent side="right">
-                          Post
-                        </TooltipContent>
+                        <TooltipContent side="right">Post</TooltipContent>
                       </Tooltip>
                     ) : (
                       linkContent
