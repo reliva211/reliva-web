@@ -57,6 +57,7 @@ import {
 } from "firebase/firestore";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { useTrendingBooks } from "@/hooks/use-trending-books";
+import DiscoverSection from "@/components/discover-section";
 import Link from "next/link";
 
 interface Book {
@@ -493,10 +494,10 @@ export default function BooksPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black">
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black w-full overflow-x-hidden">
       {/* Header */}
-      <div className="border-b border-gray-800 bg-gradient-to-r from-gray-900/95 to-gray-800/95 backdrop-blur-sm">
-        <div className="container mx-auto px-4 sm:px-6 py-6 sm:py-8">
+      <div className="border-b border-gray-800 bg-gradient-to-r from-gray-900/95 to-gray-800/95 backdrop-blur-sm w-full">
+        <div className="container mx-auto px-4 sm:px-6 py-6 sm:py-8 max-w-full">
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold bg-gradient-to-r from-white via-gray-200 to-gray-400 bg-clip-text text-transparent">
@@ -510,15 +511,15 @@ export default function BooksPage() {
         </div>
       </div>
 
-      <div className="container mx-auto px-4 sm:px-6 py-6 sm:py-8">
+      <div className="container mx-auto px-4 sm:px-6 py-6 sm:py-8 max-w-full overflow-x-hidden">
         {/* Search and Filters */}
-        <div className="mb-8 sm:mb-10">
-          <div className="flex flex-col gap-4 sm:gap-6 mb-6 sm:mb-8">
+        <div className="mb-8 sm:mb-10 w-full">
+          <div className="flex flex-col gap-4 sm:gap-6 mb-6 sm:mb-8 w-full">
             {/* Search */}
-            <div className="flex-1">
+            <div className="flex-1 w-full">
               <form
                 onSubmit={handleSearch}
-                className="flex flex-col sm:flex-row gap-3"
+                className="flex flex-col sm:flex-row gap-3 w-full"
               >
                 <div className="relative flex-1">
                   <Search className="absolute left-3 sm:left-4 top-1/2 transform -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 text-gray-400" />
@@ -526,7 +527,7 @@ export default function BooksPage() {
                     placeholder="Search books..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-10 sm:pl-12 h-11 sm:h-12 bg-gray-800/50 border-gray-700 text-white placeholder:text-gray-400 focus:border-gray-500 focus:ring-gray-500 rounded-xl text-sm sm:text-base"
+                    className="pl-10 sm:pl-12 h-11 sm:h-12 bg-gray-800/50 border-gray-700 text-white placeholder:text-gray-400 focus:border-gray-500 focus:ring-gray-500 rounded-xl text-sm sm:text-base w-full"
                   />
                   {searchQuery && (
                     <button
@@ -550,7 +551,7 @@ export default function BooksPage() {
           </div>
 
           {/* Collections Tabs */}
-          <div className="flex items-center gap-2 sm:gap-3 overflow-x-auto pb-4 scrollbar-hide">
+          <div className="flex items-center gap-2 sm:gap-3 overflow-x-auto pb-4 scrollbar-hide w-full horizontal-scroll-container">
             {/* Trending Tab */}
             <button
               onClick={() => {
@@ -584,9 +585,7 @@ export default function BooksPage() {
                       : "hover:bg-gray-800/50 text-gray-300 hover:text-white"
                   }`}
                 >
-                  <span className="truncate max-w-[80px] sm:max-w-none">
-                    {collection.name}
-                  </span>
+                  <span className="whitespace-nowrap">{collection.name}</span>
                   <Badge
                     variant="secondary"
                     className={`ml-1 text-xs ${
@@ -667,122 +666,22 @@ export default function BooksPage() {
         <div className="space-y-8">
           {/* Discover Section */}
           {showDiscover && searchResults.length === 0 && (
-            <div className="space-y-8">
-              {/* Google Books Trending */}
-              <div>
-                <div className="flex items-center justify-between mb-4 sm:mb-6">
-                  <div>
-                    <h2 className="text-xl sm:text-2xl md:text-3xl font-bold bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
-                      Popular Books
-                    </h2>
-                    <p className="text-gray-400 mt-1 sm:mt-2 text-sm sm:text-base">
-                      Trending books from Google Books
-                    </p>
-                  </div>
-                </div>
-
-                {isLoadingTrending ? (
-                  <div className="flex items-center justify-center py-16">
-                    <div className="text-center space-y-4">
-                      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto" />
-                      <p className="text-gray-400 text-lg">
-                        Loading trending books...
-                      </p>
-                    </div>
-                  </div>
-                ) : trendingBooks.length > 0 ? (
-                  <div className="relative w-full overflow-hidden">
-                    {/* Left Arrow */}
-                    <button
-                      onClick={() => {
-                        const container = document.getElementById(
-                          "trending-books-container"
-                        );
-                        if (container) {
-                          container.scrollBy({
-                            left: -300,
-                            behavior: "smooth",
-                          });
-                        }
-                      }}
-                      className="absolute left-1 sm:left-2 top-1/2 transform -translate-y-1/2 z-30 bg-black/80 hover:bg-black text-white rounded-full p-2 sm:p-4 transition-all duration-300 backdrop-blur-md shadow-2xl border border-white/10 hover:scale-110"
-                    >
-                      <ChevronLeft className="h-4 w-4 sm:h-6 sm:w-6" />
-                    </button>
-
-                    {/* Right Arrow */}
-                    <button
-                      onClick={() => {
-                        const container = document.getElementById(
-                          "trending-books-container"
-                        );
-                        if (container) {
-                          container.scrollBy({ left: 300, behavior: "smooth" });
-                        }
-                      }}
-                      className="absolute right-1 sm:right-2 top-1/2 transform -translate-y-1/2 z-30 bg-black/80 hover:bg-black text-white rounded-full p-2 sm:p-4 transition-all duration-300 backdrop-blur-md shadow-2xl border border-white/10 hover:scale-110"
-                    >
-                      <ChevronRight className="h-4 w-4 sm:h-6 sm:w-6" />
-                    </button>
-
-                    {/* Books Container with Horizontal Scrolling */}
-                    <div
-                      id="trending-books-container"
-                      className="flex gap-3 sm:gap-4 overflow-x-auto px-4 sm:px-8 py-4 sm:py-6 scrollbar-hide"
-                    >
-                      {trendingBooks.map((book) => (
-                        <div
-                          key={book.id}
-                          className="flex-shrink-0 w-[140px] sm:w-[180px] md:w-[220px]"
-                        >
-                          <div className="relative aspect-[2/3] rounded-xl overflow-hidden bg-gradient-to-br from-gray-800 to-gray-900 shadow-2xl">
-                            <Link href={`/books/${book.id}`}>
-                              <Image
-                                src={book.cover || "/placeholder.svg"}
-                                alt={book.title || "Unknown"}
-                                fill
-                                className="object-cover cursor-pointer"
-                              />
-                            </Link>
-                          </div>
-                          <div className="mt-3 sm:mt-4 space-y-1 sm:space-y-2">
-                            <h4 className="font-bold text-xs sm:text-sm truncate text-white">
-                              {book.title || "Unknown Title"}
-                            </h4>
-                            <p className="text-xs text-gray-400 font-medium truncate">
-                              {book.author || "Unknown Author"}
-                            </p>
-                            <p className="text-xs text-gray-400 font-medium">
-                              {book.year || "N/A"}
-                            </p>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                ) : (
-                  <div className="text-center py-20">
-                    <div className="space-y-6">
-                      <BookOpen className="h-20 w-20 text-gray-400 mx-auto" />
-                      <div>
-                        <h3 className="text-xl font-bold mb-2 text-white">
-                          No trending books
-                        </h3>
-                        <p className="text-gray-400 text-lg">
-                          Unable to load trending books at the moment
-                        </p>
-                      </div>
-                      <Button
-                        onClick={() => fetchTrendingBooks(true)}
-                        className="bg-gradient-to-r from-green-600 to-green-500 hover:from-green-500 hover:to-green-400 text-white px-6 py-3 rounded-xl font-semibold transition-all duration-200"
-                      >
-                        Try Again
-                      </Button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
+            <DiscoverSection
+              title="Popular Books"
+              subtitle="Trending books from Google Books"
+              items={trendingBooks.map((book) => ({
+                id: book.id,
+                title: book.title,
+                cover: book.cover,
+                year: book.year,
+                author: book.author,
+                overview: book.overview,
+              }))}
+              isLoading={isLoadingTrending}
+              onRetry={() => fetchTrendingBooks(true)}
+              itemType="book"
+              containerId="trending-books-container"
+            />
           )}
 
           {isSearching ? (
@@ -814,11 +713,11 @@ export default function BooksPage() {
               <div
                 className={
                   viewMode === "grid"
-                    ? "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4 md:gap-6"
+                    ? "grid grid-cols-5 gap-4 w-full max-w-full"
                     : "space-y-3 sm:space-y-4"
                 }
               >
-                {searchResults.map((book) => (
+                {searchResults.slice(0, 20).map((book) => (
                   <BookCard
                     key={book.id}
                     book={book}
@@ -850,11 +749,11 @@ export default function BooksPage() {
               <div
                 className={
                   viewMode === "grid"
-                    ? "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4 md:gap-6"
+                    ? "grid grid-cols-5 gap-4 w-full max-w-full"
                     : "space-y-3 sm:space-y-4"
                 }
               >
-                {filteredAndSortedBooks.map((book) => (
+                {filteredAndSortedBooks.slice(0, 20).map((book) => (
                   <SavedBookCard
                     key={book.id}
                     book={book}

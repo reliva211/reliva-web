@@ -19,10 +19,12 @@ export default function LayoutWrapper({ children }: LayoutWrapperProps) {
   const shouldShowFooter = !user;
 
   return (
-    <div className="flex min-h-screen">
+    <div className="flex min-h-screen w-full overflow-x-hidden">
       <Sidebar isLandingPage={isLandingPage} />
-      <div className="flex-1 flex flex-col">
-        <main className="flex-1 py-4 sm:py-6 lg:py-8">{children}</main>
+      <div className="flex-1 flex flex-col min-w-0 overflow-x-hidden">
+        <main className="flex-1 w-full max-w-full overflow-x-hidden main-content">
+          {children}
+        </main>
         {shouldShowFooter && <Footer />}
       </div>
       <Toaster />

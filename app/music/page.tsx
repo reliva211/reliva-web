@@ -1,7 +1,7 @@
 "use client";
 
 import type React from "react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import {
   Search,
   Star,
@@ -21,7 +21,9 @@ import {
   UserPlus,
   UserMinus,
   ChevronDown,
-  Edit,
+  ChevronLeft,
+  ChevronRight,
+  RefreshCw,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -40,7 +42,8 @@ import { Recommendations } from "@/components/recommendations";
 import { cn } from "@/lib/utils";
 import { useMusicCollections } from "@/hooks/use-music-collections";
 import { useToast } from "@/hooks/use-toast";
-import TrendingSongs from "@/components/trending-songs"
+import { useRouter } from "next/navigation";
+
 interface Song {
   id: string;
   name: string;
@@ -108,6 +111,49 @@ interface AlbumDetailsResponse {
 }
 
 export default function MusicApp() {
+  const router = useRouter();
+
+  // Scroll refs for search results
+  const artistsScrollRef = useRef<HTMLDivElement>(null);
+  const albumsScrollRef = useRef<HTMLDivElement>(null);
+  const songsScrollRef = useRef<HTMLDivElement>(null);
+
+  const scrollArtistsLeft = () => {
+    if (artistsScrollRef.current) {
+      artistsScrollRef.current.scrollBy({ left: -300, behavior: "smooth" });
+    }
+  };
+
+  const scrollArtistsRight = () => {
+    if (artistsScrollRef.current) {
+      artistsScrollRef.current.scrollBy({ left: 300, behavior: "smooth" });
+    }
+  };
+
+  const scrollAlbumsLeft = () => {
+    if (albumsScrollRef.current) {
+      albumsScrollRef.current.scrollBy({ left: -300, behavior: "smooth" });
+    }
+  };
+
+  const scrollAlbumsRight = () => {
+    if (albumsScrollRef.current) {
+      albumsScrollRef.current.scrollBy({ left: 300, behavior: "smooth" });
+    }
+  };
+
+  const scrollSongsLeft = () => {
+    if (songsScrollRef.current) {
+      songsScrollRef.current.scrollBy({ left: -300, behavior: "smooth" });
+    }
+  };
+
+  const scrollSongsRight = () => {
+    if (songsScrollRef.current) {
+      songsScrollRef.current.scrollBy({ left: 300, behavior: "smooth" });
+    }
+  };
+
   const [searchQuery, setSearchQuery] = useState("");
   const [songs, setSongs] = useState<Song[]>([]);
   const [albums, setAlbums] = useState<Album[]>([]);
@@ -131,6 +177,7 @@ export default function MusicApp() {
   >("all");
   const [showSearchDropdown, setShowSearchDropdown] = useState(false);
   const [showSearchTypeDropdown, setShowSearchTypeDropdown] = useState(false);
+  const [showSearchResults, setShowSearchResults] = useState(false);
 
   // Music collections hook
   const {
@@ -160,7 +207,7 @@ export default function MusicApp() {
     }
   }, []);
 
-  // Click outside handler to close search dropdowns
+  // Click outside handler to close search dropdown
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as HTMLElement;
@@ -191,7 +238,7 @@ export default function MusicApp() {
       const response = await fetch(
         `/api/saavn/search?q=${encodeURIComponent(
           searchQuery
-        )}&type=song&page=${page}&limit=20`
+        )}&type=song&page=${page}&limit=10`
       );
       const data = await response.json();
 
@@ -223,7 +270,7 @@ export default function MusicApp() {
         }
 
         setCurrentPage(page);
-        setHasMoreSongs(results.length === 20);
+        setHasMoreSongs(results.length === 10);
       } else {
         if (!append) {
           setSongs([]);
@@ -248,7 +295,7 @@ export default function MusicApp() {
       const response = await fetch(
         `/api/saavn/search?q=${encodeURIComponent(
           searchQuery
-        )}&type=album&page=${page}&limit=20`
+        )}&type=album&page=${page}&limit=10`
       );
       const data = await response.json();
 
@@ -269,7 +316,7 @@ export default function MusicApp() {
         }
 
         setAlbumPage(page);
-        setHasMoreAlbums(results.length === 20);
+        setHasMoreAlbums(results.length === 10);
       } else {
         if (!append) {
           setAlbums([]);
@@ -294,7 +341,7 @@ export default function MusicApp() {
       const response = await fetch(
         `/api/saavn/search?q=${encodeURIComponent(
           searchQuery
-        )}&type=artist&page=${page}&limit=20`
+        )}&type=artist&page=${page}&limit=5`
       );
       const data = await response.json();
 
@@ -315,7 +362,7 @@ export default function MusicApp() {
         }
 
         setArtistPage(page);
-        setHasMoreArtists(results.length === 20);
+        setHasMoreArtists(results.length === 5);
       } else {
         if (!append) {
           setArtists([]);
@@ -352,79 +399,84 @@ export default function MusicApp() {
     }
   };
 
-  // Clear search results when search query changes
+  // Update search query without triggering any search
   const handleSearchQueryChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newQuery = e.target.value;
     setSearchQuery(newQuery);
-
-    // Clear results and hide dropdown when query changes
-    if (newQuery.trim() === "") {
-      setSongs([]);
-      setAlbums([]);
-      setArtists([]);
-      setShowSearchDropdown(false);
-    } else {
-      // Hide dropdown when typing (will show only after Enter)
-      setShowSearchDropdown(false);
-    }
+    // No active rendering while typing - only on Enter or button click
   };
 
-  const rateSong = (songId: string, rating: number) => {
-    setRatings((prev) => ({
-      ...prev,
-      [songId]: rating,
-    }));
+  const clearSearch = () => {
+    setSearchQuery("");
+    setSongs([]);
+    setAlbums([]);
+    setArtists([]);
+    setShowSearchDropdown(false);
+    setShowSearchResults(false);
+  };
 
-    setSongs((prevSongs) =>
-      [...prevSongs].sort((a, b) => {
-        const ratingA = songId === a.id ? rating : ratings[a.id] || 0;
-        const ratingB = songId === b.id ? rating : ratings[b.id] || 0;
+  const rateSong = useCallback(
+    (songId: string, rating: number) => {
+      setRatings((prev) => ({
+        ...prev,
+        [songId]: rating,
+      }));
 
-        if (ratingA !== ratingB) {
-          return ratingB - ratingA;
+      setSongs((prevSongs) =>
+        [...prevSongs].sort((a, b) => {
+          const ratingA = songId === a.id ? rating : ratings[a.id] || 0;
+          const ratingB = songId === b.id ? rating : ratings[b.id] || 0;
+
+          if (ratingA !== ratingB) {
+            return ratingB - ratingA;
+          }
+
+          return (b.playCount || 0) - (a.playCount || 0);
+        })
+      );
+    },
+    [ratings]
+  );
+
+  const handleLikeSong = useCallback(
+    async (song: Song) => {
+      try {
+        if (isSongLiked(song.id)) {
+          await unlikeSong(song.id);
+          toast({
+            title: "Song removed from liked songs",
+            description: `${song.name} has been removed from your liked songs.`,
+          });
+        } else {
+          // Ensure all fields have proper values
+          const musicSong = {
+            id: song.id,
+            name: song.name || "Unknown Song",
+            artists: song.artists || { primary: [] },
+            image: song.image || [],
+            album: song.album || { name: "Unknown Album" },
+            duration: song.duration || 0,
+            year: song.year || "Unknown",
+            language: song.language || "Unknown",
+            playCount: song.playCount || 0,
+            downloadUrl: song.downloadUrl || [],
+          };
+          await likeSong(musicSong);
+          toast({
+            title: "Song added to liked songs",
+            description: `${song.name} has been added to your liked songs.`,
+          });
         }
-
-        return (b.playCount || 0) - (a.playCount || 0);
-      })
-    );
-  };
-
-  const handleLikeSong = async (song: Song) => {
-    try {
-      if (isSongLiked(song.id)) {
-        await unlikeSong(song.id);
+      } catch (error) {
         toast({
-          title: "Song removed from liked songs",
-          description: `${song.name} has been removed from your liked songs.`,
-        });
-      } else {
-        // Ensure all fields have proper values
-        const musicSong = {
-          id: song.id,
-          name: song.name || "Unknown Song",
-          artists: song.artists || { primary: [] },
-          image: song.image || [],
-          album: song.album || { name: "Unknown Album" },
-          duration: song.duration || 0,
-          year: song.year || "Unknown",
-          language: song.language || "Unknown",
-          playCount: song.playCount || 0,
-          downloadUrl: song.downloadUrl || [],
-        };
-        await likeSong(musicSong);
-        toast({
-          title: "Song added to liked songs",
-          description: `${song.name} has been added to your liked songs.`,
+          title: "Error",
+          description: "Failed to update liked songs. Please try again.",
+          variant: "destructive",
         });
       }
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to update liked songs. Please try again.",
-        variant: "destructive",
-      });
-    }
-  };
+    },
+    [isSongLiked, unlikeSong, likeSong, toast]
+  );
 
   const handleFollowArtist = async (artist: Artist) => {
     try {
@@ -550,12 +602,50 @@ export default function MusicApp() {
     );
   };
 
-  const handleSearch = () => {
+  // Memoize the myList Set to prevent recreation on every render
+  const myList = useMemo(
+    () => new Set(likedSongs.map((s) => s.id)),
+    [likedSongs]
+  );
+
+  // Memoize the onToggleMyList callback
+  const onToggleMyList = useCallback(
+    (songId: string) => {
+      const song = likedSongs.find((s) => s.id === songId);
+      if (song) {
+        handleLikeSong(song);
+      }
+    },
+    [likedSongs, handleLikeSong]
+  );
+
+  // Memoize Recommendations props to prevent unnecessary re-renders
+  const recommendationsProps = useMemo(
+    () => ({
+      currentSong,
+      ratings,
+      myList,
+      onPlaySong: () => {},
+      onToggleMyList,
+      onRateSong: rateSong,
+    }),
+    [currentSong, ratings, myList, onToggleMyList, rateSong]
+  );
+
+  const handleSearch = (e?: React.FormEvent) => {
+    if (e) {
+      e.preventDefault();
+    }
+
     if (!searchQuery.trim()) return;
 
     setCurrentPage(1);
     setAlbumPage(1);
     setArtistPage(1);
+    setSongs([]);
+    setAlbums([]);
+    setArtists([]);
+    setShowSearchResults(true); // Show full search results
 
     // Search based on selected type
     if (searchType === "all" || searchType === "song") {
@@ -567,7 +657,6 @@ export default function MusicApp() {
     if (searchType === "all" || searchType === "artist") {
       searchArtists(1, false);
     }
-    setShowSearchDropdown(true);
   };
 
   const loadMoreSongs = () => {
@@ -590,6 +679,11 @@ export default function MusicApp() {
 
   const handleTabChange = (value: string) => {
     setActiveTab(value);
+    setShowSearchResults(false);
+  };
+
+  const handleSongChange = (song: Song) => {
+    setCurrentSong(song);
   };
 
   const getImageUrl = (images: any[]) => {
@@ -599,21 +693,6 @@ export default function MusicApp() {
       images?.[0]?.url ||
       "/placeholder.svg"
     );
-  };
-
-  const getSearchTypeLabel = () => {
-    switch (searchType) {
-      case "all":
-        return "All";
-      case "song":
-        return "Songs";
-      case "album":
-        return "Albums";
-      case "artist":
-        return "Artists";
-      default:
-        return "All";
-    }
   };
 
   const getSearchTypeIcon = () => {
@@ -629,11 +708,24 @@ export default function MusicApp() {
     }
   };
 
+  const getSearchTypeLabel = () => {
+    switch (searchType) {
+      case "song":
+        return "Songs";
+      case "album":
+        return "Albums";
+      case "artist":
+        return "Artists";
+      default:
+        return "All";
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black">
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black w-full overflow-x-hidden">
       {/* Header */}
-      <div className="border-b border-gray-800 bg-gradient-to-r from-gray-900/95 to-gray-800/95 backdrop-blur-sm">
-        <div className="container mx-auto px-4 sm:px-6 py-6 sm:py-8 max-w-7xl">
+      <div className="border-b border-gray-800 bg-gradient-to-r from-gray-900/95 to-gray-800/95 backdrop-blur-sm w-full">
+        <div className="container mx-auto px-4 sm:px-6 py-6 sm:py-8 max-w-full">
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold bg-gradient-to-r from-white via-gray-200 to-gray-400 bg-clip-text text-transparent">
@@ -647,15 +739,15 @@ export default function MusicApp() {
         </div>
       </div>
 
-      <div className="container mx-auto px-4 sm:px-6 py-6 sm:py-8 max-w-7xl">
+      <div className="container mx-auto px-4 sm:px-6 py-6 sm:py-8 max-w-full overflow-x-hidden">
         {/* Search and Filters */}
-        <div className="mb-8 sm:mb-10">
-          <div className="flex flex-col gap-4 sm:gap-6 mb-6 sm:mb-8">
+        <div className="mb-8 sm:mb-10 w-full">
+          <div className="flex flex-col gap-4 sm:gap-6 mb-6 sm:mb-8 w-full">
             {/* Search */}
-            <div className="flex-1">
+            <div className="flex-1 w-full search-container">
               <form
                 onSubmit={handleSearch}
-                className="flex flex-col sm:flex-row gap-3"
+                className="flex flex-col sm:flex-row gap-3 w-full"
               >
                 <div className="relative flex-1">
                   <Search className="absolute left-3 sm:left-4 top-1/2 transform -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 text-gray-400" />
@@ -665,18 +757,12 @@ export default function MusicApp() {
                     value={searchQuery}
                     onChange={handleSearchQueryChange}
                     onKeyPress={handleKeyPress}
-                    className="pl-10 sm:pl-12 h-11 sm:h-12 bg-gray-800/50 border-gray-700 text-white placeholder:text-gray-400 focus:border-gray-500 focus:ring-gray-500 rounded-xl text-sm sm:text-base"
+                    className="pl-10 sm:pl-12 h-11 sm:h-12 bg-gray-800/50 border-gray-700 text-white placeholder:text-gray-400 focus:border-gray-500 focus:ring-gray-500 rounded-xl text-sm sm:text-base w-full"
                   />
                   {searchQuery && (
                     <button
                       type="button"
-                      onClick={() => {
-                        setSearchQuery("");
-                        setSongs([]);
-                        setAlbums([]);
-                        setArtists([]);
-                        setShowSearchDropdown(false);
-                      }}
+                      onClick={clearSearch}
                       className="absolute right-3 sm:right-4 top-1/2 transform -translate-y-1/2"
                     >
                       <X className="h-4 w-4 sm:h-5 sm:w-5 text-gray-400 hover:text-white transition-colors" />
@@ -779,240 +865,8 @@ export default function MusicApp() {
             </div>
           </div>
 
-          {/* Search Results Dropdown */}
-          {showSearchDropdown &&
-            searchQuery.trim() &&
-            (songs.length > 0 || albums.length > 0 || artists.length > 0) && (
-              <div className="relative mt-2 bg-gray-800 border border-gray-700 rounded-xl shadow-lg max-h-96 overflow-y-auto">
-                <div className="p-4">
-                  {/* Artists Results */}
-                  {artists.length > 0 && (
-                    <div className="mb-4">
-                      <h3 className="text-sm font-semibold text-white mb-2 flex items-center gap-2">
-                        <Users className="w-4 h-4" />
-                        Artists ({artists.length})
-                      </h3>
-                      <div className="space-y-2">
-                        {artists.slice(0, 3).map((artist) => (
-                          <div
-                            key={artist.id}
-                            className="flex items-center gap-3 p-2 hover:bg-gray-700 transition-colors cursor-pointer group"
-                          >
-                            <img
-                              src={getImageUrl(artist.image)}
-                              alt={artist.name}
-                              className="w-10 h-10 rounded-full object-cover"
-                            />
-                            <div className="flex-1 min-w-0">
-                              <h4 className="font-medium text-white truncate text-sm">
-                                {artist.name}
-                              </h4>
-                              <p className="text-xs text-gray-400 capitalize">
-                                {artist.type || "Artist"}
-                              </p>
-                            </div>
-                            <Button
-                              size="sm"
-                              className={`${
-                                isArtistFollowed(artist.id)
-                                  ? "bg-red-600 hover:bg-red-700 text-white"
-                                  : "bg-gray-700 text-white hover:bg-gray-600 border border-gray-600"
-                              } text-xs px-2 py-1`}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleFollowArtist(artist);
-                              }}
-                            >
-                              {isArtistFollowed(artist.id) ? (
-                                <>
-                                  <UserMinus className="w-3 h-3 mr-1" />
-                                  Unfollow
-                                </>
-                              ) : (
-                                <>
-                                  <UserPlus className="w-3 h-3 mr-1" />
-                                  Follow
-                                </>
-                              )}
-                            </Button>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Albums Results */}
-                  {albums.length > 0 && (
-                    <div className="mb-4">
-                      <h3 className="text-sm font-semibold text-white mb-2 flex items-center gap-2">
-                        <Disc className="w-4 h-4" />
-                        Albums ({albums.length})
-                      </h3>
-                      <div className="space-y-2">
-                        {albums.slice(0, 3).map((album) => (
-                          <div
-                            key={album.id}
-                            className="flex items-center gap-3 p-2 hover:bg-gray-700 transition-colors cursor-pointer group"
-                            onClick={() => fetchAlbumDetails(album.id)}
-                          >
-                            <img
-                              src={getImageUrl(album.image)}
-                              alt={album.name}
-                              className="w-10 h-10 rounded-lg object-cover"
-                            />
-                            <div className="flex-1 min-w-0">
-                              <h4 className="font-medium text-white truncate text-sm">
-                                {album.name}
-                              </h4>
-                              <p className="text-xs text-gray-400 truncate">
-                                {album.artists?.primary
-                                  ?.map((artist) => artist.name)
-                                  .join(", ") || "Unknown Artist"}
-                              </p>
-                            </div>
-                            <div className="flex gap-1">
-                              <Button
-                                size="sm"
-                                className="bg-gray-700 text-white hover:bg-gray-600 border border-gray-600 text-xs px-2 py-1"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  playAlbum(album);
-                                }}
-                              >
-                                <Play className="w-3 h-3" />
-                              </Button>
-                              <Button
-                                size="sm"
-                                className={`${
-                                  isAlbumLiked(album.id)
-                                    ? "bg-red-600 hover:bg-red-700 text-white"
-                                    : "bg-gray-700 text-white hover:bg-gray-600 border border-gray-600"
-                                } text-xs px-2 py-1`}
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleLikeAlbum(album);
-                                }}
-                              >
-                                <Heart
-                                  className={`w-3 h-3 ${
-                                    isAlbumLiked(album.id) ? "fill-current" : ""
-                                  }`}
-                                />
-                              </Button>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Songs Results */}
-                  {songs.length > 0 && (
-                    <div>
-                      <h3 className="text-sm font-semibold text-white mb-2 flex items-center gap-2">
-                        <Music className="w-4 h-4" />
-                        Songs ({songs.length})
-                      </h3>
-                      <div className="space-y-2">
-                        {songs.slice(0, 5).map((song) => (
-                          <div
-                            key={song.id}
-                            className="flex items-center gap-3 p-2 hover:bg-gray-700 transition-colors cursor-pointer group"
-                            onClick={() => openSongDetails(song)}
-                          >
-                            <img
-                              src={getImageUrl(song.image)}
-                              alt={song.name}
-                              className="w-10 h-10 rounded-lg object-cover"
-                            />
-                            <div className="flex-1 min-w-0">
-                              <h4 className="font-medium text-white truncate text-sm">
-                                {song.name}
-                              </h4>
-                              <p className="text-xs text-gray-400 truncate">
-                                {song.artists?.primary
-                                  ?.map((artist) => artist.name)
-                                  .join(", ") || "Unknown Artist"}
-                              </p>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <span className="text-xs text-gray-400">
-                                {formatDuration(song.duration)}
-                              </span>
-                              <Button
-                                size="sm"
-                                className="bg-gray-700 text-white hover:bg-gray-600 border border-gray-600 text-xs px-2 py-1"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  playSong(song);
-                                }}
-                              >
-                                <Play className="w-3 h-3" />
-                              </Button>
-                              <Button
-                                size="sm"
-                                className={`${
-                                  isSongLiked(song.id)
-                                    ? "text-red-400 hover:text-red-300"
-                                    : "text-gray-400 hover:text-gray-300"
-                                } text-xs px-2 py-1`}
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleLikeSong(song);
-                                }}
-                              >
-                                <Heart
-                                  className={`w-3 h-3 ${
-                                    isSongLiked(song.id)
-                                      ? "fill-red-400 text-red-400"
-                                      : ""
-                                  }`}
-                                />
-                              </Button>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-
-          {/* No Results */}
-          {showSearchDropdown &&
-            searchQuery.trim() &&
-            !loading &&
-            songs.length === 0 &&
-            albums.length === 0 &&
-            artists.length === 0 && (
-              <div className="relative mt-2 bg-gray-800 border border-gray-700 rounded-xl shadow-lg p-4">
-                <div className="text-center py-4">
-                  <Music className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                  <p className="text-sm text-gray-400">
-                    No results found for "{searchQuery}"
-                  </p>
-                </div>
-              </div>
-            )}
-
-          {/* Loading State */}
-          {showSearchDropdown && loading && searchQuery.trim() && (
-            <div className="relative mt-2 bg-gray-800 border border-gray-700 rounded-xl shadow-lg p-4">
-              <div className="text-center py-4">
-                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500 mx-auto mb-2"></div>
-                <p className="text-sm text-gray-400">Searching...</p>
-              </div>
-            </div>
-          )}
-
-          {/* Spacing between search results and navigation tabs */}
-          {showSearchDropdown && searchQuery.trim() && (
-            <div className="mt-8"></div>
-          )}
-
           {/* Navigation Tabs */}
-          <div className="flex items-center gap-2 sm:gap-3 overflow-x-auto pb-4 scrollbar-hide">
+          <div className="flex items-center gap-2 sm:gap-3 overflow-x-auto pb-4 scrollbar-hide w-full horizontal-scroll-container">
             <button
               onClick={() => handleTabChange("discover")}
               className={cn(
@@ -1108,43 +962,296 @@ export default function MusicApp() {
         </div>
 
         {/* Content Sections */}
-        <div className="space-y-8">
-          {/* Discover Tab - Trending Songs and Recommendations */}
-          {activeTab === "discover" && (
-            <div className="space-y-8">
-              <div className="bg-gray-800/50 rounded-2xl p-6 shadow-lg border border-gray-700">
-                <TrendingSongs
-                  onPlaySong={playSong}
-                  onToggleLike={(songId) => {
-                    handleLikeSong(songId)
-                  }}
-                  likedSongs={new Set(likedSongs.map((s) => s.id))}
-                />
+        <div className="space-y-8 w-full">
+          {/* Search Results */}
+          {showSearchResults && (
+            <div>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 sm:gap-0 mb-6">
+                <div>
+                  <h2 className="text-xl sm:text-2xl md:text-3xl font-bold bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
+                    Search Results
+                  </h2>
+                  <p className="text-gray-400 mt-1 sm:mt-2 text-sm sm:text-base">
+                    Music matching your search
+                  </p>
+                </div>
+                <Button
+                  variant="outline"
+                  onClick={clearSearch}
+                  className="border-gray-600 hover:bg-gray-800 hover:border-gray-500 transition-all duration-200 text-sm sm:text-base px-4 sm:px-6 py-2 sm:py-3"
+                >
+                  Clear Search
+                </Button>
               </div>
 
-              {/* Existing recommendations section */}
-              <div className="bg-gray-800/50 rounded-2xl p-6 shadow-lg border border-gray-700">
-                <h2 className="text-2xl font-bold text-white mb-6">Discover New Music</h2>
-                <Recommendations
-                  currentSong={currentSong}
-                  ratings={ratings}
-                  myList={new Set(likedSongs.map((s) => s.id))}
-                  onPlaySong={playSong}
-                  onToggleMyList={(songId) => {
-                    const song = likedSongs.find((s) => s.id === songId)
-                    if (song) {
-                      handleLikeSong(song)
-                    }
-                  }}
-                  onRateSong={rateSong}
-                />
+              {loading ? (
+                <div className="flex items-center justify-center py-16">
+                  <div className="text-center space-y-4">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto" />
+                    <p className="text-gray-400 text-lg">Searching music...</p>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-8">
+                  {/* Artists Results */}
+                  {artists.length > 0 && (
+                    <div>
+                      <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                        <Users className="w-5 h-5" />
+                        Artists
+                      </h3>
+                      <div className="relative">
+                        {/* Left Arrow */}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={scrollArtistsLeft}
+                          className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-gray-800/80 hover:bg-gray-700/80 text-white border border-gray-600 rounded-full w-10 h-10 p-0 shadow-lg"
+                        >
+                          <ChevronLeft className="w-5 h-5" />
+                        </Button>
+
+                        {/* Right Arrow */}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={scrollArtistsRight}
+                          className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-gray-800/80 hover:bg-gray-700/80 text-white border border-gray-600 rounded-full w-10 h-10 p-0 shadow-lg"
+                        >
+                          <ChevronRight className="w-5 h-5" />
+                        </Button>
+
+                        <div
+                          ref={artistsScrollRef}
+                          className="flex gap-4 overflow-x-auto scrollbar-hide pb-4 px-12 horizontal-scroll-container"
+                        >
+                          {artists.map((artist) => (
+                            <div
+                              key={artist.id}
+                              className="flex-shrink-0 w-[200px] sm:w-[220px] md:w-[240px] text-center"
+                            >
+                              <div
+                                className="cursor-pointer group"
+                                onClick={() =>
+                                  router.push(`/music/artist/${artist.id}`)
+                                }
+                              >
+                                <div className="relative mb-4">
+                                  <img
+                                    src={getImageUrl(artist.image)}
+                                    alt={artist.name}
+                                    className="w-full aspect-square rounded-full object-cover mx-auto"
+                                  />
+                                </div>
+
+                                <div className="space-y-2">
+                                  <h4
+                                    className="font-semibold text-white truncate"
+                                    title={artist.name}
+                                  >
+                                    {artist.name}
+                                  </h4>
+                                  <p className="text-sm text-gray-400 capitalize">
+                                    {artist.type || "Artist"}
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Albums Results */}
+                  {albums.length > 0 && (
+                    <div>
+                      <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                        <Disc className="w-5 h-5" />
+                        Albums
+                      </h3>
+                      <div className="relative">
+                        {/* Left Arrow */}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={scrollAlbumsLeft}
+                          className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-gray-800/80 hover:bg-gray-700/80 text-white border border-gray-600 rounded-full w-10 h-10 p-0 shadow-lg"
+                        >
+                          <ChevronLeft className="w-5 h-5" />
+                        </Button>
+
+                        {/* Right Arrow */}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={scrollAlbumsRight}
+                          className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-gray-800/80 hover:bg-gray-700/80 text-white border border-gray-600 rounded-full w-10 h-10 p-0 shadow-lg"
+                        >
+                          <ChevronRight className="w-5 h-5" />
+                        </Button>
+
+                        <div
+                          ref={albumsScrollRef}
+                          className="flex gap-4 overflow-x-auto scrollbar-hide pb-4 px-12 horizontal-scroll-container"
+                        >
+                          {albums.map((album) => (
+                            <div
+                              key={album.id}
+                              className="flex-shrink-0 w-[200px] sm:w-[220px] md:w-[240px]"
+                            >
+                              <div
+                                className="cursor-pointer group"
+                                onClick={() =>
+                                  router.push(`/music/album/${album.id}`)
+                                }
+                              >
+                                <div className="relative mb-4">
+                                  <img
+                                    src={getImageUrl(album.image)}
+                                    alt={album.name}
+                                    className="w-full aspect-square rounded-lg object-cover"
+                                  />
+                                </div>
+
+                                <div className="space-y-2">
+                                  <h4
+                                    className="font-semibold text-white truncate"
+                                    title={album.name}
+                                  >
+                                    {album.name}
+                                  </h4>
+                                  <p className="text-sm text-gray-400 truncate">
+                                    {album.artists?.primary
+                                      ?.map((artist) => artist.name)
+                                      .join(", ") || "Unknown Artist"}
+                                  </p>
+                                  <p className="text-xs text-gray-500">
+                                    {album.year}
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Songs Results */}
+                  {songs.length > 0 && (
+                    <div>
+                      <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                        <Music className="w-5 h-5" />
+                        Songs
+                      </h3>
+                      <div className="relative">
+                        {/* Left Arrow */}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={scrollSongsLeft}
+                          className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-gray-800/80 hover:bg-gray-700/80 text-white border border-gray-600 rounded-full w-10 h-10 p-0 shadow-lg"
+                        >
+                          <ChevronLeft className="w-5 h-5" />
+                        </Button>
+
+                        {/* Right Arrow */}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={scrollSongsRight}
+                          className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-gray-800/80 hover:bg-gray-700/80 text-white border border-gray-600 rounded-full w-10 h-10 p-0 shadow-lg"
+                        >
+                          <ChevronRight className="w-5 h-5" />
+                        </Button>
+
+                        <div
+                          ref={songsScrollRef}
+                          className="flex gap-4 overflow-x-auto scrollbar-hide pb-4 px-12 horizontal-scroll-container"
+                        >
+                          {songs.map((song) => (
+                            <div
+                              key={song.id}
+                              className="flex-shrink-0 w-[200px] sm:w-[220px] md:w-[240px]"
+                            >
+                              <div className="group">
+                                <div className="relative mb-4">
+                                  <img
+                                    src={getImageUrl(song.image)}
+                                    alt={song.name}
+                                    className="w-full aspect-square rounded-lg object-cover"
+                                  />
+                                </div>
+
+                                <div className="space-y-2">
+                                  <h4
+                                    className="font-semibold text-white truncate"
+                                    title={song.name}
+                                  >
+                                    {song.name}
+                                  </h4>
+                                  <p className="text-sm text-gray-400 truncate">
+                                    {song.artists?.primary
+                                      ?.map((artist) => artist.name)
+                                      .join(", ") || "Unknown Artist"}
+                                  </p>
+                                  {song.album?.name && (
+                                    <p className="text-xs text-gray-500 truncate">
+                                      {song.album.name}
+                                    </p>
+                                  )}
+
+                                  <div className="flex items-center justify-between">
+                                    <span className="text-xs text-gray-400">
+                                      {formatDuration(song.duration)}
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* No Results */}
+                  {!loading &&
+                    songs.length === 0 &&
+                    albums.length === 0 &&
+                    artists.length === 0 && (
+                      <div className="text-center py-12">
+                        <Music className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                        <h3 className="text-xl font-semibold text-white mb-2">
+                          No results found
+                        </h3>
+                        <p className="text-gray-400 mb-4">
+                          Try searching with different keywords
+                        </p>
+                      </div>
+                    )}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Discover Tab - Recommendations */}
+          {activeTab === "discover" && !showSearchResults && (
+            <div className="space-y-8 w-full">
+              {/* Recommendations section */}
+              <div className="bg-gray-800/50 rounded-2xl p-6 shadow-lg border border-gray-700 w-full">
+                <h2 className="text-2xl font-bold text-white mb-6">
+                  Discover New Music
+                </h2>
+                <Recommendations {...recommendationsProps} />
               </div>
             </div>
           )}
 
           {/* Artists Tab - Show Followed Artists */}
-          {activeTab === "artists" && (
-            <div className="space-y-6">
+          {activeTab === "artists" && !showSearchResults && (
+            <div className="space-y-6 w-full">
               <div className="flex items-center justify-between">
                 <h2 className="text-2xl font-bold text-white">
                   Followed Artists
@@ -1183,21 +1290,8 @@ export default function MusicApp() {
                         <img
                           src={getImageUrl(artist.image)}
                           alt={artist.name}
-                          className="w-full aspect-square rounded-full object-cover"
+                          className="w-[70%] aspect-square rounded-full object-cover mx-auto"
                         />
-                        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-full flex items-center justify-center">
-                          <Button
-                            size="sm"
-                            className="bg-red-600 hover:bg-red-700 text-white"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleFollowArtist(artist);
-                            }}
-                          >
-                            <UserMinus className="w-4 h-4 mr-2" />
-                            Unfollow
-                          </Button>
-                        </div>
                       </div>
                       <div className="mt-4">
                         <h3
@@ -1218,8 +1312,8 @@ export default function MusicApp() {
           )}
 
           {/* Albums Tab - Show Liked Albums */}
-          {activeTab === "albums" && (
-            <div className="space-y-6">
+          {activeTab === "albums" && !showSearchResults && (
+            <div className="space-y-6 w-full">
               <div className="flex items-center justify-between">
                 <h2 className="text-2xl font-bold text-white">Liked Albums</h2>
                 {likedAlbums.length > 0 && (
@@ -1251,43 +1345,15 @@ export default function MusicApp() {
               ) : (
                 <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                   {likedAlbums.map((album) => (
-                    <div
-                      key={album.id}
-                      className="cursor-pointer group"
-                      onClick={() => fetchAlbumDetails(album.id)}
-                    >
+                    <div key={album.id} className="cursor-pointer group">
                       <div className="relative">
                         <img
                           src={getImageUrl(album.image)}
                           alt={album.name}
-                          className="w-full aspect-square rounded-xl object-cover"
+                          className="w-full aspect-square rounded-lg object-cover"
                         />
-                        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-xl flex items-center justify-center gap-2">
-                          <Button
-                            size="sm"
-                            className="bg-white text-black hover:bg-gray-100"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              playAlbum(album);
-                            }}
-                          >
-                            <Play className="w-4 h-4 mr-2" />
-                            Play
-                          </Button>
-                          <Button
-                            size="sm"
-                            className="bg-red-600 hover:bg-red-700 text-white"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleLikeAlbum(album);
-                            }}
-                          >
-                            <Heart className="w-4 h-4 mr-2" />
-                            Unlike
-                          </Button>
-                        </div>
                       </div>
-                      <div className="mt-4 text-center">
+                      <div className="mt-4">
                         <h3
                           className="font-semibold text-white truncate"
                           title={album.name}
@@ -1299,9 +1365,7 @@ export default function MusicApp() {
                             ?.map((artist) => artist.name)
                             .join(", ") || "Unknown Artist"}
                         </p>
-                        <div className="mt-2 text-xs text-gray-400">
-                          <span>{album.year}</span>
-                        </div>
+                        <p className="text-xs text-gray-500">{album.year}</p>
                       </div>
                     </div>
                   ))}
@@ -1311,8 +1375,8 @@ export default function MusicApp() {
           )}
 
           {/* Songs Tab - Show Liked Songs */}
-          {activeTab === "songs" && (
-            <div className="space-y-6">
+          {activeTab === "songs" && !showSearchResults && (
+            <div className="space-y-6 w-full">
               <div className="flex items-center justify-between">
                 <h2 className="text-2xl font-bold text-white">Liked Songs</h2>
                 {likedSongs.length > 0 && (
@@ -1357,26 +1421,11 @@ export default function MusicApp() {
                               alt={song.name}
                               className="w-16 h-16 rounded-lg object-cover"
                             />
-                            <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center">
-                              <Button
-                                size="sm"
-                                className="bg-white text-black hover:bg-gray-100"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  playSong(song);
-                                }}
-                              >
-                                <Play className="w-4 h-4" />
-                              </Button>
-                            </div>
                           </div>
                           <div className="flex-1 min-w-0">
-                            <h3
-                              className="font-semibold text-white truncate"
-                              title={song.name}
-                            >
+                            <h4 className="font-semibold text-white truncate">
                               {song.name}
-                            </h3>
+                            </h4>
                             <p className="text-sm text-gray-400 truncate">
                               {song.artists?.primary
                                 ?.map((artist) => artist.name)
@@ -1403,7 +1452,13 @@ export default function MusicApp() {
                                 handleLikeSong(song);
                               }}
                             >
-                              <Heart className="w-5 h-5 fill-red-400 text-red-400" />
+                              <Heart
+                                className={`w-5 h-5 ${
+                                  isSongLiked(song.id)
+                                    ? "fill-red-400 text-red-400"
+                                    : ""
+                                }`}
+                              />
                             </Button>
                           </div>
                         </div>
@@ -1416,275 +1471,161 @@ export default function MusicApp() {
           )}
 
           {/* Recommended Tab */}
-          {activeTab === "recommended" && (
-            <div className="space-y-6">
-              <div className="flex items-center justify-between">
-                <h2 className="text-2xl font-bold text-white">
+          {activeTab === "recommended" && !showSearchResults && (
+            <div className="space-y-8 w-full">
+              <div className="bg-gray-800/50 rounded-2xl p-6 shadow-lg border border-gray-700 w-full">
+                <h2 className="text-2xl font-bold text-white mb-6">
                   Recommended for You
                 </h2>
-                <TrendingUp className="w-6 h-6 text-blue-500" />
-              </div>
-
-              <div className="bg-gray-800/50 rounded-2xl p-6 shadow-lg border border-gray-700">
-                <Recommendations
-                  currentSong={currentSong}
-                  ratings={ratings}
-                  myList={new Set(likedSongs.map((s) => s.id))}
-                  onPlaySong={playSong}
-                  onToggleMyList={(songId) => {
-                    const song = likedSongs.find((s) => s.id === songId);
-                    if (song) {
-                      handleLikeSong(song);
-                    }
-                  }}
-                  onRateSong={rateSong}
-                />
+                <div className="text-center py-12">
+                  <Music className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                  <h3 className="text-xl font-semibold text-white mb-2">
+                    No Recommendations Available
+                  </h3>
+                  <p className="text-gray-400">
+                    We're working on personalized recommendations for you.
+                  </p>
+                </div>
               </div>
             </div>
           )}
         </div>
       </div>
 
-      {/* Song Details Modal */}
+      {/* Song Details Dialog */}
       <Dialog open={showSongDetails} onOpenChange={setShowSongDetails}>
-        <DialogContent className="bg-gray-800 border border-gray-700 text-white max-w-2xl">
+        <DialogContent className="bg-gray-800 border-gray-700 max-w-2xl">
           <DialogHeader>
-            <div className="flex items-center justify-between">
-              <DialogTitle className="text-xl font-bold">
-                {selectedSong?.name}
-              </DialogTitle>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setShowSongDetails(false)}
-                className="text-gray-400 hover:text-gray-300"
-              >
-                <X className="w-4 h-4" />
-              </Button>
-            </div>
+            <DialogTitle className="text-white">Song Details</DialogTitle>
           </DialogHeader>
-
           {selectedSong && (
             <div className="space-y-6">
-              <div className="flex gap-6">
+              <div className="flex items-center gap-6">
                 <img
                   src={getImageUrl(selectedSong.image)}
                   alt={selectedSong.name}
-                  className="w-48 h-48 rounded-xl object-cover"
+                  className="w-32 h-32 rounded-lg object-cover"
                 />
-                <div className="flex-1 space-y-4">
-                  <div>
-                    <h3 className="text-2xl font-bold mb-2">
-                      {selectedSong.name}
-                    </h3>
-                    <p className="text-lg text-gray-300 mb-1">
-                      {selectedSong.artists?.primary
-                        ?.map((artist) => artist.name)
-                        .join(", ")}
-                    </p>
-                    <p className="text-gray-400">{selectedSong.album?.name}</p>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div className="flex items-center gap-2">
-                      <Clock className="w-4 h-4 text-gray-400" />
-                      <span>
-                        Duration: {formatDuration(selectedSong.duration)}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Calendar className="w-4 h-4 text-gray-400" />
-                      <span>Year: {selectedSong.year}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Headphones className="w-4 h-4 text-gray-400" />
-                      <span>
-                        Plays:{" "}
-                        {selectedSong.playCount?.toLocaleString() || "N/A"}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Music className="w-4 h-4 text-gray-400" />
-                      <span>Language: {selectedSong.language}</span>
-                    </div>
+                <div className="flex-1">
+                  <h3 className="text-2xl font-bold text-white mb-2">
+                    {selectedSong.name}
+                  </h3>
+                  <p className="text-lg text-gray-300 mb-1">
+                    {selectedSong.artists?.primary
+                      ?.map((artist) => artist.name)
+                      .join(", ") || "Unknown Artist"}
+                  </p>
+                  <p className="text-gray-400 mb-2">
+                    {selectedSong.album?.name}
+                  </p>
+                  <div className="flex items-center gap-4 text-sm text-gray-400">
+                    <span>{selectedSong.year}</span>
+                    <span>•</span>
+                    <span>{selectedSong.language}</span>
+                    <span>•</span>
+                    <span>{formatDuration(selectedSong.duration)}</span>
                   </div>
                 </div>
               </div>
-
-              <Separator className="bg-gray-700" />
-
               <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-400 mb-2">Rate this song:</p>
-                  <StarRating
-                    songId={selectedSong.id}
-                    currentRating={ratings[selectedSong.id] || 0}
-                  />
-                </div>
-
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    className={`border-gray-600 ${
-                      isSongLiked(selectedSong.id)
-                        ? "bg-red-900/20 text-red-400 border-red-600"
-                        : "text-gray-300 hover:bg-gray-700"
+                <StarRating
+                  songId={selectedSong.id}
+                  currentRating={ratings[selectedSong.id] || 0}
+                />
+                <Button
+                  onClick={() => handleLikeSong(selectedSong)}
+                  className={`${
+                    isSongLiked(selectedSong.id)
+                      ? "bg-red-600 hover:bg-red-700 text-white"
+                      : "bg-gray-700 text-white hover:bg-gray-600 border border-gray-600"
+                  }`}
+                >
+                  <Heart
+                    className={`w-4 h-4 mr-2 ${
+                      isSongLiked(selectedSong.id) ? "fill-current" : ""
                     }`}
-                    onClick={() => handleLikeSong(selectedSong)}
-                  >
-                    {isSongLiked(selectedSong.id) ? (
-                      <>
-                        <Heart className="w-4 h-4 mr-2 fill-red-400 text-red-400" />
-                        Liked
-                      </>
-                    ) : (
-                      <>
-                        <Heart className="w-4 h-4 mr-2" />
-                        Like
-                      </>
-                    )}
-                  </Button>
-
-                  <Button
-                    className="bg-blue-600 hover:bg-blue-700 text-white"
-                    onClick={() => {
-                      playSong(selectedSong);
-                      setShowSongDetails(false);
-                    }}
-                  >
-                    <Play className="w-4 h-4 mr-2" />
-                    Play
-                  </Button>
-                </div>
+                  />
+                  {isSongLiked(selectedSong.id) ? "Liked" : "Like"}
+                </Button>
               </div>
             </div>
           )}
         </DialogContent>
       </Dialog>
 
-      {/* Album Details Modal */}
+      {/* Album Details Dialog */}
       <Dialog open={showAlbumDetails} onOpenChange={setShowAlbumDetails}>
-        <DialogContent className="bg-gray-800 border border-gray-700 text-white max-w-4xl max-h-[80vh] overflow-y-auto">
+        <DialogContent className="bg-gray-800 border-gray-700 max-w-4xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <div className="flex items-center justify-between">
-              <DialogTitle className="text-xl font-bold">
-                {selectedAlbum?.name}
-              </DialogTitle>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setShowAlbumDetails(false)}
-                className="text-gray-400 hover:text-gray-300"
-              >
-                <X className="w-4 h-4" />
-              </Button>
-            </div>
+            <DialogTitle className="text-white">Album Details</DialogTitle>
           </DialogHeader>
-
           {selectedAlbum && (
             <div className="space-y-6">
-              <div className="flex gap-6">
+              <div className="flex items-center gap-6">
                 <img
                   src={getImageUrl(selectedAlbum.image)}
                   alt={selectedAlbum.name}
-                  className="w-64 h-64 rounded-xl object-cover"
+                  className="w-32 h-32 rounded-lg object-cover"
                 />
-                <div className="flex-1 space-y-4">
-                  <div>
-                    <h3 className="text-3xl font-bold mb-2">
-                      {selectedAlbum.name}
-                    </h3>
-                    <p className="text-xl text-gray-300 mb-1">
-                      {selectedAlbum.artists?.primary
-                        ?.map((artist) => artist.name)
-                        .join(", ")}
-                    </p>
+                <div className="flex-1">
+                  <h3 className="text-2xl font-bold text-white mb-2">
+                    {selectedAlbum.name}
+                  </h3>
+                  <p className="text-lg text-gray-300 mb-1">
+                    {selectedAlbum.artists?.primary
+                      ?.map((artist) => artist.name)
+                      .join(", ") || "Unknown Artist"}
+                  </p>
+                  <div className="flex items-center gap-4 text-sm text-gray-400">
+                    <span>{selectedAlbum.year}</span>
+                    <span>•</span>
+                    <span>{selectedAlbum.language}</span>
+                    <span>•</span>
+                    <span>{selectedAlbum.songCount} songs</span>
                   </div>
-
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div className="flex items-center gap-2">
-                      <Calendar className="w-4 h-4 text-gray-400" />
-                      <span>Year: {selectedAlbum.year}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Music className="w-4 h-4 text-gray-400" />
-                      <span>Songs: {selectedAlbum.songCount}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Headphones className="w-4 h-4 text-gray-400" />
-                      <span>
-                        Plays:{" "}
-                        {selectedAlbum.playCount?.toLocaleString() || "N/A"}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Users className="w-4 h-4 text-gray-400" />
-                      <span>Language: {selectedAlbum.language}</span>
-                    </div>
-                  </div>
-
-                  <Button
-                    className="bg-blue-600 hover:bg-blue-700 text-white"
-                    onClick={() => {
-                      playAlbum(selectedAlbum);
-                      setShowAlbumDetails(false);
-                    }}
-                  >
-                    <Play className="w-4 h-4 mr-2" />
-                    Play Album
-                  </Button>
                 </div>
+                <Button
+                  onClick={() => handleLikeAlbum(selectedAlbum)}
+                  className={`${
+                    isAlbumLiked(selectedAlbum.id)
+                      ? "bg-red-600 hover:bg-red-700 text-white"
+                      : "bg-gray-700 text-white hover:bg-gray-600 border border-gray-600"
+                  }`}
+                >
+                  <Heart
+                    className={`w-4 h-4 mr-2 ${
+                      isAlbumLiked(selectedAlbum.id) ? "fill-current" : ""
+                    }`}
+                  />
+                  {isAlbumLiked(selectedAlbum.id) ? "Liked" : "Like"}
+                </Button>
               </div>
-
-              <Separator className="bg-gray-700" />
-
-              {/* Album Songs */}
               {selectedAlbum.songs && selectedAlbum.songs.length > 0 && (
                 <div>
-                  <h4 className="text-lg font-semibold mb-4">Album Tracks</h4>
+                  <h4 className="text-lg font-semibold text-white mb-4">
+                    Tracklist
+                  </h4>
                   <div className="space-y-2">
                     {selectedAlbum.songs.map((song, index) => (
                       <div
                         key={song.id}
-                        className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-700 transition-colors group cursor-pointer"
-                        onClick={() => playSong(song)}
+                        className="flex items-center gap-4 p-3 bg-gray-700/50 rounded-lg hover:bg-gray-700 transition-colors cursor-pointer"
+                        onClick={() => openSongDetails(song)}
                       >
-                        <span className="text-gray-400 w-6 text-center">
+                        <span className="text-sm text-gray-400 w-8">
                           {index + 1}
                         </span>
-                        <img
-                          src={getImageUrl(song.image)}
-                          alt={song.name}
-                          className="w-10 h-10 rounded object-cover"
-                        />
-                        <div className="flex-1 min-w-0">
-                          <p className="font-medium text-white truncate">
-                            {song.name}
-                          </p>
-                          <p className="text-sm text-gray-400 truncate">
+                        <div className="flex-1">
+                          <p className="text-white font-medium">{song.name}</p>
+                          <p className="text-sm text-gray-400">
                             {song.artists?.primary
                               ?.map((artist) => artist.name)
-                              .join(", ")}
+                              .join(", ") || "Unknown Artist"}
                           </p>
                         </div>
-                        <span className="text-sm text-gray-400">
+                        <div className="text-sm text-gray-400">
                           {formatDuration(song.duration)}
-                        </span>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          className="opacity-0 group-hover:opacity-100 transition-opacity"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleLikeSong(song);
-                          }}
-                        >
-                          {isSongLiked(song.id) ? (
-                            <Heart className="w-4 h-4 fill-red-400 text-red-400" />
-                          ) : (
-                            <Heart className="w-4 h-4" />
-                          )}
-                        </Button>
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -1695,8 +1636,16 @@ export default function MusicApp() {
         </DialogContent>
       </Dialog>
 
-      {/* Audio Player - Temporarily disabled as requested */}
-      {/* <AudioPlayer currentSong={currentSong} playlist={songs} onSongChange={setCurrentSong} /> */}
+      {/* Audio Player - Temporarily disabled due to interface mismatch */}
+      {/* {currentSong && (
+        <div className="fixed bottom-0 left-0 right-0 z-50">
+          <AudioPlayer
+            currentSong={currentSong}
+            playlist={likedSongs}
+            onSongChange={handleSongChange}
+          />
+        </div>
+      )} */}
     </div>
   );
 }

@@ -60,6 +60,7 @@ import {
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { searchSeries } from "@/lib/tmdb";
 import { getTrendingSeries } from "@/lib/tmdb";
+import DiscoverSection from "@/components/discover-section";
 import Link from "next/link";
 
 interface Series {
@@ -541,10 +542,10 @@ export default function SeriesPage() {
   }, [showDiscover]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black">
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black w-full overflow-x-hidden">
       {/* Header */}
-      <div className="border-b border-gray-800 bg-gradient-to-r from-gray-900/95 to-gray-800/95 backdrop-blur-sm">
-        <div className="container mx-auto px-4 sm:px-6 py-6 sm:py-8">
+      <div className="border-b border-gray-800 bg-gradient-to-r from-gray-900/95 to-gray-800/95 backdrop-blur-sm w-full">
+        <div className="container mx-auto px-4 sm:px-6 py-6 sm:py-8 max-w-full">
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold bg-gradient-to-r from-white via-gray-200 to-gray-400 bg-clip-text text-transparent">
@@ -558,15 +559,15 @@ export default function SeriesPage() {
         </div>
       </div>
 
-      <div className="container mx-auto px-4 sm:px-6 py-6 sm:py-8">
+      <div className="container mx-auto px-4 sm:px-6 py-6 sm:py-8 max-w-full overflow-x-hidden">
         {/* Search and Filters */}
-        <div className="mb-8 sm:mb-10">
-          <div className="flex flex-col gap-4 sm:gap-6 mb-6 sm:mb-8">
+        <div className="mb-8 sm:mb-10 w-full">
+          <div className="flex flex-col gap-4 sm:gap-6 mb-6 sm:mb-8 w-full">
             {/* Search */}
-            <div className="flex-1">
+            <div className="flex-1 w-full">
               <form
                 onSubmit={handleSearch}
-                className="flex flex-col sm:flex-row gap-3"
+                className="flex flex-col sm:flex-row gap-3 w-full"
               >
                 <div className="relative flex-1">
                   <Search className="absolute left-3 sm:left-4 top-1/2 transform -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 text-gray-400" />
@@ -574,7 +575,7 @@ export default function SeriesPage() {
                     placeholder="Search series..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-10 sm:pl-12 h-11 sm:h-12 bg-gray-800/50 border-gray-700 text-white placeholder:text-gray-400 focus:border-gray-500 focus:ring-gray-500 rounded-xl text-sm sm:text-base"
+                    className="pl-10 sm:pl-12 h-11 sm:h-12 bg-gray-800/50 border-gray-700 text-white placeholder:text-gray-400 focus:border-gray-500 focus:ring-gray-500 rounded-xl text-sm sm:text-base w-full"
                   />
                   {searchQuery && (
                     <button
@@ -598,7 +599,7 @@ export default function SeriesPage() {
           </div>
 
           {/* Collections Tabs */}
-          <div className="flex items-center gap-2 sm:gap-3 overflow-x-auto pb-4 scrollbar-hide">
+          <div className="flex items-center gap-2 sm:gap-3 overflow-x-auto pb-4 scrollbar-hide w-full horizontal-scroll-container">
             {/* Trending Tab */}
             <button
               onClick={() => {
@@ -713,110 +714,21 @@ export default function SeriesPage() {
         <div className="space-y-8">
           {/* Trending Section */}
           {showDiscover && searchResults.length === 0 && (
-            <div>
-              <div className="flex items-center justify-between mb-6">
-                <div>
-                  <h2 className="text-3xl font-bold bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
-                    Trending Series
-                  </h2>
-                  <p className="text-gray-400 mt-2">
-                    Discover what's popular right now
-                  </p>
-                </div>
-              </div>
-
-              {isLoadingTrending ? (
-                <div className="flex items-center justify-center py-16">
-                  <div className="text-center space-y-4">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto" />
-                    <p className="text-gray-400 text-lg">
-                      Loading trending series...
-                    </p>
-                  </div>
-                </div>
-              ) : trendingSeries.length > 0 ? (
-                <div className="relative w-full overflow-hidden">
-                  {/* Left Arrow */}
-                  <button
-                    onClick={() => {
-                      const container = document.getElementById(
-                        "trending-series-container"
-                      );
-                      if (container) {
-                        container.scrollBy({ left: -600, behavior: "smooth" });
-                      }
-                    }}
-                    className="absolute left-2 top-1/2 transform -translate-y-1/2 z-30 bg-black/80 hover:bg-black text-white rounded-full p-4 transition-all duration-300 backdrop-blur-md shadow-2xl border border-white/10 hover:scale-110"
-                  >
-                    <ChevronLeft className="h-6 w-6" />
-                  </button>
-
-                  {/* Right Arrow */}
-                  <button
-                    onClick={() => {
-                      const container = document.getElementById(
-                        "trending-series-container"
-                      );
-                      if (container) {
-                        container.scrollBy({ left: 600, behavior: "smooth" });
-                      }
-                    }}
-                    className="absolute right-2 top-1/2 transform -translate-y-1/2 z-30 bg-black/80 hover:bg-black text-white rounded-full p-4 transition-all duration-300 backdrop-blur-md shadow-2xl border border-white/10 hover:scale-110"
-                  >
-                    <ChevronRight className="h-6 w-6" />
-                  </button>
-
-                  {/* Series Container with Horizontal Scrolling */}
-                  <div
-                    id="trending-series-container"
-                    className="flex gap-4 overflow-x-auto px-8 py-6 scrollbar-hide"
-                  >
-                    {trendingSeries.map((series) => (
-                      <div key={series.id} className="flex-shrink-0 w-[220px]">
-                        <div className="relative aspect-[2/3] rounded-xl overflow-hidden bg-gradient-to-br from-gray-800 to-gray-900 shadow-2xl">
-                          <Link href={`/series/${series.id}`}>
-                            <Image
-                              src={series.cover || "/placeholder.svg"}
-                              alt={series.title || "Unknown"}
-                              fill
-                              className="object-cover cursor-pointer"
-                            />
-                          </Link>
-                        </div>
-                        <div className="mt-4 space-y-2">
-                          <h4 className="font-bold text-sm truncate text-white">
-                            {series.title || "Unknown Title"}
-                          </h4>
-                          <p className="text-xs text-gray-400 font-medium">
-                            {series.year || "N/A"}
-                          </p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ) : (
-                <div className="text-center py-20">
-                  <div className="space-y-6">
-                    <Tv className="h-20 w-20 text-gray-400 mx-auto" />
-                    <div>
-                      <h3 className="text-xl font-bold mb-2 text-white">
-                        No trending series
-                      </h3>
-                      <p className="text-gray-400 text-lg">
-                        Unable to load trending series at the moment
-                      </p>
-                    </div>
-                    <Button
-                      onClick={fetchTrendingSeries}
-                      className="bg-gradient-to-r from-green-600 to-green-500 hover:from-green-500 hover:to-green-400 text-white px-6 py-3 rounded-xl font-semibold transition-all duration-200"
-                    >
-                      Try Again
-                    </Button>
-                  </div>
-                </div>
-              )}
-            </div>
+            <DiscoverSection
+              title="Trending Series"
+              subtitle="Discover what's popular right now"
+              items={trendingSeries.map((series) => ({
+                id: series.id,
+                title: series.title,
+                cover: series.cover,
+                year: series.year,
+                overview: series.overview,
+              }))}
+              isLoading={isLoadingTrending}
+              onRetry={fetchTrendingSeries}
+              itemType="series"
+              containerId="trending-series-container"
+            />
           )}
 
           {isSearching ? (
@@ -848,11 +760,11 @@ export default function SeriesPage() {
               <div
                 className={
                   viewMode === "grid"
-                    ? "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6"
+                    ? "grid grid-cols-5 gap-4 w-full max-w-full"
                     : "space-y-4"
                 }
               >
-                {searchResults.map((series) => (
+                {searchResults.slice(0, 20).map((series) => (
                   <SeriesCard
                     key={series.id}
                     series={series}
@@ -886,11 +798,11 @@ export default function SeriesPage() {
               <div
                 className={
                   viewMode === "grid"
-                    ? "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6"
+                    ? "grid grid-cols-5 gap-4 w-full max-w-full"
                     : "space-y-4"
                 }
               >
-                {filteredAndSortedSeries.map((series) => (
+                {filteredAndSortedSeries.slice(0, 20).map((series) => (
                   <SavedSeriesCard
                     key={series.id}
                     series={series}

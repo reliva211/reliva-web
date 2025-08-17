@@ -162,7 +162,7 @@ export default function Sidebar({ isLandingPage = false }: SidebarProps) {
         {/* Sidebar */}
         <aside
           className={cn(
-            "fixed left-0 top-0 z-40 h-full bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-r transition-all duration-300 ease-in-out",
+            "fixed left-0 top-0 z-40 h-full bg-zinc-900/95 backdrop-blur supports-[backdrop-filter]:bg-zinc-900/90 border-r border-zinc-800 transition-all duration-300 ease-in-out",
             isCollapsed ? "w-16" : "w-64",
             isMobileOpen
               ? "translate-x-0"
@@ -226,14 +226,14 @@ export default function Sidebar({ isLandingPage = false }: SidebarProps) {
             <ScrollArea className="flex-1">
               <nav
                 className={cn(
-                  "py-4 lg:py-6 transition-all duration-300 flex flex-col justify-center min-h-full",
+                  "py-4 lg:py-6 transition-all duration-300 flex flex-col h-full sidebar-nav",
                   isCollapsed ? "px-2" : "px-3 lg:px-4"
                 )}
               >
                 {/* Main Navigation */}
                 <div
                   className={cn(
-                    "space-y-2 transition-all duration-300",
+                    "space-y-2 transition-all duration-300 sidebar-nav-main",
                     isCollapsed ? "space-y-3" : "space-y-2 lg:space-y-3"
                   )}
                 >
@@ -265,7 +265,9 @@ export default function Sidebar({ isLandingPage = false }: SidebarProps) {
                           )}
                         />
                         {!isCollapsed && (
-                          <span className="truncate">{item.label}</span>
+                          <span className="whitespace-nowrap">
+                            {item.label}
+                          </span>
                         )}
                       </Link>
                     );
@@ -297,7 +299,7 @@ export default function Sidebar({ isLandingPage = false }: SidebarProps) {
                           )}
                         >
                           <Compass className="h-5 w-5 flex-shrink-0" />
-                          <span className="truncate">Discover</span>
+                          <span className="whitespace-nowrap">Discover</span>
                           <ChevronDown className="ml-auto h-4 w-4" />
                         </button>
                       </DropdownMenuTrigger>
@@ -358,7 +360,9 @@ export default function Sidebar({ isLandingPage = false }: SidebarProps) {
                             )}
                           />
                           {!isCollapsed && (
-                            <span className="truncate">{item.label}</span>
+                            <span className="whitespace-nowrap">
+                              {item.label}
+                            </span>
                           )}
                         </Link>
                       );
@@ -418,55 +422,59 @@ export default function Sidebar({ isLandingPage = false }: SidebarProps) {
                   })}
 
                   {/* Post Button */}
-                  {(() => {
-                    const isActive = pathname === "/reviews";
-                    const linkContent = (
-                      <Link
-                        href="/reviews"
-                        onClick={() => setIsMobileOpen(false)}
-                        className={cn(
-                          "flex items-center gap-3 rounded-lg text-sm font-medium transition-all duration-200 hover:bg-accent hover:text-accent-foreground",
-                          isCollapsed
-                            ? "justify-center px-2 py-3"
-                            : "px-4 py-3",
-                          isActive
-                            ? "bg-accent text-accent-foreground"
-                            : "text-muted-foreground"
-                        )}
-                      >
-                        <Edit
+                  <div className="my-2">
+                    {(() => {
+                      const isActive = pathname === "/reviews";
+                      const linkContent = (
+                        <Link
+                          href="/reviews"
+                          onClick={() => setIsMobileOpen(false)}
                           className={cn(
-                            "flex-shrink-0 transition-all duration-200",
-                            isCollapsed ? "h-5 w-5" : "h-5 w-5"
+                            "flex items-center gap-3 rounded-lg text-sm font-medium transition-all duration-200 hover:bg-accent hover:text-accent-foreground",
+                            isCollapsed
+                              ? "justify-center px-2 py-3"
+                              : "px-4 py-3",
+                            isActive
+                              ? "bg-accent text-accent-foreground"
+                              : "text-muted-foreground"
                           )}
-                        />
-                        {!isCollapsed && <span className="truncate">Post</span>}
-                      </Link>
-                    );
+                        >
+                          <Edit
+                            className={cn(
+                              "flex-shrink-0 transition-all duration-200",
+                              isCollapsed ? "h-5 w-5" : "h-5 w-5"
+                            )}
+                          />
+                          {!isCollapsed && (
+                            <span className="whitespace-nowrap">Post</span>
+                          )}
+                        </Link>
+                      );
 
-                    return isCollapsed ? (
-                      <Tooltip>
-                        <TooltipTrigger asChild>{linkContent}</TooltipTrigger>
-                        <TooltipContent side="right">Post</TooltipContent>
-                      </Tooltip>
-                    ) : (
-                      linkContent
-                    );
-                  })()}
+                      return isCollapsed ? (
+                        <Tooltip>
+                          <TooltipTrigger asChild>{linkContent}</TooltipTrigger>
+                          <TooltipContent side="right">Post</TooltipContent>
+                        </Tooltip>
+                      ) : (
+                        linkContent
+                      );
+                    })()}
+                  </div>
                 </div>
 
                 {/* User & Settings */}
                 <div
                   className={cn(
-                    "space-y-2 transition-all duration-300 mt-6",
-                    isCollapsed ? "space-y-3" : "space-y-3"
+                    "space-y-2 transition-all duration-300",
+                    isCollapsed ? "space-y-3" : "space-y-2 lg:space-y-3"
                   )}
                 >
                   {navigationItems.slice(4).map((item) => {
                     const Icon = item.icon;
                     const isActive = pathname === item.href;
 
-                    // Handle logout separately since it's not a navigation link
+                    // Handle logout button (has onClick) and regular navigation items
                     if (item.onClick) {
                       const buttonContent = (
                         <button
@@ -476,13 +484,10 @@ export default function Sidebar({ isLandingPage = false }: SidebarProps) {
                             setIsMobileOpen(false);
                           }}
                           className={cn(
-                            "flex w-full items-center gap-3 rounded-lg text-sm font-medium transition-all duration-200 hover:bg-accent hover:text-accent-foreground",
+                            "flex items-center gap-3 rounded-lg text-sm font-medium transition-all duration-200 hover:bg-accent hover:text-accent-foreground text-muted-foreground",
                             isCollapsed
                               ? "justify-center px-2 py-3"
-                              : "px-4 py-3",
-                            isActive
-                              ? "bg-accent text-accent-foreground"
-                              : "text-muted-foreground"
+                              : "px-4 py-3"
                           )}
                         >
                           <Icon
@@ -492,7 +497,9 @@ export default function Sidebar({ isLandingPage = false }: SidebarProps) {
                             )}
                           />
                           {!isCollapsed && (
-                            <span className="truncate">{item.label}</span>
+                            <span className="whitespace-nowrap">
+                              {item.label}
+                            </span>
                           )}
                         </button>
                       );
@@ -534,7 +541,9 @@ export default function Sidebar({ isLandingPage = false }: SidebarProps) {
                           )}
                         />
                         {!isCollapsed && (
-                          <span className="truncate">{item.label}</span>
+                          <span className="whitespace-nowrap">
+                            {item.label}
+                          </span>
                         )}
                       </Link>
                     );

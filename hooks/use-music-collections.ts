@@ -85,32 +85,36 @@ export function useMusicCollections() {
 
     try {
       // Fetch followed artists
-      const artistsCollection = collection(db, "users", user.id, "musicArtists");
+      const artistsCollection = collection(
+        db,
+        "users",
+        user.id,
+        "musicArtists"
+      );
       const artistsSnapshot = await getDocs(artistsCollection);
-      const artists = artistsSnapshot.docs.map(doc => ({
+      const artists = artistsSnapshot.docs.map((doc) => ({
         ...doc.data(),
-        addedAt: doc.data().addedAt?.toDate?.() || new Date().toISOString()
+        addedAt: doc.data().addedAt?.toDate?.() || new Date().toISOString(),
       })) as MusicArtist[];
       setFollowedArtists(artists);
 
       // Fetch liked songs
       const songsCollection = collection(db, "users", user.id, "musicSongs");
       const songsSnapshot = await getDocs(songsCollection);
-      const songs = songsSnapshot.docs.map(doc => ({
+      const songs = songsSnapshot.docs.map((doc) => ({
         ...doc.data(),
-        addedAt: doc.data().addedAt?.toDate?.() || new Date().toISOString()
+        addedAt: doc.data().addedAt?.toDate?.() || new Date().toISOString(),
       })) as MusicSong[];
       setLikedSongs(songs);
 
       // Fetch liked albums
       const albumsCollection = collection(db, "users", user.id, "musicAlbums");
       const albumsSnapshot = await getDocs(albumsCollection);
-      const albums = albumsSnapshot.docs.map(doc => ({
+      const albums = albumsSnapshot.docs.map((doc) => ({
         ...doc.data(),
-        addedAt: doc.data().addedAt?.toDate?.() || new Date().toISOString()
+        addedAt: doc.data().addedAt?.toDate?.() || new Date().toISOString(),
       })) as MusicAlbum[];
       setLikedAlbums(albums);
-
     } catch (err) {
       console.error("Error fetching music collections:", err);
       setError("Failed to fetch music collections");
@@ -120,22 +124,24 @@ export function useMusicCollections() {
   };
 
   // Add artist to followed artists
-  const followArtist = async (artist: Omit<MusicArtist, 'addedAt'>) => {
+  const followArtist = async (artist: Omit<MusicArtist, "addedAt">) => {
     if (!user?.id) return;
 
     try {
       const artistData = {
         ...artist,
-        addedAt: new Date().toISOString()
+        addedAt: new Date().toISOString(),
       };
 
       const artistRef = doc(db, "users", user.id, "musicArtists", artist.id);
       await setDoc(artistRef, artistData);
 
-      setFollowedArtists(prev => {
-        const existing = prev.find(a => a.id === artist.id);
+      setFollowedArtists((prev) => {
+        const existing = prev.find((a) => a.id === artist.id);
         if (existing) {
-          return prev.map(a => a.id === artist.id ? { ...a, ...artistData } : a);
+          return prev.map((a) =>
+            a.id === artist.id ? { ...a, ...artistData } : a
+          );
         }
         return [...prev, artistData];
       });
@@ -153,7 +159,7 @@ export function useMusicCollections() {
       const artistRef = doc(db, "users", user.id, "musicArtists", artistId);
       await deleteDoc(artistRef);
 
-      setFollowedArtists(prev => prev.filter(a => a.id !== artistId));
+      setFollowedArtists((prev) => prev.filter((a) => a.id !== artistId));
     } catch (err) {
       console.error("Error unfollowing artist:", err);
       throw err;
@@ -161,22 +167,24 @@ export function useMusicCollections() {
   };
 
   // Add song to liked songs
-  const likeSong = async (song: Omit<MusicSong, 'addedAt'>) => {
+  const likeSong = async (song: Omit<MusicSong, "addedAt">) => {
     if (!user?.id) return;
 
     try {
       const songData = {
         ...song,
-        addedAt: new Date().toISOString()
+        addedAt: new Date().toISOString(),
       };
 
       const songRef = doc(db, "users", user.id, "musicSongs", song.id);
       await setDoc(songRef, songData);
 
-      setLikedSongs(prev => {
-        const existing = prev.find(s => s.id === song.id);
+      setLikedSongs((prev) => {
+        const existing = prev.find((s) => s.id === song.id);
         if (existing) {
-          return prev.map(s => s.id === song.id ? { ...s, ...songData } : s);
+          return prev.map((s) =>
+            s.id === song.id ? { ...s, ...songData } : s
+          );
         }
         return [...prev, songData];
       });
@@ -194,7 +202,7 @@ export function useMusicCollections() {
       const songRef = doc(db, "users", user.id, "musicSongs", songId);
       await deleteDoc(songRef);
 
-      setLikedSongs(prev => prev.filter(s => s.id !== songId));
+      setLikedSongs((prev) => prev.filter((s) => s.id !== songId));
     } catch (err) {
       console.error("Error unliking song:", err);
       throw err;
@@ -202,22 +210,24 @@ export function useMusicCollections() {
   };
 
   // Add album to liked albums
-  const likeAlbum = async (album: Omit<MusicAlbum, 'addedAt'>) => {
+  const likeAlbum = async (album: Omit<MusicAlbum, "addedAt">) => {
     if (!user?.id) return;
 
     try {
       const albumData = {
         ...album,
-        addedAt: new Date().toISOString()
+        addedAt: new Date().toISOString(),
       };
 
       const albumRef = doc(db, "users", user.id, "musicAlbums", album.id);
       await setDoc(albumRef, albumData);
 
-      setLikedAlbums(prev => {
-        const existing = prev.find(a => a.id === album.id);
+      setLikedAlbums((prev) => {
+        const existing = prev.find((a) => a.id === album.id);
         if (existing) {
-          return prev.map(a => a.id === album.id ? { ...a, ...albumData } : a);
+          return prev.map((a) =>
+            a.id === album.id ? { ...a, ...albumData } : a
+          );
         }
         return [...prev, albumData];
       });
@@ -235,7 +245,7 @@ export function useMusicCollections() {
       const albumRef = doc(db, "users", user.id, "musicAlbums", albumId);
       await deleteDoc(albumRef);
 
-      setLikedAlbums(prev => prev.filter(a => a.id !== albumId));
+      setLikedAlbums((prev) => prev.filter((a) => a.id !== albumId));
     } catch (err) {
       console.error("Error unliking album:", err);
       throw err;
@@ -244,15 +254,15 @@ export function useMusicCollections() {
 
   // Check if item is in collection
   const isArtistFollowed = (artistId: string) => {
-    return followedArtists.some(a => a.id === artistId);
+    return followedArtists.some((a) => a.id === artistId);
   };
 
   const isSongLiked = (songId: string) => {
-    return likedSongs.some(s => s.id === songId);
+    return likedSongs.some((s) => s.id === songId);
   };
 
   const isAlbumLiked = (albumId: string) => {
-    return likedAlbums.some(a => a.id === albumId);
+    return likedAlbums.some((a) => a.id === albumId);
   };
 
   // Initialize on mount
