@@ -40,7 +40,7 @@ import { Recommendations } from "@/components/recommendations";
 import { cn } from "@/lib/utils";
 import { useMusicCollections } from "@/hooks/use-music-collections";
 import { useToast } from "@/hooks/use-toast";
-
+import TrendingSongs from "@/components/trending-songs"
 interface Song {
   id: string;
   name: string;
@@ -1109,25 +1109,36 @@ export default function MusicApp() {
 
         {/* Content Sections */}
         <div className="space-y-8">
-          {/* Discover Tab - Recommendations Only */}
+          {/* Discover Tab - Trending Songs and Recommendations */}
           {activeTab === "discover" && (
-            <div className="bg-gray-800/50 rounded-2xl p-6 shadow-lg border border-gray-700">
-              <h2 className="text-2xl font-bold text-white mb-6">
-                Discover New Music
-              </h2>
-              <Recommendations
-                currentSong={currentSong}
-                ratings={ratings}
-                myList={new Set(likedSongs.map((s) => s.id))}
-                onPlaySong={playSong}
-                onToggleMyList={(songId) => {
-                  const song = likedSongs.find((s) => s.id === songId);
-                  if (song) {
-                    handleLikeSong(song);
-                  }
-                }}
-                onRateSong={rateSong}
-              />
+            <div className="space-y-8">
+              <div className="bg-gray-800/50 rounded-2xl p-6 shadow-lg border border-gray-700">
+                <TrendingSongs
+                  onPlaySong={playSong}
+                  onToggleLike={(songId) => {
+                    handleLikeSong(songId)
+                  }}
+                  likedSongs={new Set(likedSongs.map((s) => s.id))}
+                />
+              </div>
+
+              {/* Existing recommendations section */}
+              <div className="bg-gray-800/50 rounded-2xl p-6 shadow-lg border border-gray-700">
+                <h2 className="text-2xl font-bold text-white mb-6">Discover New Music</h2>
+                <Recommendations
+                  currentSong={currentSong}
+                  ratings={ratings}
+                  myList={new Set(likedSongs.map((s) => s.id))}
+                  onPlaySong={playSong}
+                  onToggleMyList={(songId) => {
+                    const song = likedSongs.find((s) => s.id === songId)
+                    if (song) {
+                      handleLikeSong(song)
+                    }
+                  }}
+                  onRateSong={rateSong}
+                />
+              </div>
             </div>
           )}
 
