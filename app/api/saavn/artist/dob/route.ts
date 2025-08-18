@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    console.log(`Fetching artist details for ID: ${id}`);
+    console.log(`Fetching DOB for artist ID: ${id}`);
 
     // Fetch artist details from Saavn API
     const response = await fetch(`https://saavn.dev/api/artists?id=${id}`, {
@@ -27,28 +27,29 @@ export async function GET(request: NextRequest) {
 
     const data = await response.json();
 
-    // Log the data structure to verify DOB and similar artists
-    if (data.data) {
-      console.log(`Artist: ${data.data.name}`);
-      console.log(`DOB: ${data.data.dob}`);
-      console.log(
-        `Similar Artists Count: ${data.data.similarArtists?.length || 0}`
-      );
+    // Extract DOB and related information
+    const artistData = data.data;
+    const dobInfo = {
+      dob: artistData?.dob,
+      name: artistData?.name,
+      id: artistData?.id,
+      isValid: artistData?.dob
+        ? !isNaN(new Date(artistData.dob).getTime())
+        : false,
+    };
 
-      if (data.data.similarArtists && data.data.similarArtists.length > 0) {
-        console.log(
-          `Similar Artists: ${data.data.similarArtists
-            .map((artist: any) => artist.name)
-            .join(", ")}`
-        );
-      }
-    }
+    console.log(
+      `DOB for ${artistData?.name}: ${artistData?.dob} (Valid: ${dobInfo.isValid})`
+    );
 
-    return NextResponse.json(data);
+    return NextResponse.json({
+      success: true,
+      data: dobInfo,
+    });
   } catch (error) {
-    console.error("Error fetching artist details:", error);
+    console.error("Error fetching artist DOB:", error);
     return NextResponse.json(
-      { error: "Failed to fetch artist details" },
+      { error: "Failed to fetch artist DOB" },
       { status: 500 }
     );
   }

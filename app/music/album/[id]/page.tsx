@@ -6,7 +6,7 @@ import { use } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Disc, Music, Clock, Play, Heart } from "lucide-react";
+import { Disc, Music, Clock, Play, Heart, Star, Plus } from "lucide-react";
 
 interface Song {
   id: string;
@@ -134,9 +134,10 @@ export default function AlbumDetailPage({
   const resolvedParams = use(params);
   const router = useRouter();
   const [album, setAlbum] = useState<Album | null>(null);
+  const [similarAlbums, setSimilarAlbums] = useState<Album[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState("overview");
+  const [activeTab, setActiveTab] = useState("songs");
 
   const getImageUrl = (images: any[]) => {
     return (
@@ -160,16 +161,23 @@ export default function AlbumDetailPage({
 
       setLoading(true);
       try {
-        // Fetch album details using the album ID directly
-        const albumResponse = await fetch(
-          `/api/saavn/album?id=${resolvedParams.id}`
-        );
+        // Fetch album details and similar albums in parallel
+        const [albumResponse, similarResponse] = await Promise.all([
+          fetch(`/api/saavn/album?id=${resolvedParams.id}`),
+          fetch(`/api/saavn/album/similar?id=${resolvedParams.id}`),
+        ]);
+
         const albumData = await albumResponse.json();
+        const similarData = await similarResponse.json();
 
         if (albumData.data) {
           setAlbum(albumData.data);
         } else {
           setError("Album not found");
+        }
+
+        if (similarData.data && similarData.data.albums) {
+          setSimilarAlbums(similarData.data.albums);
         }
       } catch (err) {
         console.error("Error fetching album details:", err);
@@ -222,300 +230,236 @@ export default function AlbumDetailPage({
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black">
-      {/* Header */}
-      <div className="border-b border-gray-800 bg-gradient-to-r from-gray-900/95 to-gray-800/95 backdrop-blur-sm">
-        <div className="container mx-auto px-4 py-6">
-          <div className="flex items-center gap-4">
-            <Button
-              variant="ghost"
-              onClick={() => router.back()}
-              className="text-gray-400 hover:text-white"
-            >
-              ← Back
-            </Button>
-          </div>
-        </div>
-      </div>
-
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
       <div className="container mx-auto px-4 py-8">
-        {/* Album Header */}
-        <div className="relative mb-12">
-          {/* Background gradient overlay */}
-          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-gray-900/50 to-gray-900 rounded-3xl"></div>
+        {/* Back Button */}
+        <Button
+          variant="ghost"
+          onClick={() => router.back()}
+          className="mb-8 rounded-xl hover:bg-muted/50 transition-all duration-200 group"
+        >
+          ← Back
+        </Button>
 
-          <div className="relative flex flex-col md:flex-row gap-8 p-8 bg-gradient-to-r from-gray-800/30 to-gray-700/30 rounded-3xl border border-gray-700/50 backdrop-blur-sm">
-            <div className="flex-shrink-0">
-              <div className="relative group">
-                <div className="absolute inset-0 bg-gradient-to-r from-purple-500/20 to-pink-500/20 rounded-xl blur-xl group-hover:blur-2xl transition-all duration-300"></div>
+        {/* Album Header */}
+        <div className="flex flex-col lg:flex-row gap-8 mb-12">
+          {/* Album Image */}
+          <div className="w-full lg:w-1/4">
+            <div className="relative group max-w-xs mx-auto lg:mx-0">
+              <div className="aspect-square rounded-2xl overflow-hidden bg-gradient-to-br from-muted to-muted/50 shadow-2xl group-hover:shadow-3xl transition-all duration-300">
                 <img
                   src={getImageUrl(album.image)}
                   alt={album.name}
-                  className="relative w-48 h-48 md:w-64 md:h-64 rounded-xl object-cover shadow-2xl ring-4 ring-gray-700/50 group-hover:ring-gray-600/50 transition-all duration-300"
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                 />
-                <div className="absolute inset-0 rounded-xl bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
               </div>
+              {/* Subtle overlay gradient */}
+              <div className="absolute inset-0 rounded-2xl bg-gradient-to-t from-black/10 via-transparent to-transparent pointer-events-none"></div>
             </div>
+          </div>
 
-            <div className="flex-1 flex flex-col justify-center">
-              <div className="flex items-start justify-between mb-6">
-                <div className="flex-1">
-                  <h1 className="text-4xl md:text-6xl font-bold bg-gradient-to-r from-white via-gray-100 to-gray-300 bg-clip-text text-transparent mb-3">
-                    {album.name}
-                  </h1>
-                  <div className="flex items-center gap-4 text-gray-300 mb-4">
-                    <span className="text-lg font-medium hover:text-blue-300 transition-colors cursor-pointer">
-                      {album.artists?.primary
-                        ?.map((artist) => artist.name)
-                        .join(", ") || "Unknown Artist"}
-                    </span>
-                    {album.year && (
-                      <Badge
-                        variant="secondary"
-                        className="bg-green-500/20 text-green-300 border-green-500/30"
-                      >
-                        {album.year}
-                      </Badge>
-                    )}
-                    {album.language && (
-                      <Badge
-                        variant="secondary"
-                        className="bg-orange-500/20 text-orange-300 border-orange-500/30"
-                      >
-                        {album.language}
-                      </Badge>
-                    )}
-                  </div>
-                </div>
+          {/* Album Info */}
+          <div className="flex-1 space-y-6">
+            <div className="space-y-6">
+              <h1 className="text-5xl lg:text-6xl font-bold bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent leading-tight">
+                {album.name}
+              </h1>
 
-                <Button
-                  size="lg"
-                  className="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white shadow-lg transition-all duration-200 transform hover:scale-105"
-                >
-                  <Heart className="w-5 h-5 mr-2" />
-                  Like
-                </Button>
-              </div>
-
-              <div className="flex items-center gap-8">
-                <div className="flex items-center gap-3 bg-gray-800/50 px-4 py-2 rounded-full border border-gray-700/50">
-                  <Music className="w-5 h-5 text-purple-400" />
-                  <span className="text-white font-medium">
-                    {album.songCount} songs
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+                <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-muted/50 backdrop-blur-sm border border-border/30 shadow-lg">
+                  <Music className="h-4 w-4 text-primary" />
+                  <span className="text-sm font-medium text-foreground">
+                    {album.artists?.primary
+                      ?.map((artist) => artist.name)
+                      .join(", ") || "Unknown Artist"}
                   </span>
                 </div>
-                {album.playCount && (
-                  <div className="flex items-center gap-3 bg-gray-800/50 px-4 py-2 rounded-full border border-gray-700/50">
-                    <Play className="w-5 h-5 text-green-400" />
-                    <span className="text-white font-medium">
-                      {album.playCount.toLocaleString()} plays
+                {album.year && (
+                  <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-muted/50 backdrop-blur-sm border border-border/30 shadow-lg">
+                    <Clock className="h-4 w-4 text-primary" />
+                    <span className="text-sm font-medium text-foreground">
+                      {album.year}
+                    </span>
+                  </div>
+                )}
+                {album.language && (
+                  <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-muted/50 backdrop-blur-sm border border-border/30 shadow-lg">
+                    <span className="text-sm font-medium text-foreground capitalize">
+                      {album.language}
                     </span>
                   </div>
                 )}
               </div>
             </div>
+
+            {/* Action Buttons */}
+            <div className="flex flex-wrap items-center gap-4 pt-4">
+              <Button
+                size="lg"
+                className="rounded-xl hover:scale-105 transition-all duration-200 bg-green-600 hover:bg-green-700 shadow-lg"
+              >
+                <Play className="w-5 h-5 mr-2" />
+                Play Album
+              </Button>
+              <Button
+                size="lg"
+                variant="outline"
+                className="rounded-xl hover:bg-muted/50 transition-all duration-200 group bg-background/60 border-border/50 shadow-lg"
+              >
+                <Heart className="w-5 h-5 mr-2 group-hover:scale-110 transition-transform" />
+                Like
+              </Button>
+              {album.explicitContent && (
+                <Badge
+                  variant="destructive"
+                  className="rounded-xl px-4 py-2 text-sm font-medium shadow-lg"
+                >
+                  Explicit
+                </Badge>
+              )}
+            </div>
           </div>
         </div>
 
         {/* Tabs */}
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-2 bg-gray-800/30 border border-gray-700/50 rounded-xl p-1 backdrop-blur-sm">
-            <TabsTrigger
-              value="overview"
-              className="text-white data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-600/20 data-[state=active]:to-pink-600/20 data-[state=active]:border data-[state=active]:border-purple-500/30 rounded-lg transition-all duration-200"
-            >
-              Overview
-            </TabsTrigger>
-            <TabsTrigger
-              value="songs"
-              className="text-white data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-600/20 data-[state=active]:to-pink-600/20 data-[state=active]:border data-[state=active]:border-purple-500/30 rounded-lg transition-all duration-200"
-            >
-              Songs
-            </TabsTrigger>
-          </TabsList>
+        <div className="space-y-8">
+          <Tabs defaultValue="songs" className="space-y-6">
+            <TabsList className="inline-flex h-12 items-center justify-center rounded-xl bg-muted/30 backdrop-blur-sm border border-border/20 p-1 gap-1">
+              <TabsTrigger
+                value="songs"
+                className="inline-flex items-center justify-center whitespace-nowrap rounded-lg px-6 py-2 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm hover:bg-muted/50"
+              >
+                Songs ({album.songs?.length || 0})
+              </TabsTrigger>
+              <TabsTrigger
+                value="reviews"
+                className="inline-flex items-center justify-center whitespace-nowrap rounded-lg px-6 py-2 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm hover:bg-muted/50"
+              >
+                Reviews
+              </TabsTrigger>
+              <TabsTrigger
+                value="similar"
+                className="inline-flex items-center justify-center whitespace-nowrap rounded-lg px-6 py-2 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm hover:bg-muted/50"
+              >
+                Similar Albums
+              </TabsTrigger>
+            </TabsList>
 
-          {/* Overview Tab */}
-          <TabsContent value="overview" className="mt-8">
-            <div className="grid gap-8 md:grid-cols-2">
-              {/* Album Info Section */}
-              <div className="bg-gray-800/20 rounded-2xl p-6 border border-gray-700/50 backdrop-blur-sm">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
-                    <Disc className="w-5 h-5 text-white" />
-                  </div>
-                  <h3 className="text-2xl font-bold text-white">Album Info</h3>
-                </div>
-                <div className="space-y-4">
-                  <div className="flex justify-between items-center p-3 bg-gray-800/30 rounded-lg border border-gray-700/30">
-                    <span className="text-gray-400 font-medium">Artist</span>
-                    <span className="text-white font-semibold">
-                      {album.artists?.primary
-                        ?.map((artist) => artist.name)
-                        .join(", ") || "Unknown Artist"}
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center p-3 bg-gray-800/30 rounded-lg border border-gray-700/30">
-                    <span className="text-gray-400 font-medium">
-                      Release Year
-                    </span>
-                    <span className="text-white font-semibold">
-                      {album.year || "Unknown"}
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center p-3 bg-gray-800/30 rounded-lg border border-gray-700/30">
-                    <span className="text-gray-400 font-medium">Language</span>
-                    <span className="text-white font-semibold">
-                      {album.language || "Unknown"}
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center p-3 bg-gray-800/30 rounded-lg border border-gray-700/30">
-                    <span className="text-gray-400 font-medium">
-                      Total Songs
-                    </span>
-                    <span className="text-white font-semibold">
-                      {album.songCount || 0}
-                    </span>
-                  </div>
-                  {album.playCount && (
-                    <div className="flex justify-between items-center p-3 bg-gray-800/30 rounded-lg border border-gray-700/30">
-                      <span className="text-gray-400 font-medium">
-                        Total Plays
-                      </span>
-                      <span className="text-white font-semibold">
-                        {album.playCount.toLocaleString()}
-                      </span>
-                    </div>
-                  )}
-                  {album.description && (
-                    <div className="p-3 bg-gray-800/30 rounded-lg border border-gray-700/30">
-                      <span className="text-gray-400 font-medium block mb-2">
-                        Description
-                      </span>
-                      <span className="text-white leading-relaxed">
-                        {album.description}
-                      </span>
-                    </div>
-                  )}
-                  {album.explicitContent && (
-                    <div className="flex justify-between items-center p-3 bg-red-500/10 rounded-lg border border-red-500/30">
-                      <span className="text-red-400 font-medium">
-                        Explicit Content
-                      </span>
-                      <Badge
-                        variant="destructive"
-                        className="bg-red-500/20 text-red-300 border-red-500/30"
-                      >
-                        Yes
-                      </Badge>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Album Actions Section */}
-              <div className="bg-gray-800/20 rounded-2xl p-6 border border-gray-700/50 backdrop-blur-sm">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="w-10 h-10 bg-gradient-to-r from-green-500 to-blue-500 rounded-lg flex items-center justify-center">
-                    <Play className="w-5 h-5 text-white" />
-                  </div>
-                  <h3 className="text-2xl font-bold text-white">
-                    Album Actions
-                  </h3>
-                </div>
-                <div className="space-y-4">
-                  <Button className="w-full bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white h-12 text-lg font-semibold shadow-lg transition-all duration-200 transform hover:scale-105">
-                    <Play className="w-5 h-5 mr-3" />
-                    Play Album
-                  </Button>
-                  <Button
-                    variant="outline"
-                    className="w-full border-gray-600 hover:bg-gray-700 text-white h-12 text-lg font-medium transition-all duration-200"
-                    onClick={() => setActiveTab("songs")}
-                  >
-                    <Music className="w-5 h-5 mr-3" />
-                    View All Songs
-                  </Button>
-                  <Button
-                    variant="outline"
-                    className="w-full border-purple-600 hover:bg-purple-600/20 text-purple-300 h-12 text-lg font-medium transition-all duration-200"
-                  >
-                    <Heart className="w-5 h-5 mr-3" />
-                    Add to Library
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </TabsContent>
-
-          {/* Songs Tab */}
-          <TabsContent value="songs" className="mt-8">
-            {album.songs && album.songs.length > 0 ? (
-              <div className="bg-gray-800/20 rounded-2xl p-6 border border-gray-700/50 backdrop-blur-sm">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg flex items-center justify-center">
-                    <Music className="w-5 h-5 text-white" />
-                  </div>
-                  <h3 className="text-2xl font-bold text-white">Album Songs</h3>
-                </div>
-                <div className="space-y-3">
+            {/* Songs Tab */}
+            <TabsContent value="songs" className="space-y-6">
+              {album.songs && album.songs.length > 0 ? (
+                <div className="space-y-2 px-4">
                   {album.songs.map((song, index) => (
                     <div
                       key={song.id}
-                      className="flex items-center gap-4 p-4 bg-gray-800/30 rounded-xl hover:bg-gray-700/40 transition-all duration-200 cursor-pointer group border border-gray-700/30 hover:border-gray-600/50"
+                      className="flex items-center gap-4 p-4 bg-muted/30 backdrop-blur-sm rounded-xl hover:bg-muted/50 transition-all duration-200 cursor-pointer group border border-border/20"
                       onClick={() => router.push(`/music/song/${song.id}`)}
                     >
-                      <div className="flex items-center gap-4 flex-1">
-                        <div className="w-8 h-8 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center text-xs font-bold text-white">
-                          {index + 1}
-                        </div>
-                        <div className="relative">
-                          <img
-                            src={getImageUrl(song.image)}
-                            alt={song.name}
-                            className="w-14 h-14 rounded-lg object-cover group-hover:scale-110 transition-transform duration-200"
-                          />
-                          <div className="absolute inset-0 bg-black/20 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200"></div>
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <h4 className="font-semibold text-white truncate group-hover:text-blue-300 transition-colors">
-                            {song.name}
-                          </h4>
-                          <p className="text-sm text-gray-400 truncate">
-                            {song.artists.primary
-                              .map((artist) => artist.name)
-                              .join(", ")}
-                          </p>
-                        </div>
+                      <div className="w-8 h-8 bg-muted rounded-full flex items-center justify-center text-xs font-bold text-foreground">
+                        {index + 1}
                       </div>
-                      <div className="flex items-center gap-3">
-                        <div className="text-sm text-gray-400 bg-gray-800/50 px-3 py-1 rounded-full">
-                          {formatDuration(song.duration)}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between">
+                          <div className="flex-1 min-w-0">
+                            <h4 className="font-semibold text-foreground truncate">
+                              {song.name}
+                            </h4>
+                            <p className="text-sm text-muted-foreground truncate">
+                              {song.artists.primary
+                                .map((artist) => artist.name)
+                                .join(", ")}
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <span className="text-sm text-muted-foreground">
+                              {formatDuration(song.duration)}
+                            </span>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 text-muted-foreground hover:text-foreground"
+                            >
+                              <Play className="w-4 h-4" />
+                            </Button>
+                          </div>
                         </div>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 text-gray-400 hover:text-white"
-                        >
-                          <Play className="w-4 h-4" />
-                        </Button>
                       </div>
                     </div>
                   ))}
                 </div>
-              </div>
-            ) : (
-              <div className="bg-gray-800/20 rounded-2xl p-12 border border-gray-700/50 backdrop-blur-sm text-center">
-                <Music className="w-20 h-20 text-gray-400 mx-auto mb-6" />
-                <h3 className="text-2xl font-bold text-white mb-3">
-                  No Songs Found
-                </h3>
-                <p className="text-gray-400 text-lg">
-                  This album doesn't have any songs available.
+              ) : (
+                <div className="text-center py-12 px-4">
+                  <Music className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
+                  <h3 className="text-xl font-bold text-foreground mb-2">
+                    No Songs Found
+                  </h3>
+                  <p className="text-muted-foreground">
+                    This album doesn't have any songs available.
+                  </p>
+                </div>
+              )}
+            </TabsContent>
+
+            {/* Reviews Tab */}
+            <TabsContent value="reviews" className="space-y-6">
+              <div className="text-center py-12 px-4">
+                <Star className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
+                <p className="text-muted-foreground">
+                  Reviews functionality coming soon...
                 </p>
               </div>
-            )}
-          </TabsContent>
-        </Tabs>
+            </TabsContent>
+
+            {/* Similar Tab */}
+            <TabsContent value="similar" className="space-y-6">
+              {similarAlbums.length > 0 ? (
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 px-4">
+                  {similarAlbums.map((similarAlbum) => (
+                    <div
+                      key={similarAlbum.id}
+                      className="overflow-hidden cursor-pointer hover:shadow-lg transition-all duration-300 rounded-xl group bg-muted/30 backdrop-blur-sm hover:bg-muted/50 hover:scale-105 border border-border/20"
+                      onClick={() =>
+                        router.push(`/music/album/${similarAlbum.id}`)
+                      }
+                    >
+                      <div className="aspect-square relative overflow-hidden">
+                        <img
+                          src={getImageUrl(similarAlbum.image)}
+                          alt={similarAlbum.name}
+                          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                        />
+                        {/* Hover overlay */}
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                      </div>
+                      <div className="p-3">
+                        <h3 className="font-medium text-sm truncate mb-1 group-hover:text-primary transition-colors">
+                          {similarAlbum.name}
+                        </h3>
+                        <p className="text-xs text-muted-foreground truncate">
+                          {similarAlbum.artists?.primary
+                            ?.map((artist) => artist.name)
+                            .join(", ")}
+                        </p>
+                        {similarAlbum.year && (
+                          <p className="text-xs text-muted-foreground">
+                            {similarAlbum.year}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-12 px-4">
+                  <Disc className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
+                  <p className="text-muted-foreground">
+                    No similar albums found.
+                  </p>
+                </div>
+              )}
+            </TabsContent>
+          </Tabs>
+        </div>
       </div>
     </div>
   );

@@ -7,7 +7,18 @@ import { use } from "react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Star, Play, Plus, Heart, Edit } from "lucide-react";
+import {
+  Star,
+  Play,
+  Plus,
+  Heart,
+  Edit,
+  ArrowLeft,
+  Calendar,
+  Clock,
+  Users,
+  Tv,
+} from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -93,7 +104,7 @@ export default function SeriesDetailPage({
   const [selectedListId, setSelectedListId] = useState("");
   const [addToListOpen, setAddToListOpen] = useState(false);
   const [isSavingToList, setIsSavingToList] = useState(false);
-  const [activeTab, setActiveTab] = useState("all");
+  const [activeTab, setActiveTab] = useState("overview");
   const [trailerOpen, setTrailerOpen] = useState(false);
   const [selectedTrailer, setSelectedTrailer] = useState<Video | null>(null);
 
@@ -272,8 +283,8 @@ export default function SeriesDetailPage({
 
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 dark:from-gray-900 dark:via-black dark:to-gray-900 flex items-center justify-center">
-        <div className="text-center">
+      <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20 flex items-center justify-center">
+        <div className="text-center p-8 rounded-2xl bg-card/50 backdrop-blur-sm border border-border/50">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
           <p className="text-muted-foreground">Loading...</p>
         </div>
@@ -285,8 +296,8 @@ export default function SeriesDetailPage({
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 dark:from-gray-900 dark:via-black dark:to-gray-900 flex items-center justify-center">
-        <div className="text-center">
+      <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20 flex items-center justify-center">
+        <div className="text-center p-8 rounded-2xl bg-card/50 backdrop-blur-sm border border-border/50">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
           <p className="text-muted-foreground">Loading series details...</p>
         </div>
@@ -296,235 +307,286 @@ export default function SeriesDetailPage({
 
   if (error || !series) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 dark:from-gray-900 dark:via-black dark:to-gray-900 flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-destructive mb-4">{error || "Series not found"}</p>
-          <Button onClick={() => router.back()}>Go Back</Button>
+      <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20 flex items-center justify-center">
+        <div className="text-center p-8 rounded-2xl bg-card/50 backdrop-blur-sm border border-border/50">
+          <p className="text-destructive mb-6">{error || "Series not found"}</p>
+          <Button onClick={() => router.back()} className="rounded-xl">
+            Go Back
+          </Button>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 dark:from-gray-900 dark:via-black dark:to-gray-900">
-      <div className="max-w-7xl mx-auto px-4 py-8">
-        {/* Top Section */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
-          {/* Poster */}
-          <div className="lg:col-span-1">
-            <div className="relative">
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
+      <div className="container mx-auto px-4 py-8">
+        {/* Back Button */}
+        <Button
+          variant="ghost"
+          onClick={() => router.back()}
+          className="mb-8 rounded-xl hover:bg-muted/50 transition-all duration-200 group"
+        >
+          <ArrowLeft className="h-4 w-4 mr-2 group-hover:-translate-x-1 transition-transform" />
+          Back
+        </Button>
+
+        {/* Hero Section with Backdrop */}
+        <div className="relative mb-12 rounded-3xl overflow-hidden">
+          {series.backdrop_path && (
+            <div className="absolute inset-0">
               <Image
-                src={
-                  series.poster_path
-                    ? `https://image.tmdb.org/t/p/w500${series.poster_path}`
-                    : "/placeholder.svg"
-                }
+                src={`https://image.tmdb.org/t/p/original${series.backdrop_path}`}
                 alt={series.name}
-                width={400}
-                height={600}
-                className="rounded-lg shadow-lg w-full"
+                fill
+                className="object-cover blur-sm"
+                priority
               />
             </div>
-          </div>
+          )}
 
-          {/* Details */}
-          <div className="lg:col-span-2 space-y-6">
-            <div>
-              <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">
-                {series.name}
-              </h1>
-              {series.tagline && (
-                <p className="text-lg text-muted-foreground italic mb-4">
-                  "{series.tagline}"
-                </p>
-              )}
-            </div>
-
-            <div className="space-y-4">
-              <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
-                {series.overview}
-              </p>
-
-              <div className="flex items-center gap-4">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={handleTrailerClick}
-                  disabled={!getBestTrailer()}
-                >
-                  <Play className="w-4 h-4 mr-2" />
-                  {getBestTrailer() ? "Watch Trailer" : "No Trailer"}
-                </Button>
-                <Button
-                  size="sm"
-                  onClick={() =>
-                    router.push(
-                      `/reviews?type=series&id=${
-                        resolvedParams.id
-                      }&title=${encodeURIComponent(
-                        series.name
-                      )}&cover=${encodeURIComponent(
+          <div className="relative z-10 p-8 lg:p-12">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-end">
+              {/* Poster */}
+              <div className="lg:col-span-1">
+                <div className="relative group max-w-xs mx-auto lg:mx-0">
+                  <div className="aspect-[2/3] rounded-2xl overflow-hidden bg-gradient-to-br from-muted to-muted/50 shadow-2xl group-hover:shadow-3xl transition-all duration-300">
+                    <Image
+                      src={
                         series.poster_path
-                          ? `https://image.tmdb.org/t/p/w300${series.poster_path}`
+                          ? `https://image.tmdb.org/t/p/w500${series.poster_path}`
                           : "/placeholder.svg"
-                      )}`
-                    )
-                  }
-                >
-                  <Edit className="w-4 h-4 mr-2" />
-                  Write Review
-                </Button>
-                <div className="flex items-center gap-1">
-                  <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-                  <span className="text-sm font-medium">
-                    {series.vote_average.toFixed(1)}
-                  </span>
+                      }
+                      alt={series.name}
+                      width={400}
+                      height={600}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
+                  </div>
+                  {/* Subtle overlay gradient */}
+                  <div className="absolute inset-0 rounded-2xl bg-gradient-to-t from-black/10 via-transparent to-transparent pointer-events-none"></div>
                 </div>
               </div>
-            </div>
 
-            {/* Stats */}
-            <div className="flex items-center gap-8">
-              <div className="flex gap-2">
-                <Button variant="outline" size="sm">
-                  <Heart className="w-4 h-4 mr-2" />
-                  Watchlist
-                </Button>
-                <Dialog open={addToListOpen} onOpenChange={setAddToListOpen}>
-                  <DialogTrigger asChild>
-                    <Button size="sm">
-                      <Plus className="w-4 h-4 mr-2" />
-                      Add to List
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>Add to List</DialogTitle>
-                      <DialogDescription>
-                        Choose a list to add "{series.name}" to.
-                      </DialogDescription>
-                    </DialogHeader>
-                    <div className="space-y-4">
-                      {userLists.length > 0 ? (
-                        <div className="space-y-2">
-                          {userLists.map((list) => (
-                            <label
-                              key={list.id}
-                              className="flex items-center gap-2 cursor-pointer"
-                            >
-                              <input
-                                type="radio"
-                                name="series-list"
-                                value={list.id}
-                                checked={selectedListId === list.id}
-                                onChange={() => setSelectedListId(list.id)}
-                              />
-                              <span>{list.name}</span>
-                            </label>
-                          ))}
-                        </div>
-                      ) : (
-                        <p className="text-muted-foreground text-sm">
-                          No lists available. Create a list first.
-                        </p>
-                      )}
-                    </div>
-                    <div className="flex justify-end gap-2">
-                      <Button
-                        onClick={handleAddToList}
-                        disabled={isSavingToList || !selectedListId}
+              {/* Details */}
+              <div className="lg:col-span-2 space-y-4">
+                <div className="space-y-2">
+                  <h1 className="text-4xl lg:text-6xl font-bold text-white drop-shadow-2xl">
+                    {series.name}
+                  </h1>
+                  {series.tagline && (
+                    <p className="text-lg lg:text-xl text-white italic drop-shadow-lg">
+                      "{series.tagline}"
+                    </p>
+                  )}
+                </div>
+
+                {/* Quick Stats */}
+                <div className="flex flex-wrap items-center gap-6">
+                  <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-background/60 backdrop-blur-sm border border-border/50 shadow-lg">
+                    <Calendar className="h-4 w-4 text-primary" />
+                    <span className="text-sm font-medium text-foreground">
+                      {new Date(series.first_air_date).getFullYear()}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-background/60 backdrop-blur-sm border border-border/50 shadow-lg">
+                    <Tv className="h-4 w-4 text-primary" />
+                    <span className="text-sm font-medium text-foreground">
+                      {series.number_of_seasons} Seasons
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-background/60 backdrop-blur-sm border border-border/50 shadow-lg">
+                    <Clock className="h-4 w-4 text-primary" />
+                    <span className="text-sm font-medium text-foreground">
+                      {series.number_of_episodes} Episodes
+                    </span>
+                  </div>
+                </div>
+
+                {/* Overview */}
+                <div className="p-6 rounded-2xl bg-background/60 backdrop-blur-sm border border-border/50 shadow-lg">
+                  <p className="text-foreground leading-relaxed text-base">
+                    {series.overview}
+                  </p>
+                </div>
+
+                {/* Genres */}
+                {series.genres && (
+                  <div className="flex flex-wrap gap-2">
+                    {series.genres.map((genre) => (
+                      <Badge
+                        key={genre.id}
+                        variant="outline"
+                        className="rounded-lg px-3 py-1 text-sm font-medium bg-white/20 text-white border-white/30"
                       >
-                        {isSavingToList ? "Saving..." : "Add to List"}
+                        {genre.name}
+                      </Badge>
+                    ))}
+                  </div>
+                )}
+
+                {/* Action Buttons */}
+                <div className="flex flex-wrap items-center gap-4">
+                  <Button
+                    size="lg"
+                    variant="outline"
+                    onClick={handleTrailerClick}
+                    disabled={!getBestTrailer()}
+                    className="rounded-xl hover:bg-muted/50 transition-all duration-200 group bg-background/60 border-border/50"
+                  >
+                    <Play className="w-5 h-5 mr-2 group-hover:scale-110 transition-transform" />
+                    {getBestTrailer() ? "Watch Trailer" : "No Trailer"}
+                  </Button>
+                  <Button
+                    size="lg"
+                    onClick={() =>
+                      router.push(
+                        `/reviews?type=series&id=${
+                          resolvedParams.id
+                        }&title=${encodeURIComponent(
+                          series.name
+                        )}&cover=${encodeURIComponent(
+                          series.poster_path
+                            ? `https://image.tmdb.org/t/p/w300${series.poster_path}`
+                            : "/placeholder.svg"
+                        )}`
+                      )
+                    }
+                    className="rounded-xl hover:scale-105 transition-all duration-200"
+                  >
+                    <Star className="w-5 h-5 mr-2" />
+                    Rate
+                  </Button>
+                  <Dialog open={addToListOpen} onOpenChange={setAddToListOpen}>
+                    <DialogTrigger asChild>
+                      <Button
+                        size="lg"
+                        className="rounded-xl hover:scale-105 transition-all duration-200"
+                      >
+                        <Plus className="w-5 h-5 mr-2" />
+                        Add to List
                       </Button>
-                    </div>
-                  </DialogContent>
-                </Dialog>
+                    </DialogTrigger>
+                    <DialogContent className="rounded-2xl">
+                      <DialogHeader>
+                        <DialogTitle>Add to List</DialogTitle>
+                        <DialogDescription>
+                          Choose a list to add "{series.name}" to.
+                        </DialogDescription>
+                      </DialogHeader>
+                      <div className="space-y-4">
+                        {userLists.length > 0 ? (
+                          <div className="space-y-2">
+                            {userLists.map((list) => (
+                              <label
+                                key={list.id}
+                                className="flex items-center gap-3 cursor-pointer p-3 rounded-xl hover:bg-muted/50 transition-colors"
+                              >
+                                <input
+                                  type="radio"
+                                  name="series-list"
+                                  value={list.id}
+                                  checked={selectedListId === list.id}
+                                  onChange={() => setSelectedListId(list.id)}
+                                  className="text-primary"
+                                />
+                                <span className="font-medium">{list.name}</span>
+                              </label>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="text-muted-foreground text-sm">
+                            No lists available. Create a list first.
+                          </p>
+                        )}
+                      </div>
+                      <div className="flex justify-end gap-2">
+                        <Button
+                          onClick={handleAddToList}
+                          disabled={isSavingToList || !selectedListId}
+                          className="rounded-xl"
+                        >
+                          {isSavingToList ? "Saving..." : "Add to List"}
+                        </Button>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+                </div>
               </div>
             </div>
           </div>
         </div>
 
         {/* Bottom Section */}
-        <div className="border-t border-gray-200 dark:border-gray-700 pt-8">
+        <div className="space-y-8">
           {/* Navigation Tabs */}
-          <div className="flex space-x-8 mb-6 border-b border-gray-200 dark:border-gray-700">
-            {["all", "reviews", "cast/crew", "thread", "posts", "similar"].map(
-              (tab) => (
+          <div className="flex justify-center">
+            <div className="inline-flex h-14 items-center justify-center rounded-2xl bg-muted/30 backdrop-blur-sm border border-border/20 p-1 gap-1">
+              {["overview", "cast/crew", "reviews", "similar"].map((tab) => (
                 <button
                   key={tab}
                   onClick={() => setActiveTab(tab)}
-                  className={`pb-2 px-1 text-sm font-medium transition-colors ${
+                  className={`inline-flex items-center justify-center whitespace-nowrap rounded-xl px-6 py-3 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 ${
                     activeTab === tab
-                      ? "text-primary border-b-2 border-primary"
-                      : "text-muted-foreground hover:text-primary"
+                      ? "bg-background text-foreground shadow-sm"
+                      : "text-muted-foreground hover:bg-muted/50"
                   }`}
                 >
                   {tab.charAt(0).toUpperCase() + tab.slice(1)}
                 </button>
-              )
-            )}
+              ))}
+            </div>
           </div>
 
           {/* Content Area */}
-          <div className="min-h-[400px] bg-card rounded-lg p-6">
-            {activeTab === "all" && (
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold">Series Information</h3>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                  <div>
-                    <span className="text-muted-foreground">
-                      First Air Date:
+          <div className="min-h-[400px] bg-card/50 backdrop-blur-sm rounded-2xl p-8 border border-border/30 shadow-lg">
+            {activeTab === "overview" && (
+              <div className="space-y-6">
+                <h3 className="text-2xl font-semibold bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent">
+                  Series Information
+                </h3>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                  <div className="p-4 rounded-xl bg-muted/30 backdrop-blur-sm border border-border/20">
+                    <span className="text-muted-foreground text-sm">
+                      First Air Date
                     </span>
-                    <p>
+                    <p className="font-medium">
                       {new Date(series.first_air_date).toLocaleDateString()}
                     </p>
                   </div>
-                  <div>
-                    <span className="text-muted-foreground">Seasons:</span>
-                    <p>{series.number_of_seasons}</p>
+                  <div className="p-4 rounded-xl bg-muted/30 backdrop-blur-sm border border-border/20">
+                    <span className="text-muted-foreground text-sm">
+                      Seasons
+                    </span>
+                    <p className="font-medium">{series.number_of_seasons}</p>
                   </div>
-                  <div>
-                    <span className="text-muted-foreground">Episodes:</span>
-                    <p>{series.number_of_episodes}</p>
+                  <div className="p-4 rounded-xl bg-muted/30 backdrop-blur-sm border border-border/20">
+                    <span className="text-muted-foreground text-sm">
+                      Episodes
+                    </span>
+                    <p className="font-medium">{series.number_of_episodes}</p>
                   </div>
-                  <div>
-                    <span className="text-muted-foreground">Status:</span>
-                    <p>{series.status}</p>
-                  </div>
-                  <div>
-                    <span className="text-muted-foreground">Rating:</span>
-                    <p>{series.vote_average}/10</p>
+                  <div className="p-4 rounded-xl bg-muted/30 backdrop-blur-sm border border-border/20">
+                    <span className="text-muted-foreground text-sm">
+                      Status
+                    </span>
+                    <p className="font-medium">{series.status}</p>
                   </div>
                 </div>
-                {series.genres && (
-                  <div>
-                    <span className="text-muted-foreground">Genres:</span>
-                    <div className="flex flex-wrap gap-2 mt-2">
-                      {series.genres.map((genre) => (
-                        <Badge key={genre.id} variant="secondary">
-                          {genre.name}
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-            {activeTab === "reviews" && (
-              <div className="text-center text-muted-foreground py-8">
-                <p>Reviews coming soon...</p>
               </div>
             )}
             {activeTab === "cast/crew" && (
-              <div className="space-y-6">
+              <div className="space-y-8">
                 {series.credits?.cast && series.credits.cast.length > 0 && (
                   <div>
-                    <h3 className="text-lg font-semibold mb-4">Cast</h3>
+                    <h3 className="text-2xl font-semibold mb-6 bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent">
+                      Cast
+                    </h3>
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                       {series.credits.cast.slice(0, 12).map((actor, index) => (
                         <div
                           key={`cast-${actor.id}-${index}`}
-                          className="flex items-center space-x-3 p-3 bg-card rounded-lg cursor-pointer hover:bg-accent transition-colors"
+                          className="flex items-center space-x-3 p-4 bg-muted/30 backdrop-blur-sm rounded-xl cursor-pointer hover:bg-muted/50 transition-all duration-200 group border border-border/20"
                           onClick={() => router.push(`/person/${actor.id}`)}
                         >
                           {actor.profile_path ? (
@@ -533,21 +595,21 @@ export default function SeriesDetailPage({
                               alt={actor.name}
                               width={48}
                               height={48}
-                              className="rounded-full object-cover"
+                              className="rounded-full object-cover group-hover:scale-110 transition-transform duration-200"
                               onError={(e) => {
                                 const target = e.target as HTMLImageElement;
                                 target.src = "/placeholder-user.jpg";
                               }}
                             />
                           ) : (
-                            <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center">
+                            <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center group-hover:scale-110 transition-transform duration-200">
                               <span className="text-sm font-medium text-muted-foreground">
                                 {actor.name.charAt(0).toUpperCase()}
                               </span>
                             </div>
                           )}
                           <div className="flex-1 min-w-0">
-                            <p className="font-medium text-sm truncate">
+                            <p className="font-medium text-sm truncate group-hover:text-primary transition-colors">
                               {actor.name}
                             </p>
                             <p className="text-xs text-muted-foreground truncate">
@@ -562,7 +624,9 @@ export default function SeriesDetailPage({
 
                 {series.credits?.crew && series.credits.crew.length > 0 && (
                   <div>
-                    <h3 className="text-lg font-semibold mb-4">Crew</h3>
+                    <h3 className="text-2xl font-semibold mb-6 bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent">
+                      Crew
+                    </h3>
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                       {series.credits.crew
                         .filter((person) =>
@@ -578,7 +642,7 @@ export default function SeriesDetailPage({
                         .map((person, index) => (
                           <div
                             key={`crew-${person.id}-${index}`}
-                            className="flex items-center space-x-3 p-3 bg-card rounded-lg cursor-pointer hover:bg-accent transition-colors"
+                            className="flex items-center space-x-3 p-4 bg-muted/30 backdrop-blur-sm rounded-xl cursor-pointer hover:bg-muted/50 transition-all duration-200 group border border-border/20"
                             onClick={() => router.push(`/person/${person.id}`)}
                           >
                             {person.profile_path ? (
@@ -587,21 +651,21 @@ export default function SeriesDetailPage({
                                 alt={person.name}
                                 width={48}
                                 height={48}
-                                className="rounded-full object-cover"
+                                className="rounded-full object-cover group-hover:scale-110 transition-transform duration-200"
                                 onError={(e) => {
                                   const target = e.target as HTMLImageElement;
                                   target.src = "/placeholder-user.jpg";
                                 }}
                               />
                             ) : (
-                              <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center">
+                              <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center group-hover:scale-110 transition-transform duration-200">
                                 <span className="text-sm font-medium text-muted-foreground">
                                   {person.name.charAt(0).toUpperCase()}
                                 </span>
                               </div>
                             )}
                             <div className="flex-1 min-w-0">
-                              <p className="font-medium text-sm truncate">
+                              <p className="font-medium text-sm truncate group-hover:text-primary transition-colors">
                                 {person.name}
                               </p>
                               <p className="text-xs text-muted-foreground truncate">
@@ -617,25 +681,22 @@ export default function SeriesDetailPage({
                 {(!series.credits?.cast || series.credits.cast.length === 0) &&
                   (!series.credits?.crew ||
                     series.credits.crew.length === 0) && (
-                    <div className="text-center text-muted-foreground py-8">
-                      <p>Cast and crew information not available.</p>
+                    <div className="text-center text-muted-foreground py-12">
+                      <p className="text-lg">
+                        Cast and crew information not available.
+                      </p>
                     </div>
                   )}
               </div>
             )}
-            {activeTab === "thread" && (
-              <div className="text-center text-muted-foreground py-8">
-                <p>Discussion threads coming soon...</p>
-              </div>
-            )}
-            {activeTab === "posts" && (
-              <div className="text-center text-muted-foreground py-8">
-                <p>Community posts coming soon...</p>
+            {activeTab === "reviews" && (
+              <div className="text-center text-muted-foreground py-12">
+                <p className="text-lg">Reviews coming soon...</p>
               </div>
             )}
             {activeTab === "similar" && (
-              <div className="text-center text-muted-foreground py-8">
-                <p>Similar series coming soon...</p>
+              <div className="text-center text-muted-foreground py-12">
+                <p className="text-lg">Similar series coming soon...</p>
               </div>
             )}
           </div>
@@ -644,7 +705,7 @@ export default function SeriesDetailPage({
 
       {/* Trailer Modal */}
       <Dialog open={trailerOpen} onOpenChange={setTrailerOpen}>
-        <DialogContent className="max-w-4xl max-h-[80vh]">
+        <DialogContent className="max-w-4xl max-h-[80vh] rounded-2xl">
           <DialogHeader>
             <DialogTitle>
               {selectedTrailer?.name || "Series Trailer"}
@@ -658,7 +719,7 @@ export default function SeriesDetailPage({
               <iframe
                 src={`https://www.youtube.com/embed/${selectedTrailer.key}?autoplay=1`}
                 title={selectedTrailer.name}
-                className="absolute top-0 left-0 w-full h-full rounded-lg"
+                className="absolute top-0 left-0 w-full h-full rounded-xl"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                 allowFullScreen
               />

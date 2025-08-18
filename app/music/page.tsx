@@ -168,7 +168,7 @@ export default function MusicApp() {
   const [currentPage, setCurrentPage] = useState(1);
   const [albumPage, setAlbumPage] = useState(1);
   const [artistPage, setArtistPage] = useState(1);
-  const [activeTab, setActiveTab] = useState("discover");
+  const [activeTab, setActiveTab] = useState("explore");
   const [hasMoreSongs, setHasMoreSongs] = useState(false);
   const [hasMoreAlbums, setHasMoreAlbums] = useState(false);
   const [hasMoreArtists, setHasMoreArtists] = useState(false);
@@ -868,15 +868,15 @@ export default function MusicApp() {
           {/* Navigation Tabs */}
           <div className="flex items-center gap-2 sm:gap-3 overflow-x-auto pb-4 scrollbar-hide w-full horizontal-scroll-container">
             <button
-              onClick={() => handleTabChange("discover")}
+              onClick={() => handleTabChange("explore")}
               className={cn(
                 "flex items-center gap-2 sm:gap-3 px-4 sm:px-6 py-2 sm:py-3 rounded-xl transition-all duration-300 whitespace-nowrap font-medium text-sm sm:text-base",
-                activeTab === "discover"
+                activeTab === "explore"
                   ? "bg-gradient-to-r from-gray-800 to-gray-700 text-white shadow-lg border border-gray-600"
                   : "hover:bg-gray-800/50 text-gray-300 hover:text-white"
               )}
             >
-              <span>Discover</span>
+              <span>Explore</span>
             </button>
             <button
               onClick={() => handleTabChange("artists")}
@@ -1023,7 +1023,7 @@ export default function MusicApp() {
 
                         <div
                           ref={artistsScrollRef}
-                          className="flex gap-4 overflow-x-auto scrollbar-hide pb-4 px-12 horizontal-scroll-container"
+                          className="flex gap-2 overflow-x-auto scrollbar-hide pb-4 px-12 horizontal-scroll-container"
                         >
                           {artists.map((artist) => (
                             <div
@@ -1036,12 +1036,41 @@ export default function MusicApp() {
                                   router.push(`/music/artist/${artist.id}`)
                                 }
                               >
-                                <div className="relative mb-4">
+                                <div className="relative mb-2">
                                   <img
                                     src={getImageUrl(artist.image)}
                                     alt={artist.name}
                                     className="w-full aspect-square rounded-full object-cover mx-auto"
                                   />
+                                  {/* Hover overlay with action buttons */}
+                                  <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-full flex items-center justify-center gap-4">
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        // Placeholder for play functionality
+                                        console.log(
+                                          "Play artist:",
+                                          artist.name
+                                        );
+                                      }}
+                                      className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-white/30 transition-all duration-200 hover:scale-110"
+                                    >
+                                      <Play className="w-5 h-5 text-white fill-white" />
+                                    </button>
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        // Placeholder for like functionality
+                                        console.log(
+                                          "Like artist:",
+                                          artist.name
+                                        );
+                                      }}
+                                      className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-white/30 transition-all duration-200 hover:scale-110"
+                                    >
+                                      <Heart className="w-5 h-5 text-white fill-white" />
+                                    </button>
+                                  </div>
                                 </div>
 
                                 <div className="space-y-2">
@@ -1093,7 +1122,7 @@ export default function MusicApp() {
 
                         <div
                           ref={albumsScrollRef}
-                          className="flex gap-4 overflow-x-auto scrollbar-hide pb-4 px-12 horizontal-scroll-container"
+                          className="flex gap-2 overflow-x-auto scrollbar-hide pb-4 px-12 horizontal-scroll-container"
                         >
                           {albums.map((album) => (
                             <div
@@ -1106,12 +1135,35 @@ export default function MusicApp() {
                                   router.push(`/music/album/${album.id}`)
                                 }
                               >
-                                <div className="relative mb-4">
+                                <div className="relative mb-2">
                                   <img
                                     src={getImageUrl(album.image)}
                                     alt={album.name}
                                     className="w-full aspect-square rounded-lg object-cover"
                                   />
+                                  {/* Hover overlay with action buttons */}
+                                  <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-lg flex items-center justify-center gap-4">
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        // Placeholder for play functionality
+                                        console.log("Play album:", album.name);
+                                      }}
+                                      className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-white/30 transition-all duration-200 hover:scale-110"
+                                    >
+                                      <Play className="w-5 h-5 text-white fill-white" />
+                                    </button>
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        // Placeholder for like functionality
+                                        console.log("Like album:", album.name);
+                                      }}
+                                      className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-white/30 transition-all duration-200 hover:scale-110"
+                                    >
+                                      <Heart className="w-5 h-5 text-white fill-white" />
+                                    </button>
+                                  </div>
                                 </div>
 
                                 <div className="space-y-2">
@@ -1168,7 +1220,7 @@ export default function MusicApp() {
 
                         <div
                           ref={songsScrollRef}
-                          className="flex gap-4 overflow-x-auto scrollbar-hide pb-4 px-12 horizontal-scroll-container"
+                          className="flex gap-2 overflow-x-auto scrollbar-hide pb-4 px-12 horizontal-scroll-container"
                         >
                           {songs.map((song) => (
                             <div
@@ -1176,12 +1228,35 @@ export default function MusicApp() {
                               className="flex-shrink-0 w-[200px] sm:w-[220px] md:w-[240px]"
                             >
                               <div className="group">
-                                <div className="relative mb-4">
+                                <div className="relative mb-2">
                                   <img
                                     src={getImageUrl(song.image)}
                                     alt={song.name}
                                     className="w-full aspect-square rounded-lg object-cover"
                                   />
+                                  {/* Hover overlay with action buttons */}
+                                  <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-lg flex items-center justify-center gap-4">
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        // Placeholder for play functionality
+                                        console.log("Play song:", song.name);
+                                      }}
+                                      className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-white/30 transition-all duration-200 hover:scale-110"
+                                    >
+                                      <Play className="w-5 h-5 text-white fill-white" />
+                                    </button>
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        // Placeholder for like functionality
+                                        console.log("Like song:", song.name);
+                                      }}
+                                      className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-white/30 transition-all duration-200 hover:scale-110"
+                                    >
+                                      <Heart className="w-5 h-5 text-white fill-white" />
+                                    </button>
+                                  </div>
                                 </div>
 
                                 <div className="space-y-2">
@@ -1236,13 +1311,13 @@ export default function MusicApp() {
             </div>
           )}
 
-          {/* Discover Tab - Recommendations */}
-          {activeTab === "discover" && !showSearchResults && (
+          {/* Explore Tab - Recommendations */}
+          {activeTab === "explore" && !showSearchResults && (
             <div className="space-y-8 w-full">
               {/* Recommendations section */}
-              <div className="bg-gray-800/50 rounded-2xl p-6 shadow-lg border border-gray-700 w-full">
+              <div className="w-full">
                 <h2 className="text-2xl font-bold text-white mb-6">
-                  Discover New Music
+                  Explore New Music
                 </h2>
                 <Recommendations {...recommendationsProps} />
               </div>
@@ -1276,10 +1351,10 @@ export default function MusicApp() {
                     Start exploring and follow your favorite artists!
                   </p>
                   <Button
-                    onClick={() => handleTabChange("discover")}
+                    onClick={() => handleTabChange("explore")}
                     className="bg-blue-600 hover:bg-blue-700 text-white"
                   >
-                    Discover Artists
+                    Explore Artists
                   </Button>
                 </div>
               ) : (
@@ -1293,14 +1368,14 @@ export default function MusicApp() {
                           className="w-[70%] aspect-square rounded-full object-cover mx-auto"
                         />
                       </div>
-                      <div className="mt-4">
+                      <div className="mt-3 text-center">
                         <h3
-                          className="font-semibold text-white truncate"
+                          className="font-semibold text-white truncate text-sm sm:text-base"
                           title={artist.name}
                         >
                           {artist.name}
                         </h3>
-                        <p className="text-sm text-gray-400 capitalize">
+                        <p className="text-xs text-gray-400 mt-0.5">
                           {artist.type || "Artist"}
                         </p>
                       </div>
@@ -1336,10 +1411,10 @@ export default function MusicApp() {
                     Start exploring and like your favorite albums!
                   </p>
                   <Button
-                    onClick={() => handleTabChange("discover")}
+                    onClick={() => handleTabChange("explore")}
                     className="bg-blue-600 hover:bg-blue-700 text-white"
                   >
-                    Discover Albums
+                    Explore Albums
                   </Button>
                 </div>
               ) : (
@@ -1352,20 +1427,45 @@ export default function MusicApp() {
                           alt={album.name}
                           className="w-full aspect-square rounded-lg object-cover"
                         />
+                        {/* Hover overlay with action buttons */}
+                        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-lg flex items-center justify-center gap-4">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              // Placeholder for play functionality
+                              console.log("Play album:", album.name);
+                            }}
+                            className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-white/30 transition-all duration-200 hover:scale-110"
+                          >
+                            <Play className="w-5 h-5 text-white fill-white" />
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              // Placeholder for like functionality
+                              console.log("Like album:", album.name);
+                            }}
+                            className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-white/30 transition-all duration-200 hover:scale-110"
+                          >
+                            <Heart className="w-5 h-5 text-white fill-white" />
+                          </button>
+                        </div>
                       </div>
-                      <div className="mt-4">
+                      <div className="mt-3">
                         <h3
-                          className="font-semibold text-white truncate"
+                          className="font-semibold text-white truncate text-sm sm:text-base"
                           title={album.name}
                         >
                           {album.name}
                         </h3>
-                        <p className="text-sm text-gray-400 truncate">
+                        <p className="text-xs text-gray-400 truncate mt-1">
                           {album.artists?.primary
                             ?.map((artist) => artist.name)
                             .join(", ") || "Unknown Artist"}
                         </p>
-                        <p className="text-xs text-gray-500">{album.year}</p>
+                        <p className="text-xs text-gray-500 mt-1">
+                          {album.year}
+                        </p>
                       </div>
                     </div>
                   ))}
@@ -1399,10 +1499,10 @@ export default function MusicApp() {
                     Start exploring and like your favorite songs!
                   </p>
                   <Button
-                    onClick={() => handleTabChange("discover")}
+                    onClick={() => handleTabChange("explore")}
                     className="bg-blue-600 hover:bg-blue-700 text-white"
                   >
-                    Discover Songs
+                    Explore Songs
                   </Button>
                 </div>
               ) : (
@@ -1421,6 +1521,29 @@ export default function MusicApp() {
                               alt={song.name}
                               className="w-16 h-16 rounded-lg object-cover"
                             />
+                            {/* Hover overlay with action buttons */}
+                            <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-lg flex items-center justify-center gap-2">
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  // Placeholder for play functionality
+                                  console.log("Play song:", song.name);
+                                }}
+                                className="w-8 h-8 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-white/30 transition-all duration-200 hover:scale-110"
+                              >
+                                <Play className="w-3 h-3 text-white fill-white" />
+                              </button>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  // Placeholder for like functionality
+                                  console.log("Like song:", song.name);
+                                }}
+                                className="w-8 h-8 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-white/30 transition-all duration-200 hover:scale-110"
+                              >
+                                <Heart className="w-3 h-3 text-white fill-white" />
+                              </button>
+                            </div>
                           </div>
                           <div className="flex-1 min-w-0">
                             <h4 className="font-semibold text-white truncate">

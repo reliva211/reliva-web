@@ -184,7 +184,16 @@ export default function Sidebar({ isLandingPage = false }: SidebarProps) {
                     isCollapsed ? "text-lg mx-auto" : "text-lg lg:text-xl"
                   )}
                 >
-                  {isCollapsed ? "R" : "reliva"}
+                  {isCollapsed ? (
+                    "R"
+                  ) : (
+                    <span className="flex items-center gap-2">
+                      reliva
+                      <span className="text-xs text-muted-foreground px-1.5 py-0.5 rounded-full font-medium">
+                        beta
+                      </span>
+                    </span>
+                  )}
                 </span>
               </Link>
               <div

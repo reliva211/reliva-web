@@ -7,7 +7,18 @@ import { use } from "react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Star, BookOpen, Plus, Heart, Edit } from "lucide-react";
+import {
+  Star,
+  BookOpen,
+  Plus,
+  Heart,
+  Edit,
+  ArrowLeft,
+  Calendar,
+  Clock,
+  Users,
+  Book,
+} from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -70,7 +81,7 @@ export default function BookDetailPage({
   const [selectedListId, setSelectedListId] = useState("");
   const [addToListOpen, setAddToListOpen] = useState(false);
   const [isSavingToList, setIsSavingToList] = useState(false);
-  const [activeTab, setActiveTab] = useState("all");
+  const [activeTab, setActiveTab] = useState("overview");
 
   // Default collections for books
   const defaultCollections = [
@@ -221,8 +232,8 @@ export default function BookDetailPage({
 
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 dark:from-gray-900 dark:via-black dark:to-gray-900 flex items-center justify-center">
-        <div className="text-center">
+      <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20 flex items-center justify-center">
+        <div className="text-center p-8 rounded-2xl bg-card/50 backdrop-blur-sm border border-border/50">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
           <p className="text-muted-foreground">Loading...</p>
         </div>
@@ -234,8 +245,8 @@ export default function BookDetailPage({
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 dark:from-gray-900 dark:via-black dark:to-gray-900 flex items-center justify-center">
-        <div className="text-center">
+      <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20 flex items-center justify-center">
+        <div className="text-center p-8 rounded-2xl bg-card/50 backdrop-blur-sm border border-border/50">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
           <p className="text-muted-foreground">Loading book details...</p>
         </div>
@@ -245,254 +256,310 @@ export default function BookDetailPage({
 
   if (error || !book) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 dark:from-gray-900 dark:via-black dark:to-gray-900 flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-destructive mb-4">{error || "Book not found"}</p>
-          <Button onClick={() => router.back()}>Go Back</Button>
+      <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20 flex items-center justify-center">
+        <div className="text-center p-8 rounded-2xl bg-card/50 backdrop-blur-sm border border-border/50">
+          <p className="text-destructive mb-6">{error || "Book not found"}</p>
+          <Button onClick={() => router.back()} className="rounded-xl">
+            Go Back
+          </Button>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 dark:from-gray-900 dark:via-black dark:to-gray-900">
-      <div className="max-w-7xl mx-auto px-4 py-8">
-        {/* Top Section */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
-          {/* Cover */}
-          <div className="lg:col-span-1">
-            <div className="relative">
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
+      <div className="container mx-auto px-4 py-8">
+        {/* Back Button */}
+        <Button
+          variant="ghost"
+          onClick={() => router.back()}
+          className="mb-8 rounded-xl hover:bg-muted/50 transition-all duration-200 group"
+        >
+          <ArrowLeft className="h-4 w-4 mr-2 group-hover:-translate-x-1 transition-transform" />
+          Back
+        </Button>
+
+        {/* Hero Section with Backdrop */}
+        <div className="relative mb-12 rounded-3xl overflow-hidden">
+          {book.imageLinks?.thumbnail && (
+            <div className="absolute inset-0">
               <Image
-                src={
-                  book.imageLinks?.thumbnail
-                    ? book.imageLinks.thumbnail.replace("http://", "https://")
-                    : "/placeholder.svg"
-                }
+                src={book.imageLinks.thumbnail.replace("http://", "https://")}
                 alt={book.title}
-                width={400}
-                height={600}
-                className="rounded-lg shadow-lg w-full"
-                onError={(e) => {
-                  const target = e.target as HTMLImageElement;
-                  target.src = "/placeholder.svg";
-                }}
+                fill
+                className="object-cover blur-sm"
+                priority
               />
             </div>
-          </div>
+          )}
 
-          {/* Details */}
-          <div className="lg:col-span-2 space-y-6">
-            <div>
-              <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">
-                {book.title}
-              </h1>
-              {book.authors && (
-                <p className="text-lg text-muted-foreground mb-4">
-                  by {book.authors.join(", ")}
-                </p>
-              )}
-            </div>
-
-            <div className="space-y-4">
-              <div
-                className="text-gray-700 dark:text-gray-300 leading-relaxed"
-                dangerouslySetInnerHTML={{
-                  __html:
-                    book.description ||
-                    "No description available for this book.",
-                }}
-              />
-
-              <div className="flex items-center gap-4">
-                <Button size="sm" variant="outline" asChild>
-                  <a
-                    href={book.previewLink}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    <BookOpen className="w-4 h-4 mr-2" />
-                    Preview
-                  </a>
-                </Button>
-                <Button
-                  size="sm"
-                  onClick={() =>
-                    router.push(
-                      `/reviews?type=book&id=${
-                        resolvedParams.id
-                      }&title=${encodeURIComponent(
-                        book.title
-                      )}&author=${encodeURIComponent(
-                        book.authors?.join(", ") || "Unknown Author"
-                      )}&cover=${encodeURIComponent(
+          <div className="relative z-10 p-8 lg:p-12">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-end">
+              {/* Cover */}
+              <div className="lg:col-span-1">
+                <div className="relative group max-w-xs mx-auto lg:mx-0">
+                  <div className="aspect-[2/3] rounded-2xl overflow-hidden bg-gradient-to-br from-muted to-muted/50 shadow-2xl group-hover:shadow-3xl transition-all duration-300">
+                    <Image
+                      src={
                         book.imageLinks?.thumbnail
                           ? book.imageLinks.thumbnail.replace(
                               "http://",
                               "https://"
                             )
                           : "/placeholder.svg"
-                      )}`
-                    )
-                  }
-                >
-                  <Edit className="w-4 h-4 mr-2" />
-                  Write Review
-                </Button>
-                {book.averageRating && (
-                  <div className="flex items-center gap-1">
-                    <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-                    <span className="text-sm font-medium">
-                      {book.averageRating.toFixed(1)}
+                      }
+                      alt={book.title}
+                      width={400}
+                      height={600}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.src = "/placeholder.svg";
+                      }}
+                    />
+                  </div>
+                  {/* Subtle overlay gradient */}
+                  <div className="absolute inset-0 rounded-2xl bg-gradient-to-t from-black/10 via-transparent to-transparent pointer-events-none"></div>
+                </div>
+              </div>
+
+              {/* Details */}
+              <div className="lg:col-span-2 space-y-4">
+                <div className="space-y-2">
+                  <h1 className="text-4xl lg:text-6xl font-bold text-white drop-shadow-2xl">
+                    {book.title}
+                  </h1>
+                  {book.authors && (
+                    <p className="text-lg lg:text-xl text-white italic drop-shadow-lg">
+                      by {book.authors.join(", ")}
+                    </p>
+                  )}
+                </div>
+
+                {/* Quick Stats */}
+                <div className="flex flex-wrap items-center gap-6">
+                  <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-background/60 backdrop-blur-sm border border-border/50 shadow-lg">
+                    <Calendar className="h-4 w-4 text-primary" />
+                    <span className="text-sm font-medium text-foreground">
+                      {book.publishedDate
+                        ? new Date(book.publishedDate).getFullYear()
+                        : "Unknown"}
                     </span>
-                    {book.ratingsCount && (
-                      <span className="text-sm text-muted-foreground">
-                        ({book.ratingsCount} ratings)
+                  </div>
+                  <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-background/60 backdrop-blur-sm border border-border/50 shadow-lg">
+                    <Book className="h-4 w-4 text-primary" />
+                    <span className="text-sm font-medium text-foreground">
+                      {book.pageCount || "Unknown"} Pages
+                    </span>
+                  </div>
+                  {book.averageRating && (
+                    <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-background/60 backdrop-blur-sm border border-border/50 shadow-lg">
+                      <Star className="h-4 w-4 text-primary" />
+                      <span className="text-sm font-medium text-foreground">
+                        {book.averageRating.toFixed(1)}
                       </span>
-                    )}
+                    </div>
+                  )}
+                </div>
+
+                {/* Overview */}
+                <div className="p-6 rounded-2xl bg-background/60 backdrop-blur-sm border border-border/50 shadow-lg">
+                  <div
+                    className="text-foreground leading-relaxed text-base"
+                    dangerouslySetInnerHTML={{
+                      __html:
+                        book.description ||
+                        "No description available for this book.",
+                    }}
+                  />
+                </div>
+
+                {/* Categories */}
+                {book.categories && (
+                  <div className="flex flex-wrap gap-2">
+                    {book.categories.map((category, index) => (
+                      <Badge
+                        key={index}
+                        variant="outline"
+                        className="rounded-lg px-3 py-1 text-sm font-medium bg-white/20 text-white border-white/30"
+                      >
+                        {category}
+                      </Badge>
+                    ))}
                   </div>
                 )}
-              </div>
-            </div>
 
-            {/* Stats */}
-            <div className="flex items-center gap-8">
-              <div className="flex gap-2">
-                <Button variant="outline" size="sm">
-                  <Heart className="w-4 h-4 mr-2" />
-                  Wishlist
-                </Button>
-                <Dialog open={addToListOpen} onOpenChange={setAddToListOpen}>
-                  <DialogTrigger asChild>
-                    <Button size="sm">
-                      <Plus className="w-4 h-4 mr-2" />
-                      Add to List
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>Add to List</DialogTitle>
-                      <DialogDescription>
-                        Choose a list to add "{book.title}" to.
-                      </DialogDescription>
-                    </DialogHeader>
-                    <div className="space-y-4">
-                      {userLists.length > 0 ? (
-                        <div className="space-y-2">
-                          {userLists.map((list) => (
-                            <label
-                              key={list.id}
-                              className="flex items-center gap-2 cursor-pointer"
-                            >
-                              <input
-                                type="radio"
-                                name="book-list"
-                                value={list.id}
-                                checked={selectedListId === list.id}
-                                onChange={() => setSelectedListId(list.id)}
-                              />
-                              <span>{list.name}</span>
-                            </label>
-                          ))}
-                        </div>
-                      ) : (
-                        <p className="text-muted-foreground text-sm">
-                          No lists available. Create a list first.
-                        </p>
-                      )}
-                    </div>
-                    <div className="flex justify-end gap-2">
+                {/* Action Buttons */}
+                <div className="flex flex-wrap items-center gap-4">
+                  <Button
+                    size="lg"
+                    variant="outline"
+                    asChild
+                    className="rounded-xl hover:bg-muted/50 transition-all duration-200 group bg-background/60 border-border/50"
+                  >
+                    <a
+                      href={book.previewLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <BookOpen className="w-5 h-5 mr-2 group-hover:scale-110 transition-transform" />
+                      Preview
+                    </a>
+                  </Button>
+                  <Button
+                    size="lg"
+                    onClick={() =>
+                      router.push(
+                        `/reviews?type=book&id=${
+                          resolvedParams.id
+                        }&title=${encodeURIComponent(
+                          book.title
+                        )}&author=${encodeURIComponent(
+                          book.authors?.join(", ") || "Unknown Author"
+                        )}&cover=${encodeURIComponent(
+                          book.imageLinks?.thumbnail
+                            ? book.imageLinks.thumbnail.replace(
+                                "http://",
+                                "https://"
+                              )
+                            : "/placeholder.svg"
+                        )}`
+                      )
+                    }
+                    className="rounded-xl hover:scale-105 transition-all duration-200"
+                  >
+                    <Star className="w-5 h-5 mr-2" />
+                    Rate
+                  </Button>
+                  <Dialog open={addToListOpen} onOpenChange={setAddToListOpen}>
+                    <DialogTrigger asChild>
                       <Button
-                        onClick={handleAddToList}
-                        disabled={isSavingToList || !selectedListId}
+                        size="lg"
+                        className="rounded-xl hover:scale-105 transition-all duration-200"
                       >
-                        {isSavingToList ? "Saving..." : "Add to List"}
+                        <Plus className="w-5 h-5 mr-2" />
+                        Add to List
                       </Button>
-                    </div>
-                  </DialogContent>
-                </Dialog>
+                    </DialogTrigger>
+                    <DialogContent className="rounded-2xl">
+                      <DialogHeader>
+                        <DialogTitle>Add to List</DialogTitle>
+                        <DialogDescription>
+                          Choose a list to add "{book.title}" to.
+                        </DialogDescription>
+                      </DialogHeader>
+                      <div className="space-y-4">
+                        {userLists.length > 0 ? (
+                          <div className="space-y-2">
+                            {userLists.map((list) => (
+                              <label
+                                key={list.id}
+                                className="flex items-center gap-3 cursor-pointer p-3 rounded-xl hover:bg-muted/50 transition-colors"
+                              >
+                                <input
+                                  type="radio"
+                                  name="book-list"
+                                  value={list.id}
+                                  checked={selectedListId === list.id}
+                                  onChange={() => setSelectedListId(list.id)}
+                                  className="text-primary"
+                                />
+                                <span className="font-medium">{list.name}</span>
+                              </label>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="text-muted-foreground text-sm">
+                            No lists available. Create a list first.
+                          </p>
+                        )}
+                      </div>
+                      <div className="flex justify-end gap-2">
+                        <Button
+                          onClick={handleAddToList}
+                          disabled={isSavingToList || !selectedListId}
+                          className="rounded-xl"
+                        >
+                          {isSavingToList ? "Saving..." : "Add to List"}
+                        </Button>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+                </div>
               </div>
             </div>
           </div>
         </div>
 
         {/* Bottom Section */}
-        <div className="border-t border-gray-200 dark:border-gray-700 pt-8">
+        <div className="space-y-8">
           {/* Navigation Tabs */}
-          <div className="flex space-x-8 mb-6 border-b border-gray-200 dark:border-gray-700">
-            {["all", "reviews", "similar", "thread", "posts"].map((tab) => (
-              <button
-                key={tab}
-                onClick={() => setActiveTab(tab)}
-                className={`pb-2 px-1 text-sm font-medium transition-colors ${
-                  activeTab === tab
-                    ? "text-primary border-b-2 border-primary"
-                    : "text-muted-foreground hover:text-primary"
-                }`}
-              >
-                {tab.charAt(0).toUpperCase() + tab.slice(1)}
-              </button>
-            ))}
+          <div className="flex justify-center">
+            <div className="inline-flex h-14 items-center justify-center rounded-2xl bg-muted/30 backdrop-blur-sm border border-border/20 p-1 gap-1">
+              {["overview", "reviews", "similar"].map((tab) => (
+                <button
+                  key={tab}
+                  onClick={() => setActiveTab(tab)}
+                  className={`inline-flex items-center justify-center whitespace-nowrap rounded-xl px-6 py-3 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 ${
+                    activeTab === tab
+                      ? "bg-background text-foreground shadow-sm"
+                      : "text-muted-foreground hover:bg-muted/50"
+                  }`}
+                >
+                  {tab.charAt(0).toUpperCase() + tab.slice(1)}
+                </button>
+              ))}
+            </div>
           </div>
 
           {/* Content Area */}
-          <div className="min-h-[400px] bg-card rounded-lg p-6">
-            {activeTab === "all" && (
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold">Book Information</h3>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                  <div>
-                    <span className="text-muted-foreground">Published:</span>
-                    <p>
+          <div className="min-h-[400px] bg-card/50 backdrop-blur-sm rounded-2xl p-8 border border-border/30 shadow-lg">
+            {activeTab === "overview" && (
+              <div className="space-y-6">
+                <h3 className="text-2xl font-semibold bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent">
+                  Book Information
+                </h3>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                  <div className="p-4 rounded-xl bg-muted/30 backdrop-blur-sm border border-border/20">
+                    <span className="text-muted-foreground text-sm">
+                      Published
+                    </span>
+                    <p className="font-medium">
                       {book.publishedDate
                         ? new Date(book.publishedDate).toLocaleDateString()
                         : "Unknown"}
                     </p>
                   </div>
-                  <div>
-                    <span className="text-muted-foreground">Pages:</span>
-                    <p>{book.pageCount || "Unknown"}</p>
+                  <div className="p-4 rounded-xl bg-muted/30 backdrop-blur-sm border border-border/20">
+                    <span className="text-muted-foreground text-sm">Pages</span>
+                    <p className="font-medium">{book.pageCount || "Unknown"}</p>
                   </div>
-                  <div>
-                    <span className="text-muted-foreground">Publisher:</span>
-                    <p>{book.publisher || "Unknown"}</p>
+                  <div className="p-4 rounded-xl bg-muted/30 backdrop-blur-sm border border-border/20">
+                    <span className="text-muted-foreground text-sm">
+                      Publisher
+                    </span>
+                    <p className="font-medium">{book.publisher || "Unknown"}</p>
                   </div>
-                  <div>
-                    <span className="text-muted-foreground">Language:</span>
-                    <p>{book.language?.toUpperCase() || "Unknown"}</p>
+                  <div className="p-4 rounded-xl bg-muted/30 backdrop-blur-sm border border-border/20">
+                    <span className="text-muted-foreground text-sm">
+                      Language
+                    </span>
+                    <p className="font-medium">
+                      {book.language?.toUpperCase() || "Unknown"}
+                    </p>
                   </div>
                 </div>
-                {book.categories && (
-                  <div>
-                    <span className="text-muted-foreground">Categories:</span>
-                    <div className="flex flex-wrap gap-2 mt-2">
-                      {book.categories.map((category, index) => (
-                        <Badge key={index} variant="secondary">
-                          {category}
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-                )}
               </div>
             )}
             {activeTab === "reviews" && (
-              <div className="text-center text-muted-foreground py-8">
-                <p>Reviews coming soon...</p>
+              <div className="text-center text-muted-foreground py-12">
+                <p className="text-lg">Reviews coming soon...</p>
               </div>
             )}
             {activeTab === "similar" && (
-              <div className="text-center text-muted-foreground py-8">
-                <p>Similar books coming soon...</p>
-              </div>
-            )}
-            {activeTab === "thread" && (
-              <div className="text-center text-muted-foreground py-8">
-                <p>Discussion threads coming soon...</p>
-              </div>
-            )}
-            {activeTab === "posts" && (
-              <div className="text-center text-muted-foreground py-8">
-                <p>Community posts coming soon...</p>
+              <div className="text-center text-muted-foreground py-12">
+                <p className="text-lg">Similar books coming soon...</p>
               </div>
             )}
           </div>

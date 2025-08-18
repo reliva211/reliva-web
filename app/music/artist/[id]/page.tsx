@@ -208,6 +208,7 @@ export default function ArtistDetailPage({
   const [artist, setArtist] = useState<Artist | null>(null);
   const [albums, setAlbums] = useState<Album[]>([]);
   const [songs, setSongs] = useState<Song[]>([]);
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState("overview");
@@ -238,18 +239,33 @@ export default function ArtistDetailPage({
 
       setLoading(true);
       try {
-        // Fetch artist details using the artist ID directly
-        const artistResponse = await fetch(
-          `/api/saavn/artist?id=${resolvedParams.id}`
-        );
+        // Fetch artist details and albums first
+        const [artistResponse, albumsResponse] = await Promise.all([
+          fetch(`/api/saavn/artist?id=${resolvedParams.id}`),
+          fetch(`/api/saavn/artist/albums?id=${resolvedParams.id}`),
+        ]);
+
         const artistData = await artistResponse.json();
+        const albumsData = await albumsResponse.json();
 
         if (artistData.data) {
           setArtist(artistData.data);
-
-          // Use the data from the artist response directly
-          setAlbums(artistData.data.topAlbums || []);
           setSongs(artistData.data.topSongs || []);
+
+          // Use the dedicated albums endpoint for complete album list
+          if (albumsData.data && albumsData.data.albums) {
+            console.log(
+              `Fetched ${albumsData.data.albums.length} albums out of ${albumsData.data.total} total albums`
+            );
+            setAlbums(albumsData.data.albums);
+          } else {
+            // Fallback to topAlbums if albums endpoint fails
+            console.log(
+              "Using fallback topAlbums:",
+              artistData.data.topAlbums?.length || 0
+            );
+            setAlbums(artistData.data.topAlbums || []);
+          }
         } else {
           setError("Artist not found");
         }
@@ -300,13 +316,13 @@ export default function ArtistDetailPage({
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black">
-        <div className="container mx-auto px-4 py-8">
-          <div className="flex items-center justify-center py-16">
-            <div className="text-center space-y-4">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto" />
-              <p className="text-gray-400 text-lg">Loading artist details...</p>
-            </div>
+      <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
+        <div className="flex items-center justify-center py-16">
+          <div className="text-center space-y-4">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto" />
+            <p className="text-muted-foreground text-lg">
+              Loading artist details...
+            </p>
           </div>
         </div>
       </div>
@@ -315,339 +331,345 @@ export default function ArtistDetailPage({
 
   if (error || !artist) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black">
-        <div className="container mx-auto px-4 py-8">
-          <div className="text-center py-16">
-            <Users className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-            <h1 className="text-2xl font-bold text-white mb-2">
-              Artist Not Found
-            </h1>
-            <p className="text-gray-400 mb-4">
-              {error || "The artist you're looking for doesn't exist."}
-            </p>
-            <Button
-              onClick={() => router.push("/music")}
-              className="bg-blue-600 hover:bg-blue-700"
-            >
-              Back to Music
-            </Button>
-          </div>
+      <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
+        <div className="text-center py-16">
+          <Users className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
+          <h1 className="text-2xl font-bold text-foreground mb-2">
+            Artist Not Found
+          </h1>
+          <p className="text-muted-foreground mb-4">
+            {error || "The artist you're looking for doesn't exist."}
+          </p>
+          <Button
+            onClick={() => router.push("/music")}
+            className="bg-blue-600 hover:bg-blue-700"
+          >
+            Back to Music
+          </Button>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black">
-      {/* Header */}
-      <div className="border-b border-gray-800 bg-gradient-to-r from-gray-900/95 to-gray-800/95 backdrop-blur-sm">
-        <div className="container mx-auto px-4 py-6">
-          <div className="flex items-center gap-4">
-            <Button
-              variant="ghost"
-              onClick={() => router.back()}
-              className="text-gray-400 hover:text-white"
-            >
-              ← Back
-            </Button>
-          </div>
-        </div>
-      </div>
-
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
       <div className="container mx-auto px-4 py-8">
-        {/* Artist Header */}
-        <div className="relative mb-12">
-          {/* Background gradient overlay */}
-          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-gray-900/50 to-gray-900 rounded-3xl"></div>
+        {/* Back Button */}
+        <Button
+          variant="ghost"
+          onClick={() => router.back()}
+          className="mb-8 rounded-xl hover:bg-muted/50 transition-all duration-200 group"
+        >
+          ← Back
+        </Button>
 
-          <div className="relative flex flex-col md:flex-row gap-8 p-8 bg-gradient-to-r from-gray-800/30 to-gray-700/30 rounded-3xl border border-gray-700/50 backdrop-blur-sm">
-            <div className="flex-shrink-0">
-              <div className="relative group">
-                <div className="absolute inset-0 bg-gradient-to-r from-blue-500/20 to-purple-500/20 rounded-full blur-xl group-hover:blur-2xl transition-all duration-300"></div>
+        {/* Artist Header */}
+        <div className="flex flex-col lg:flex-row gap-8 mb-12">
+          {/* Profile Image */}
+          <div className="w-full lg:w-1/4">
+            <div className="relative group max-w-xs mx-auto lg:mx-0">
+              <div className="aspect-square rounded-2xl overflow-hidden bg-gradient-to-br from-muted to-muted/50 shadow-2xl group-hover:shadow-3xl transition-all duration-300">
                 <img
                   src={getImageUrl(artist.image)}
                   alt={artist.name}
-                  className="relative w-48 h-48 md:w-64 md:h-64 rounded-full object-cover shadow-2xl ring-4 ring-gray-700/50 group-hover:ring-gray-600/50 transition-all duration-300"
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                 />
-                <div className="absolute inset-0 rounded-full bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+              </div>
+              {/* Subtle overlay gradient */}
+              <div className="absolute inset-0 rounded-2xl bg-gradient-to-t from-black/10 via-transparent to-transparent pointer-events-none"></div>
+            </div>
+          </div>
+
+          {/* Artist Info */}
+          <div className="flex-1 space-y-6">
+            <div className="space-y-4">
+              <h1 className="text-5xl lg:text-6xl font-bold bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent">
+                {artist.name}
+              </h1>
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 text-muted-foreground">
+                {artist.dominantLanguage && (
+                  <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-muted/50 backdrop-blur-sm border border-border/30">
+                    <MapPin className="h-4 w-4 text-primary" />
+                    <span className="text-sm font-medium">
+                      {artist.dominantLanguage}
+                    </span>
+                  </div>
+                )}
               </div>
             </div>
 
-            <div className="flex-1 flex flex-col justify-center">
-              <div className="flex items-start justify-between mb-6">
-                <div className="flex-1">
-                  <h1 className="text-4xl md:text-6xl font-bold bg-gradient-to-r from-white via-gray-100 to-gray-300 bg-clip-text text-transparent mb-3">
-                    {artist.name}
-                  </h1>
-                  <div className="flex items-center gap-4 text-gray-300 mb-4">
-                    <Badge
-                      variant="secondary"
-                      className="bg-blue-500/20 text-blue-300 border-blue-500/30"
-                    >
-                      <span className="capitalize">
-                        {artist.type || "Artist"}
-                      </span>
-                    </Badge>
-                    {artist.dominantLanguage && (
-                      <Badge
-                        variant="secondary"
-                        className="bg-purple-500/20 text-purple-300 border-purple-500/30"
-                      >
-                        {artist.dominantLanguage}
-                      </Badge>
-                    )}
-                  </div>
+            {artist.bio && artist.bio[0] && (
+              <div className="space-y-4">
+                <h2 className="text-2xl font-semibold bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent">
+                  Biography
+                </h2>
+                <div className="p-6 rounded-2xl bg-card/50 backdrop-blur-sm border border-border/30 shadow-lg">
+                  <p className="text-muted-foreground leading-relaxed text-base">
+                    {artist.bio[0].text && artist.bio[0].text.length > 500
+                      ? `${artist.bio[0].text.substring(0, 500)}...`
+                      : artist.bio[0].text || "No biography available"}
+                  </p>
                 </div>
+              </div>
+            )}
 
+            <div className="flex flex-wrap items-center gap-3">
+              <Badge
+                variant="secondary"
+                className="rounded-xl px-4 py-2 text-sm font-medium bg-primary/10 text-primary border-primary/20"
+              >
+                {artist.type || "Artist"}
+              </Badge>
+              {artist.wiki && (
+                <Badge
+                  variant="outline"
+                  className="rounded-xl px-4 py-2 text-sm font-medium hover:bg-muted/50 transition-colors group"
+                >
+                  <a
+                    href={artist.wiki}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 hover:underline"
+                  >
+                    Wiki
+                    <ExternalLink className="h-3 w-3 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+                  </a>
+                </Badge>
+              )}
+
+              {/* Action Buttons */}
+              <div className="flex items-center gap-3">
                 <Button
+                  size="sm"
+                  className="rounded-xl hover:scale-105 transition-all duration-200 bg-green-600 hover:bg-green-700"
+                >
+                  <Play className="w-4 h-4 mr-2" />
+                  Rate
+                </Button>
+                <Button
+                  size="sm"
                   onClick={handleFollowArtist}
-                  size="lg"
-                  className={`${
+                  className={`rounded-xl hover:scale-105 transition-all duration-200 ${
                     isArtistFollowed(artist.id)
-                      ? "bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white shadow-lg"
-                      : "bg-gradient-to-r from-gray-700 to-gray-600 hover:from-gray-600 hover:to-gray-500 text-white border border-gray-600 shadow-lg"
-                  } transition-all duration-200 transform hover:scale-105`}
+                      ? "bg-black hover:bg-gray-800 text-white"
+                      : "bg-green-600 hover:bg-green-700"
+                  }`}
                 >
                   {isArtistFollowed(artist.id) ? (
                     <>
-                      <UserMinus className="w-5 h-5 mr-2" />
+                      <UserMinus className="w-4 h-4 mr-2" />
                       Unfollow
                     </>
                   ) : (
                     <>
-                      <UserPlus className="w-5 h-5 mr-2" />
+                      <UserPlus className="w-4 h-4 mr-2" />
                       Follow
                     </>
                   )}
                 </Button>
               </div>
-
-              {artist.bio && artist.bio.length > 0 && (
-                <div className="mb-6">
-                  <p className="text-gray-300 text-lg leading-relaxed italic">
-                    "{artist.bio[0]?.text || ""}"
-                  </p>
-                </div>
-              )}
-
-              <div className="flex items-center gap-8">
-                <div className="flex items-center gap-3 bg-gray-800/50 px-4 py-2 rounded-full border border-gray-700/50">
-                  <Disc className="w-5 h-5 text-blue-400" />
-                  <span className="text-white font-medium">
-                    {albums.length} albums
-                  </span>
-                </div>
-                <div className="flex items-center gap-3 bg-gray-800/50 px-4 py-2 rounded-full border border-gray-700/50">
-                  <Music className="w-5 h-5 text-purple-400" />
-                  <span className="text-white font-medium">
-                    {songs.length} songs
-                  </span>
-                </div>
-              </div>
             </div>
           </div>
         </div>
 
-        {/* Tabs */}
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-4 bg-gray-800/30 border border-gray-700/50 rounded-xl p-1 backdrop-blur-sm">
-            <TabsTrigger
-              value="overview"
-              className="text-white data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600/20 data-[state=active]:to-purple-600/20 data-[state=active]:border data-[state=active]:border-blue-500/30 rounded-lg transition-all duration-200"
-            >
-              Overview
-            </TabsTrigger>
-            <TabsTrigger
-              value="albums"
-              className="text-white data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600/20 data-[state=active]:to-purple-600/20 data-[state=active]:border data-[state=active]:border-blue-500/30 rounded-lg transition-all duration-200"
-            >
-              Albums
-            </TabsTrigger>
-            <TabsTrigger
-              value="songs"
-              className="text-white data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600/20 data-[state=active]:to-purple-600/20 data-[state=active]:border data-[state=active]:border-blue-500/30 rounded-lg transition-all duration-200"
-            >
-              Songs
-            </TabsTrigger>
-            <TabsTrigger
-              value="related"
-              className="text-white data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600/20 data-[state=active]:to-purple-600/20 data-[state=active]:border data-[state=active]:border-blue-500/30 rounded-lg transition-all duration-200"
-            >
-              Related Artists
-            </TabsTrigger>
-          </TabsList>
+        {/* Credits Tabs */}
+        <div className="space-y-8">
+          <Tabs defaultValue="overview" className="space-y-6">
+            <TabsList className="inline-flex h-12 items-center justify-center rounded-xl bg-muted/30 backdrop-blur-sm border border-border/20 p-1 gap-1">
+              <TabsTrigger
+                value="overview"
+                className="inline-flex items-center justify-center whitespace-nowrap rounded-lg px-6 py-2 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm hover:bg-muted/50"
+              >
+                Overview
+              </TabsTrigger>
+              <TabsTrigger
+                value="albums"
+                className="inline-flex items-center justify-center whitespace-nowrap rounded-lg px-6 py-2 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm hover:bg-muted/50"
+              >
+                Albums ({albums.length})
+              </TabsTrigger>
+              <TabsTrigger
+                value="popular-songs"
+                className="inline-flex items-center justify-center whitespace-nowrap rounded-lg px-6 py-2 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm hover:bg-muted/50"
+              >
+                Popular Songs ({songs.length})
+              </TabsTrigger>
+              <TabsTrigger
+                value="reviews"
+                className="inline-flex items-center justify-center whitespace-nowrap rounded-lg px-6 py-2 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm hover:bg-muted/50"
+              >
+                Reviews
+              </TabsTrigger>
+            </TabsList>
 
-          {/* Overview Tab */}
-          <TabsContent value="overview" className="mt-8">
-            <div className="grid gap-8 md:grid-cols-2">
-              {/* Popular Songs Section */}
-              <div className="bg-gray-800/20 rounded-2xl p-6 border border-gray-700/50 backdrop-blur-sm">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg flex items-center justify-center">
-                    <Music className="w-5 h-5 text-white" />
-                  </div>
-                  <h3 className="text-2xl font-bold text-white">
-                    Popular Songs
-                  </h3>
-                </div>
-                {songs.length > 0 ? (
-                  <div className="space-y-3">
-                    {songs.slice(0, 5).map((song, index) => (
-                      <div
-                        key={song.id}
-                        className="flex items-center gap-4 p-4 bg-gray-800/30 rounded-xl hover:bg-gray-700/40 transition-all duration-200 group border border-gray-700/30 hover:border-gray-600/50"
-                      >
-                        <div className="relative">
-                          <img
-                            src={getImageUrl(song.image)}
-                            alt={song.name}
-                            className="w-14 h-14 rounded-lg object-cover group-hover:scale-110 transition-transform duration-200"
-                          />
-                          <div className="absolute inset-0 bg-black/20 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200"></div>
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <h4 className="font-semibold text-white truncate group-hover:text-blue-300 transition-colors">
-                            {song.name}
-                          </h4>
-                          <p className="text-sm text-gray-400 truncate">
-                            {song.album?.name}
-                          </p>
-                        </div>
-                        <div className="flex items-center gap-3">
-                          <div className="text-sm text-gray-400 bg-gray-800/50 px-2 py-1 rounded-full">
-                            {formatDuration(song.duration)}
-                          </div>
-                          <div className="w-6 h-6 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-xs font-bold text-white">
-                            {index + 1}
-                          </div>
-                        </div>
+            <TabsContent value="overview" className="space-y-8">
+              {/* Top Songs Section */}
+              <div className="space-y-4">
+                <h3 className="text-xl font-semibold text-foreground px-4">
+                  Top Songs
+                </h3>
+                <div className="space-y-2 px-4">
+                  {songs.slice(0, 5).map((song, index) => (
+                    <div
+                      key={song.id}
+                      className="flex items-center gap-4 p-3 bg-muted/30 backdrop-blur-sm rounded-xl hover:bg-muted/50 transition-all duration-200 group border border-border/20"
+                    >
+                      <div className="w-8 h-8 bg-muted rounded-full flex items-center justify-center text-sm font-bold text-foreground">
+                        {index + 1}
                       </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-12">
-                    <Music className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                    <p className="text-gray-400 text-lg">No songs found</p>
-                  </div>
-                )}
+                      <img
+                        src={getImageUrl(song.image)}
+                        alt={song.name}
+                        className="w-12 h-12 rounded-lg object-cover"
+                      />
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-semibold text-foreground truncate">
+                          {song.name}
+                        </h4>
+                        <p className="text-sm text-muted-foreground truncate">
+                          {song.album?.name}
+                        </p>
+                      </div>
+                      <div className="text-sm text-muted-foreground">
+                        {formatDuration(song.duration)}
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
 
-              {/* Recent Albums Section */}
-              <div className="bg-gray-800/20 rounded-2xl p-6 border border-gray-700/50 backdrop-blur-sm">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
-                    <Disc className="w-5 h-5 text-white" />
-                  </div>
-                  <h3 className="text-2xl font-bold text-white">
-                    Recent Albums
-                  </h3>
-                </div>
-                {albums.length > 0 ? (
-                  <div className="grid gap-4 md:grid-cols-2">
-                    {albums.slice(0, 4).map((album) => (
-                      <div
-                        key={album.id}
-                        className="cursor-pointer group"
-                        onClick={() => router.push(`/music/album/${album.id}`)}
-                      >
-                        <div className="relative">
-                          <img
-                            src={getImageUrl(album.image)}
-                            alt={album.name}
-                            className="w-full aspect-square rounded-xl object-cover group-hover:scale-105 transition-transform duration-200 shadow-lg"
-                          />
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-200"></div>
-                          <div className="absolute bottom-2 left-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                            <p className="text-white text-sm font-medium truncate">
-                              {album.name}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="mt-3">
-                          <h4 className="font-semibold text-white truncate group-hover:text-purple-300 transition-colors">
-                            {album.name}
-                          </h4>
-                          <p className="text-sm text-gray-400">{album.year}</p>
-                        </div>
+              {/* Top Albums Section */}
+              <div className="space-y-4">
+                <h3 className="text-xl font-semibold text-foreground px-4">
+                  Top Albums
+                </h3>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 px-4">
+                  {albums.slice(0, 6).map((album) => (
+                    <div
+                      key={album.id}
+                      className="overflow-hidden cursor-pointer hover:shadow-lg transition-all duration-300 rounded-xl group bg-muted/30 backdrop-blur-sm hover:bg-muted/50 hover:scale-105 border border-border/20"
+                      onClick={() => router.push(`/music/album/${album.id}`)}
+                    >
+                      <div className="aspect-square relative overflow-hidden">
+                        <img
+                          src={getImageUrl(album.image)}
+                          alt={album.name}
+                          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                        />
+                        {/* Hover overlay */}
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                       </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-12">
-                    <Disc className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                    <p className="text-gray-400 text-lg">No albums found</p>
-                  </div>
-                )}
+                      <div className="p-2">
+                        <h3 className="font-medium text-xs truncate mb-1 group-hover:text-primary transition-colors">
+                          {album.name}
+                        </h3>
+                        <p className="text-xs text-muted-foreground truncate">
+                          {album.year}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
-            </div>
-          </TabsContent>
 
-          {/* Albums Tab */}
-          <TabsContent value="albums" className="mt-8">
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-              {albums.map((album) => (
-                <div key={album.id} className="cursor-pointer group">
-                  <div className="relative">
+              {/* Artist Stats Section */}
+              <div className="space-y-4">
+                <h3 className="text-xl font-semibold text-foreground px-4">
+                  Artist Stats
+                </h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 px-4">
+                  <div className="p-4 bg-muted/30 backdrop-blur-sm rounded-xl border border-border/20">
+                    <div className="text-2xl font-bold text-foreground">
+                      {albums.length}
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      Total Albums
+                    </div>
+                  </div>
+                  <div className="p-4 bg-muted/30 backdrop-blur-sm rounded-xl border border-border/20">
+                    <div className="text-2xl font-bold text-foreground">
+                      {songs.length}
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      Total Songs
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </TabsContent>
+
+            {/* Albums Tab */}
+            <TabsContent value="albums" className="space-y-6">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 px-4">
+                {albums.map((album) => (
+                  <div
+                    key={album.id}
+                    className="overflow-hidden cursor-pointer hover:shadow-lg transition-all duration-300 rounded-xl group bg-muted/30 backdrop-blur-sm hover:bg-muted/50 hover:scale-105 border border-border/20"
+                    onClick={() => router.push(`/music/album/${album.id}`)}
+                  >
+                    <div className="aspect-square relative overflow-hidden">
+                      <img
+                        src={getImageUrl(album.image)}
+                        alt={album.name}
+                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                      />
+                      {/* Hover overlay */}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                    </div>
+                    <div className="p-2">
+                      <h3 className="font-medium text-xs truncate mb-1 group-hover:text-primary transition-colors">
+                        {album.name}
+                      </h3>
+                      <p className="text-xs text-muted-foreground truncate">
+                        {album.year}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </TabsContent>
+
+            {/* Popular Songs Tab */}
+            <TabsContent value="popular-songs" className="space-y-6">
+              <div className="space-y-3 px-4">
+                {songs.map((song, index) => (
+                  <div
+                    key={song.id}
+                    className="flex items-center gap-4 p-4 bg-muted/30 backdrop-blur-sm rounded-xl hover:bg-muted/50 transition-all duration-200 group border border-border/20"
+                  >
+                    <div className="w-10 h-10 bg-muted rounded-full flex items-center justify-center text-sm font-bold text-foreground">
+                      {index + 1}
+                    </div>
                     <img
-                      src={getImageUrl(album.image)}
-                      alt={album.name}
-                      className="w-full aspect-square rounded-lg object-cover group-hover:scale-105 transition-transform"
+                      src={getImageUrl(song.image)}
+                      alt={song.name}
+                      className="w-16 h-16 rounded-xl object-cover"
                     />
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-semibold text-foreground truncate">
+                        {song.name}
+                      </h4>
+                      <p className="text-sm text-muted-foreground truncate">
+                        {song.album?.name}
+                      </p>
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      {formatDuration(song.duration)}
+                    </div>
                   </div>
-                  <div className="mt-3">
-                    <h4 className="font-semibold text-white truncate">
-                      {album.name}
-                    </h4>
-                    <p className="text-sm text-gray-400">{album.year}</p>
-                    <p className="text-xs text-gray-500">
-                      {album.songCount} songs
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </TabsContent>
+                ))}
+              </div>
+            </TabsContent>
 
-          {/* Songs Tab */}
-          <TabsContent value="songs" className="mt-8">
-            <div className="space-y-3">
-              {songs.map((song) => (
-                <div
-                  key={song.id}
-                  className="flex items-center gap-4 p-4 bg-gray-800/50 rounded-lg"
-                >
-                  <img
-                    src={getImageUrl(song.image)}
-                    alt={song.name}
-                    className="w-16 h-16 rounded-lg object-cover"
-                  />
-                  <div className="flex-1 min-w-0">
-                    <h4 className="font-semibold text-white truncate">
-                      {song.name}
-                    </h4>
-                    <p className="text-sm text-gray-400 truncate">
-                      {song.album?.name}
-                    </p>
-                  </div>
-                  <div className="text-sm text-gray-400">
-                    {formatDuration(song.duration)}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </TabsContent>
-
-          {/* Related Artists Tab */}
-          <TabsContent value="related" className="mt-8">
-            <div className="text-center py-12">
-              <Users className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-xl font-semibold text-white mb-2">
-                Related Artists
-              </h3>
-              <p className="text-gray-400">Coming soon...</p>
-            </div>
-          </TabsContent>
-        </Tabs>
+            {/* Reviews Tab */}
+            <TabsContent value="reviews" className="space-y-6">
+              <div className="text-center py-12">
+                <Star className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
+                <p className="text-muted-foreground">Reviews coming soon...</p>
+              </div>
+            </TabsContent>
+          </Tabs>
+        </div>
       </div>
     </div>
   );
