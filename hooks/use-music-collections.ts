@@ -65,11 +65,31 @@ export interface MusicAlbum {
   addedAt: string;
 }
 
+export interface MusicRecommendation {
+  id: string;
+  name: string;
+  artists: {
+    primary: Array<{
+      id: string;
+      name: string;
+    }>;
+  };
+  image: Array<{ quality: string; url: string }>;
+  year: string;
+  language: string;
+  songCount: number;
+  playCount: number;
+  songs?: MusicSong[];
+  addedAt: string;
+  type: 'album' | 'song' | 'artist';
+}
+
 export function useMusicCollections() {
   const { user } = useCurrentUser();
   const [followedArtists, setFollowedArtists] = useState<MusicArtist[]>([]);
   const [likedSongs, setLikedSongs] = useState<MusicSong[]>([]);
   const [likedAlbums, setLikedAlbums] = useState<MusicAlbum[]>([]);
+  const [musicRecommendations, setMusicRecommendations] = useState<MusicRecommendation[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -115,6 +135,15 @@ export function useMusicCollections() {
         addedAt: doc.data().addedAt?.toDate?.() || new Date().toISOString(),
       })) as MusicAlbum[];
       setLikedAlbums(albums);
+
+      // Fetch music recommendations
+      const recommendationsCollection = collection(db, "users", user.id, "musicRecommendations");
+      const recommendationsSnapshot = await getDocs(recommendationsCollection);
+      const recommendations = recommendationsSnapshot.docs.map((doc) => ({
+        ...doc.data(),
+        addedAt: doc.data().addedAt?.toDate?.() || new Date().toISOString(),
+      })) as MusicRecommendation[];
+      setMusicRecommendations(recommendations);
     } catch (err) {
       console.error("Error fetching music collections:", err);
       setError("Failed to fetch music collections");
@@ -252,6 +281,50 @@ export function useMusicCollections() {
     }
   };
 
+  // Add album to recommendations
+  const addAlbumToRecommendations = async (album: Omit<MusicAlbum, "addedAt">) => {
+    if (!user?.id) return;
+
+    try {
+      const albumData: MusicRecommendation = {
+        ...album,
+        addedAt: new Date().toISOString(),
+        type: 'album',
+      };
+
+      const recommendationRef = doc(db, "users", user.id, "musicRecommendations", album.id);
+      await setDoc(recommendationRef, albumData);
+
+      setMusicRecommendations((prev) => {
+        const existing = prev.find((a) => a.id === album.id);
+        if (existing) {
+          return prev.map((a) =>
+            a.id === album.id ? { ...a, ...albumData } : a
+          );
+        }
+        return [...prev, albumData];
+      });
+    } catch (err) {
+      console.error("Error adding album to recommendations:", err);
+      throw err;
+    }
+  };
+
+  // Remove album from recommendations
+  const removeAlbumFromRecommendations = async (albumId: string) => {
+    if (!user?.id) return;
+
+    try {
+      const recommendationRef = doc(db, "users", user.id, "musicRecommendations", albumId);
+      await deleteDoc(recommendationRef);
+
+      setMusicRecommendations((prev) => prev.filter((a) => a.id !== albumId));
+    } catch (err) {
+      console.error("Error removing album from recommendations:", err);
+      throw err;
+    }
+  };
+
   // Check if item is in collection
   const isArtistFollowed = (artistId: string) => {
     return followedArtists.some((a) => a.id === artistId);
@@ -265,6 +338,10 @@ export function useMusicCollections() {
     return likedAlbums.some((a) => a.id === albumId);
   };
 
+  const isAlbumInRecommendations = (albumId: string) => {
+    return musicRecommendations.some((a) => a.id === albumId && a.type === 'album');
+  };
+
   // Initialize on mount
   useEffect(() => {
     fetchMusicCollections();
@@ -274,6 +351,7 @@ export function useMusicCollections() {
     followedArtists,
     likedSongs,
     likedAlbums,
+    musicRecommendations,
     loading,
     error,
     followArtist,
@@ -282,9 +360,12 @@ export function useMusicCollections() {
     unlikeSong,
     likeAlbum,
     unlikeAlbum,
+    addAlbumToRecommendations,
+    removeAlbumFromRecommendations,
     isArtistFollowed,
     isSongLiked,
     isAlbumLiked,
+    isAlbumInRecommendations,
     refreshCollections: fetchMusicCollections,
   };
 }

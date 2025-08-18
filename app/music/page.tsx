@@ -194,6 +194,10 @@ export default function MusicApp() {
     isArtistFollowed,
     isSongLiked,
     isAlbumLiked,
+    isAlbumInRecommendations,
+    addAlbumToRecommendations,
+    removeAlbumFromRecommendations,
+    musicRecommendations,
   } = useMusicCollections();
 
   const { toast } = useToast();
@@ -721,6 +725,48 @@ export default function MusicApp() {
     }
   };
 
+  const handleAddAlbumToRecommendations = async (album: Album, e: React.MouseEvent) => {
+    e.stopPropagation();
+    
+    try {
+      if (isAlbumInRecommendations(album.id)) {
+        await removeAlbumFromRecommendations(album.id);
+        toast({
+          title: "Removed from recommendations",
+          description: `${album.name} has been removed from your recommendations.`,
+        });
+      } else {
+        // Convert Album to MusicAlbum format
+        const musicAlbum = {
+          id: album.id,
+          name: album.name || "Unknown Album",
+          artists: album.artists || { primary: [] },
+          image: album.image || [],
+          year: album.year || "Unknown",
+          language: album.language || "Unknown",
+          songCount: album.songCount || 0,
+          playCount: album.playCount || 0,
+          songs: album.songs?.map((song) => ({
+            ...song,
+            addedAt: new Date().toISOString(),
+          })) || [],
+        };
+        
+        await addAlbumToRecommendations(musicAlbum);
+        toast({
+          title: "Added to recommendations",
+          description: `${album.name} has been added to your recommendations.`,
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update recommendations. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black w-full overflow-x-hidden">
       {/* Header */}
@@ -1163,6 +1209,21 @@ export default function MusicApp() {
                                     >
                                       <Heart className="w-5 h-5 text-white fill-white" />
                                     </button>
+                                    <button
+                                      onClick={(e) => handleAddAlbumToRecommendations(album, e)}
+                                      className={`w-12 h-12 backdrop-blur-sm rounded-full flex items-center justify-center transition-all duration-200 hover:scale-110 ${
+                                        isAlbumInRecommendations(album.id)
+                                          ? "bg-green-500/80 hover:bg-green-600/80"
+                                          : "bg-white/20 hover:bg-white/30"
+                                      }`}
+                                      title={isAlbumInRecommendations(album.id) ? "Remove from list" : "Add to list"}
+                                    >
+                                      {isAlbumInRecommendations(album.id) ? (
+                                        <Check className="w-5 h-5 text-white fill-white" />
+                                      ) : (
+                                        <Plus className="w-5 h-5 text-white fill-white" />
+                                      )}
+                                    </button>
                                   </div>
                                 </div>
 
@@ -1449,6 +1510,24 @@ export default function MusicApp() {
                           >
                             <Heart className="w-5 h-5 text-white fill-white" />
                           </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleAddAlbumToRecommendations(album, e);
+                            }}
+                            className={`w-12 h-12 backdrop-blur-sm rounded-full flex items-center justify-center transition-all duration-200 hover:scale-110 ${
+                              isAlbumInRecommendations(album.id)
+                                ? "bg-green-500/80 hover:bg-green-600/80"
+                                : "bg-white/20 hover:bg-white/30"
+                            }`}
+                            title={isAlbumInRecommendations(album.id) ? "Remove from list" : "Add to list"}
+                          >
+                            {isAlbumInRecommendations(album.id) ? (
+                              <Check className="w-5 h-5 text-white fill-white" />
+                            ) : (
+                              <Plus className="w-5 h-5 text-white fill-white" />
+                            )}
+                          </button>
                         </div>
                       </div>
                       <div className="mt-3">
@@ -1598,17 +1677,89 @@ export default function MusicApp() {
             <div className="space-y-8 w-full">
               <div className="bg-gray-800/50 rounded-2xl p-6 shadow-lg border border-gray-700 w-full">
                 <h2 className="text-2xl font-bold text-white mb-6">
-                  Recommended for You
+                  Your Music Recommendations
                 </h2>
-                <div className="text-center py-12">
-                  <Music className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-xl font-semibold text-white mb-2">
-                    No Recommendations Available
-                  </h3>
-                  <p className="text-gray-400">
-                    We're working on personalized recommendations for you.
-                  </p>
-                </div>
+                {musicRecommendations.length === 0 ? (
+                  <div className="text-center py-12">
+                    <Music className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                    <h3 className="text-xl font-semibold text-white mb-2">
+                      No Recommendations Yet
+                    </h3>
+                    <p className="text-gray-400 mb-4">
+                      Start adding albums to your recommendations list from the music section!
+                    </p>
+                    <Button
+                      onClick={() => handleTabChange("explore")}
+                      className="bg-blue-600 hover:bg-blue-700 text-white"
+                    >
+                      Explore Music
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-lg font-semibold text-white">
+                        Albums in Your Recommendations
+                      </h3>
+                      <Badge variant="outline" className="text-gray-300 border-gray-600">
+                        {musicRecommendations.length} albums
+                      </Badge>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+                      {musicRecommendations.map((album) => (
+                        <div key={album.id} className="group">
+                          <div className="relative w-full aspect-square rounded-lg overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900">
+                            <div
+                              className="cursor-pointer"
+                              onClick={() => router.push(`/music/album/${album.id}`)}
+                            >
+                              <img
+                                src={getImageUrl(album.image)}
+                                alt={album.name || "Unknown"}
+                                className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                              />
+                            </div>
+                            {/* Hover overlay with action buttons */}
+                            <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-lg flex items-center justify-center gap-2">
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  // Placeholder for play functionality
+                                  console.log("Play album:", album.name);
+                                }}
+                                className="w-8 h-8 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-white/30 transition-all duration-200 hover:scale-110"
+                              >
+                                <Play className="w-3 h-3 text-white fill-white" />
+                              </button>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleAddAlbumToRecommendations(album, e);
+                                }}
+                                className="w-8 h-8 bg-red-500/80 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-red-600/80 transition-all duration-200 hover:scale-110"
+                                title="Remove from list"
+                              >
+                                <X className="w-3 h-3 text-white fill-white" />
+                              </button>
+                            </div>
+                          </div>
+                          <div className="mt-2 space-y-1">
+                            <h4 className="font-medium text-xs truncate text-white leading-tight">
+                              {album.name || "Unknown Title"}
+                            </h4>
+                            <p className="text-xs text-gray-400 leading-tight">
+                              {album.artists?.primary?.map((artist) => artist.name).join(", ") || "Unknown Artist"}
+                            </p>
+                            <p className="text-xs text-gray-500">
+                              {album.year}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -1707,21 +1858,44 @@ export default function MusicApp() {
                     <span>{selectedAlbum.songCount} songs</span>
                   </div>
                 </div>
-                <Button
-                  onClick={() => handleLikeAlbum(selectedAlbum)}
-                  className={`${
-                    isAlbumLiked(selectedAlbum.id)
-                      ? "bg-red-600 hover:bg-red-700 text-white"
-                      : "bg-gray-700 text-white hover:bg-gray-600 border border-gray-600"
-                  }`}
-                >
-                  <Heart
-                    className={`w-4 h-4 mr-2 ${
-                      isAlbumLiked(selectedAlbum.id) ? "fill-current" : ""
+                <div className="flex items-center gap-3">
+                  <Button
+                    onClick={() => handleLikeAlbum(selectedAlbum)}
+                    className={`${
+                      isAlbumLiked(selectedAlbum.id)
+                        ? "bg-red-600 hover:bg-red-700 text-white"
+                        : "bg-gray-700 text-white hover:bg-gray-600 border border-gray-600"
                     }`}
-                  />
-                  {isAlbumLiked(selectedAlbum.id) ? "Liked" : "Like"}
-                </Button>
+                  >
+                    <Heart
+                      className={`w-4 h-4 mr-2 ${
+                        isAlbumLiked(selectedAlbum.id) ? "fill-current" : ""
+                      }`}
+                    />
+                    {isAlbumLiked(selectedAlbum.id) ? "Liked" : "Like"}
+                  </Button>
+                  <Button
+                    onClick={() => handleAddAlbumToRecommendations(selectedAlbum, {} as React.MouseEvent)}
+                    variant="outline"
+                    className={`${
+                      isAlbumInRecommendations(selectedAlbum.id)
+                        ? "bg-primary/20 text-primary border-primary/30"
+                        : "bg-gray-700 text-white hover:bg-gray-600 border border-gray-600"
+                    }`}
+                  >
+                    {isAlbumInRecommendations(selectedAlbum.id) ? (
+                      <>
+                        <Check className="w-4 h-4 mr-2" />
+                        In List
+                      </>
+                    ) : (
+                      <>
+                        <Plus className="w-4 h-4 mr-2" />
+                        Add to List
+                      </>
+                    )}
+                  </Button>
+                </div>
               </div>
               {selectedAlbum.songs && selectedAlbum.songs.length > 0 && (
                 <div>

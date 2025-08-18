@@ -4,8 +4,10 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { use } from "react";
 import { Button } from "@/components/ui/button";
+import { useMusicCollections } from "@/hooks/use-music-collections";
+import { useToast } from "@/hooks/use-toast";
 
-import { Music, Play, Heart, Clock, Users, Disc } from "lucide-react";
+import { Music, Play, Heart, Clock, Users, Disc, Plus, Check } from "lucide-react";
 
 interface Song {
   id: string;
@@ -83,6 +85,9 @@ export default function SongDetailPage({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const { isSongLiked, likeSong, unlikeSong, addAlbumToRecommendations, removeAlbumFromRecommendations, isAlbumInRecommendations } = useMusicCollections();
+  const { toast } = useToast();
+
   const getImageUrl = (images: any[]) => {
     return (
       images?.[2]?.url ||
@@ -126,6 +131,97 @@ export default function SongDetailPage({
 
     fetchSongDetails();
   }, [resolvedParams.id]);
+
+  const handleAddToRecommendations = async () => {
+    if (!song) return;
+
+    try {
+      // For songs, we'll add the album to recommendations if it exists
+      if (song.album?.id) {
+        if (isAlbumInRecommendations(song.album.id)) {
+          await removeAlbumFromRecommendations(song.album.id);
+          toast({
+            title: "Removed from recommendations",
+            description: `${song.album.name} has been removed from your recommendations.`,
+          });
+        } else {
+          // Convert to album format and add to recommendations
+          const albumData = {
+            id: song.album.id,
+            name: song.album.name || "Unknown Album",
+            artists: song.artists || { primary: [] },
+            image: song.image || [],
+            year: song.year || "Unknown",
+            language: song.language || "Unknown",
+            songCount: 1,
+            playCount: song.playCount || 0,
+            songs: [{
+              ...song,
+              addedAt: new Date().toISOString(),
+            }],
+          };
+          
+          await addAlbumToRecommendations(albumData);
+          toast({
+            title: "Added to recommendations",
+            description: `${song.album.name} has been added to your recommendations.`,
+          });
+        }
+      } else {
+        toast({
+          title: "No album information",
+          description: "This song doesn't have album information to add to recommendations.",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update recommendations. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleLikeSong = async () => {
+    if (!song) return;
+
+    try {
+      if (isSongLiked(song.id)) {
+        await unlikeSong(song.id);
+        toast({
+          title: "Song removed from liked songs",
+          description: `${song.name} has been removed from your liked songs.`,
+        });
+      } else {
+        // Convert Song to MusicSong format
+        const musicSong = {
+          id: song.id,
+          name: song.name || "Unknown Song",
+          artists: song.artists || { primary: [] },
+          image: song.image || [],
+          album: song.album || { name: "Unknown Album" },
+          duration: song.duration || 0,
+          year: song.year || "Unknown",
+          language: song.language || "Unknown",
+          playCount: song.playCount || 0,
+          downloadUrl: song.downloadUrl || [],
+        };
+        
+        await likeSong(musicSong);
+        toast({
+          title: "Song added to liked songs",
+          description: `${song.name} has been added to your liked songs.`,
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update liked songs. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
 
   if (loading) {
     return (
@@ -224,10 +320,40 @@ export default function SongDetailPage({
               </div>
 
               <div className="flex items-center gap-3">
-                <Button className="bg-gray-700 text-white hover:bg-gray-600 border border-gray-600">
-                  <Heart className="w-4 h-4 mr-2" />
-                  Like
+                <Button 
+                  onClick={handleLikeSong}
+                  className={`${
+                    isSongLiked(song.id)
+                      ? "bg-red-600 hover:bg-red-700 text-white"
+                      : "bg-gray-700 text-white hover:bg-gray-600 border border-gray-600"
+                  }`}
+                >
+                  <Heart className={`w-4 h-4 mr-2 ${isSongLiked(song.id) ? "fill-current" : ""}`} />
+                  {isSongLiked(song.id) ? "Liked" : "Like"}
                 </Button>
+                {song.album?.id && (
+                  <Button
+                    onClick={handleAddToRecommendations}
+                    variant="outline"
+                    className={`${
+                      isAlbumInRecommendations(song.album.id)
+                        ? "bg-primary/20 text-primary border-primary/30"
+                        : "bg-gray-700 text-white hover:bg-gray-600 border border-gray-600"
+                    }`}
+                  >
+                    {isAlbumInRecommendations(song.album.id) ? (
+                      <>
+                        <Check className="w-4 h-4 mr-2" />
+                        In List
+                      </>
+                    ) : (
+                      <>
+                        <Plus className="w-4 h-4 mr-2" />
+                        Add to List
+                      </>
+                    )}
+                  </Button>
+                )}
               </div>
             </div>
 

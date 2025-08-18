@@ -59,11 +59,31 @@ interface Series {
   number_of_episodes: number;
 }
 
+interface MusicAlbum {
+  id: string;
+  name: string;
+  artists: {
+    primary: Array<{
+      id: string;
+      name: string;
+    }>;
+  };
+  image: Array<{ quality: string; url: string }>;
+  year: string;
+  language: string;
+  songCount: number;
+  playCount: number;
+  songs?: any[];
+  addedAt: string;
+  type: 'album' | 'song' | 'artist';
+}
+
 interface UserRecommendation {
   user: User;
   movies: Movie[];
   books: Book[];
   series: Series[];
+  music: MusicAlbum[];
 }
 
 export function useRecommendations() {
@@ -106,7 +126,8 @@ export function useRecommendations() {
       const followingUsersSnapshot = await getDocs(followingUsersRef);
       let followingUsers = followingUsersSnapshot.docs
         .map((doc) => ({ uid: doc.id, ...doc.data() } as User))
-        .filter((user) => followingList.includes(user.uid)); // Only include followed users
+        // Only include followed users and explicitly exclude current user if accidentally present
+        .filter((user) => followingList.includes(user.uid) && user.uid !== currentUser.uid);
 
       console.log(
         `Found ${followingUsers.length} following users for ${currentUser.uid}`
@@ -159,8 +180,16 @@ export function useRecommendations() {
             ...doc.data(),
           })) as Series[];
 
+          // Fetch user's music recommendations (only from musicRecommendations collection)
+          const musicRecommendationsRef = collection(db, "users", user.uid, "musicRecommendations");
+          const musicRecommendationsSnapshot = await getDocs(musicRecommendationsRef);
+          const musicRecommendations = musicRecommendationsSnapshot.docs.map((doc) => ({
+            id: doc.id,
+            ...doc.data(),
+          })) as MusicAlbum[];
+
           // Only add users who have recommendations in their Recommendations collections
-          if (movieRecommendations.length > 0 || bookRecommendations.length > 0 || seriesRecommendations.length > 0) {
+          if (movieRecommendations.length > 0 || bookRecommendations.length > 0 || seriesRecommendations.length > 0 || musicRecommendations.length > 0) {
             // Try to get user name from various possible fields
             let displayName =
               user.displayName ||
@@ -178,6 +207,7 @@ export function useRecommendations() {
               movies: movieRecommendations,
               books: bookRecommendations,
               series: seriesRecommendations,
+              music: musicRecommendations,
             });
           }
         } catch (error) {

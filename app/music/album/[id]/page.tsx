@@ -6,7 +6,9 @@ import { use } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Disc, Music, Clock, Play, Heart, Star, Plus } from "lucide-react";
+import { Disc, Music, Clock, Play, Heart, Star, Plus, Check } from "lucide-react";
+import { useMusicCollections } from "@/hooks/use-music-collections";
+import { useToast } from "@/hooks/use-toast";
 
 interface Song {
   id: string;
@@ -139,6 +141,9 @@ export default function AlbumDetailPage({
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState("songs");
 
+  const { isAlbumInRecommendations, addAlbumToRecommendations, removeAlbumFromRecommendations } = useMusicCollections();
+  const { toast } = useToast();
+
   const getImageUrl = (images: any[]) => {
     return (
       images?.[2]?.url ||
@@ -189,6 +194,48 @@ export default function AlbumDetailPage({
 
     fetchAlbumDetails();
   }, [resolvedParams.id]);
+
+  const handleAddToRecommendations = async () => {
+    if (!album) return;
+
+    try {
+      if (isAlbumInRecommendations(album.id)) {
+        await removeAlbumFromRecommendations(album.id);
+        toast({
+          title: "Removed from recommendations",
+          description: `${album.name} has been removed from your recommendations.`,
+        });
+      } else {
+        // Convert Album to MusicAlbum format
+        const musicAlbum = {
+          id: album.id,
+          name: album.name || "Unknown Album",
+          artists: album.artists || { primary: [] },
+          image: album.image || [],
+          year: album.year?.toString() || "Unknown",
+          language: album.language || "Unknown",
+          songCount: album.songCount || 0,
+          playCount: album.playCount || 0,
+          songs: album.songs?.map((song) => ({
+            ...song,
+            addedAt: new Date().toISOString(),
+          })) || [],
+        };
+        
+        await addAlbumToRecommendations(musicAlbum);
+        toast({
+          title: "Added to recommendations",
+          description: `${album.name} has been added to your recommendations.`,
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update recommendations. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
 
   if (loading) {
     return (
@@ -308,6 +355,28 @@ export default function AlbumDetailPage({
               >
                 <Heart className="w-5 h-5 mr-2 group-hover:scale-110 transition-transform" />
                 Like
+              </Button>
+              <Button
+                size="lg"
+                variant="outline"
+                onClick={handleAddToRecommendations}
+                className={`rounded-xl hover:scale-105 transition-all duration-200 group bg-background/60 border-border/50 shadow-lg ${
+                  isAlbumInRecommendations(album.id) 
+                    ? "bg-primary/20 text-primary border-primary/30" 
+                    : ""
+                }`}
+              >
+                {isAlbumInRecommendations(album.id) ? (
+                  <>
+                    <Check className="w-5 h-5 mr-2" />
+                    In List
+                  </>
+                ) : (
+                  <>
+                    <Plus className="w-5 h-5 mr-2" />
+                    Add to List
+                  </>
+                )}
               </Button>
               {album.explicitContent && (
                 <Badge
