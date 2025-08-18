@@ -324,6 +324,13 @@ export default function BookDetailPage({
                         book.title
                       )}&author=${encodeURIComponent(
                         book.authors?.join(", ") || "Unknown Author"
+                      )}&cover=${encodeURIComponent(
+                        book.imageLinks?.thumbnail
+                          ? book.imageLinks.thumbnail.replace(
+                              "http://",
+                              "https://"
+                            )
+                          : "/placeholder.svg"
                       )}`
                     )
                   }

@@ -361,7 +361,13 @@ export default function SeriesDetailPage({
                     router.push(
                       `/reviews?type=series&id=${
                         resolvedParams.id
-                      }&title=${encodeURIComponent(series.name)}`
+                      }&title=${encodeURIComponent(
+                        series.name
+                      )}&cover=${encodeURIComponent(
+                        series.poster_path
+                          ? `https://image.tmdb.org/t/p/w300${series.poster_path}`
+                          : "/placeholder.svg"
+                      )}`
                     )
                   }
                 >

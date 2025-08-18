@@ -4,7 +4,6 @@ import { useEffect, useState, useMemo } from "react";
 
 // Force dynamic rendering to prevent prerender issues
 export const dynamic = "force-dynamic";
-export const revalidate = 0;
 import Image from "next/image";
 import { SafeImage } from "@/components/safe-image";
 import { DebugImage } from "@/components/debug-image";

@@ -1,12 +1,11 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { useSearchParams } from "next/navigation";
 
 // Force dynamic rendering to prevent prerender issues
 export const dynamic = "force-dynamic";
-export const revalidate = 0;
 
 import {
   Star,
@@ -23,7 +22,8 @@ import { db } from "@/lib/firebase";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 import { toast } from "@/components/ui/use-toast";
 
-export default function ReviewsPage() {
+// Component that uses useSearchParams (needs to be wrapped in Suspense)
+function ReviewsPageContent() {
   const { user } = useCurrentUser();
   const searchParams = useSearchParams();
 
@@ -39,36 +39,45 @@ export default function ReviewsPage() {
     const id = searchParams.get("id");
     const title = searchParams.get("title");
     const author = searchParams.get("author");
+    const cover = searchParams.get("cover");
+
+    console.log("URL Parameters:", { type, id, title, author, cover });
 
     if (type && id && title) {
       setSearchType(type);
-      setSearchQuery(title);
+      const decodedTitle = decodeURIComponent(title);
+      const decodedAuthor = author ? decodeURIComponent(author) : null;
+      const decodedCover = cover
+        ? decodeURIComponent(cover)
+        : "/placeholder.svg";
 
-      // Create a mock media object for the selected item
-      const mockMedia = {
+      // Create media object directly from URL parameters (no search needed)
+      const mediaFromUrl = {
         id: id,
-        title: decodeURIComponent(title),
-        cover: "", // Will be filled by search
+        title: decodedTitle,
+        cover: decodedCover,
         year: null,
         type: type,
-        author: author ? decodeURIComponent(author) : null,
+        author: decodedAuthor,
         data: {},
       };
 
-      // Trigger search for the title to get full details
-      if (title) {
-        setSearchQuery(decodeURIComponent(title));
-        // The search will be triggered in the next useEffect
-      }
+      // Set the media directly without searching
+      setSelectedMedia(mediaFromUrl);
+      console.log("Directly set media from URL:", mediaFromUrl);
+
+      // Clear search results since we don't need them
+      setSearchResults([]);
+      setSearchQuery("");
     }
   }, [searchParams]);
 
-  // Auto-search when search query is set from URL parameters
+  // Auto-search when search query is set manually (not from URL parameters)
   useEffect(() => {
-    if (searchQuery && searchQuery.trim()) {
+    if (searchQuery && searchQuery.trim() && !searchParams.get("id")) {
       searchMedia();
     }
-  }, [searchType]); // Trigger when search type changes from URL params
+  }, [searchType, searchQuery, searchParams]); // Only trigger for manual searches
 
   // Review state
   const [selectedMedia, setSelectedMedia] = useState(null);
@@ -128,21 +137,6 @@ export default function ReviewsPage() {
       }
 
       setSearchResults(results);
-
-      // Auto-select the media if it was pre-selected from URL parameters
-      const urlId = searchParams.get("id");
-      const urlTitle = searchParams.get("title");
-      if (urlId && urlTitle && results.length > 0) {
-        const decodedTitle = decodeURIComponent(urlTitle);
-        const matchingResult = results.find(
-          (result) =>
-            result.id.toString() === urlId ||
-            result.title.toLowerCase().includes(decodedTitle.toLowerCase())
-        );
-        if (matchingResult) {
-          setSelectedMedia(matchingResult);
-        }
-      }
     } catch (error) {
       console.error("Search error:", error);
       toast({
@@ -483,5 +477,30 @@ export default function ReviewsPage() {
         )}
       </div>
     </div>
+  );
+}
+
+// Loading component for Suspense fallback
+function ReviewsPageLoading() {
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 dark:from-gray-900 dark:via-black dark:to-gray-900">
+      <div className="max-w-4xl mx-auto px-4 py-8">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+          <p className="text-gray-600 dark:text-gray-400">
+            Loading review form...
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Main component with Suspense wrapper
+export default function ReviewsPage() {
+  return (
+    <Suspense fallback={<ReviewsPageLoading />}>
+      <ReviewsPageContent />
+    </Suspense>
   );
 }

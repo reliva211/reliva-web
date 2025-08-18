@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 
 // Force dynamic rendering to prevent prerender issues
 export const dynamic = "force-dynamic";
-export const revalidate = 0;
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { Bell, Check, Heart, MessageCircle, Star, Users } from "lucide-react";
 import {

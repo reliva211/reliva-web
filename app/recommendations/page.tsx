@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 
 // Force dynamic rendering to prevent prerender issues
 export const dynamic = "force-dynamic";
-export const revalidate = 0;
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { useRouter } from "next/navigation";
 import Image from "next/image";

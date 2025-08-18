@@ -356,7 +356,13 @@ export default function MovieDetailPage({
                     router.push(
                       `/reviews?type=movie&id=${
                         resolvedParams.id
-                      }&title=${encodeURIComponent(movie.title)}`
+                      }&title=${encodeURIComponent(
+                        movie.title
+                      )}&cover=${encodeURIComponent(
+                        movie.poster_path
+                          ? `https://image.tmdb.org/t/p/w300${movie.poster_path}`
+                          : "/placeholder.svg"
+                      )}`
                     )
                   }
                 >
