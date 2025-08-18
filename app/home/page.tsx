@@ -1,16 +1,32 @@
 "use client";
 
 import { useCurrentUser } from "@/hooks/use-current-user";
+
+// Force dynamic rendering to prevent prerender issues
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, MessageSquare, Users, UserPlus, Play, Zap } from "lucide-react";
+import {
+  ArrowRight,
+  MessageSquare,
+  Users,
+  UserPlus,
+  Play,
+  Zap,
+} from "lucide-react";
 import ReviewPost from "@/components/review-post";
 import { useFollowedReviews } from "@/hooks/use-followed-reviews";
 
 export default function HomePage() {
   const { user, loading } = useCurrentUser();
-  const { reviews, loading: loadingReviews, error, retry } = useFollowedReviews();
+  const {
+    reviews,
+    loading: loadingReviews,
+    error,
+    retry,
+  } = useFollowedReviews();
 
   // Show spinner while auth state is loading
   if (loading) {
@@ -37,8 +53,9 @@ export default function HomePage() {
                   ! 🎬📚🎵
                 </h1>
                 <p className="text-lg md:text-xl text-gray-600 dark:text-gray-300 mb-6 max-w-3xl mx-auto">
-                  Discover what your friends are watching, reading, and listening to. 
-                  Stay connected with the people you follow and never miss their latest reviews.
+                  Discover what your friends are watching, reading, and
+                  listening to. Stay connected with the people you follow and
+                  never miss their latest reviews.
                 </p>
                 <div className="flex flex-wrap justify-center gap-4 text-sm text-gray-500 dark:text-gray-400">
                   <span className="flex items-center gap-2">
@@ -65,7 +82,8 @@ export default function HomePage() {
                     Your Reviews & People You Follow
                   </h2>
                   <p className="text-gray-600 dark:text-gray-400 text-sm md:text-base">
-                    See your reviews and what your friends are saying about their favorite media
+                    See your reviews and what your friends are saying about
+                    their favorite media
                   </p>
                 </div>
                 <div className="flex gap-2">
@@ -86,11 +104,14 @@ export default function HomePage() {
                   </Link>
                 </div>
               </div>
-              
+
               {loadingReviews ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
                   {[...Array(3)].map((_, i) => (
-                    <div key={i} className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 p-6 animate-pulse">
+                    <div
+                      key={i}
+                      className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 p-6 animate-pulse"
+                    >
                       <div className="flex items-center space-x-4 mb-6">
                         <div className="w-12 h-12 bg-gray-300 dark:bg-gray-600 rounded-full"></div>
                         <div className="flex-1">
@@ -117,7 +138,7 @@ export default function HomePage() {
                   <p className="text-gray-600 dark:text-gray-400 mb-8 max-w-md mx-auto text-base md:text-lg leading-relaxed">
                     {error}
                   </p>
-                  <Button 
+                  <Button
                     onClick={retry}
                     className="bg-gradient-to-r from-emerald-600 to-blue-600 hover:from-emerald-700 hover:to-blue-700 text-white text-base md:text-lg px-8 py-4 md:px-10 md:py-4 rounded-xl font-semibold shadow-lg transform hover:scale-105 transition-all duration-300"
                   >
@@ -133,7 +154,8 @@ export default function HomePage() {
                     No reviews yet
                   </h3>
                   <p className="text-gray-600 dark:text-gray-400 mb-8 max-w-md mx-auto text-base md:text-lg leading-relaxed">
-                    Start following people to see their reviews, or write your first review to share with the community!
+                    Start following people to see their reviews, or write your
+                    first review to share with the community!
                   </p>
                   <div className="flex flex-col sm:flex-row gap-4 justify-center">
                     <Link href="/users">
@@ -143,7 +165,10 @@ export default function HomePage() {
                       </Button>
                     </Link>
                     <Link href="/reviews">
-                      <Button variant="outline" className="text-base md:text-lg px-8 py-4 md:px-10 md:py-4 rounded-xl font-semibold shadow-lg transform hover:scale-105 transition-all duration-300">
+                      <Button
+                        variant="outline"
+                        className="text-base md:text-lg px-8 py-4 md:px-10 md:py-4 rounded-xl font-semibold shadow-lg transform hover:scale-105 transition-all duration-300"
+                      >
                         Write Your First Review
                       </Button>
                     </Link>
@@ -152,8 +177,8 @@ export default function HomePage() {
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
                   {reviews.slice(0, 9).map((review) => (
-                    <ReviewPost 
-                      key={review.id} 
+                    <ReviewPost
+                      key={review.id}
                       review={review}
                       onLikeToggle={() => {
                         // The hook will automatically refresh when user changes

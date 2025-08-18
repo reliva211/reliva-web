@@ -1,9 +1,21 @@
 "use client";
 
 import { useState, useEffect } from "react";
+
+// Force dynamic rendering to prevent prerender issues
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { Bell, Check, Heart, MessageCircle, Star, Users } from "lucide-react";
-import { collection, query, where, updateDoc, doc, onSnapshot, Timestamp } from "firebase/firestore";
+import {
+  collection,
+  query,
+  where,
+  updateDoc,
+  doc,
+  onSnapshot,
+  Timestamp,
+} from "firebase/firestore";
 import { db } from "@/lib/firebase";
 
 interface Notification {
@@ -31,7 +43,7 @@ export default function NotificationsPage() {
       setLoading(false);
       return;
     }
-    
+
     try {
       const notificationsRef = collection(db, "notifications");
       const q = query(
@@ -42,42 +54,46 @@ export default function NotificationsPage() {
       );
 
       // Real-time listener for notifications
-      const unsubscribe = onSnapshot(q, (snapshot) => {
-        try {
-          const notificationsData = snapshot.docs.map(doc => {
-            const data = doc.data();
-            return {
-              id: doc.id,
-              ...data,
-              // Ensure required fields have defaults
-              isRead: data.isRead ?? false,
-              fromUserName: data.fromUserName || "Anonymous",
-              message: data.message || "",
-              type: data.type || "follow",
-              createdAt: data.createdAt || new Date().toISOString(),
-            } as Notification;
-          });
-          
-          // Sort client-side by createdAt in descending order
-          notificationsData.sort((a, b) => {
-            const dateA = new Date(a.createdAt).getTime();
-            const dateB = new Date(b.createdAt).getTime();
-            return dateB - dateA; // Descending order
-          });
-          
-          setNotifications(notificationsData);
-          setError(null);
-        } catch (err) {
-          console.error("Error processing notifications:", err);
+      const unsubscribe = onSnapshot(
+        q,
+        (snapshot) => {
+          try {
+            const notificationsData = snapshot.docs.map((doc) => {
+              const data = doc.data();
+              return {
+                id: doc.id,
+                ...data,
+                // Ensure required fields have defaults
+                isRead: data.isRead ?? false,
+                fromUserName: data.fromUserName || "Anonymous",
+                message: data.message || "",
+                type: data.type || "follow",
+                createdAt: data.createdAt || new Date().toISOString(),
+              } as Notification;
+            });
+
+            // Sort client-side by createdAt in descending order
+            notificationsData.sort((a, b) => {
+              const dateA = new Date(a.createdAt).getTime();
+              const dateB = new Date(b.createdAt).getTime();
+              return dateB - dateA; // Descending order
+            });
+
+            setNotifications(notificationsData);
+            setError(null);
+          } catch (err) {
+            console.error("Error processing notifications:", err);
+            setError("Error loading notifications");
+          } finally {
+            setLoading(false);
+          }
+        },
+        (error) => {
+          console.error("Error fetching notifications:", error);
           setError("Error loading notifications");
-        } finally {
           setLoading(false);
         }
-      }, (error) => {
-        console.error("Error fetching notifications:", error);
-        setError("Error loading notifications");
-        setLoading(false);
-      });
+      );
 
       return () => unsubscribe();
     } catch (err) {
@@ -93,12 +109,14 @@ export default function NotificationsPage() {
 
     const markAllAsReadOnVisit = async () => {
       try {
-        const unreadNotifications = notifications.filter(n => !n.isRead);
+        const unreadNotifications = notifications.filter((n) => !n.isRead);
         if (unreadNotifications.length === 0) return;
 
-        const updatePromises = unreadNotifications.map(notif => {
+        const updatePromises = unreadNotifications.map((notif) => {
           try {
-            return updateDoc(doc(db, "notifications", notif.id), { isRead: true });
+            return updateDoc(doc(db, "notifications", notif.id), {
+              isRead: true,
+            });
           } catch (err) {
             console.error(`Error updating notification ${notif.id}:`, err);
             return Promise.resolve(); // Continue with other updates
@@ -125,12 +143,14 @@ export default function NotificationsPage() {
 
   const markAllAsRead = async () => {
     try {
-      const unreadNotifications = notifications.filter(n => !n.isRead);
+      const unreadNotifications = notifications.filter((n) => !n.isRead);
       if (unreadNotifications.length === 0) return;
 
-      const updatePromises = unreadNotifications.map(notif => {
+      const updatePromises = unreadNotifications.map((notif) => {
         try {
-          return updateDoc(doc(db, "notifications", notif.id), { isRead: true });
+          return updateDoc(doc(db, "notifications", notif.id), {
+            isRead: true,
+          });
         } catch (err) {
           console.error(`Error updating notification ${notif.id}:`, err);
           return Promise.resolve(); // Continue with other updates
@@ -160,14 +180,14 @@ export default function NotificationsPage() {
 
   const formatTimestamp = (timestamp: any) => {
     if (!timestamp) return "Just now";
-    
+
     try {
       let date: Date;
-      
+
       if (timestamp.toDate) {
         // Firestore Timestamp
         date = timestamp.toDate();
-      } else if (typeof timestamp === 'string') {
+      } else if (typeof timestamp === "string") {
         // ISO string
         date = new Date(timestamp);
       } else if (timestamp instanceof Date) {
@@ -183,8 +203,10 @@ export default function NotificationsPage() {
       }
 
       const now = new Date();
-      const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
-      
+      const diffInHours = Math.floor(
+        (now.getTime() - date.getTime()) / (1000 * 60 * 60)
+      );
+
       if (diffInHours < 1) return "Just now";
       if (diffInHours < 24) return `${diffInHours}h ago`;
       if (diffInHours < 168) return `${Math.floor(diffInHours / 24)}d ago`;
@@ -200,7 +222,7 @@ export default function NotificationsPage() {
     if (!notification.isRead) {
       markAsRead(notification.id);
     }
-    
+
     // Navigate to action URL if available
     if (notification.actionUrl) {
       try {
@@ -217,7 +239,9 @@ export default function NotificationsPage() {
         <div className="container mx-auto px-4 py-8 max-w-4xl">
           <div className="text-center py-12">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-500 mx-auto mb-4"></div>
-            <p className="text-gray-600 dark:text-gray-400">Loading notifications...</p>
+            <p className="text-gray-600 dark:text-gray-400">
+              Loading notifications...
+            </p>
           </div>
         </div>
       </div>
@@ -263,8 +287,8 @@ export default function NotificationsPage() {
               Stay updated with your community activity
             </p>
           </div>
-          
-          {notifications.some(n => !n.isRead) && (
+
+          {notifications.some((n) => !n.isRead) && (
             <button
               onClick={markAllAsRead}
               className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-colors"
@@ -286,7 +310,8 @@ export default function NotificationsPage() {
                 No notifications yet
               </h3>
               <p className="text-gray-600 dark:text-gray-400 max-w-md mx-auto">
-                When you interact with the community, your notifications will appear here.
+                When you interact with the community, your notifications will
+                appear here.
               </p>
             </div>
           ) : (
@@ -294,8 +319,8 @@ export default function NotificationsPage() {
               <div
                 key={notification.id}
                 className={`bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-6 transition-all duration-300 cursor-pointer hover:shadow-xl ${
-                  !notification.isRead 
-                    ? "ring-2 ring-emerald-500/20 bg-emerald-50/50 dark:bg-emerald-900/10" 
+                  !notification.isRead
+                    ? "ring-2 ring-emerald-500/20 bg-emerald-50/50 dark:bg-emerald-900/10"
                     : ""
                 }`}
                 onClick={() => handleNotificationClick(notification)}
@@ -305,7 +330,7 @@ export default function NotificationsPage() {
                     <div className="w-12 h-12 rounded-full bg-gradient-to-br from-emerald-500 to-blue-500 flex items-center justify-center text-white font-semibold flex-shrink-0">
                       {notification.fromUserName?.charAt(0) || "U"}
                     </div>
-                    
+
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
                         {getNotificationIcon(notification.type)}
@@ -316,17 +341,17 @@ export default function NotificationsPage() {
                           <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
                         )}
                       </div>
-                      
+
                       <p className="text-gray-700 dark:text-gray-300 mb-2">
                         {notification.message}
                       </p>
-                      
+
                       <p className="text-sm text-gray-500 dark:text-gray-400">
                         {formatTimestamp(notification.createdAt)}
                       </p>
                     </div>
                   </div>
-                  
+
                   {!notification.isRead && (
                     <button
                       onClick={(e) => {
@@ -347,4 +372,4 @@ export default function NotificationsPage() {
       </div>
     </div>
   );
-} 
+}

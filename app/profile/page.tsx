@@ -1,6 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
+
+// Force dynamic rendering to prevent prerender issues
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 import Image from "next/image";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { useProfile } from "@/hooks/use-profile";

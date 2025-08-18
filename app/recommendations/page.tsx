@@ -1,6 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
+
+// Force dynamic rendering to prevent prerender issues
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
@@ -257,7 +261,7 @@ export default function RecommendationsPage() {
               <p className="text-muted-foreground mb-4 text-sm">
                 You need to follow other users to see their recommendations
               </p>
-              <Button 
+              <Button
                 onClick={() => router.push("/users")}
                 className="bg-primary text-primary-foreground hover:bg-primary/90 text-sm"
               >
@@ -274,74 +278,75 @@ export default function RecommendationsPage() {
 
                   return (
                     <div key={userRec.user.uid} className="space-y-4">
-                        {/* User Header */}
-                          <div className="flex items-center gap-3">
-                            <Avatar
+                      {/* User Header */}
+                      <div className="flex items-center gap-3">
+                        <Avatar
                           className="h-9 w-9 cursor-pointer hover:opacity-80 transition-opacity ring-2 ring-primary/20"
-                              onClick={() =>
-                                router.push(`/users/${userRec.user.uid}`)
-                              }
-                            >
-                              <AvatarImage src={userRec.user.photoURL} />
+                          onClick={() =>
+                            router.push(`/users/${userRec.user.uid}`)
+                          }
+                        >
+                          <AvatarImage src={userRec.user.photoURL} />
                           <AvatarFallback className="bg-primary/10 text-primary font-semibold text-xs">
-                                {getUserInitials(userRec.user.displayName)}
-                              </AvatarFallback>
-                            </Avatar>
-                            <div>
-                              <h3
+                            {getUserInitials(userRec.user.displayName)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <h3
                             className="text-lg font-semibold text-gray-900 dark:text-white cursor-pointer hover:text-primary transition-colors"
-                                onClick={() =>
-                                  router.push(`/users/${userRec.user.uid}`)
-                                }
-                              >
-                                {userRec.user.displayName}
-                              </h3>
+                            onClick={() =>
+                              router.push(`/users/${userRec.user.uid}`)
+                            }
+                          >
+                            {userRec.user.displayName}
+                          </h3>
                           <p className="text-xs text-muted-foreground">
                             {items.length} {activeCategory.slice(0, -1)}
-                            {items.length !== 1 ? "s" : ""} in their recommendations
+                            {items.length !== 1 ? "s" : ""} in their
+                            recommendations
                           </p>
-                          </div>
                         </div>
+                      </div>
 
-                        {/* Items Grid */}
+                      {/* Items Grid */}
                       <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
-                            {items.slice(0, 12).map((item) => (
+                        {items.slice(0, 12).map((item) => (
                           <div key={item.id} className="group flex-shrink-0">
                             <div className="relative w-[156px] h-[231px] rounded-md overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900">
                               <Link href={`/${activeCategory}/${item.id}`}>
-                                  <Image
-                                    src={item.cover || "/placeholder.svg"}
-                                    alt={item.title || "Unknown"}
-                                    fill
+                                <Image
+                                  src={item.cover || "/placeholder.svg"}
+                                  alt={item.title || "Unknown"}
+                                  fill
                                   className="object-cover cursor-pointer transition-transform duration-300 group-hover:scale-105"
                                 />
-                                        </Link>
-                                    </div>
+                              </Link>
+                            </div>
                             <div className="mt-1.5 space-y-0.5">
                               <h4 className="font-medium text-xs truncate text-gray-900 dark:text-white leading-tight">
-                                    {item.title || "Unknown Title"}
-                                  </h4>
+                                {item.title || "Unknown Title"}
+                              </h4>
                               <p className="text-xs text-muted-foreground leading-tight">
-                                    {activeCategory === "books"
-                                      ? (item as Book).author
-                                      : (item as Movie | Series).year || "N/A"}
-                                  </p>
-                                </div>
-                              </div>
-                            ))}
+                                {activeCategory === "books"
+                                  ? (item as Book).author
+                                  : (item as Movie | Series).year || "N/A"}
+                              </p>
+                            </div>
                           </div>
-                          {items.length > 12 && (
+                        ))}
+                      </div>
+                      {items.length > 12 && (
                         <div className="text-center pt-3">
                           <Button
                             variant="ghost"
                             size="sm"
                             className="text-primary hover:text-primary/80 text-xs"
                           >
-                                View all {items.length} items
-                              </Button>
-                            </div>
-                          )}
+                            View all {items.length} items
+                          </Button>
                         </div>
+                      )}
+                    </div>
                   );
                 })}
             </div>

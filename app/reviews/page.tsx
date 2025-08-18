@@ -4,6 +4,10 @@ import React, { useState, useEffect } from "react";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { useSearchParams } from "next/navigation";
 
+// Force dynamic rendering to prevent prerender issues
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 import {
   Star,
   Search,
