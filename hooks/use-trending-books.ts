@@ -48,6 +48,14 @@ const setCachedTrendingBooks = (books: SearchResult[]) => {
   }
 };
 
+const clearCachedTrendingBooks = () => {
+  try {
+    localStorage.removeItem(CACHE_KEY);
+  } catch (error) {
+    console.error("Error clearing cache:", error);
+  }
+};
+
 // Get Trending Books with caching and fallback
 const getTrendingBooks = async (): Promise<SearchResult[]> => {
   // First, try to get from cache
@@ -85,17 +93,31 @@ const getTrendingBooks = async (): Promise<SearchResult[]> => {
     const allBooks =
       data.results?.lists?.flatMap(
         (list: any) =>
-          list.books?.map((book: any) => ({
-            id: book.id,
-            title: book.title || "Unknown Title",
-            author: book.author || "Unknown Author",
-            year: book.year || 2024,
-            cover: book.cover || "/placeholder.svg",
-            overview: book.overview || "",
-            publishedDate: book.publishedDate || "",
-            pageCount: book.pageCount || 0,
-            listName: book.listName || "Best Seller",
-          })) || []
+          list.books?.map((book: any) => {
+            // Create a unique ID that contains book information for navigation
+            const bookInfo = {
+              title: book.title || "Unknown Title",
+              author: book.author || "Unknown Author",
+              cover: book.book_image || book.cover || "/placeholder.svg",
+              overview: book.description || book.overview || "",
+              publishedDate: book.created_date || book.publishedDate || "",
+              pageCount: book.weeks_on_list || book.pageCount || 0,
+            };
+            const encodedId = encodeURIComponent(JSON.stringify(bookInfo));
+
+            return {
+              id: encodedId,
+              title: book.title || "Unknown Title",
+              author: book.author || "Unknown Author",
+              year: book.year || 2024,
+              cover: book.book_image || book.cover || "/placeholder.svg",
+              overview: book.description || book.overview || "",
+              publishedDate: book.created_date || book.publishedDate || "",
+              pageCount: book.weeks_on_list || book.pageCount || 0,
+              listName: list.list_name || book.listName || "Best Seller",
+              rank: book.rank,
+            };
+          }) || []
       ) || [];
 
     // Remove duplicates based on ID and return first 20 books
@@ -130,6 +152,7 @@ interface UseTrendingBooksReturn {
   error: string | null;
   fetchBooks: (forceRefresh?: boolean) => Promise<void>;
   clearError: () => void;
+  clearCache: () => void;
 }
 
 export function useTrendingBooks(): UseTrendingBooksReturn {
@@ -177,14 +200,9 @@ export function useTrendingBooks(): UseTrendingBooksReturn {
 
   // Preload trending books when hook mounts
   useEffect(() => {
-    // Start loading immediately if we have cached data
-    const cachedBooks = getCachedTrendingBooks();
-    if (cachedBooks && cachedBooks.length > 0) {
-      setBooks(cachedBooks);
-    }
-
-    // Always fetch fresh data in background
-    fetchBooks();
+    // Clear cache and fetch fresh data
+    clearCachedTrendingBooks();
+    fetchBooks(true);
   }, [fetchBooks]);
 
   return {
@@ -193,6 +211,6 @@ export function useTrendingBooks(): UseTrendingBooksReturn {
     error,
     fetchBooks,
     clearError,
+    clearCache: clearCachedTrendingBooks,
   };
 }
-

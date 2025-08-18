@@ -7,7 +7,7 @@ import { use } from "react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Star, BookOpen, Plus, Heart } from "lucide-react";
+import { Star, BookOpen, Plus, Heart, Edit } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -94,9 +94,7 @@ export default function BookDetailPage({
     const fetchBookDetails = async () => {
       try {
         setLoading(true);
-        const response = await fetch(
-          `https://www.googleapis.com/books/v1/volumes/${resolvedParams.id}`
-        );
+        const response = await fetch(`/api/books/${resolvedParams.id}`);
 
         if (!response.ok) {
           throw new Error("Failed to fetch book details");
@@ -161,7 +159,9 @@ export default function BookDetailPage({
         id: resolvedParams.id,
         title: book.title,
         author: book.authors?.join(", ") || "Unknown Author",
-        year: new Date(book.publishedDate).getFullYear(),
+        year: book.publishedDate
+          ? new Date(book.publishedDate).getFullYear()
+          : new Date().getFullYear(),
         cover: book.imageLinks?.thumbnail || "/placeholder.svg",
         rating: book.averageRating || 0,
         notes: "",
@@ -178,7 +178,9 @@ export default function BookDetailPage({
       );
 
       // If adding to Recommendations collection, also add to the recommendations subcollection
-      const selectedCollection = userLists.find(list => list.id === selectedListId);
+      const selectedCollection = userLists.find(
+        (list) => list.id === selectedListId
+      );
       if (selectedCollection && selectedCollection.name === "Recommendations") {
         try {
           const recommendationsRef = collection(
@@ -187,23 +189,23 @@ export default function BookDetailPage({
             user.uid,
             "bookRecommendations"
           );
-          await setDoc(
-            doc(recommendationsRef, resolvedParams.id),
-            {
-              id: resolvedParams.id,
-              title: book.title,
-              author: book.authors?.join(", ") || "Unknown Author",
-              year: new Date(book.publishedDate).getFullYear(),
-              cover: book.imageLinks?.thumbnail || "/placeholder.svg",
-              overview: book.description || "",
-              publishedDate: book.publishedDate || "",
-              pageCount: book.pageCount || 0,
-              addedAt: new Date(),
-              isPublic: true,
-            }
-          );
+          await setDoc(doc(recommendationsRef, resolvedParams.id), {
+            id: resolvedParams.id,
+            title: book.title,
+            author: book.authors?.join(", ") || "Unknown Author",
+            year: new Date(book.publishedDate).getFullYear(),
+            cover: book.imageLinks?.thumbnail || "/placeholder.svg",
+            overview: book.description || "",
+            publishedDate: book.publishedDate || "",
+            pageCount: book.pageCount || 0,
+            addedAt: new Date(),
+            isPublic: true,
+          });
         } catch (error) {
-          console.error("Error adding to recommendations subcollection:", error);
+          console.error(
+            "Error adding to recommendations subcollection:",
+            error
+          );
         }
       }
 
@@ -263,13 +265,17 @@ export default function BookDetailPage({
               <Image
                 src={
                   book.imageLinks?.thumbnail
-                    ? book.imageLinks.thumbnail.replace('http://', 'https://')
+                    ? book.imageLinks.thumbnail.replace("http://", "https://")
                     : "/placeholder.svg"
                 }
                 alt={book.title}
                 width={400}
                 height={600}
                 className="rounded-lg shadow-lg w-full"
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement;
+                  target.src = "/placeholder.svg";
+                }}
               />
             </div>
           </div>
@@ -288,16 +294,42 @@ export default function BookDetailPage({
             </div>
 
             <div className="space-y-4">
-              <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
-                {book.description}
-              </p>
+              <div
+                className="text-gray-700 dark:text-gray-300 leading-relaxed"
+                dangerouslySetInnerHTML={{
+                  __html:
+                    book.description ||
+                    "No description available for this book.",
+                }}
+              />
 
               <div className="flex items-center gap-4">
                 <Button size="sm" variant="outline" asChild>
-                  <a href={book.previewLink} target="_blank" rel="noopener noreferrer">
+                  <a
+                    href={book.previewLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
                     <BookOpen className="w-4 h-4 mr-2" />
                     Preview
                   </a>
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={() =>
+                    router.push(
+                      `/reviews?type=book&id=${
+                        resolvedParams.id
+                      }&title=${encodeURIComponent(
+                        book.title
+                      )}&author=${encodeURIComponent(
+                        book.authors?.join(", ") || "Unknown Author"
+                      )}`
+                    )
+                  }
+                >
+                  <Edit className="w-4 h-4 mr-2" />
+                  Write Review
                 </Button>
                 {book.averageRating && (
                   <div className="flex items-center gap-1">
@@ -380,21 +412,19 @@ export default function BookDetailPage({
         <div className="border-t border-gray-200 dark:border-gray-700 pt-8">
           {/* Navigation Tabs */}
           <div className="flex space-x-8 mb-6 border-b border-gray-200 dark:border-gray-700">
-            {["all", "reviews", "similar", "thread", "posts"].map(
-              (tab) => (
-                <button
-                  key={tab}
-                  onClick={() => setActiveTab(tab)}
-                  className={`pb-2 px-1 text-sm font-medium transition-colors ${
-                    activeTab === tab
-                      ? "text-primary border-b-2 border-primary"
-                      : "text-muted-foreground hover:text-primary"
-                  }`}
-                >
-                  {tab.charAt(0).toUpperCase() + tab.slice(1)}
-                </button>
-              )
-            )}
+            {["all", "reviews", "similar", "thread", "posts"].map((tab) => (
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                className={`pb-2 px-1 text-sm font-medium transition-colors ${
+                  activeTab === tab
+                    ? "text-primary border-b-2 border-primary"
+                    : "text-muted-foreground hover:text-primary"
+                }`}
+              >
+                {tab.charAt(0).toUpperCase() + tab.slice(1)}
+              </button>
+            ))}
           </div>
 
           {/* Content Area */}
@@ -405,7 +435,11 @@ export default function BookDetailPage({
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                   <div>
                     <span className="text-muted-foreground">Published:</span>
-                    <p>{new Date(book.publishedDate).toLocaleDateString()}</p>
+                    <p>
+                      {book.publishedDate
+                        ? new Date(book.publishedDate).toLocaleDateString()
+                        : "Unknown"}
+                    </p>
                   </div>
                   <div>
                     <span className="text-muted-foreground">Pages:</span>
@@ -459,4 +493,4 @@ export default function BookDetailPage({
       </div>
     </div>
   );
-} 
+}

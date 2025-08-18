@@ -8,13 +8,14 @@
 
 - **Multi-media Support**: Music, Books, Movies, TV Series
 - **Social Features**: Reviews, ratings, likes, community feed, following system
-- **External API Integration**: Spotify, TMDB, MusicBrainz, MusicAPI, Saavn
+- **External API Integration**: Spotify, TMDB, MusicBrainz, MusicAPI, Saavn, NYTimes Books API
 - **Authentication**: Firebase Auth with NextAuth.js
 - **Real-time Database**: Firebase Firestore
 - **Modern UI**: Next.js 15 with Tailwind CSS and Radix UI components
 - **Following System**: Follow users and see personalized feeds
 - **Recommendations**: Discover content from other users' collections
 - **Notifications**: Real-time user notifications
+- **Bestseller Lists**: NYTimes Books API integration
 
 ## 🏗️ Architecture
 
@@ -25,7 +26,7 @@
 - **Backend**: Next.js API routes, Firebase
 - **Database**: Firebase Firestore
 - **Authentication**: Firebase Auth + NextAuth.js
-- **External APIs**: Spotify, TMDB, MusicBrainz, MusicAPI, Saavn
+- **External APIs**: Spotify, TMDB, MusicBrainz, MusicAPI, Saavn, NYTimes Books API, Google Books API
 - **Package Manager**: pnpm
 
 ### Project Structure
@@ -38,6 +39,8 @@ reliva-web/
 │   │   ├── auth/          # Authentication endpoints
 │   │   ├── music-api/     # Music API integration
 │   │   ├── music-preview/ # Music preview functionality
+│   │   ├── nytimes/       # NYTimes Books API integration
+│   │   ├── google-books/  # Google Books API integration
 │   │   ├── recommendations/ # Recommendations API
 │   │   ├── saavn/         # Saavn API integration
 │   │   ├── search/        # Global search
@@ -86,6 +89,8 @@ reliva-web/
 │   ├── layout-wrapper.tsx
 │   ├── mode-toggle.tsx    # Dark/light mode toggle
 │   ├── movie-card.tsx
+│   ├── nytimes-bestsellers.tsx # NYTimes Books component
+
 │   ├── post-success-toast.tsx
 │   ├── profile-books-section.tsx
 │   ├── profile-movie-section.tsx
@@ -108,8 +113,11 @@ reliva-web/
 │   ├── use-mobile.tsx
 │   ├── use-movie-profile.ts
 │   ├── use-music-api.ts   # Music API integration
+│   ├── use-music-collections.ts
 │   ├── use-music-profile.ts
 │   ├── use-notifications.ts
+│   ├── use-nytimes-books.ts # NYTimes Books API hook
+│   ├── use-google-books.ts  # Google Books API hook
 │   ├── use-profile.ts
 │   ├── use-ratings.ts
 │   ├── use-recommendations.ts # Recommendations hook
@@ -117,6 +125,7 @@ reliva-web/
 │   ├── use-search.ts
 │   ├── use-series-profile.ts
 │   ├── use-toast.ts
+
 │   ├── use-user-connections.ts
 │   └── use-userdata.ts
 ├── lib/                   # Utility libraries
@@ -131,7 +140,10 @@ reliva-web/
 │   ├── add-test-collections.js
 │   ├── add-test-data.js
 │   ├── add-test-following-data.js
+│   ├── cleanup-test-data.js
 │   ├── debug-reviews.js
+│   ├── test-nytimes-api.js
+│   ├── test-google-books-api.js
 │   └── test-recommendations.js
 ├── types/                 # TypeScript type definitions
 │   ├── next-auth.d.ts
@@ -243,11 +255,17 @@ reliva-web/
 - **Reading Lists**: Organize books by status
 - **Book Reviews**: Rate and review books
 - **Profile Integration**: User book collections
+- **NYTimes Bestsellers**: Integration with NYTimes Books API
 
 **Key Files:**
 
 - `app/books/page.tsx` - Books listing
 - `components/profile-books-section.tsx` - Books profile section
+- `components/nytimes-bestsellers.tsx` - NYTimes bestsellers component
+- `hooks/use-nytimes-books.ts` - NYTimes Books API hook
+- `hooks/use-google-books.ts` - Google Books API hook
+- `app/api/nytimes/books/route.ts` - NYTimes Books API endpoint
+- `app/api/google-books/route.ts` - Google Books API endpoint
 
 ### 5. Review System
 
@@ -339,6 +357,21 @@ reliva-web/
 - **Search Integration**: Search for songs and albums
 - **Playlist Support**: Access to Saavn playlists
 
+### 7. NYTimes Books API
+
+- **Bestseller Lists**: Access to NYTimes bestseller lists
+- **Book Data**: Comprehensive book information
+- **Multiple Lists**: Hardcover, paperback, fiction, nonfiction
+- **Real-time Updates**: Current bestseller data
+
+### 8. Google Books API
+
+- **Book Search**: Search by title, author, ISBN, or general query
+- **Detailed Information**: Publisher, page count, ratings, reviews
+- **Purchase Links**: Direct links to buy books
+- **Preview Functionality**: Book preview links
+- **Categories**: Book categorization and genres
+
 ## 🎨 UI/UX Features
 
 ### Design System
@@ -416,6 +449,7 @@ Required environment variables:
 - `SPOTIFY_CLIENT_SECRET` - Spotify OAuth client secret
 - `MUSICAPI_CLIENT_ID` - MusicAPI client ID
 - `MUSICAPI_CLIENT_SECRET` - MusicAPI client secret
+- `NYTIMES_API_KEY` - NYTimes Books API key
 - `NEXTAUTH_SECRET` - NextAuth secret
 
 ### Testing Scripts
@@ -425,6 +459,8 @@ Required environment variables:
 - `scripts/add-test-collections.js` - Add media collections
 - `scripts/debug-reviews.js` - Debug review functionality
 - `scripts/test-recommendations.js` - Test recommendations feature
+- `scripts/test-nytimes-api.js` - Test NYTimes Books API
+- `scripts/cleanup-test-data.js` - Clean up test data
 
 ### Key Dependencies
 
@@ -458,6 +494,29 @@ Required environment variables:
 - **Collection Integration**: Add items directly to your collections
 - **Source Filtering**: Choose between friends and all users
 - **User Cards**: Expandable user recommendation cards
+
+### NYTimes Books API Integration
+
+- **Bestseller Lists**: Access to current NYTimes bestseller lists
+- **Multiple Categories**: Hardcover, paperback, fiction, nonfiction
+- **Book Details**: Comprehensive book information
+- **Component Integration**: Reusable NYTimes bestsellers component
+
+### Google Books API Integration
+
+- **Book Search**: Search by title, author, ISBN, or general query
+- **Detailed Information**: Publisher, page count, ratings, reviews
+- **Purchase Links**: Direct links to buy books
+- **Preview Functionality**: Book preview links
+- **Categories**: Book categorization and genres
+
+### Trending Books Feature
+
+- **NYTimes Integration**: Display current bestseller lists
+- **Google Books Integration**: Fetch detailed book information on click
+- **Smart Search**: Automatic ISBN, title, and author matching
+- **Purchase Options**: Direct links to buy books
+- **Book Previews**: Preview functionality for available books
 
 ### Enhanced Profile Sections
 
@@ -503,6 +562,64 @@ Required environment variables:
 - **Monitoring**: Error tracking and performance monitoring
 - **Pagination**: Load more functionality for large datasets
 - **Caching**: Advanced caching strategies
+
+## 📚 Documentation Files
+
+- `CODEBASE_INDEX.md` - This comprehensive codebase index
+- `FOLLOWING_SYSTEM_README.md` - Detailed following system documentation
+- `RECOMMENDATIONS_FEATURE.md` - Recommendations feature documentation
+- `NYTIMES_API_INTEGRATION.md` - NYTimes Books API integration guide
+- `SERIES_AND_BOOKS_TODO.md` - Implementation notes for series and books pages
+- `README.md` - Basic project setup and structure
+
+## 🎵 Media Types Supported
+
+### Music
+
+- **Sources**: Spotify, MusicBrainz, MusicAPI, Saavn
+- **Features**: Playlist management, track previews, artist/album search
+- **Collections**: Favorites, playlists, custom collections
+
+### Movies
+
+- **Sources**: TMDB
+- **Features**: Movie search, ratings, reviews, trending content
+- **Collections**: Watchlist, watched, custom collections
+
+### TV Series
+
+- **Sources**: TMDB
+- **Features**: Series search, season/episode tracking, ratings
+- **Collections**: Watchlist, watching, completed, dropped
+
+### Books
+
+- **Sources**: NYTimes Books API, Google Books API
+- **Features**: Bestseller lists, book search, reading lists, trending books integration
+- **Collections**: To read, reading, completed, dropped
+
+## 🔄 Data Flow
+
+### User Authentication Flow
+
+1. User signs up/logs in via Firebase Auth
+2. NextAuth.js handles session management
+3. User data stored in Firestore
+4. Real-time updates via Firebase listeners
+
+### Content Discovery Flow
+
+1. User searches for content via external APIs
+2. Content added to user collections in Firestore
+3. Reviews and ratings stored in Firestore
+4. Following system filters content for personalized feed
+
+### Social Interaction Flow
+
+1. User follows other users (stored in Firestore)
+2. Reviews from followed users appear in personalized feed
+3. Users can like and interact with reviews
+4. Real-time notifications for social activities
 
 ---
 

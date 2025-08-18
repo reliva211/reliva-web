@@ -7,7 +7,7 @@ import { use } from "react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Star, Play, Plus, Heart } from "lucide-react";
+import { Star, Play, Plus, Heart, Edit } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -205,7 +205,9 @@ export default function SeriesDetailPage({
       );
 
       // If adding to Recommendations collection, also add to the recommendations subcollection
-      const selectedCollection = userLists.find(list => list.id === selectedListId);
+      const selectedCollection = userLists.find(
+        (list) => list.id === selectedListId
+      );
       if (selectedCollection && selectedCollection.name === "Recommendations") {
         try {
           const recommendationsRef = collection(
@@ -214,25 +216,25 @@ export default function SeriesDetailPage({
             user.uid,
             "seriesRecommendations"
           );
-          await setDoc(
-            doc(recommendationsRef, String(series.id)),
-            {
-              id: series.id,
-              title: series.name,
-              year: new Date(series.first_air_date).getFullYear(),
-              cover: series.poster_path
-                ? `https://image.tmdb.org/t/p/w300${series.poster_path}`
-                : "/placeholder.svg",
-              overview: series.overview || "",
-              first_air_date: series.first_air_date || "",
-              number_of_seasons: series.number_of_seasons || 1,
-              number_of_episodes: series.number_of_episodes || 1,
-              addedAt: new Date(),
-              isPublic: true,
-            }
-          );
+          await setDoc(doc(recommendationsRef, String(series.id)), {
+            id: series.id,
+            title: series.name,
+            year: new Date(series.first_air_date).getFullYear(),
+            cover: series.poster_path
+              ? `https://image.tmdb.org/t/p/w300${series.poster_path}`
+              : "/placeholder.svg",
+            overview: series.overview || "",
+            first_air_date: series.first_air_date || "",
+            number_of_seasons: series.number_of_seasons || 1,
+            number_of_episodes: series.number_of_episodes || 1,
+            addedAt: new Date(),
+            isPublic: true,
+          });
         } catch (error) {
-          console.error("Error adding to recommendations subcollection:", error);
+          console.error(
+            "Error adding to recommendations subcollection:",
+            error
+          );
         }
       }
 
@@ -248,15 +250,15 @@ export default function SeriesDetailPage({
 
   const getBestTrailer = () => {
     if (!series?.videos?.results) return null;
-    
+
     const trailers = series.videos.results.filter(
-      video => video.site === "YouTube" && video.type === "Trailer"
+      (video) => video.site === "YouTube" && video.type === "Trailer"
     );
-    
+
     if (trailers.length === 0) return null;
-    
+
     // Prefer official trailers, then the first one
-    const officialTrailer = trailers.find(trailer => trailer.official);
+    const officialTrailer = trailers.find((trailer) => trailer.official);
     return officialTrailer || trailers[0];
   };
 
@@ -344,14 +346,27 @@ export default function SeriesDetailPage({
               </p>
 
               <div className="flex items-center gap-4">
-                <Button 
-                  size="sm" 
+                <Button
+                  size="sm"
                   variant="outline"
                   onClick={handleTrailerClick}
                   disabled={!getBestTrailer()}
                 >
                   <Play className="w-4 h-4 mr-2" />
                   {getBestTrailer() ? "Watch Trailer" : "No Trailer"}
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={() =>
+                    router.push(
+                      `/reviews?type=series&id=${
+                        resolvedParams.id
+                      }&title=${encodeURIComponent(series.name)}`
+                    )
+                  }
+                >
+                  <Edit className="w-4 h-4 mr-2" />
+                  Write Review
                 </Button>
                 <div className="flex items-center gap-1">
                   <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
@@ -625,10 +640,15 @@ export default function SeriesDetailPage({
       <Dialog open={trailerOpen} onOpenChange={setTrailerOpen}>
         <DialogContent className="max-w-4xl max-h-[80vh]">
           <DialogHeader>
-            <DialogTitle>{selectedTrailer?.name || "Series Trailer"}</DialogTitle>
+            <DialogTitle>
+              {selectedTrailer?.name || "Series Trailer"}
+            </DialogTitle>
           </DialogHeader>
           {selectedTrailer && (
-            <div className="relative w-full" style={{ paddingBottom: '56.25%' }}>
+            <div
+              className="relative w-full"
+              style={{ paddingBottom: "56.25%" }}
+            >
               <iframe
                 src={`https://www.youtube.com/embed/${selectedTrailer.key}?autoplay=1`}
                 title={selectedTrailer.name}

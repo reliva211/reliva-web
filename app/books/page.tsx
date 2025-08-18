@@ -165,6 +165,7 @@ export default function BooksPage() {
     loading: isLoadingTrending,
     error: trendingError,
     fetchBooks: fetchTrendingBooks,
+    clearCache: clearTrendingCache,
   } = useTrendingBooks();
 
   // Default collections for books
@@ -564,7 +565,7 @@ export default function BooksPage() {
                   : "hover:bg-gray-800/50 text-gray-300 hover:text-white"
               }`}
             >
-              <span>Trending</span>
+              <span>Trending Books</span>
             </button>
 
             {collections.map((collection) => {
@@ -666,22 +667,40 @@ export default function BooksPage() {
         <div className="space-y-8">
           {/* Discover Section */}
           {showDiscover && searchResults.length === 0 && (
-            <DiscoverSection
-              title="Popular Books"
-              subtitle="Trending books from Google Books"
-              items={trendingBooks.map((book) => ({
-                id: book.id,
-                title: book.title,
-                cover: book.cover,
-                year: book.year,
-                author: book.author,
-                overview: book.overview,
-              }))}
-              isLoading={isLoadingTrending}
-              onRetry={() => fetchTrendingBooks(true)}
-              itemType="book"
-              containerId="trending-books-container"
-            />
+            <div>
+              {trendingError && (
+                <div className="text-center py-8">
+                  <p className="text-red-500 mb-4">Error: {trendingError}</p>
+                  <Button
+                    onClick={() => {
+                      clearTrendingCache();
+                      fetchTrendingBooks(true);
+                    }}
+                  >
+                    Retry
+                  </Button>
+                </div>
+              )}
+              <DiscoverSection
+                title="Trending Books"
+                subtitle="Current NYTimes bestsellers"
+                items={trendingBooks.map((book) => ({
+                  id: book.id,
+                  title: book.title,
+                  cover: book.cover,
+                  year: book.year,
+                  author: book.author,
+                  overview: book.overview,
+                }))}
+                isLoading={isLoadingTrending}
+                onRetry={() => {
+                  clearTrendingCache();
+                  fetchTrendingBooks(true);
+                }}
+                itemType="book"
+                containerId="trending-books-container"
+              />
+            </div>
           )}
 
           {isSearching ? (

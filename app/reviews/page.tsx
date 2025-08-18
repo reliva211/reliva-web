@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useCurrentUser } from "@/hooks/use-current-user";
+import { useSearchParams } from "next/navigation";
 
 import {
   Star,
@@ -20,12 +21,50 @@ import { toast } from "@/components/ui/use-toast";
 
 export default function ReviewsPage() {
   const { user } = useCurrentUser();
+  const searchParams = useSearchParams();
 
   // Search state
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
   const [searchType, setSearchType] = useState("movie"); // movie, series, book
+
+  // Handle URL parameters for pre-selected media
+  useEffect(() => {
+    const type = searchParams.get("type");
+    const id = searchParams.get("id");
+    const title = searchParams.get("title");
+    const author = searchParams.get("author");
+
+    if (type && id && title) {
+      setSearchType(type);
+      setSearchQuery(title);
+
+      // Create a mock media object for the selected item
+      const mockMedia = {
+        id: id,
+        title: decodeURIComponent(title),
+        cover: "", // Will be filled by search
+        year: null,
+        type: type,
+        author: author ? decodeURIComponent(author) : null,
+        data: {},
+      };
+
+      // Trigger search for the title to get full details
+      if (title) {
+        setSearchQuery(decodeURIComponent(title));
+        // The search will be triggered in the next useEffect
+      }
+    }
+  }, [searchParams]);
+
+  // Auto-search when search query is set from URL parameters
+  useEffect(() => {
+    if (searchQuery && searchQuery.trim()) {
+      searchMedia();
+    }
+  }, [searchType]); // Trigger when search type changes from URL params
 
   // Review state
   const [selectedMedia, setSelectedMedia] = useState(null);
@@ -85,6 +124,21 @@ export default function ReviewsPage() {
       }
 
       setSearchResults(results);
+
+      // Auto-select the media if it was pre-selected from URL parameters
+      const urlId = searchParams.get("id");
+      const urlTitle = searchParams.get("title");
+      if (urlId && urlTitle && results.length > 0) {
+        const decodedTitle = decodeURIComponent(urlTitle);
+        const matchingResult = results.find(
+          (result) =>
+            result.id.toString() === urlId ||
+            result.title.toLowerCase().includes(decodedTitle.toLowerCase())
+        );
+        if (matchingResult) {
+          setSelectedMedia(matchingResult);
+        }
+      }
     } catch (error) {
       console.error("Search error:", error);
       toast({

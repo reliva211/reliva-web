@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button";
 import { ModeToggle } from "@/components/mode-toggle";
 import {
   Music,
-  BookOpen,
   Film,
   Menu,
   X,
@@ -93,7 +92,7 @@ export default function Sidebar({ isLandingPage = false }: SidebarProps) {
 
   const discoverItems = [
     { href: "/music", label: "Music", icon: Music },
-    { href: "/books", label: "Books", icon: BookOpen },
+    { href: "/books", label: "Books", icon: Library },
     { href: "/movies", label: "Movies", icon: Film },
     { href: "/series", label: "Series", icon: Tv },
   ];
@@ -102,6 +101,7 @@ export default function Sidebar({ isLandingPage = false }: SidebarProps) {
     { href: "/", label: "Home", icon: Home },
     { href: "/recommendations", label: "Recommendations", icon: TrendingUp },
     { href: "/users", label: "Friends", icon: Users },
+    { href: "/reviews", label: "Post", icon: Edit },
     {
       href: "/notifications",
       label: "Notifications",
@@ -420,47 +420,6 @@ export default function Sidebar({ isLandingPage = false }: SidebarProps) {
                       linkContent
                     );
                   })}
-
-                  {/* Post Button */}
-                  <div className="my-2">
-                    {(() => {
-                      const isActive = pathname === "/reviews";
-                      const linkContent = (
-                        <Link
-                          href="/reviews"
-                          onClick={() => setIsMobileOpen(false)}
-                          className={cn(
-                            "flex items-center gap-3 rounded-lg text-sm font-medium transition-all duration-200 hover:bg-accent hover:text-accent-foreground",
-                            isCollapsed
-                              ? "justify-center px-2 py-3"
-                              : "px-4 py-3",
-                            isActive
-                              ? "bg-accent text-accent-foreground"
-                              : "text-muted-foreground"
-                          )}
-                        >
-                          <Edit
-                            className={cn(
-                              "flex-shrink-0 transition-all duration-200",
-                              isCollapsed ? "h-5 w-5" : "h-5 w-5"
-                            )}
-                          />
-                          {!isCollapsed && (
-                            <span className="whitespace-nowrap">Post</span>
-                          )}
-                        </Link>
-                      );
-
-                      return isCollapsed ? (
-                        <Tooltip>
-                          <TooltipTrigger asChild>{linkContent}</TooltipTrigger>
-                          <TooltipContent side="right">Post</TooltipContent>
-                        </Tooltip>
-                      ) : (
-                        linkContent
-                      );
-                    })()}
-                  </div>
                 </div>
 
                 {/* User & Settings */}
