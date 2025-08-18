@@ -378,6 +378,24 @@ export default function AlbumDetailPage({
                   </>
                 )}
               </Button>
+              <Button
+                size="lg"
+                variant="outline"
+                onClick={() => {
+                  const params = new URLSearchParams({
+                    type: 'music',
+                    id: album.id,
+                    title: album.name,
+                    cover: getImageUrl(album.image),
+                    artist: album.artists?.primary?.map(artist => artist.name).join(", ") || "Unknown Artist"
+                  });
+                  router.push(`/reviews?${params.toString()}`);
+                }}
+                className="rounded-xl hover:scale-105 transition-all duration-200 group bg-background/60 border-border/50 shadow-lg"
+              >
+                <Star className="w-5 h-5 mr-2 group-hover:scale-110 transition-transform" />
+                Write Review
+              </Button>
               {album.explicitContent && (
                 <Badge
                   variant="destructive"

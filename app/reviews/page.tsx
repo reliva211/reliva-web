@@ -15,6 +15,7 @@ import {
   BookOpen,
   CheckCircle,
   XCircle,
+  Music,
 } from "lucide-react";
 import Image from "next/image";
 import { searchService } from "@/lib/search-service";
@@ -31,7 +32,7 @@ function ReviewsPageContent() {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
-  const [searchType, setSearchType] = useState("movie"); // movie, series, book
+  const [searchType, setSearchType] = useState("movie"); // movie, series, book, music
 
   // Handle URL parameters for pre-selected media
   useEffect(() => {
@@ -40,8 +41,9 @@ function ReviewsPageContent() {
     const title = searchParams.get("title");
     const author = searchParams.get("author");
     const cover = searchParams.get("cover");
+    const artist = searchParams.get("artist");
 
-    console.log("URL Parameters:", { type, id, title, author, cover });
+    console.log("URL Parameters:", { type, id, title, author, cover, artist });
 
     if (type && id && title) {
       setSearchType(type);
@@ -50,6 +52,7 @@ function ReviewsPageContent() {
       const decodedCover = cover
         ? decodeURIComponent(cover)
         : "/placeholder.svg";
+      const decodedArtist = artist ? decodeURIComponent(artist) : null;
 
       // Create media object directly from URL parameters (no search needed)
       const mediaFromUrl = {
@@ -59,6 +62,7 @@ function ReviewsPageContent() {
         year: null,
         type: type,
         author: decodedAuthor,
+        artist: decodedArtist,
         data: {},
       };
 
@@ -134,6 +138,28 @@ function ReviewsPageContent() {
           type: "book",
           data: book,
         }));
+      } else if (searchType === "music") {
+        // Search for music using Saavn API
+        try {
+          const response = await fetch(`/api/saavn/search?q=${encodeURIComponent(searchQuery)}&type=song&limit=10`);
+          const data = await response.json();
+          
+          if (data.data?.results) {
+            results = data.data.results.map((track) => ({
+              id: track.id,
+              title: track.name,
+              cover: track.image?.[2]?.url || track.image?.[1]?.url || track.image?.[0]?.url || "/placeholder.svg",
+              year: track.year || null,
+              type: "music",
+              artist: track.artists?.primary?.map(artist => artist.name).join(", ") || "Unknown Artist",
+              album: track.album?.name || "Unknown Album",
+              data: track,
+            }));
+          }
+        } catch (error) {
+          console.error("Music search error:", error);
+          results = [];
+        }
       }
 
       setSearchResults(results);
@@ -178,6 +204,7 @@ function ReviewsPageContent() {
         mediaType: selectedMedia.type,
         mediaYear: selectedMedia.year,
         mediaAuthor: selectedMedia.author || null,
+        mediaArtist: selectedMedia.artist || null,
         rating: rating,
         reviewText: reviewText.trim(),
         timestamp: serverTimestamp(),
@@ -292,6 +319,7 @@ function ReviewsPageContent() {
                   { value: "movie", label: "Movies", icon: Film },
                   { value: "series", label: "Series", icon: Tv },
                   { value: "book", label: "Books", icon: BookOpen },
+                  { value: "music", label: "Music", icon: Music },
                 ].map((type) => (
                   <button
                     key={type.value}
@@ -312,7 +340,7 @@ function ReviewsPageContent() {
               <div className="flex gap-2">
                 <input
                   type="text"
-                  placeholder={`Search for ${searchType}s...`}
+                  placeholder={`Search for ${searchType === "music" ? "songs/albums" : searchType}s...`}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && searchMedia()}
@@ -350,6 +378,7 @@ function ReviewsPageContent() {
                         <div className="text-sm text-gray-500 dark:text-gray-400">
                           {result.year && <span>{result.year}</span>}
                           {result.author && <span> • {result.author}</span>}
+                          {result.artist && <span> • {result.artist}</span>}
                         </div>
                         <span className="inline-block px-2 py-1 text-xs bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded mt-1">
                           {result.type.toUpperCase()}
@@ -389,6 +418,9 @@ function ReviewsPageContent() {
                     {selectedMedia.year && <span>{selectedMedia.year}</span>}
                     {selectedMedia.author && (
                       <span> • {selectedMedia.author}</span>
+                    )}
+                    {selectedMedia.artist && (
+                      <span> • {selectedMedia.artist}</span>
                     )}
                   </div>
                   <span className="inline-block px-2 py-1 text-xs bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300 rounded mt-1">
