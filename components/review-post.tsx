@@ -2,7 +2,7 @@
 
 import React from "react";
 import Image from "next/image";
-import { Star, Heart, MessageCircle, Share2, MoreHorizontal } from "lucide-react";
+import { Star, Heart, MessageCircle, MoreHorizontal } from "lucide-react";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { doc, updateDoc, arrayUnion, arrayRemove } from "firebase/firestore";
 import { db } from "@/lib/firebase";
@@ -62,9 +62,9 @@ export default function ReviewPost({ review, onLikeToggle }: ReviewPostProps) {
   };
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden hover:shadow-xl transition-all duration-300 hover:scale-[1.02]">
+    <div className="py-6 border-b border-gray-200 dark:border-gray-700">
       {/* Header */}
-      <div className="p-4 sm:p-5 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-gray-50 to-white dark:from-gray-800 dark:to-gray-800">
+      <div className="mb-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3 min-w-0">
             <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gradient-to-br from-emerald-500 to-blue-500 flex items-center justify-center text-white font-semibold text-sm sm:text-base flex-shrink-0 shadow-lg">
@@ -86,9 +86,9 @@ export default function ReviewPost({ review, onLikeToggle }: ReviewPostProps) {
       </div>
 
       {/* Media Info */}
-      <div className="p-4 sm:p-5 border-b border-gray-200 dark:border-gray-700">
+      <div className="mb-4">
         <div className="flex items-start space-x-3 sm:space-x-4">
-          <div className="relative w-16 h-24 sm:w-20 sm:h-28 rounded-xl overflow-hidden flex-shrink-0 shadow-md">
+          <div className="relative w-32 h-48 sm:w-40 sm:h-56 rounded-xl overflow-hidden flex-shrink-0 shadow-md">
             <Image
               src={review.mediaCover || "/placeholder.svg"}
               alt={review.mediaTitle}
@@ -120,19 +120,18 @@ export default function ReviewPost({ review, onLikeToggle }: ReviewPostProps) {
                 </span>
               </div>
             </div>
+            {/* Review Text moved here */}
+            <p className="text-gray-800 dark:text-gray-200 leading-relaxed text-sm sm:text-base line-clamp-4 mt-3">
+              {review.reviewText}
+            </p>
           </div>
         </div>
       </div>
 
-      {/* Review Text */}
-      <div className="p-4 sm:p-5">
-        <p className="text-gray-800 dark:text-gray-200 leading-relaxed text-sm sm:text-base line-clamp-4">
-          {review.reviewText}
-        </p>
-      </div>
+
 
       {/* Actions */}
-      <div className="px-4 sm:px-5 py-3 sm:py-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
+      <div>
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3 sm:space-x-4">
             <button
@@ -153,10 +152,7 @@ export default function ReviewPost({ review, onLikeToggle }: ReviewPostProps) {
             </button>
           </div>
           
-          <button className="flex items-center space-x-2 px-3 py-2 rounded-lg text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-gray-200 transition-all duration-200 text-sm font-medium">
-            <Share2 className="h-4 w-4 sm:h-5 sm:w-5" />
-            <span className="font-medium hidden sm:inline">Share</span>
-          </button>
+
         </div>
       </div>
     </div>
