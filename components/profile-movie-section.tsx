@@ -25,6 +25,14 @@ import {
   Clock,
   Heart,
   ThumbsUp,
+  Edit,
+  Eye,
+  Calendar,
+  Award,
+  Film,
+  Video,
+  Bookmark,
+  Share2,
 } from "lucide-react";
 import { useMovieProfile, type TMDBMovie } from "@/hooks/use-movie-profile";
 import { useCurrentUser } from "@/hooks/use-current-user";
@@ -34,7 +42,46 @@ interface ProfileMovieSectionProps {
   readOnly?: boolean;
 }
 
-// No placeholder data - only show actual content
+// Placeholder content for empty states - inspired by music section design
+const PLACEHOLDER = {
+  currentlyWatching: {
+    title: "Add your current watch",
+    subtitle: "Search for a movie you're watching",
+    cover:
+      "https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=256&h=384&fit=crop&crop=center",
+  },
+  favoriteMovie: {
+    title: "Add your favorite movie",
+    subtitle: "Search for your all-time favorite",
+    cover:
+      "https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=256&h=384&fit=crop&crop=center",
+  },
+  favoriteDirector: {
+    name: "Add your favorite director",
+    avatar:
+      "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&h=300&fit=crop&crop=faces",
+  },
+  favoriteMovies: new Array(4).fill(0).map((_, i) => ({
+    id: `fav-${i}`,
+    cover:
+      "https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=160&h=240&fit=crop&crop=center",
+  })),
+  watchlist: new Array(4).fill(0).map((_, i) => ({
+    id: `watch-${i}`,
+    cover:
+      "https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=160&h=240&fit=crop&crop=center",
+  })),
+  recommendations: new Array(4).fill(0).map((_, i) => ({
+    id: `rec-${i}`,
+    cover:
+      "https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=160&h=240&fit=crop&crop=center",
+  })),
+  ratings: new Array(4).fill(0).map((_, i) => ({
+    id: `rt-${i}`,
+    cover:
+      "https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=160&h=240&fit=crop&crop=center",
+  })),
+};
 
 // Helper function to clean up text content
 const cleanTextContent = (text: string): string => {
@@ -44,6 +91,37 @@ const cleanTextContent = (text: string): string => {
     .replace(/\[[^\]]*\]/g, "") // Remove square brackets and their content
     .replace(/\s+/g, " ") // Replace multiple spaces with single space
     .trim(); // Remove leading/trailing spaces
+};
+
+// Helper function to safely extract image URLs from various API response formats
+const getImageUrl = (image: any): string => {
+  try {
+    if (typeof image === "string") {
+      return image;
+    }
+    if (Array.isArray(image)) {
+      // Handle array of image objects with quality and url properties
+      const highQualityImage = image.find(
+        (img) => img?.quality === "500x500" || img?.quality === "high"
+      );
+      const mediumQualityImage = image.find(
+        (img) => img?.quality === "150x150" || img?.quality === "medium"
+      );
+      const anyImage = image.find((img) => img?.url);
+
+      return (
+        highQualityImage?.url || mediumQualityImage?.url || anyImage?.url || ""
+      );
+    }
+    if (image && typeof image === "object") {
+      // Handle single image object
+      return image.url || image.src || "";
+    }
+    return "";
+  } catch (error) {
+    console.error("Error parsing image URL:", error);
+    return "";
+  }
 };
 
 // Helper function to safely get text content
@@ -73,12 +151,16 @@ export default function ProfileMovieSection({
     updateFavoriteDirector,
     addFavoriteMovie,
     removeFavoriteMovie,
+    replaceFavoriteMovie,
     addToWatchlist,
     removeFromWatchlist,
+    replaceWatchlistMovie,
     addRecommendation,
     removeRecommendation,
+    replaceRecommendation,
     addRating,
     removeRating,
+    replaceRating,
     searchMovie,
     searchDirector,
   } = useMovieProfile(targetUserId);
@@ -103,6 +185,7 @@ export default function ProfileMovieSection({
     movieId: string;
     rating: number;
   } | null>(null);
+  const [editingItem, setEditingItem] = useState<any>(null);
 
   // Horizontal scroll functionality
   const scrollContainerRefs = {
@@ -143,41 +226,6 @@ export default function ProfileMovieSection({
       });
     }
   };
-
-  // Scroll to end when new items are added
-  useEffect(() => {
-    const scrollToEnd = (
-      containerRef: React.RefObject<HTMLDivElement | null>
-    ) => {
-      if (containerRef.current) {
-        containerRef.current.scrollTo({
-          left: containerRef.current.scrollWidth,
-          behavior: "smooth",
-        });
-      }
-    };
-
-    // Only scroll if we have items and the component is mounted
-    if (movieProfile) {
-      if (movieProfile.favoriteMovies?.length > 0) {
-        scrollToEnd(scrollContainerRefs.favoriteMovies);
-      }
-      if (movieProfile.watchlist?.length > 0) {
-        scrollToEnd(scrollContainerRefs.watchlist);
-      }
-      if (movieProfile.recommendations?.length > 0) {
-        scrollToEnd(scrollContainerRefs.recommendations);
-      }
-      if (movieProfile.ratings?.length > 0) {
-        scrollToEnd(scrollContainerRefs.ratings);
-      }
-    }
-  }, [
-    movieProfile?.favoriteMovies?.length,
-    movieProfile?.watchlist?.length,
-    movieProfile?.recommendations?.length,
-    movieProfile?.ratings?.length,
-  ]);
 
   // Rating functionality
   const handleRatingHover = (movieId: string, rating: number) => {
@@ -361,20 +409,40 @@ export default function ProfileMovieSection({
           await updateFavoriteMovie(formattedItem);
           break;
         case "favoriteMovies":
-          console.log("Adding to favorite movies");
-          await addFavoriteMovie(formattedItem);
+          if (editingItem) {
+            // Replace the specific movie at its original position
+            await replaceFavoriteMovie(editingItem.id, formattedItem);
+          } else {
+            // Add new movie
+            await addFavoriteMovie(formattedItem);
+          }
           break;
         case "watchlist":
-          console.log("Adding to watchlist");
-          await addToWatchlist(formattedItem);
+          if (editingItem) {
+            // Replace the specific movie at its original position
+            await replaceWatchlistMovie(editingItem.id, formattedItem);
+          } else {
+            // Add new movie
+            await addToWatchlist(formattedItem);
+          }
           break;
         case "recommendation":
-          console.log("Adding to recommendations");
-          await addRecommendation(formattedItem);
+          if (editingItem) {
+            // Replace the specific recommendation at its original position
+            await replaceRecommendation(editingItem.id, formattedItem);
+          } else {
+            // Add new recommendation
+            await addRecommendation(formattedItem);
+          }
           break;
         case "rating":
-          console.log("Adding to ratings");
-          await addRating(formattedItem, 5); // Default 5-star rating
+          if (editingItem) {
+            // Replace the specific rating at its original position
+            await replaceRating(editingItem.id, formattedItem, 5); // Default 5-star rating
+          } else {
+            // Add new rating
+            await addRating(formattedItem, 5); // Default 5-star rating
+          }
           break;
         case "favoriteDirector":
           console.log("Updating favorite director");
@@ -390,6 +458,7 @@ export default function ProfileMovieSection({
       setShowSearchDialog(false);
       setSearchQuery("");
       setSearchResults([]);
+      setEditingItem(null); // Clear the editing item after operation
     } catch (error) {
       console.error("Error adding item:", error);
       alert(
@@ -430,12 +499,19 @@ export default function ProfileMovieSection({
     }
   };
 
-  const openSearchDialog = (searchType: any) => {
+  const openSearchDialog = (searchType: any, itemToReplace?: any) => {
     setActiveSearchType(searchType);
     setShowSearchDialog(true);
     setSearchQuery("");
     setSearchResults([]);
     setSearchError(null);
+
+    // Store the item to replace if provided
+    if (itemToReplace) {
+      setEditingItem(itemToReplace);
+    } else {
+      setEditingItem(null);
+    }
   };
 
   // Handle trailer click
@@ -596,501 +672,703 @@ export default function ProfileMovieSection({
   const limitedRatings = safeMovieProfile.ratings || [];
 
   return (
-    <div className="space-y-0 max-w-3xl mx-auto">
-      <div>
-        {/* currently watching - simplified format */}
-        <div>
-          <div className="flex items-center justify-between mb-3">
-            <p className="text-sm font-medium text-muted-foreground">
-              currently watching
-            </p>
-            {!readOnly && (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-6 w-6 p-0 hover:bg-muted"
-                onClick={() => openSearchDialog("recentlyWatched")}
-              >
-                <Plus className="h-3 w-3" />
-              </Button>
-            )}
-          </div>
+    <div className="space-y-8 max-w-4xl mx-auto">
+      {/* Recently watched section - horizontal layout */}
+      <div className="max-w-3xl mx-auto">
+        <div className="flex items-center justify-start mb-4">
+          <p className="text-sm font-medium text-muted-foreground">
+            recently watched
+          </p>
+        </div>
+
+        <div className="relative">
           {currentRecentlyWatched ? (
-            <div className="relative">
-              <Button
-                variant="ghost"
-                size="sm"
-                className="absolute left-0 top-1/2 -translate-y-1/2 z-10 h-8 w-8 p-0 bg-black/50 hover:bg-black/70 text-white rounded-full"
-                onClick={navigateRecentlyWatchedLeft}
-                disabled={recentlyWatchedList.length <= 1}
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </Button>
-              <div className="flex gap-4 px-8">
-                <div className="aspect-[2/3] w-32 bg-muted rounded-md overflow-hidden flex-shrink-0">
-                  <Image
-                    src={currentRecentlyWatched.cover || "/placeholder.svg"}
-                    alt={
-                      getTextContent(currentRecentlyWatched.title) || "Movie"
-                    }
-                    width={128}
-                    height={192}
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      const target = e.target as HTMLImageElement;
-                      target.src = "/placeholder.svg";
-                    }}
-                  />
+            <div className="flex gap-6 items-start">
+              {/* Movie poster */}
+              <div className="relative group flex-shrink-0">
+                <div className="w-48 h-72 bg-muted rounded-md overflow-hidden">
+                  <Link href={`/movies/${currentRecentlyWatched.id}`}>
+                    <Image
+                      src={
+                        currentRecentlyWatched.cover ||
+                        PLACEHOLDER.currentlyWatching.cover
+                      }
+                      alt={
+                        getTextContent(currentRecentlyWatched.title) || "Movie"
+                      }
+                      width={192}
+                      height={288}
+                      className="w-full h-full object-cover cursor-pointer"
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.src = PLACEHOLDER.currentlyWatching.cover;
+                      }}
+                    />
+                  </Link>
+                  {!readOnly && (
+                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-md flex items-center justify-center">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 w-8 p-0 bg-white/20 hover:bg-white/30 text-white"
+                        onClick={() => openSearchDialog("recentlyWatched")}
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  )}
                 </div>
-                <div className="flex-1 min-w-0">
-                  <h3 className="text-base font-semibold leading-tight mb-2">
-                    {getTextContent(currentRecentlyWatched.title) ||
-                      "Unknown Movie"}
-                  </h3>
-                  <p className="text-sm text-muted-foreground leading-tight mb-4">
-                    {currentRecentlyWatched.overview ||
-                      "No description available"}
-                  </p>
-                  <div className="flex items-center gap-3">
+              </div>
+
+              {/* Content section */}
+              <div className="flex-1 min-w-0">
+                <h3 className="text-xl font-semibold text-foreground mb-2">
+                  {getTextContent(currentRecentlyWatched.title) ||
+                    "Unknown Movie"}
+                </h3>
+                <p className="text-sm text-muted-foreground mb-4 line-clamp-3">
+                  {currentRecentlyWatched.overview ||
+                    "No description available"}
+                </p>
+
+                {/* Action buttons and navigation */}
+                <div className="flex items-center gap-4">
+                  {/* Navigation dots */}
+                  {recentlyWatchedList.length > 1 && (
                     <div className="flex gap-1">
                       {recentlyWatchedList.map((_, index) => (
                         <div
                           key={index}
-                          className={`w-2 h-2 rounded-full ${
+                          className={`w-2 h-2 rounded-full transition-colors ${
                             index === currentRecentlyWatchedIndex
-                              ? "bg-muted-foreground"
+                              ? "bg-primary"
                               : "bg-muted-foreground/30"
                           }`}
                         />
                       ))}
                     </div>
-                  </div>
-                  <div className="mt-4 flex items-center gap-2">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-7 w-7 p-0 hover:bg-muted"
-                      onClick={() => handleLikeClick(currentRecentlyWatched)}
-                    >
-                      <Heart className="h-3 w-3" />
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="h-7 text-xs px-3"
-                      onClick={() => handleTrailerClick(currentRecentlyWatched)}
-                    >
-                      trailer
-                    </Button>
-                  </div>
-                </div>
-              </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="absolute right-0 top-1/2 -translate-y-1/2 z-10 h-8 w-8 p-0 bg-black/50 hover:bg-black/70 text-white rounded-full"
-                onClick={navigateRecentlyWatchedRight}
-                disabled={recentlyWatchedList.length <= 1}
-              >
-                <ChevronRight className="h-4 w-4" />
-              </Button>
-            </div>
-          ) : (
-            <div className="flex gap-4">
-              <div className="aspect-[2/3] w-32 bg-muted rounded-md flex items-center justify-center flex-shrink-0">
-                <div className="text-center">
-                  <p className="text-xs text-muted-foreground mb-2">No movie</p>
+                  )}
+
+                  {/* Trailer button */}
                   <Button
                     variant="outline"
                     size="sm"
-                    className="h-6 text-xs"
-                    onClick={() => openSearchDialog("recentlyWatched")}
+                    className="h-8 px-4"
+                    onClick={() => handleTrailerClick(currentRecentlyWatched)}
                   >
-                    Add
-                  </Button>
-                </div>
-              </div>
-              <div className="flex-1 min-w-0">
-                <h3 className="text-base font-semibold leading-tight mb-2">
-                  No currently watching
-                </h3>
-                <p className="text-sm text-muted-foreground leading-tight mb-4">
-                  Add a movie you're currently watching
-                </p>
-                <div className="flex items-center gap-3">
-                  <div className="flex gap-1">
-                    <div className="w-2 h-2 bg-muted-foreground rounded-full"></div>
-                    <div className="w-2 h-2 bg-muted-foreground/30 rounded-full"></div>
-                    <div className="w-2 h-2 bg-muted-foreground/30 rounded-full"></div>
-                  </div>
-                </div>
-                <div className="mt-4">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="h-7 text-xs px-3"
-                    disabled
-                  >
+                    <Play className="h-3 w-3 mr-1" />
                     trailer
                   </Button>
                 </div>
               </div>
+
+              {/* Navigation arrow */}
+              {recentlyWatchedList.length > 1 && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-10 w-10 p-0 bg-black/80 hover:bg-black backdrop-blur-md border border-white/10 rounded-full flex-shrink-0 shadow-2xl hover:scale-110 transition-all duration-300 z-30"
+                  onClick={navigateRecentlyWatchedRight}
+                >
+                  <ChevronRight className="h-5 w-5 text-white" />
+                </Button>
+              )}
+            </div>
+          ) : (
+            <div className="flex gap-6 items-start">
+              {/* Empty state poster */}
+              <div className="w-48 h-72 bg-muted rounded-md border border-border/30 flex items-center justify-center flex-shrink-0">
+                <div className="text-center">
+                  <Video className="h-16 w-16 mx-auto mb-4 text-muted-foreground/50" />
+                  <p className="text-sm text-muted-foreground/50">
+                    Add Current Watch
+                  </p>
+                </div>
+              </div>
+
+              {/* Empty state content */}
+              <div className="flex-1 min-w-0">
+                <h3 className="text-xl font-semibold text-muted-foreground/50 mb-2">
+                  Movie Title
+                </h3>
+                <p className="text-sm text-muted-foreground/50 mb-4">
+                  Movie description
+                </p>
+
+                <div className="flex items-center gap-4">
+                  <div className="flex gap-1">
+                    <div className="w-2 h-2 bg-muted-foreground/30 rounded-full"></div>
+                    <div className="w-2 h-2 bg-muted-foreground/30 rounded-full"></div>
+                    <div className="w-2 h-2 bg-muted-foreground/30 rounded-full"></div>
+                  </div>
+
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-8 px-4"
+                    disabled
+                  >
+                    <Play className="h-3 w-3 mr-1" />
+                    trailer
+                  </Button>
+                </div>
+              </div>
+
+              {/* Navigation arrow */}
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-10 w-10 p-0 bg-black/80 hover:bg-black backdrop-blur-md border border-white/10 rounded-full flex-shrink-0 shadow-2xl hover:scale-110 transition-all duration-300 z-30"
+                disabled
+              >
+                <ChevronRight className="h-5 w-5 text-white/50" />
+              </Button>
             </div>
           )}
         </div>
       </div>
 
-      {/* favorite movies */}
-      <div className="mt-2">
-        <div className="flex items-center justify-between mb-3">
-          <p className="text-sm font-medium text-muted-foreground">favorite</p>
-          {!readOnly && (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-6 w-6 p-0 hover:bg-muted"
-              onClick={() => openSearchDialog("favoriteMovies")}
+      {/* Bottom row - favorite movies aligned with top grid */}
+      <div className="grid grid-cols-3 gap-4 sm:gap-6 lg:gap-8 max-w-3xl mx-auto">
+        {/* favorite movies - takes first column */}
+        <div className="col-span-3">
+          <div className="flex items-center justify-start mb-4">
+            <p className="text-sm font-medium text-muted-foreground">
+              favorite movies
+            </p>
+          </div>
+          <div className="relative">
+            <div
+              ref={scrollContainerRefs.favoriteMovies}
+              className="flex justify-start gap-6 overflow-hidden"
             >
-              <Plus className="h-3 w-3" />
-            </Button>
-          )}
-        </div>
-        <div className="relative">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="absolute left-0 top-1/2 -translate-y-1/2 z-10 h-8 w-8 p-0 bg-black/50 hover:bg-black/70 text-white rounded-full"
-            onClick={() => scrollLeft(scrollContainerRefs.favoriteMovies)}
-          >
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
-          <div
-            ref={scrollContainerRefs.favoriteMovies}
-            className="flex gap-4 overflow-x-auto scrollbar-hide"
-            style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
-          >
-            {limitedFavoriteMovies.length > 0 ? (
-              limitedFavoriteMovies.map((movie, idx) => (
-                <div
-                  key={movie.id || idx}
-                  className="relative group flex-shrink-0 w-32"
-                >
-                  <div className="aspect-[2/3] w-full bg-muted rounded-md overflow-hidden">
-                    <Image
-                      src={movie.cover || "/placeholder.svg"}
-                      alt={movie.title || "Movie"}
-                      width={128}
-                      height={192}
-                      className="w-full h-full object-cover"
-                      onError={(e) => {
-                        const target = e.target as HTMLImageElement;
-                        target.src = "/placeholder.svg";
-                      }}
-                    />
-                    {!readOnly && (
+              {limitedFavoriteMovies.length > 0 ? (
+                <>
+                  {limitedFavoriteMovies.map((movie, idx) => (
+                    <div
+                      key={movie.id || idx}
+                      className="relative group flex-shrink-0"
+                    >
+                      <div className="aspect-[2/3] w-32 bg-muted rounded-md overflow-hidden">
+                        <Link href={`/movies/${movie.id}`}>
+                          <Image
+                            src={
+                              movie.cover || PLACEHOLDER.favoriteMovies[0].cover
+                            }
+                            alt={movie.title || "Movie"}
+                            width={128}
+                            height={192}
+                            className="w-full h-full object-cover cursor-pointer"
+                            onError={(e) => {
+                              const target = e.target as HTMLImageElement;
+                              target.src = PLACEHOLDER.favoriteMovies[0].cover;
+                            }}
+                          />
+                        </Link>
+                        {!readOnly && (
+                          <div className="absolute top-2 right-2 flex gap-1">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-6 w-6 p-0 bg-black/50 hover:bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity"
+                              onClick={() =>
+                                openSearchDialog("favoriteMovies", movie)
+                              }
+                              title="Replace movie"
+                            >
+                              <Edit className="h-3 w-3 text-white" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-6 w-6 p-0 bg-red-600/80 hover:bg-red-700/90 opacity-0 group-hover:opacity-100 transition-opacity"
+                              onClick={() =>
+                                handleRemoveItem("favoriteMovies", movie.id)
+                              }
+                              title="Delete movie"
+                            >
+                              <Trash2 className="h-3 w-3 text-white" />
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                      {/* Movie name and year display */}
+                      <div className="mt-3 text-center w-full">
+                        <p className="text-base font-semibold leading-tight px-2">
+                          {getTextContent(movie.title) || "Unknown Movie"}
+                        </p>
+                        <p className="text-sm text-muted-foreground leading-tight mt-0.5 px-2">
+                          {movie.year || "Unknown Year"}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+
+                  {/* Add button for subsequent items - always show when items exist */}
+                  <div className="flex-shrink-0">
+                    <div className="aspect-[2/3] w-32 bg-transparent rounded-md border-2 border-gray-600 flex items-center justify-center overflow-visible">
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="absolute top-1 right-1 h-6 w-6 p-0 bg-black/50 hover:bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity"
-                        onClick={() =>
-                          handleRemoveItem("favoriteMovies", movie.id)
-                        }
+                        className="h-12 w-12 p-0 bg-black/70 hover:bg-black/90 text-white rounded-full border-2 border-white/20 shadow-lg"
+                        onClick={() => openSearchDialog("favoriteMovies")}
                       >
-                        <X className="h-3 w-3 text-white" />
+                        <Plus className="h-6 w-6" />
                       </Button>
-                    )}
+                    </div>
                   </div>
-                  <div className="mt-2 text-center">
-                    <p className="text-sm font-semibold leading-tight">
-                      {getTextContent(movie.title) || "Unknown Movie"}
+                </>
+              ) : (
+                // Show single Add screen when empty
+                <div className="flex flex-col items-center justify-center min-h-[200px]">
+                  <div className="aspect-[2/3] w-32 bg-transparent rounded-md border-2 border-gray-600 flex flex-col items-center justify-center mb-3">
+                    <p className="text-sm text-gray-400 mb-1 text-center">
+                      Add
                     </p>
-                    <p className="text-xs text-muted-foreground leading-tight mt-1">
-                      {movie.year || "Unknown Year"}
+                    <p className="text-xs text-gray-500 text-center">
+                      No favorite movies
                     </p>
                   </div>
+                  {!readOnly && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="text-xs"
+                      onClick={() => openSearchDialog("favoriteMovies")}
+                    >
+                      <Plus className="h-3 w-3 mr-1" />
+                      Add Movie
+                    </Button>
+                  )}
                 </div>
-              ))
-            ) : (
-              // Show single Add screen when empty
-              <div className="flex-shrink-0 w-32">
-                <div className="aspect-[2/3] w-full bg-black/20 rounded-md border border-border/30 flex items-center justify-center">
-                  <div className="text-center flex items-center justify-center h-full">
-                    <p className="text-sm text-muted-foreground/50">Add</p>
-                  </div>
-                </div>
-              </div>
+              )}
+            </div>
+
+            {/* Navigation arrows for favorite movies */}
+            {limitedFavoriteMovies.length > 0 && (
+              <>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="absolute left-2 top-1/2 transform -translate-y-1/2 h-8 w-8 p-0 bg-black/80 hover:bg-black backdrop-blur-md border border-white/10 text-white rounded-full shadow-2xl hover:scale-110 transition-all duration-300 z-30"
+                  onClick={() => scrollLeft(scrollContainerRefs.favoriteMovies)}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="absolute right-2 top-1/2 transform -translate-y-1/2 h-8 w-8 p-0 bg-black/80 hover:bg-black backdrop-blur-md border border-white/10 text-white rounded-full shadow-2xl hover:scale-110 transition-all duration-300 z-30"
+                  onClick={() =>
+                    scrollRight(scrollContainerRefs.favoriteMovies)
+                  }
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </>
             )}
           </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="absolute right-0 top-1/2 -translate-y-1/2 z-10 h-8 w-8 p-0 bg-black/50 hover:bg-black/70 text-white rounded-full"
-            onClick={() => scrollRight(scrollContainerRefs.favoriteMovies)}
-          >
-            <ChevronRight className="h-4 w-4" />
-          </Button>
         </div>
       </div>
 
       {/* watchlist */}
-      <div className="mt-2">
-        <div className="flex items-center justify-between mb-3">
+      <div className="mt-12 max-w-3xl mx-auto">
+        <div className="flex items-center justify-start mb-4">
           <p className="text-sm font-medium text-muted-foreground">watchlist</p>
-          {!readOnly && (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-6 w-6 p-0 hover:bg-muted"
-              onClick={() => openSearchDialog("watchlist")}
-            >
-              <Plus className="h-3 w-3" />
-            </Button>
-          )}
         </div>
         <div className="relative">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="absolute left-0 top-1/2 -translate-y-1/2 z-10 h-8 w-8 p-0 bg-black/50 hover:bg-black/70 text-white rounded-full"
-            onClick={() => scrollLeft(scrollContainerRefs.watchlist)}
-          >
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
           <div
             ref={scrollContainerRefs.watchlist}
-            className="flex gap-4 overflow-x-auto scrollbar-hide"
-            style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+            className="flex justify-start gap-6 overflow-hidden"
           >
             {limitedWatchlist.length > 0 ? (
-              limitedWatchlist.map((movie, idx) => (
-                <div
-                  key={movie.id || idx}
-                  className="relative group flex-shrink-0 w-32"
-                >
-                  <div className="aspect-[2/3] w-full bg-muted rounded-md overflow-hidden">
-                    <Image
-                      src={movie.cover || "/placeholder.svg"}
-                      alt={movie.title || "Movie"}
-                      width={128}
-                      height={192}
-                      className="w-full h-full object-cover"
-                      onError={(e) => {
-                        const target = e.target as HTMLImageElement;
-                        target.src = "/placeholder.svg";
-                      }}
-                    />
-                    {!readOnly && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="absolute top-1 right-1 h-6 w-6 p-0 bg-black/50 hover:bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity"
-                        onClick={() => handleRemoveItem("watchlist", movie.id)}
-                      >
-                        <X className="h-3 w-3 text-white" />
-                      </Button>
-                    )}
+              <>
+                {limitedWatchlist.map((movie, idx) => (
+                  <div
+                    key={movie.id || idx}
+                    className="relative group flex-shrink-0"
+                  >
+                    <div className="aspect-[2/3] w-32 bg-muted rounded-md overflow-hidden">
+                      <Link href={`/movies/${movie.id}`}>
+                        <Image
+                          src={movie.cover || PLACEHOLDER.watchlist[0].cover}
+                          alt={movie.title || "Movie"}
+                          width={128}
+                          height={192}
+                          className="w-full h-full object-cover cursor-pointer"
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            target.src = PLACEHOLDER.watchlist[0].cover;
+                          }}
+                        />
+                      </Link>
+                      {!readOnly && (
+                        <div className="absolute top-2 right-2 flex gap-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 w-6 p-0 bg-black/50 hover:bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={() => openSearchDialog("watchlist", movie)}
+                            title="Replace movie"
+                          >
+                            <Edit className="h-3 w-3 text-white" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 w-6 p-0 bg-red-600/80 hover:bg-red-700/90 opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={() =>
+                              handleRemoveItem("watchlist", movie.id)
+                            }
+                            title="Delete movie"
+                          >
+                            <Trash2 className="h-3 w-3 text-white" />
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                    {/* Movie name and year display */}
+                    <div className="mt-3 text-center w-full">
+                      <p className="text-base font-semibold leading-tight px-2">
+                        {getTextContent(movie.title) || "Unknown Movie"}
+                      </p>
+                      <p className="text-sm text-muted-foreground leading-tight mt-0.5 px-2">
+                        {movie.year || "Unknown Year"}
+                      </p>
+                    </div>
                   </div>
-                  <div className="mt-2 text-center">
-                    <p className="text-sm font-semibold leading-tight">
-                      {getTextContent(movie.title) || "Unknown Movie"}
-                    </p>
-                    <p className="text-xs text-muted-foreground leading-tight mt-1">
-                      {movie.year || "Unknown Year"}
-                    </p>
+                ))}
+
+                {/* Add button for subsequent items - always show when items exist */}
+                <div className="flex-shrink-0">
+                  <div className="aspect-[2/3] w-32 bg-transparent rounded-md border-2 border-gray-600 flex items-center justify-center overflow-visible">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-12 w-12 p-0 bg-black/70 hover:bg-black/90 text-white rounded-full border-2 border-white/20 shadow-lg"
+                      onClick={() => openSearchDialog("watchlist")}
+                    >
+                      <Plus className="h-6 w-6" />
+                    </Button>
                   </div>
                 </div>
-              ))
+              </>
             ) : (
-              // Show placeholder items when empty
-              <div className="flex-shrink-0 w-32">
-                <div className="aspect-[2/3] w-full bg-black/20 rounded-md border border-border/30 flex items-center justify-center">
-                  <div className="text-center flex items-center justify-center h-full">
-                    <p className="text-sm text-muted-foreground/50">Add</p>
-                  </div>
+              // Show single Add screen when empty
+              <div className="flex flex-col items-center justify-center min-h-[200px]">
+                <div className="aspect-[2/3] w-32 bg-transparent rounded-md border-2 border-gray-600 flex flex-col items-center justify-center mb-3">
+                  <p className="text-xs text-gray-500 text-center">
+                    No watchlist movies
+                  </p>
                 </div>
+                {!readOnly && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="text-xs"
+                    onClick={() => openSearchDialog("watchlist")}
+                  >
+                    <Plus className="h-3 w-3 mr-1" />
+                    Add Movie
+                  </Button>
+                )}
               </div>
             )}
           </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="absolute right-0 top-1/2 -translate-y-1/2 z-10 h-8 w-8 p-0 bg-black/50 hover:bg-black/70 text-white rounded-full"
-            onClick={() => scrollRight(scrollContainerRefs.watchlist)}
-          >
-            <ChevronRight className="h-4 w-4" />
-          </Button>
+
+          {/* Navigation arrows for watchlist */}
+          {limitedWatchlist.length > 0 && (
+            <>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="absolute left-2 top-1/2 transform -translate-y-1/2 h-8 w-8 p-0 bg-black/80 hover:bg-black backdrop-blur-md border border-white/10 text-white rounded-full shadow-2xl hover:scale-110 transition-all duration-300 z-30"
+                onClick={() => scrollLeft(scrollContainerRefs.watchlist)}
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="absolute right-2 top-1/2 transform -translate-y-1/2 h-8 w-8 p-0 bg-black/80 hover:bg-black backdrop-blur-md border border-white/10 text-white rounded-full shadow-2xl hover:scale-110 transition-all duration-300 z-30"
+                onClick={() => scrollRight(scrollContainerRefs.watchlist)}
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </>
+          )}
         </div>
       </div>
 
       {/* recommendations */}
-      <div className="mt-2">
-        <div className="flex items-center justify-between mb-3">
+      <div className="mt-12 max-w-3xl mx-auto">
+        <div className="flex items-center justify-start mb-4">
           <p className="text-sm font-medium text-muted-foreground">
-            recommendation
+            recommendations
           </p>
-          {!readOnly && (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-6 w-6 p-0 hover:bg-muted"
-              onClick={() => openSearchDialog("recommendation")}
-            >
-              <Plus className="h-3 w-3" />
-            </Button>
-          )}
         </div>
         <div className="relative">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="absolute left-0 top-1/2 -translate-y-1/2 z-10 h-8 w-8 p-0 bg-black/50 hover:bg-black/70 text-white rounded-full"
-            onClick={() => scrollLeft(scrollContainerRefs.recommendations)}
-          >
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
           <div
             ref={scrollContainerRefs.recommendations}
-            className="flex gap-4 overflow-x-auto scrollbar-hide"
-            style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+            className="flex justify-start gap-6 overflow-hidden"
           >
             {limitedRecommendations.length > 0 ? (
-              limitedRecommendations.map((movie, idx) => (
-                <div
-                  key={movie.id || idx}
-                  className="relative flex-shrink-0 w-32"
-                >
-                  <div className="aspect-[2/3] w-full bg-muted rounded-md overflow-hidden">
-                    <Link href={`/movies/${movie.id}`}>
-                      <Image
-                        src={movie.cover || "/placeholder.svg"}
-                        alt={movie.title || "Movie"}
-                        width={128}
-                        height={192}
-                        className="w-full h-full object-cover cursor-pointer"
-                        onError={(e) => {
-                          const target = e.target as HTMLImageElement;
-                          target.src = "/placeholder.svg";
-                        }}
-                      />
-                    </Link>
+              <>
+                {limitedRecommendations.map((movie, idx) => (
+                  <div
+                    key={movie.id || idx}
+                    className="relative group flex-shrink-0"
+                  >
+                    <div className="aspect-[2/3] w-32 bg-muted rounded-md overflow-hidden">
+                      <Link href={`/movies/${movie.id}`}>
+                        <Image
+                          src={
+                            movie.cover || PLACEHOLDER.recommendations[0].cover
+                          }
+                          alt={movie.title || "Movie"}
+                          width={128}
+                          height={192}
+                          className="w-full h-full object-cover cursor-pointer"
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            target.src = PLACEHOLDER.recommendations[0].cover;
+                          }}
+                        />
+                      </Link>
+                      {!readOnly && (
+                        <div className="absolute top-2 right-2 flex gap-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 w-6 p-0 bg-black/50 hover:bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={() =>
+                              openSearchDialog("recommendation", movie)
+                            }
+                            title="Replace recommendation"
+                          >
+                            <Edit className="h-3 w-3 text-white" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 w-6 p-0 bg-red-600/80 hover:bg-red-700/90 opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={() =>
+                              handleRemoveItem("recommendation", movie.id)
+                            }
+                            title="Delete recommendation"
+                          >
+                            <Trash2 className="h-3 w-3 text-white" />
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                    {/* Movie name and year display */}
+                    <div className="mt-3 text-center w-full">
+                      <p className="text-base font-semibold leading-tight px-2">
+                        {getTextContent(movie.title) || "Unknown Movie"}
+                      </p>
+                      <p className="text-sm text-muted-foreground leading-tight mt-0.5 px-2">
+                        {movie.year || "Unknown Year"}
+                      </p>
+                    </div>
                   </div>
-                  <div className="mt-2 text-center">
-                    <p className="text-sm font-semibold leading-tight">
-                      {getTextContent(movie.title) || "Unknown Movie"}
-                    </p>
-                    <p className="text-xs text-muted-foreground leading-tight mt-1">
-                      {movie.year || "Unknown Year"}
-                    </p>
+                ))}
+
+                {/* Add button for subsequent items - always show when items exist */}
+                <div className="flex-shrink-0">
+                  <div className="aspect-[2/3] w-32 bg-transparent rounded-md border-2 border-gray-600 flex items-center justify-center overflow-visible">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-12 w-12 p-0 bg-black/70 hover:bg-black/90 text-white rounded-full border-2 border-white/20 shadow-lg"
+                      onClick={() => openSearchDialog("recommendation")}
+                    >
+                      <Plus className="h-6 w-6" />
+                    </Button>
                   </div>
                 </div>
-              ))
+              </>
             ) : (
-              // Show placeholder items when empty
-              <div className="flex-shrink-0 w-32">
-                <div className="aspect-[2/3] w-full bg-black/20 rounded-md border border-border/30 flex items-center justify-center">
-                  <div className="text-center flex items-center justify-center h-full">
-                    <p className="text-sm text-muted-foreground/50">Add</p>
-                  </div>
+              // Show single Add screen when empty
+              <div className="flex flex-col items-center justify-center min-h-[200px]">
+                <div className="aspect-[2/3] w-32 bg-transparent rounded-md border-2 border-gray-600 flex flex-col items-center justify-center mb-3">
+                  <p className="text-xs text-gray-500 text-center">
+                    No recommendations
+                  </p>
                 </div>
+                {!readOnly && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="text-xs"
+                    onClick={() => openSearchDialog("recommendation")}
+                  >
+                    <Plus className="h-3 w-3 mr-1" />
+                    Add Recommendation
+                  </Button>
+                )}
               </div>
             )}
           </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="absolute right-0 top-1/2 -translate-y-1/2 z-10 h-8 w-8 p-0 bg-black/50 hover:bg-black/70 text-white rounded-full"
-            onClick={() => scrollRight(scrollContainerRefs.recommendations)}
-          >
-            <ChevronRight className="h-4 w-4" />
-          </Button>
+
+          {/* Navigation arrows for recommendations */}
+          {limitedRecommendations.length > 0 && (
+            <>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="absolute left-2 top-1/2 transform -translate-y-1/2 h-8 w-8 p-0 bg-black/80 hover:bg-black backdrop-blur-md border border-white/10 text-white rounded-full shadow-2xl hover:scale-110 transition-all duration-300 z-30"
+                onClick={() => scrollLeft(scrollContainerRefs.recommendations)}
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="absolute right-2 top-1/2 transform -translate-y-1/2 h-8 w-8 p-0 bg-black/80 hover:bg-black backdrop-blur-md border border-white/10 text-white rounded-full shadow-2xl hover:scale-110 transition-all duration-300 z-30"
+                onClick={() => scrollRight(scrollContainerRefs.recommendations)}
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </>
+          )}
         </div>
       </div>
 
-      {/* rating */}
-      <div>
-        <div className="flex items-center justify-between mb-3">
-          <p className="text-sm font-medium text-muted-foreground">rating</p>
-          {!readOnly && (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-6 w-6 p-0 hover:bg-muted"
-              onClick={() => openSearchDialog("rating")}
-            >
-              <Plus className="h-3 w-3" />
-            </Button>
-          )}
+      {/* ratings */}
+      <div className="mt-12 max-w-3xl mx-auto">
+        <div className="flex items-center justify-start mb-4">
+          <p className="text-sm font-medium text-muted-foreground">ratings</p>
         </div>
         <div className="relative">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="absolute left-0 top-1/2 -translate-y-1/2 z-10 h-8 w-8 p-0 bg-black/50 hover:bg-black/70 text-white rounded-full"
-            onClick={() => scrollLeft(scrollContainerRefs.ratings)}
-          >
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
           <div
             ref={scrollContainerRefs.ratings}
-            className="flex gap-4 overflow-x-auto scrollbar-hide"
-            style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+            className="flex justify-start gap-6 overflow-hidden"
           >
             {limitedRatings.length > 0 ? (
-              limitedRatings.map((rating, idx) => (
-                <div
-                  key={rating.movie.id || idx}
-                  className="relative group flex-shrink-0 w-32"
-                >
-                  <div className="aspect-[2/3] w-full bg-muted rounded-md overflow-hidden">
-                    <Image
-                      src={rating.movie.cover || "/placeholder.svg"}
-                      alt={rating.movie.title || "Movie"}
-                      width={128}
-                      height={192}
-                      className="w-full h-full object-cover"
-                      onError={(e) => {
-                        const target = e.target as HTMLImageElement;
-                        target.src = "/placeholder.svg";
-                      }}
-                    />
-                    {!readOnly && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="absolute top-1 right-1 h-6 w-6 p-0 bg-black/50 hover:bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity"
-                        onClick={() =>
-                          handleRemoveItem("rating", rating.movie.id)
-                        }
-                      >
-                        <X className="h-3 w-3 text-white" />
-                      </Button>
-                    )}
-                    <div className="absolute bottom-1 left-1 right-1 flex justify-center gap-1 p-2 bg-black/50 rounded-md">
+              <>
+                {limitedRatings.map((rating, idx) => (
+                  <div
+                    key={rating.movie.id || idx}
+                    className="relative group flex-shrink-0"
+                  >
+                    <div className="aspect-[2/3] w-32 bg-muted rounded-md overflow-hidden">
+                      <Link href={`/movies/${rating.movie.id}`}>
+                        <Image
+                          src={
+                            rating.movie.cover || PLACEHOLDER.ratings[0].cover
+                          }
+                          alt={rating.movie.title || "Movie"}
+                          width={128}
+                          height={192}
+                          className="w-full h-full object-cover cursor-pointer"
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            target.src = PLACEHOLDER.ratings[0].cover;
+                          }}
+                        />
+                      </Link>
+                      {!readOnly && (
+                        <div className="absolute top-2 right-2 flex gap-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 w-6 p-0 bg-black/50 hover:bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={() =>
+                              openSearchDialog("rating", rating.movie)
+                            }
+                            title="Replace rating"
+                          >
+                            <Edit className="h-3 w-3 text-white" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 w-6 p-0 bg-red-600/80 hover:bg-red-700/90 opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={() =>
+                              handleRemoveItem("rating", rating.movie.id)
+                            }
+                            title="Delete rating"
+                          >
+                            <Trash2 className="h-3 w-3 text-white" />
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                    {/* Rating stars - above the movie name */}
+                    <div className="mt-3 flex justify-center gap-1">
                       {renderInteractiveStars(rating.movie.id, rating.rating)}
                     </div>
+                    {/* Movie name and year display - below the rating */}
+                    <div className="mt-2 text-center w-full">
+                      <p className="text-sm font-semibold leading-tight px-2 truncate min-h-[1.5rem] flex items-center justify-center">
+                        {getTextContent(rating.movie.title) || "Unknown Movie"}
+                      </p>
+                      <p className="text-xs text-muted-foreground leading-tight mt-0.5 px-2">
+                        {rating.movie.year || "Unknown Year"}
+                      </p>
+                    </div>
                   </div>
-                  {/* Removed name and year display - only poster and rating shown */}
+                ))}
+
+                {/* Add button for subsequent items - always show when items exist */}
+                <div className="flex-shrink-0">
+                  <div className="aspect-[2/3] w-32 bg-transparent rounded-md border-2 border-gray-600 flex items-center justify-center overflow-visible">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-12 w-12 p-0 bg-black/70 hover:bg-black/90 text-white rounded-full border-2 border-white/20 shadow-lg"
+                      onClick={() => openSearchDialog("rating")}
+                    >
+                      <Plus className="h-6 w-6" />
+                    </Button>
+                  </div>
                 </div>
-              ))
+              </>
             ) : (
-              // Show placeholder items when empty
-              <div className="flex-shrink-0 w-32">
-                <div className="aspect-[2/3] w-full bg-black/20 rounded-md border border-border/30 flex items-center justify-center">
-                  <div className="text-center flex items-center justify-center h-full">
-                    <p className="text-sm text-muted-foreground/50">Add</p>
-                  </div>
+              // Show single Add screen when empty
+              <div className="flex flex-col items-center justify-center min-h-[200px]">
+                <div className="aspect-[2/3] w-32 bg-transparent rounded-md border-2 border-gray-600 flex flex-col items-center justify-center mb-3">
+                  <p className="text-xs text-gray-500 text-center">
+                    No rated movies
+                  </p>
                 </div>
+                {!readOnly && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="text-xs"
+                    onClick={() => openSearchDialog("rating")}
+                  >
+                    <Plus className="h-3 w-3 mr-1" />
+                    Add Rating
+                  </Button>
+                )}
               </div>
             )}
           </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="absolute right-0 top-1/2 -translate-y-1/2 z-10 h-8 w-8 p-0 bg-black/50 hover:bg-black/70 text-white rounded-full"
-            onClick={() => scrollRight(scrollContainerRefs.ratings)}
-          >
-            <ChevronRight className="h-4 w-4" />
-          </Button>
+
+          {/* Navigation arrows for ratings */}
+          {limitedRatings.length > 0 && (
+            <>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="absolute left-2 top-1/2 transform -translate-y-1/2 h-8 w-8 p-0 bg-black/80 hover:bg-black backdrop-blur-md border border-white/10 text-white rounded-full shadow-2xl hover:scale-110 transition-all duration-300 z-30"
+                onClick={() => scrollLeft(scrollContainerRefs.ratings)}
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="absolute right-2 top-1/2 transform -translate-y-1/2 h-8 w-8 p-0 bg-black/80 hover:bg-black backdrop-blur-md border border-white/10 text-white rounded-full shadow-2xl hover:scale-110 transition-all duration-300 z-30"
+                onClick={() => scrollRight(scrollContainerRefs.ratings)}
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </>
+          )}
         </div>
       </div>
 

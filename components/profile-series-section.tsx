@@ -25,7 +25,14 @@ import {
   Clock,
   Heart,
   ThumbsUp,
+  Edit,
+  Eye,
+  Calendar,
+  Award,
   Tv,
+  Video,
+  Bookmark,
+  Share2,
 } from "lucide-react";
 import { useSeriesProfile, type TMDBSeries } from "@/hooks/use-series-profile";
 import { useCurrentUser } from "@/hooks/use-current-user";
@@ -34,6 +41,47 @@ interface ProfileSeriesSectionProps {
   userId?: string;
   readOnly?: boolean;
 }
+
+// Placeholder content for empty states - inspired by movies section design
+const PLACEHOLDER = {
+  currentlyWatching: {
+    title: "Add your current watch",
+    subtitle: "Search for a series you're watching",
+    cover:
+      "https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=256&h=384&fit=crop&crop=center",
+  },
+  favoriteSeries: {
+    title: "Add your favorite series",
+    subtitle: "Search for your all-time favorite",
+    cover:
+      "https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=256&h=384&fit=crop&crop=center",
+  },
+  favoriteCreator: {
+    name: "Add your favorite creator",
+    avatar:
+      "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&h=300&fit=crop&crop=faces",
+  },
+  favoriteSeriesList: new Array(4).fill(0).map((_, i) => ({
+    id: `fav-${i}`,
+    cover:
+      "https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=160&h=240&fit=crop&crop=center",
+  })),
+  watchlist: new Array(4).fill(0).map((_, i) => ({
+    id: `watch-${i}`,
+    cover:
+      "https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=160&h=240&fit=crop&crop=center",
+  })),
+  recommendations: new Array(4).fill(0).map((_, i) => ({
+    id: `rec-${i}`,
+    cover:
+      "https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=160&h=240&fit=crop&crop=center",
+  })),
+  ratings: new Array(4).fill(0).map((_, i) => ({
+    id: `rt-${i}`,
+    cover:
+      "https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=160&h=240&fit=crop&crop=center",
+  })),
+};
 
 // Helper function to clean up text content
 const cleanTextContent = (text: string): string => {
@@ -55,6 +103,31 @@ const getTextContent = (text: any): string => {
     return text.name || text.title || text.text || JSON.stringify(text);
   }
   return "";
+};
+
+// Helper function to safely extract image URLs from various API response formats
+const getImageUrl = (image: any): string => {
+  try {
+    if (typeof image === "string") {
+      return image;
+    }
+    if (image && typeof image === "object") {
+      // Handle different image object formats
+      return (
+        image.poster_path ||
+        image.backdrop_path ||
+        image.profile_path ||
+        image.cover ||
+        image.image ||
+        image.avatar ||
+        ""
+      );
+    }
+    return "";
+  } catch (error) {
+    console.error("Error extracting image URL:", error);
+    return "";
+  }
 };
 
 export default function ProfileSeriesSection({
@@ -80,6 +153,10 @@ export default function ProfileSeriesSection({
     removeRating,
     searchSeries,
     searchCreator,
+    replaceFavoriteSeries,
+    replaceWatchlistSeries,
+    replaceRecommendation,
+    replaceRating,
   } = useSeriesProfile(targetUserId);
 
   // Search states
@@ -102,8 +179,9 @@ export default function ProfileSeriesSection({
     seriesId: string;
     rating: number;
   } | null>(null);
+  const [editingItem, setEditingItem] = useState<any>(null);
 
-  // Horizontal scroll functionality
+  // Scroll container refs
   const scrollContainerRefs = {
     favoriteSeriesList: useRef<HTMLDivElement>(null),
     watchlist: useRef<HTMLDivElement>(null),
@@ -115,70 +193,28 @@ export default function ProfileSeriesSection({
   const [currentRecentlyWatchedIndex, setCurrentRecentlyWatchedIndex] =
     useState(0);
 
-  const scrollLeft = (containerRef: React.RefObject<HTMLDivElement | null>) => {
-    if (containerRef.current) {
-      const scrollDistance = Math.min(
-        200,
-        containerRef.current.clientWidth * 0.8
-      );
-      containerRef.current.scrollBy({
+  // Scroll functions
+  const scrollLeft = (ref: React.RefObject<HTMLDivElement | null>) => {
+    if (ref.current) {
+      const scrollDistance = Math.min(200, ref.current.clientWidth * 0.8);
+      ref.current.scrollBy({
         left: -scrollDistance,
         behavior: "smooth",
       });
     }
   };
 
-  const scrollRight = (
-    containerRef: React.RefObject<HTMLDivElement | null>
-  ) => {
-    if (containerRef.current) {
-      const scrollDistance = Math.min(
-        200,
-        containerRef.current.clientWidth * 0.8
-      );
-      containerRef.current.scrollBy({
+  const scrollRight = (ref: React.RefObject<HTMLDivElement | null>) => {
+    if (ref.current) {
+      const scrollDistance = Math.min(200, ref.current.clientWidth * 0.8);
+      ref.current.scrollBy({
         left: scrollDistance,
         behavior: "smooth",
       });
     }
   };
 
-  // Scroll to end when new items are added
-  useEffect(() => {
-    const scrollToEnd = (
-      containerRef: React.RefObject<HTMLDivElement | null>
-    ) => {
-      if (containerRef.current) {
-        containerRef.current.scrollTo({
-          left: containerRef.current.scrollWidth,
-          behavior: "smooth",
-        });
-      }
-    };
-
-    // Only scroll if we have items and the component is mounted
-    if (seriesProfile) {
-      if (seriesProfile.favoriteSeriesList?.length > 0) {
-        scrollToEnd(scrollContainerRefs.favoriteSeriesList);
-      }
-      if (seriesProfile.watchlist?.length > 0) {
-        scrollToEnd(scrollContainerRefs.watchlist);
-      }
-      if (seriesProfile.recommendations?.length > 0) {
-        scrollToEnd(scrollContainerRefs.recommendations);
-      }
-      if (seriesProfile.ratings?.length > 0) {
-        scrollToEnd(scrollContainerRefs.ratings);
-      }
-    }
-  }, [
-    seriesProfile?.favoriteSeriesList?.length,
-    seriesProfile?.watchlist?.length,
-    seriesProfile?.recommendations?.length,
-    seriesProfile?.ratings?.length,
-  ]);
-
-  // Rating functionality
+  // Rating functions
   const handleRatingHover = (seriesId: string, rating: number) => {
     setHoveredRating({ seriesId, rating });
   };
@@ -189,15 +225,18 @@ export default function ProfileSeriesSection({
 
   const handleRatingClick = async (seriesId: string, rating: number) => {
     try {
-      const series = seriesProfile.ratings.find(
-        (r) => r.series.id.toString() === seriesId
-      )?.series;
-      if (series) {
-        await addRating(series, rating);
+      if (rating === 0) {
+        await removeRating(seriesId);
+      } else {
+        const series = seriesProfile.ratings.find(
+          (r) => r.series.id.toString() === seriesId
+        )?.series;
+        if (series) {
+          await addRating(series, rating);
+        }
       }
     } catch (error) {
       console.error("Error updating rating:", error);
-      alert("Failed to update rating. Please try again.");
     }
   };
 
@@ -312,96 +351,91 @@ export default function ProfileSeriesSection({
     }
   };
 
-  const handleSelectItem = async (
-    item: any,
-    searchType:
-      | "recentlyWatched"
-      | "favoriteCreator"
-      | "favoriteSeries"
-      | "favoriteSeriesList"
-      | "watchlist"
-      | "recommendation"
-      | "rating"
-  ) => {
-    if (!item || !item.id) {
-      console.error("Invalid item selected:", item);
-      return;
-    }
+  const handleSelectItem = async (item: any) => {
+    if (!activeSearchType) return;
+
+    const formattedItem = {
+      id: item.id || "",
+      name: cleanTextContent(getTextContent(item.name || item.title)) || "",
+      title: cleanTextContent(getTextContent(item.name || item.title)) || "",
+      year: parseInt(
+        item.year || item.first_air_date?.split("-")[0] || "0",
+        10
+      ),
+      cover: item.cover || item.image || item.poster_path || "",
+      poster_path: item.poster_path || item.cover || item.image || "",
+      rating: item.rating || item.vote_average || 0,
+      overview: item.overview || "",
+      first_air_date: item.first_air_date || "",
+      vote_average: item.vote_average || 0,
+      vote_count: item.vote_count || 0,
+      genre_ids: Array.isArray(item.genre_ids) ? item.genre_ids : [],
+      genres: Array.isArray(item.genres) ? item.genres : [],
+      number_of_seasons: item.number_of_seasons || 0,
+      number_of_episodes: item.number_of_episodes || 0,
+      status: item.status || "",
+      type: item.type || "tv",
+    };
 
     try {
-      console.log("Adding item:", item, "to section:", searchType);
-
-      const formattedItem = {
-        id: item.id || "",
-        name: cleanTextContent(getTextContent(item.name || item.title)) || "",
-        title: cleanTextContent(getTextContent(item.name || item.title)) || "",
-        year: parseInt(
-          item.year || item.first_air_date?.split("-")[0] || "0",
-          10
-        ),
-        cover: item.cover || item.image || item.poster_path || "",
-        poster_path: item.poster_path || item.cover || item.image || "",
-        rating: item.rating || item.vote_average || 0,
-        overview: item.overview || "",
-        first_air_date: item.first_air_date || "",
-        vote_average: item.vote_average || 0,
-        vote_count: item.vote_count || 0,
-        genre_ids: Array.isArray(item.genre_ids) ? item.genre_ids : [],
-        genres: Array.isArray(item.genres) ? item.genres : [],
-        number_of_seasons: item.number_of_seasons || 0,
-        number_of_episodes: item.number_of_episodes || 0,
-        status: item.status || "",
-        type: item.type || "tv",
-      };
-
-      console.log("Formatted item:", formattedItem);
-
-      switch (searchType) {
-        case "recentlyWatched":
-          console.log("Updating recently watched");
-          await updateRecentlyWatched(formattedItem);
-          break;
-        case "favoriteSeries":
-          console.log("Updating favorite series");
-          await updateFavoriteSeries(formattedItem);
-          break;
-        case "favoriteSeriesList":
-          console.log("Adding to favorite series list");
-          await addFavoriteSeries(formattedItem);
-          break;
-        case "watchlist":
-          console.log("Adding to watchlist");
-          await addToWatchlist(formattedItem);
-          break;
-        case "recommendation":
-          console.log("Adding to recommendations");
-          await addRecommendation(formattedItem);
-          break;
-        case "rating":
-          console.log("Adding to ratings");
-          await addRating(formattedItem, 5); // Default 5-star rating
-          break;
-        case "favoriteCreator":
-          console.log("Updating favorite creator");
-          await updateFavoriteCreator({
-            id: item.id,
-            name: item.name,
-            image: item.image || item.cover,
-          });
-          break;
+      // Check if we're replacing an existing item
+      if (editingItem) {
+        switch (activeSearchType) {
+          case "recentlyWatched":
+            // For recently watched, we just update since it's a single item
+            await updateRecentlyWatched(formattedItem);
+            break;
+          case "favoriteSeriesList":
+            await replaceFavoriteSeries(
+              editingItem.id.toString(),
+              formattedItem
+            );
+            break;
+          case "watchlist":
+            await replaceWatchlistSeries(
+              editingItem.id.toString(),
+              formattedItem
+            );
+            break;
+          case "recommendation":
+            await replaceRecommendation(
+              editingItem.id.toString(),
+              formattedItem
+            );
+            break;
+          case "rating":
+            await replaceRating(editingItem.id.toString(), formattedItem, 5);
+            break;
+        }
+      } else {
+        // Adding new items
+        switch (activeSearchType) {
+          case "recentlyWatched":
+            await updateRecentlyWatched(formattedItem);
+            break;
+          case "favoriteSeriesList":
+            await addFavoriteSeries(formattedItem);
+            break;
+          case "watchlist":
+            await addToWatchlist(formattedItem);
+            break;
+          case "recommendation":
+            await addRecommendation(formattedItem);
+            break;
+          case "rating":
+            await addRating(formattedItem, 5);
+            break;
+        }
       }
 
-      console.log("Item added successfully");
       setShowSearchDialog(false);
       setSearchQuery("");
       setSearchResults([]);
+      setActiveSearchType(null);
+      setEditingItem(null); // Clear the editing item
     } catch (error) {
-      console.error("Error adding item:", error);
-      alert(
-        `Failed to add item: ${
-          error instanceof Error ? error.message : "Unknown error"
-        }`
-      );
+      console.error("Error adding/replacing item:", error);
+      alert("Failed to add/replace item. Please try again.");
     }
   };
 
@@ -435,12 +469,33 @@ export default function ProfileSeriesSection({
     }
   };
 
-  const openSearchDialog = (searchType: any) => {
+  const handleRemoveRating = async (seriesId: string) => {
+    if (!seriesId) {
+      console.error("Invalid series ID for rating removal:", seriesId);
+      return;
+    }
+
+    try {
+      await removeRating(seriesId);
+    } catch (error) {
+      console.error("Error removing rating:", error);
+      alert("Failed to remove rating. Please try again.");
+    }
+  };
+
+  const openSearchDialog = (searchType: any, itemToReplace?: any) => {
     setActiveSearchType(searchType);
     setShowSearchDialog(true);
     setSearchQuery("");
     setSearchResults([]);
     setSearchError(null);
+
+    // Store the item to replace if provided
+    if (itemToReplace) {
+      setEditingItem(itemToReplace);
+    } else {
+      setEditingItem(null);
+    }
   };
 
   // Handle trailer click
@@ -559,7 +614,7 @@ export default function ProfileSeriesSection({
     );
   }
 
-  // Ensure seriesProfile exists
+  // Safe access to series profile
   const safeSeriesProfile = seriesProfile || {
     recentlyWatched: [],
     favoriteSeries: null,
@@ -570,14 +625,14 @@ export default function ProfileSeriesSection({
     ratings: [],
   };
 
-  // Create a list of recently watched series
+  // Recently watched list
   const recentlyWatchedList = safeSeriesProfile.recentlyWatched || [];
 
   // Navigation functions for recently watched
   const navigateRecentlyWatchedLeft = () => {
     if (recentlyWatchedList.length > 1) {
       setCurrentRecentlyWatchedIndex((prev) =>
-        prev === recentlyWatchedList.length - 1 ? 0 : prev + 1
+        prev === 0 ? recentlyWatchedList.length - 1 : prev - 1
       );
     }
   };
@@ -585,7 +640,7 @@ export default function ProfileSeriesSection({
   const navigateRecentlyWatchedRight = () => {
     if (recentlyWatchedList.length > 1) {
       setCurrentRecentlyWatchedIndex((prev) =>
-        prev === 0 ? recentlyWatchedList.length - 1 : prev - 1
+        prev === recentlyWatchedList.length - 1 ? 0 : prev + 1
       );
     }
   };
@@ -594,7 +649,7 @@ export default function ProfileSeriesSection({
   const currentRecentlyWatched =
     recentlyWatchedList[currentRecentlyWatchedIndex] || null;
 
-  // Limit items to 15 per section
+  // Limit items to specified limits per section
   const limitedFavoriteSeriesList =
     safeSeriesProfile.favoriteSeriesList?.slice(0, 5) || [];
   const limitedWatchlist = safeSeriesProfile.watchlist || [];
@@ -603,387 +658,178 @@ export default function ProfileSeriesSection({
   const limitedRatings = safeSeriesProfile.ratings || [];
 
   return (
-    <div className="space-y-0 max-w-3xl mx-auto">
-      <div>
-        {/* currently watching - simplified format */}
-        <div>
-          <div className="flex items-center justify-between mb-3">
-            <p className="text-sm font-medium text-muted-foreground">
-              currently watching
-            </p>
-            {!readOnly && (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-6 w-6 p-0 hover:bg-muted"
-                onClick={() => openSearchDialog("recentlyWatched")}
-              >
-                <Plus className="h-3 w-3" />
-              </Button>
-            )}
-          </div>
+    <div className="space-y-8 max-w-4xl mx-auto">
+      <div className="max-w-3xl mx-auto">
+        <div className="flex items-center justify-start mb-4">
+          <p className="text-sm font-medium text-muted-foreground">
+            currently watching
+          </p>
+        </div>
+
+        <div className="relative">
           {currentRecentlyWatched ? (
-            <div className="relative">
-              <Button
-                variant="ghost"
-                size="sm"
-                className="absolute left-0 top-1/2 -translate-y-1/2 z-10 h-8 w-8 p-0 bg-black/50 hover:bg-black/70 text-white rounded-full"
-                onClick={navigateRecentlyWatchedLeft}
-                disabled={recentlyWatchedList.length <= 1}
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </Button>
-              <div className="flex gap-4 px-8">
-                <div className="aspect-[2/3] w-32 bg-muted rounded-md overflow-hidden flex-shrink-0">
-                  <Image
-                    src={
-                      currentRecentlyWatched.poster_path
-                        ? `https://image.tmdb.org/t/p/w500${currentRecentlyWatched.poster_path}`
-                        : "/placeholder.svg"
-                    }
-                    alt={
-                      getTextContent(currentRecentlyWatched.name) || "Series"
-                    }
-                    width={128}
-                    height={192}
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      const target = e.target as HTMLImageElement;
-                      target.src = "/placeholder.svg";
-                    }}
-                  />
+            <div className="flex gap-6 items-start">
+              {/* Series poster */}
+              <div className="relative group flex-shrink-0">
+                <div className="w-32 h-48 bg-muted rounded-md overflow-hidden">
+                  <Link href={`/series/${currentRecentlyWatched.id}`}>
+                    <Image
+                      src={
+                        currentRecentlyWatched.poster_path
+                          ? `https://image.tmdb.org/t/p/w500${currentRecentlyWatched.poster_path}`
+                          : "/placeholder.svg"
+                      }
+                      alt={
+                        getTextContent(currentRecentlyWatched.name) || "Series"
+                      }
+                      width={128}
+                      height={192}
+                      className="w-full h-full object-cover cursor-pointer"
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.src = "/placeholder.svg";
+                      }}
+                    />
+                  </Link>
+                  {!readOnly && (
+                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-md flex items-center justify-center">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 w-8 p-0 bg-white/20 hover:bg-white/30 text-white"
+                        onClick={() => openSearchDialog("recentlyWatched")}
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  )}
                 </div>
-                <div className="flex-1 min-w-0">
-                  <h3 className="text-base font-semibold leading-tight mb-2">
-                    {getTextContent(currentRecentlyWatched.name) ||
-                      "Unknown Series"}
-                  </h3>
-                  <p className="text-sm text-muted-foreground leading-tight mb-4">
-                    {currentRecentlyWatched.overview ||
-                      "No description available"}
-                  </p>
-                  <div className="flex items-center gap-3">
+              </div>
+
+              {/* Content section */}
+              <div className="flex-1 min-w-0">
+                <h3 className="text-xl font-semibold text-foreground mb-2">
+                  {getTextContent(currentRecentlyWatched.name) ||
+                    "Unknown Series"}
+                </h3>
+                <p className="text-sm text-muted-foreground mb-4 line-clamp-3">
+                  {currentRecentlyWatched.overview ||
+                    "No description available"}
+                </p>
+
+                {/* Action buttons and navigation */}
+                <div className="flex items-center gap-4">
+                  {/* Navigation dots */}
+                  {recentlyWatchedList.length > 1 && (
                     <div className="flex gap-1">
                       {recentlyWatchedList.map((_, index) => (
                         <div
                           key={index}
-                          className={`w-2 h-2 rounded-full ${
+                          className={`w-2 h-2 rounded-full transition-colors ${
                             index === currentRecentlyWatchedIndex
-                              ? "bg-muted-foreground"
+                              ? "bg-primary"
                               : "bg-muted-foreground/30"
                           }`}
                         />
                       ))}
                     </div>
-                  </div>
-                  <div className="mt-4 flex items-center gap-2">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-7 w-7 p-0 hover:bg-muted"
-                      onClick={() => handleLikeClick(currentRecentlyWatched)}
-                    >
-                      <Heart className="h-3 w-3" />
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="h-7 text-xs px-3"
-                      onClick={() => handleTrailerClick(currentRecentlyWatched)}
-                    >
-                      trailer
-                    </Button>
-                  </div>
-                </div>
-              </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="absolute right-0 top-1/2 -translate-y-1/2 z-10 h-8 w-8 p-0 bg-black/50 hover:bg-black/70 text-white rounded-full"
-                onClick={navigateRecentlyWatchedRight}
-                disabled={recentlyWatchedList.length <= 1}
-              >
-                <ChevronRight className="h-4 w-4" />
-              </Button>
-            </div>
-          ) : (
-            <div className="flex gap-4">
-              <div className="aspect-[2/3] w-32 bg-muted rounded-md flex items-center justify-center flex-shrink-0">
-                <div className="text-center">
-                  <p className="text-xs text-muted-foreground mb-2">
-                    No series
-                  </p>
+                  )}
+
+                  {/* Trailer button */}
                   <Button
                     variant="outline"
                     size="sm"
-                    className="h-6 text-xs"
-                    onClick={() => openSearchDialog("recentlyWatched")}
+                    className="h-8 px-4"
+                    onClick={() => handleTrailerClick(currentRecentlyWatched)}
                   >
-                    Add
-                  </Button>
-                </div>
-              </div>
-              <div className="flex-1 min-w-0">
-                <h3 className="text-base font-semibold leading-tight mb-2">
-                  No currently watching
-                </h3>
-                <p className="text-sm text-muted-foreground leading-tight mb-4">
-                  Add a series you're currently watching
-                </p>
-                <div className="flex items-center gap-3">
-                  <div className="flex gap-1">
-                    <div className="w-2 h-2 bg-muted-foreground rounded-full"></div>
-                    <div className="w-2 h-2 bg-muted-foreground/30 rounded-full"></div>
-                    <div className="w-2 h-2 bg-muted-foreground/30 rounded-full"></div>
-                  </div>
-                </div>
-                <div className="mt-4">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="h-7 text-xs px-3"
-                    disabled
-                  >
+                    <Play className="h-3 w-3 mr-1" />
                     trailer
                   </Button>
                 </div>
               </div>
+
+              {/* Navigation arrow */}
+              {recentlyWatchedList.length > 1 && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-10 w-10 p-0 bg-black/80 hover:bg-black backdrop-blur-md border border-white/10 rounded-full flex-shrink-0 shadow-2xl hover:scale-110 transition-all duration-300 z-30"
+                  onClick={navigateRecentlyWatchedRight}
+                >
+                  <ChevronRight className="h-5 w-5 text-white" />
+                </Button>
+              )}
+            </div>
+          ) : (
+            <div className="flex gap-6 items-start">
+              {/* Empty state poster */}
+              <div className="w-32 h-48 bg-muted rounded-md border border-border/30 flex items-center justify-center flex-shrink-0">
+                <div className="text-center">
+                  <Video className="h-16 w-16 mx-auto mb-4 text-muted-foreground/50" />
+                  <p className="text-sm text-muted-foreground/50">
+                    Add Current Watch
+                  </p>
+                </div>
+              </div>
+
+              {/* Empty state content */}
+              <div className="flex-1 min-w-0">
+                <h3 className="text-xl font-semibold text-muted-foreground/50 mb-2">
+                  Series Title
+                </h3>
+                <p className="text-sm text-muted-foreground/50 mb-4">
+                  Series description
+                </p>
+
+                <div className="flex items-center gap-4">
+                  <div className="flex gap-1">
+                    <div className="w-2 h-2 bg-muted-foreground/30 rounded-full"></div>
+                    <div className="w-2 h-2 bg-muted-foreground/30 rounded-full"></div>
+                    <div className="w-2 h-2 bg-muted-foreground/30 rounded-full"></div>
+                  </div>
+
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-8 px-4"
+                    disabled
+                  >
+                    <Play className="h-3 w-3 mr-1" />
+                    trailer
+                  </Button>
+                </div>
+              </div>
+
+              {/* Navigation arrow */}
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-10 w-10 p-0 bg-black/80 hover:bg-black backdrop-blur-md border border-white/10 rounded-full flex-shrink-0 shadow-2xl hover:scale-110 transition-all duration-300 z-30"
+                disabled
+              >
+                <ChevronRight className="h-5 w-5 text-white" />
+              </Button>
             </div>
           )}
         </div>
       </div>
 
       {/* favorite series */}
-      <div>
-        <div className="flex items-center justify-between mb-3">
+      <div className="mt-12 max-w-3xl mx-auto">
+        <div className="flex items-center justify-start mb-4">
           <p className="text-sm font-medium text-muted-foreground">favorite</p>
-          {!readOnly && (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-6 w-6 p-0 hover:bg-muted"
-              onClick={() => openSearchDialog("favoriteSeriesList")}
-            >
-              <Plus className="h-3 w-3" />
-            </Button>
-          )}
         </div>
         <div className="relative">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="absolute left-0 top-1/2 -translate-y-1/2 z-10 h-8 w-8 p-0 bg-black/50 hover:bg-black/70 text-white rounded-full"
-            onClick={() => scrollLeft(scrollContainerRefs.favoriteSeriesList)}
-          >
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
           <div
             ref={scrollContainerRefs.favoriteSeriesList}
-            className="flex gap-4 overflow-x-auto scrollbar-hide"
-            style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+            className="flex justify-start gap-6 overflow-hidden"
           >
-            {limitedFavoriteSeriesList.length > 0
-              ? limitedFavoriteSeriesList.map((series, idx) => (
+            {limitedFavoriteSeriesList.length > 0 ? (
+              <>
+                {limitedFavoriteSeriesList.map((series, idx) => (
                   <div
                     key={series.id || idx}
                     className="relative group flex-shrink-0 w-32"
-                  >
-                    <div className="aspect-[2/3] w-full bg-muted rounded-md overflow-hidden">
-                      <Image
-                        src={
-                          series.poster_path
-                            ? `https://image.tmdb.org/t/p/w500${series.poster_path}`
-                            : "/placeholder.svg"
-                        }
-                        alt={series.name || "Series"}
-                        width={128}
-                        height={192}
-                        className="w-full h-full object-cover"
-                        onError={(e) => {
-                          const target = e.target as HTMLImageElement;
-                          target.src = "/placeholder.svg";
-                        }}
-                      />
-                      {!readOnly && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="absolute top-1 right-1 h-6 w-6 p-0 bg-black/50 hover:bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity"
-                          onClick={() =>
-                            handleRemoveItem(
-                              "favoriteSeriesList",
-                              series.id.toString()
-                            )
-                          }
-                        >
-                          <X className="h-3 w-3 text-white" />
-                        </Button>
-                      )}
-                    </div>
-                    <div className="mt-2 text-center">
-                      <p className="text-sm font-semibold leading-tight">
-                        {getTextContent(series.name) || "Unknown Series"}
-                      </p>
-                      <p className="text-xs text-muted-foreground leading-tight mt-1">
-                        {series.first_air_date?.split("-")[0] || "Unknown Year"}
-                      </p>
-                    </div>
-                  </div>
-                ))
-              : // Show single Add screen when empty
-                (
-                  <div className="flex-shrink-0 w-32">
-                    <div className="aspect-[2/3] w-full bg-black/20 rounded-md border border-border/30 flex items-center justify-center">
-                      <div className="text-center flex items-center justify-center h-full">
-                        <p className="text-sm text-muted-foreground/50">Add</p>
-                      </div>
-                    </div>
-                  </div>
-                )}
-          </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="absolute right-0 top-1/2 -translate-y-1/2 z-10 h-8 w-8 p-0 bg-black/50 hover:bg-black/70 text-white rounded-full"
-            onClick={() => scrollRight(scrollContainerRefs.favoriteSeriesList)}
-          >
-            <ChevronRight className="h-4 w-4" />
-          </Button>
-        </div>
-      </div>
-
-      {/* watchlist */}
-      <div>
-        <div className="flex items-center justify-between mb-3">
-          <p className="text-sm font-medium text-muted-foreground">watchlist</p>
-          {!readOnly && (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-6 w-6 p-0 hover:bg-muted"
-              onClick={() => openSearchDialog("watchlist")}
-            >
-              <Plus className="h-3 w-3" />
-            </Button>
-          )}
-        </div>
-        <div className="relative">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="absolute left-0 top-1/2 -translate-y-1/2 z-10 h-8 w-8 p-0 bg-black/50 hover:bg-black/70 text-white rounded-full"
-            onClick={() => scrollLeft(scrollContainerRefs.watchlist)}
-          >
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
-          <div
-            ref={scrollContainerRefs.watchlist}
-            className="flex gap-4 overflow-x-auto scrollbar-hide"
-            style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
-          >
-            {limitedWatchlist.length > 0
-              ? limitedWatchlist.map((series, idx) => (
-                  <div
-                    key={series.id || idx}
-                    className="relative group flex-shrink-0 w-32"
-                  >
-                    <div className="aspect-[2/3] w-full bg-muted rounded-md overflow-hidden">
-                      <Image
-                        src={
-                          series.poster_path
-                            ? `https://image.tmdb.org/t/p/w500${series.poster_path}`
-                            : "/placeholder.svg"
-                        }
-                        alt={series.name || "Series"}
-                        width={128}
-                        height={192}
-                        className="w-full h-full object-cover"
-                        onError={(e) => {
-                          const target = e.target as HTMLImageElement;
-                          target.src = "/placeholder.svg";
-                        }}
-                      />
-                      {!readOnly && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="absolute top-1 right-1 h-6 w-6 p-0 bg-black/50 hover:bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity"
-                          onClick={() =>
-                            handleRemoveItem("watchlist", series.id.toString())
-                          }
-                        >
-                          <X className="h-3 w-3 text-white" />
-                        </Button>
-                      )}
-                    </div>
-                    <div className="mt-2 text-center">
-                      <p className="text-sm font-semibold leading-tight">
-                        {getTextContent(series.name) || "Unknown Series"}
-                      </p>
-                      <p className="text-xs text-muted-foreground leading-tight mt-1">
-                        {series.first_air_date?.split("-")[0] || "Unknown Year"}
-                      </p>
-                    </div>
-                  </div>
-                ))
-              : // Show placeholder items when empty
-                (
-                  <div className="flex-shrink-0 w-32">
-                    <div className="aspect-[2/3] w-full bg-black/20 rounded-md border border-border/30 flex items-center justify-center">
-                      <div className="text-center flex items-center justify-center h-full">
-                        <p className="text-sm text-muted-foreground/50">Add</p>
-                      </div>
-                    </div>
-                  </div>
-                )}
-          </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="absolute right-0 top-1/2 -translate-y-1/2 z-10 h-8 w-8 p-0 bg-black/50 hover:bg-black/70 text-white rounded-full"
-            onClick={() => scrollRight(scrollContainerRefs.watchlist)}
-          >
-            <ChevronRight className="h-4 w-4" />
-          </Button>
-        </div>
-      </div>
-
-      {/* recommendations */}
-      <div>
-        <div className="flex items-center justify-between mb-3">
-          <p className="text-sm font-medium text-muted-foreground">
-            recommendation
-          </p>
-          {!readOnly && (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-6 w-6 p-0 hover:bg-muted"
-              onClick={() => openSearchDialog("recommendation")}
-            >
-              <Plus className="h-3 w-3" />
-            </Button>
-          )}
-        </div>
-        <div className="relative">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="absolute left-0 top-1/2 -translate-y-1/2 z-10 h-8 w-8 p-0 bg-black/50 hover:bg-black/70 text-white rounded-full"
-            onClick={() => scrollLeft(scrollContainerRefs.recommendations)}
-          >
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
-          <div
-            ref={scrollContainerRefs.recommendations}
-            className="flex gap-4 overflow-x-auto scrollbar-hide"
-            style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
-          >
-            {limitedRecommendations.length > 0
-              ? limitedRecommendations.map((series, idx) => (
-                  <div
-                    key={series.id || idx}
-                    className="relative flex-shrink-0 w-32"
                   >
                     <div className="aspect-[2/3] w-full bg-muted rounded-md overflow-hidden">
                       <Link href={`/series/${series.id}`}>
@@ -1003,134 +849,531 @@ export default function ProfileSeriesSection({
                           }}
                         />
                       </Link>
+                      {!readOnly && (
+                        <div className="absolute top-2 right-2 flex gap-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 w-6 p-0 bg-black/50 hover:bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={() =>
+                              openSearchDialog("favoriteSeriesList", series)
+                            }
+                            title="Replace series"
+                          >
+                            <Edit className="h-3 w-3 text-white" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 w-6 p-0 bg-red-600/80 hover:bg-red-700/90 opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={() =>
+                              handleRemoveItem(
+                                "favoriteSeriesList",
+                                series.id.toString()
+                              )
+                            }
+                            title="Delete series"
+                          >
+                            <Trash2 className="h-3 w-3 text-white" />
+                          </Button>
+                        </div>
+                      )}
                     </div>
                     <div className="mt-2 text-center">
-                      <p className="text-sm font-semibold leading-tight">
+                      <p className="text-sm font-semibold leading-tight line-clamp-2 min-h-[2.5rem] flex items-start justify-center">
                         {getTextContent(series.name) || "Unknown Series"}
                       </p>
-                      <p className="text-xs text-muted-foreground leading-tight mt-1">
+                      <p className="text-xs text-muted-foreground leading-tight mt-0.5">
                         {series.first_air_date?.split("-")[0] || "Unknown Year"}
                       </p>
                     </div>
                   </div>
-                ))
-              : // Show placeholder items when empty
-                (
-                  <div className="flex-shrink-0 w-32">
-                    <div className="aspect-[2/3] w-full bg-black/20 rounded-md border border-border/30 flex items-center justify-center">
-                      <div className="text-center flex items-center justify-center h-full">
-                        <p className="text-sm text-muted-foreground/50">Add</p>
-                      </div>
+                ))}
+
+                {/* Add button for subsequent items - always show when items exist */}
+                <div className="flex-shrink-0">
+                  <div className="aspect-[2/3] w-32 bg-transparent rounded-md border-2 border-gray-600 flex items-center justify-center overflow-visible">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-12 w-12 p-0 bg-black/70 hover:bg-black/90 text-white rounded-full border-2 border-white/20 shadow-lg"
+                      onClick={() => openSearchDialog("favoriteSeriesList")}
+                    >
+                      <Plus className="h-6 w-6" />
+                    </Button>
+                  </div>
+                </div>
+              </>
+            ) : (
+              // Show single Add screen when empty
+              <div className="flex flex-col items-center justify-center min-h-[200px]">
+                <div className="aspect-[2/3] w-32 bg-transparent rounded-md border-2 border-gray-600 flex flex-col items-center justify-center mb-3">
+                  <p className="text-xs text-gray-500 text-center">
+                    No favorite series
+                  </p>
+                </div>
+                {!readOnly && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="text-xs"
+                    onClick={() => openSearchDialog("favoriteSeriesList")}
+                  >
+                    <Plus className="h-3 w-3 mr-1" />
+                    Add Series
+                  </Button>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Navigation arrows for favorite series */}
+          {limitedFavoriteSeriesList.length > 0 && (
+            <>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="absolute left-2 top-1/2 transform -translate-y-1/2 h-8 w-8 p-0 bg-black/80 hover:bg-black backdrop-blur-md border border-white/10 text-white rounded-full shadow-2xl hover:scale-110 transition-all duration-300 z-30"
+                onClick={() =>
+                  scrollLeft(scrollContainerRefs.favoriteSeriesList)
+                }
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="absolute right-2 top-1/2 transform -translate-y-1/2 h-8 w-8 p-0 bg-black/80 hover:bg-black backdrop-blur-md border border-white/10 text-white rounded-full shadow-2xl hover:scale-110 transition-all duration-300 z-30"
+                onClick={() =>
+                  scrollRight(scrollContainerRefs.favoriteSeriesList)
+                }
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* watchlist */}
+      <div className="mt-12 max-w-3xl mx-auto">
+        <div className="flex items-center justify-start mb-4">
+          <p className="text-sm font-medium text-muted-foreground">watchlist</p>
+        </div>
+        <div className="relative">
+          <div
+            ref={scrollContainerRefs.watchlist}
+            className="flex justify-start gap-6 overflow-hidden"
+          >
+            {limitedWatchlist.length > 0 ? (
+              <>
+                {limitedWatchlist.map((series, idx) => (
+                  <div
+                    key={series.id || idx}
+                    className="relative group flex-shrink-0 w-32"
+                  >
+                    <div className="aspect-[2/3] w-full bg-muted rounded-md overflow-hidden">
+                      <Link href={`/series/${series.id}`}>
+                        <Image
+                          src={
+                            series.poster_path
+                              ? `https://image.tmdb.org/t/p/w500${series.poster_path}`
+                              : "/placeholder.svg"
+                          }
+                          alt={series.name || "Series"}
+                          width={128}
+                          height={192}
+                          className="w-full h-full object-cover cursor-pointer"
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            target.src = "/placeholder.svg";
+                          }}
+                        />
+                      </Link>
+                      {!readOnly && (
+                        <div className="absolute top-2 right-2 flex gap-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 w-6 p-0 bg-black/50 hover:bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={() =>
+                              openSearchDialog("watchlist", series)
+                            }
+                            title="Replace series"
+                          >
+                            <Edit className="h-3 w-3 text-white" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 w-6 p-0 bg-red-600/80 hover:bg-red-700/90 opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={() =>
+                              handleRemoveItem(
+                                "watchlist",
+                                series.id.toString()
+                              )
+                            }
+                            title="Delete series"
+                          >
+                            <Trash2 className="h-3 w-3 text-white" />
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                    <div className="mt-2 text-center">
+                      <p className="text-sm font-semibold leading-tight line-clamp-2 min-h-[2.5rem] flex items-start justify-center">
+                        {getTextContent(series.name) || "Unknown Series"}
+                      </p>
+                      <p className="text-xs text-muted-foreground leading-tight mt-0.5">
+                        {series.first_air_date?.split("-")[0] || "Unknown Year"}
+                      </p>
                     </div>
                   </div>
+                ))}
+
+                {/* Add button for subsequent items - always show when items exist */}
+                <div className="flex-shrink-0">
+                  <div className="aspect-[2/3] w-32 bg-transparent rounded-md border-2 border-gray-600 flex items-center justify-center overflow-visible">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-12 w-12 p-0 bg-black/70 hover:bg-black/90 text-white rounded-full border-2 border-white/20 shadow-lg"
+                      onClick={() => openSearchDialog("watchlist")}
+                    >
+                      <Plus className="h-6 w-6" />
+                    </Button>
+                  </div>
+                </div>
+              </>
+            ) : (
+              // Show single Add screen when empty
+              <div className="flex flex-col items-center justify-center min-h-[200px]">
+                <div className="aspect-[2/3] w-32 bg-transparent rounded-md border-2 border-gray-600 flex flex-col items-center justify-center mb-3">
+                  <p className="text-xs text-gray-500 text-center">
+                    No watchlist series
+                  </p>
+                </div>
+                {!readOnly && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="text-xs"
+                    onClick={() => openSearchDialog("watchlist")}
+                  >
+                    <Plus className="h-3 w-3 mr-1" />
+                    Add Series
+                  </Button>
                 )}
+              </div>
+            )}
           </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="absolute right-0 top-1/2 -translate-y-1/2 z-10 h-8 w-8 p-0 bg-black/50 hover:bg-black/70 text-white rounded-full"
-            onClick={() => scrollRight(scrollContainerRefs.recommendations)}
+
+          {/* Navigation arrows for watchlist */}
+          {limitedWatchlist.length > 0 && (
+            <>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="absolute left-2 top-1/2 transform -translate-y-1/2 h-8 w-8 p-0 bg-black/80 hover:bg-black backdrop-blur-md border border-white/10 text-white rounded-full shadow-2xl hover:scale-110 transition-all duration-300 z-30"
+                onClick={() => scrollLeft(scrollContainerRefs.watchlist)}
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="absolute right-2 top-1/2 transform -translate-y-1/2 h-8 w-8 p-0 bg-black/80 hover:bg-black backdrop-blur-md border border-white/10 text-white rounded-full shadow-2xl hover:scale-110 transition-all duration-300 z-30"
+                onClick={() => scrollRight(scrollContainerRefs.watchlist)}
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* recommendations */}
+      <div className="mt-12 max-w-3xl mx-auto">
+        <div className="flex items-center justify-start mb-4">
+          <p className="text-sm font-medium text-muted-foreground">
+            recommendation
+          </p>
+        </div>
+        <div className="relative">
+          <div
+            ref={scrollContainerRefs.recommendations}
+            className="flex justify-start gap-6 overflow-hidden"
           >
-            <ChevronRight className="h-4 w-4" />
-          </Button>
+            {limitedRecommendations.length > 0 ? (
+              <>
+                {limitedRecommendations.map((series, idx) => (
+                  <div
+                    key={series.id || idx}
+                    className="relative group flex-shrink-0 w-32"
+                  >
+                    <div className="aspect-[2/3] w-full bg-muted rounded-md overflow-hidden">
+                      <Link href={`/series/${series.id}`}>
+                        <Image
+                          src={
+                            series.poster_path
+                              ? `https://image.tmdb.org/t/p/w500${series.poster_path}`
+                              : "/placeholder.svg"
+                          }
+                          alt={series.name || "Series"}
+                          width={128}
+                          height={192}
+                          className="w-full h-full object-cover cursor-pointer"
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            target.src = "/placeholder.svg";
+                          }}
+                        />
+                      </Link>
+                      {!readOnly && (
+                        <div className="absolute top-2 right-2 flex gap-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 w-6 p-0 bg-black/50 hover:bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={() =>
+                              openSearchDialog("recommendation", series)
+                            }
+                            title="Replace recommendation"
+                          >
+                            <Edit className="h-3 w-3 text-white" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 w-6 p-0 bg-red-600/80 hover:bg-red-700/90 opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={() =>
+                              handleRemoveItem(
+                                "recommendation",
+                                series.id.toString()
+                              )
+                            }
+                            title="Delete recommendation"
+                          >
+                            <Trash2 className="h-3 w-3 text-white" />
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                    <div className="mt-2 text-center">
+                      <p className="text-sm font-semibold leading-tight line-clamp-2 min-h-[2.5rem] flex items-start justify-center">
+                        {getTextContent(series.name) || "Unknown Series"}
+                      </p>
+                      <p className="text-xs text-muted-foreground leading-tight mt-0.5">
+                        {series.first_air_date?.split("-")[0] || "Unknown Year"}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+
+                {/* Add button for subsequent items - always show when items exist */}
+                <div className="flex-shrink-0">
+                  <div className="aspect-[2/3] w-32 bg-transparent rounded-md border-2 border-gray-600 flex items-center justify-center overflow-visible">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-12 w-12 p-0 bg-black/70 hover:bg-black/90 text-white rounded-full border-2 border-white/20 shadow-lg"
+                      onClick={() => openSearchDialog("recommendation")}
+                    >
+                      <Plus className="h-6 w-6" />
+                    </Button>
+                  </div>
+                </div>
+              </>
+            ) : (
+              // Show single Add screen when empty
+              <div className="flex flex-col items-center justify-center min-h-[200px]">
+                <div className="aspect-[2/3] w-32 bg-transparent rounded-md border-2 border-gray-600 flex flex-col items-center justify-center mb-3">
+                  <p className="text-xs text-gray-500 text-center">
+                    No recommendations
+                  </p>
+                </div>
+                {!readOnly && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="text-xs"
+                    onClick={() => openSearchDialog("recommendation")}
+                  >
+                    <Plus className="h-3 w-3 mr-1" />
+                    Add Recommendation
+                  </Button>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Navigation arrows for recommendations */}
+          {limitedRecommendations.length > 0 && (
+            <>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="absolute left-2 top-1/2 transform -translate-y-1/2 h-8 w-8 p-0 bg-black/80 hover:bg-black backdrop-blur-md border border-white/10 text-white rounded-full shadow-2xl hover:scale-110 transition-all duration-300 z-30"
+                onClick={() => scrollLeft(scrollContainerRefs.recommendations)}
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="absolute right-2 top-1/2 transform -translate-y-1/2 h-8 w-8 p-0 bg-black/80 hover:bg-black backdrop-blur-md border border-white/10 text-white rounded-full shadow-2xl hover:scale-110 transition-all duration-300 z-30"
+                onClick={() => scrollRight(scrollContainerRefs.recommendations)}
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </>
+          )}
         </div>
       </div>
 
       {/* rating */}
-      <div>
-        <div className="flex items-center justify-between mb-3">
+      <div className="mt-12 max-w-3xl mx-auto">
+        <div className="flex items-center justify-start mb-4">
           <p className="text-sm font-medium text-muted-foreground">rating</p>
-          {!readOnly && (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-6 w-6 p-0 hover:bg-muted"
-              onClick={() => openSearchDialog("rating")}
-            >
-              <Plus className="h-3 w-3" />
-            </Button>
-          )}
         </div>
         <div className="relative">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="absolute left-0 top-1/2 -translate-y-1/2 z-10 h-8 w-8 p-0 bg-black/50 hover:bg-black/70 text-white rounded-full"
-            onClick={() => scrollLeft(scrollContainerRefs.ratings)}
-          >
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
           <div
             ref={scrollContainerRefs.ratings}
-            className="flex gap-4 overflow-x-auto scrollbar-hide"
-            style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+            className="flex justify-start gap-6 overflow-hidden"
           >
-            {limitedRatings.length > 0
-              ? limitedRatings.map((rating, idx) => (
+            {limitedRatings.length > 0 ? (
+              <>
+                {limitedRatings.map((rating, idx) => (
                   <div
                     key={rating.series.id || idx}
                     className="relative group flex-shrink-0 w-32"
                   >
                     <div className="aspect-[2/3] w-full bg-muted rounded-md overflow-hidden">
-                      <Image
-                        src={
-                          rating.series.poster_path
-                            ? `https://image.tmdb.org/t/p/w500${rating.series.poster_path}`
-                            : "/placeholder.svg"
-                        }
-                        alt={rating.series.name || "Series"}
-                        width={128}
-                        height={192}
-                        className="w-full h-full object-cover"
-                        onError={(e) => {
-                          const target = e.target as HTMLImageElement;
-                          target.src = "/placeholder.svg";
-                        }}
-                      />
-                      {!readOnly && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="absolute top-1 right-1 h-6 w-6 p-0 bg-black/50 hover:bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity"
-                          onClick={() =>
-                            handleRemoveItem(
-                              "rating",
-                              rating.series.id.toString()
-                            )
+                      <Link href={`/series/${rating.series.id}`}>
+                        <Image
+                          src={
+                            rating.series.poster_path
+                              ? `https://image.tmdb.org/t/p/w500${rating.series.poster_path}`
+                              : "/placeholder.svg"
                           }
-                        >
-                          <X className="h-3 w-3 text-white" />
-                        </Button>
+                          alt={rating.series.name || "Series"}
+                          width={128}
+                          height={192}
+                          className="w-full h-full object-cover cursor-pointer"
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            target.src = "/placeholder.svg";
+                          }}
+                        />
+                      </Link>
+                      {!readOnly && (
+                        <div className="absolute top-2 right-2 flex gap-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 w-6 p-0 bg-black/50 hover:bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={() =>
+                              openSearchDialog("rating", rating.series)
+                            }
+                            title="Replace rating"
+                          >
+                            <Edit className="h-3 w-3 text-white" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 w-6 p-0 bg-red-600/80 hover:bg-red-700/90 opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={() =>
+                              handleRemoveItem(
+                                "rating",
+                                rating.series.id.toString()
+                              )
+                            }
+                            title="Delete rating"
+                          >
+                            <Trash2 className="h-3 w-3 text-white" />
+                          </Button>
+                        </div>
                       )}
-                      <div className="absolute bottom-1 left-1 right-1 flex justify-center gap-1 p-2 bg-black/50 rounded-md">
-                        {renderInteractiveStars(
-                          rating.series.id.toString(),
-                          rating.rating
-                        )}
-                      </div>
                     </div>
-                    {/* Removed name and year display - only poster and rating shown */}
-                  </div>
-                ))
-              : // Show placeholder items when empty
-                (
-                  <div className="flex-shrink-0 w-32">
-                    <div className="aspect-[2/3] w-full bg-black/20 rounded-md border border-border/30 flex items-center justify-center">
-                      <div className="text-center flex items-center justify-center h-full">
-                        <p className="text-sm text-muted-foreground/50">Add</p>
-                      </div>
+                    {/* Rating stars - above the series name */}
+                    <div className="mt-3 flex justify-center gap-1">
+                      {renderInteractiveStars(
+                        rating.series.id.toString(),
+                        rating.rating
+                      )}
+                    </div>
+                    {/* Series name and year display - below the rating */}
+                    <div className="mt-2 text-center w-full">
+                      <p className="text-sm font-semibold leading-tight px-2 truncate min-h-[1.5rem] flex items-center justify-center">
+                        {getTextContent(rating.series.name) || "Unknown Series"}
+                      </p>
+                      <p className="text-xs text-muted-foreground leading-tight -mt-1 px-2">
+                        {rating.series.first_air_date?.split("-")[0] ||
+                          "Unknown Year"}
+                      </p>
                     </div>
                   </div>
+                ))}
+
+                {/* Add button for subsequent items - always show when items exist */}
+                <div className="flex-shrink-0">
+                  <div className="aspect-[2/3] w-32 bg-transparent rounded-md border-2 border-gray-600 flex items-center justify-center overflow-visible">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-12 w-12 p-0 bg-black/70 hover:bg-black/90 text-white rounded-full border-2 border-white/20 shadow-lg"
+                      onClick={() => openSearchDialog("rating")}
+                    >
+                      <Plus className="h-6 w-6" />
+                    </Button>
+                  </div>
+                </div>
+              </>
+            ) : (
+              // Show single Add screen when empty
+              <div className="flex flex-col items-center justify-center min-h-[200px]">
+                <div className="aspect-[2/3] w-32 bg-transparent rounded-md border-2 border-gray-600 flex flex-col items-center justify-center mb-3">
+                  <p className="text-xs text-gray-500 text-center">
+                    No rated series
+                  </p>
+                </div>
+                {!readOnly && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="text-xs"
+                    onClick={() => openSearchDialog("rating")}
+                  >
+                    <Plus className="h-3 w-3 mr-1" />
+                    Add Rating
+                  </Button>
                 )}
+              </div>
+            )}
           </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="absolute right-0 top-1/2 -translate-y-1/2 z-10 h-8 w-8 p-0 bg-black/50 hover:bg-black/70 text-white rounded-full"
-            onClick={() => scrollRight(scrollContainerRefs.ratings)}
-          >
-            <ChevronRight className="h-4 w-4" />
-          </Button>
+
+          {/* Navigation arrows for ratings */}
+          {limitedRatings.length > 0 && (
+            <>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="absolute left-2 top-1/2 transform -translate-y-1/2 h-8 w-8 p-0 bg-black/80 hover:bg-black backdrop-blur-md border border-white/10 text-white rounded-full shadow-2xl hover:scale-110 transition-all duration-300 z-30"
+                onClick={() => scrollLeft(scrollContainerRefs.ratings)}
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="absolute right-2 top-1/2 transform -translate-y-1/2 h-8 w-8 p-0 bg-black/80 hover:bg-black backdrop-blur-md border border-white/10 text-white rounded-full shadow-2xl hover:scale-110 transition-all duration-300 z-30"
+                onClick={() => scrollRight(scrollContainerRefs.ratings)}
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </>
+          )}
         </div>
       </div>
 
@@ -1139,7 +1382,7 @@ export default function ProfileSeriesSection({
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
             <DialogTitle>
-              Search{" "}
+              {editingItem ? "Replace" : "Search"}{" "}
               {activeSearchType === "favoriteCreator"
                 ? "Creators"
                 : activeSearchType === "recentlyWatched"
@@ -1162,7 +1405,9 @@ export default function ProfileSeriesSection({
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                 <Input
-                  placeholder={`Search ${
+                  placeholder={`${
+                    editingItem ? "Search for replacement" : "Search"
+                  } ${
                     activeSearchType === "favoriteCreator"
                       ? "creators"
                       : activeSearchType === "recentlyWatched"
@@ -1193,7 +1438,11 @@ export default function ProfileSeriesSection({
                 onClick={() => handleSearch(searchQuery, activeSearchType!)}
                 disabled={isSearching || !searchQuery.trim()}
               >
-                {isSearching ? "Searching..." : "Search"}
+                {isSearching
+                  ? "Searching..."
+                  : editingItem
+                  ? "Search for Replacement"
+                  : "Search"}
               </Button>
             </div>
 
@@ -1209,7 +1458,7 @@ export default function ProfileSeriesSection({
                   <div
                     key={item.id || index}
                     className="flex items-center gap-3 p-2 rounded-md hover:bg-muted cursor-pointer"
-                    onClick={() => handleSelectItem(item, activeSearchType!)}
+                    onClick={() => handleSelectItem(item)}
                   >
                     <div className="w-12 h-16 rounded-md overflow-hidden flex-shrink-0">
                       <Image

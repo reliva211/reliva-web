@@ -651,7 +651,7 @@ export default function BioPage() {
                         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
                       </div>
                       <CardContent className="p-4">
-                        <h3 className="font-semibold text-white">
+                        <h3 className="font-semibold text-white leading-tight line-clamp-2 min-h-[2.5rem] flex items-start">
                           {movie.title}
                         </h3>
                         <div className="flex items-center gap-1 mt-1">

@@ -865,10 +865,12 @@ function MovieCard({
           </Link>
         </div>
         <div className="flex-1 min-w-0">
-          <h3 className="font-bold text-lg truncate text-white">
+          <h3 className="font-bold text-lg leading-tight line-clamp-2 min-h-[3rem] flex items-start text-white">
             {validatedMovie.title}
           </h3>
-          <p className="text-gray-400 font-medium">{validatedMovie.year}</p>
+          <p className="text-gray-400 font-medium mt-1">
+            {validatedMovie.year}
+          </p>
         </div>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -919,7 +921,7 @@ function MovieCard({
         </Link>
       </div>
       <div className="mt-4 space-y-2">
-        <h4 className="font-bold text-sm truncate text-white">
+        <h4 className="font-bold text-sm leading-tight line-clamp-2 min-h-[2.5rem] flex items-start text-white">
           {validatedMovie.title}
         </h4>
         <p className="text-xs text-gray-400 font-medium">

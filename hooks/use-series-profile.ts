@@ -463,6 +463,134 @@ export function useSeriesProfile(userId: string | undefined) {
     }
   };
 
+  // Replace functions
+  const replaceFavoriteSeries = async (
+    oldId: string,
+    newSeries: TMDBSeries
+  ) => {
+    if (!userId) return;
+
+    try {
+      const docRef = doc(db, "seriesProfiles", userId);
+      const docSnap = await getDoc(docRef);
+
+      if (docSnap.exists()) {
+        const currentData = docSnap.data() as SeriesProfile;
+        const updatedFavoriteSeriesList = currentData.favoriteSeriesList.map(
+          (series) => (series.id.toString() === oldId ? newSeries : series)
+        );
+
+        await updateDoc(docRef, {
+          favoriteSeriesList: updatedFavoriteSeriesList,
+        });
+
+        setSeriesProfile((prev) => ({
+          ...prev,
+          favoriteSeriesList: updatedFavoriteSeriesList,
+        }));
+      }
+    } catch (err) {
+      console.error("Error replacing favorite series:", err);
+      throw new Error("Failed to replace favorite series");
+    }
+  };
+
+  const replaceWatchlistSeries = async (
+    oldId: string,
+    newSeries: TMDBSeries
+  ) => {
+    if (!userId) return;
+
+    try {
+      const docRef = doc(db, "seriesProfiles", userId);
+      const docSnap = await getDoc(docRef);
+
+      if (docSnap.exists()) {
+        const currentData = docSnap.data() as SeriesProfile;
+        const updatedWatchlist = currentData.watchlist.map((series) =>
+          series.id.toString() === oldId ? newSeries : series
+        );
+
+        await updateDoc(docRef, {
+          watchlist: updatedWatchlist,
+        });
+
+        setSeriesProfile((prev) => ({
+          ...prev,
+          watchlist: updatedWatchlist,
+        }));
+      }
+    } catch (err) {
+      console.error("Error replacing watchlist series:", err);
+      throw new Error("Failed to replace watchlist series");
+    }
+  };
+
+  const replaceRecommendation = async (
+    oldId: string,
+    newSeries: TMDBSeries
+  ) => {
+    if (!userId) return;
+
+    try {
+      const docRef = doc(db, "seriesProfiles", userId);
+      const docSnap = await getDoc(docRef);
+
+      if (docSnap.exists()) {
+        const currentData = docSnap.data() as SeriesProfile;
+        const updatedRecommendations = currentData.recommendations.map(
+          (series) => (series.id.toString() === oldId ? newSeries : series)
+        );
+
+        await updateDoc(docRef, {
+          recommendations: updatedRecommendations,
+        });
+
+        setSeriesProfile((prev) => ({
+          ...prev,
+          recommendations: updatedRecommendations,
+        }));
+      }
+    } catch (err) {
+      console.error("Error replacing recommendation:", err);
+      throw new Error("Failed to replace recommendation");
+    }
+  };
+
+  const replaceRating = async (
+    oldId: string,
+    newSeries: TMDBSeries,
+    newRating: number
+  ) => {
+    if (!userId) return;
+
+    try {
+      const docRef = doc(db, "seriesProfiles", userId);
+      const docSnap = await getDoc(docRef);
+
+      if (docSnap.exists()) {
+        const currentData = docSnap.data() as SeriesProfile;
+        const updatedRatings = currentData.ratings.map((rating) =>
+          rating.series.id.toString() === oldId
+            ? { series: newSeries, rating: newRating }
+            : rating
+        );
+
+        await updateDoc(docRef, {
+          ratings: updatedRatings,
+        });
+
+        setSeriesProfile((prev) => ({
+          ...prev,
+          ratings: updatedRatings,
+        }));
+      }
+    } catch (err) {
+      console.error("Error replacing rating:", err);
+      throw new Error("Failed to replace rating");
+    }
+  };
+
   return {
     seriesProfile,
     loading,
@@ -480,5 +608,9 @@ export function useSeriesProfile(userId: string | undefined) {
     removeRating,
     searchSeries,
     searchCreator,
+    replaceFavoriteSeries,
+    replaceWatchlistSeries,
+    replaceRecommendation,
+    replaceRating,
   };
 }

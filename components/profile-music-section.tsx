@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -130,8 +131,12 @@ export default function ProfileMusicSection({
   userId,
   readOnly = false,
 }: ProfileMusicSectionProps) {
-  const { user } = useCurrentUser();
+  const { user, loading: userLoading } = useCurrentUser();
   const targetUserId = userId || user?.uid;
+
+  // Only fetch music profile if user is authenticated
+  const shouldFetchProfile = !userLoading && !!targetUserId && !!user;
+
   const {
     musicProfile,
     loading,
@@ -141,12 +146,25 @@ export default function ProfileMusicSection({
     updateFavoriteSong,
     addFavoriteAlbum,
     removeFavoriteAlbum,
+    replaceFavoriteAlbum,
     addRecommendation,
     removeRecommendation,
+    replaceRecommendation,
     addRating,
     removeRating,
+    replaceRating,
     searchMusic,
-  } = useMusicProfile(targetUserId);
+  } = useMusicProfile(shouldFetchProfile ? targetUserId : undefined);
+
+  // Ensure musicProfile exists
+  const safeMusicProfile = musicProfile || {
+    currentObsession: null,
+    favoriteArtist: null,
+    favoriteSong: null,
+    favoriteAlbums: [],
+    recommendations: [],
+    ratings: [],
+  };
 
   // Search states
   const [searchQuery, setSearchQuery] = useState("");
@@ -167,6 +185,7 @@ export default function ProfileMusicSection({
     songId: string;
     rating: number;
   } | null>(null);
+  const [editingItem, setEditingItem] = useState<any>(null);
 
   // Rating functionality
   const handleRatingHover = (songId: string, rating: number) => {
@@ -225,37 +244,6 @@ export default function ProfileMusicSection({
       });
     }
   };
-
-  // Scroll to end when new items are added
-  useEffect(() => {
-    const scrollToEnd = (
-      containerRef: React.RefObject<HTMLDivElement | null>
-    ) => {
-      if (containerRef.current) {
-        containerRef.current.scrollTo({
-          left: containerRef.current.scrollWidth,
-          behavior: "smooth",
-        });
-      }
-    };
-
-    // Only scroll if we have items and the component is mounted
-    if (musicProfile) {
-      if (musicProfile.favoriteAlbums?.length > 0) {
-        scrollToEnd(scrollContainerRefs.favoriteAlbums);
-      }
-      if (musicProfile.recommendations?.length > 0) {
-        scrollToEnd(scrollContainerRefs.recommendations);
-      }
-      if (musicProfile.ratings?.length > 0) {
-        scrollToEnd(scrollContainerRefs.ratings);
-      }
-    }
-  }, [
-    musicProfile?.favoriteAlbums?.length,
-    musicProfile?.recommendations?.length,
-    musicProfile?.ratings?.length,
-  ]);
 
   const renderInteractiveStars = (songId: string, currentRating: number) => {
     const displayRating =
@@ -463,18 +451,37 @@ export default function ProfileMusicSection({
           await updateFavoriteSong(formattedItem);
           break;
         case "album":
-          await addFavoriteAlbum(formattedItem);
+          if (editingItem) {
+            // Replace the specific album at its original position
+            await replaceFavoriteAlbum(editingItem.id, formattedItem);
+          } else {
+            // Add new album
+            await addFavoriteAlbum(formattedItem);
+          }
           break;
         case "recommendation":
-          await addRecommendation(formattedItem);
+          if (editingItem) {
+            // Replace the specific recommendation at its original position
+            await replaceRecommendation(editingItem.id, formattedItem);
+          } else {
+            // Add new recommendation
+            await addRecommendation(formattedItem);
+          }
           break;
         case "rating":
-          await addRating(formattedItem, 3); // Default 3-star rating
+          if (editingItem) {
+            // Replace the specific rating at its original position
+            await replaceRating(editingItem.id, formattedItem, 3); // Default 3-star rating
+          } else {
+            // Add new rating
+            await addRating(formattedItem, 3); // Default 3-star rating
+          }
           break;
       }
       setShowSearchDialog(false);
       setSearchQuery("");
       setSearchResults([]);
+      setEditingItem(null); // Clear the editing item after operation
     } catch (error) {
       console.error("Error updating music profile:", error);
       alert("Failed to update music profile. Please try again.");
@@ -488,13 +495,21 @@ export default function ProfileMusicSection({
       | "favoriteSong"
       | "album"
       | "recommendation"
-      | "rating"
+      | "rating",
+    itemToReplace?: any
   ) => {
     setActiveSearchType(searchType);
     setShowSearchDialog(true);
     setSearchQuery("");
     setSearchResults([]);
     setSearchError(null);
+
+    // Store the item to replace if provided
+    if (itemToReplace) {
+      setEditingItem(itemToReplace);
+    } else {
+      setEditingItem(null);
+    }
   };
 
   // Handle like click
@@ -593,38 +608,82 @@ export default function ProfileMusicSection({
     );
   }
 
-  // Ensure musicProfile exists
-  const safeMusicProfile = musicProfile || {
-    currentObsession: null,
-    favoriteArtist: null,
-    favoriteSong: null,
-    favoriteAlbums: [],
-    recommendations: [],
-    ratings: [],
-  };
+  // Show all items (no limits)
+  const limitedFavoriteAlbums = safeMusicProfile.favoriteAlbums || [];
+  const limitedRecommendations = safeMusicProfile.recommendations || [];
+  const limitedRatings = safeMusicProfile.ratings || [];
 
-  // Limit items to 4 per section
-  const limitedFavoriteAlbums =
-    safeMusicProfile.favoriteAlbums?.slice(0, 4) || [];
-  const limitedRecommendations =
-    safeMusicProfile.recommendations?.slice(0, 4) || [];
-  const limitedRatings = safeMusicProfile.ratings?.slice(0, 4) || [];
+  // Show loading state while user is being authenticated
+  if (userLoading || loading) {
+    return (
+      <div className="space-y-8 max-w-4xl mx-auto">
+        <div className="flex items-center justify-center min-h-[200px]">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-300 mx-auto mb-4"></div>
+            <p className="text-sm text-muted-foreground">
+              Loading music profile...
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state if there's an authentication error
+  if (
+    error &&
+    (error.includes("not authenticated") || error.includes("permission"))
+  ) {
+    return (
+      <div className="space-y-8 max-w-4xl mx-auto">
+        <div className="flex items-center justify-center min-h-[200px]">
+          <div className="text-center">
+            <p className="text-sm text-muted-foreground mb-2">
+              {error.includes("permission")
+                ? "Authentication issue detected. Please refresh the page or sign in again."
+                : "Please sign in to view your music profile"}
+            </p>
+            <div className="space-y-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => window.location.reload()}
+              >
+                Refresh Page
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  // Force re-fetch by updating the key
+                  window.location.reload();
+                }}
+              >
+                Retry
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-0 max-w-4xl mx-auto">
-      <div className="grid grid-cols-3 gap-2 sm:gap-3">
+    <div className="space-y-8 max-w-4xl mx-auto">
+      {/* Top row - 3 sections in grid */}
+      <div className="grid grid-cols-3 gap-4 sm:gap-6 lg:gap-8 max-w-3xl mx-auto">
         {/* current obsession - card */}
         <div className="flex flex-col">
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center justify-start mb-2">
             <p className="text-sm font-medium text-muted-foreground">
               current obsession
             </p>
           </div>
-          <div className="flex flex-col items-center flex-1">
+          <div className="flex flex-col items-start flex-1">
             {safeMusicProfile.currentObsession ? (
               <>
                 <div className="relative group">
-                  <div className="w-48 h-48 sm:w-56 sm:h-56 lg:w-64 lg:h-64 bg-muted rounded-md overflow-hidden">
+                  <div className="w-36 h-36 sm:w-44 sm:h-44 lg:w-48 lg:h-48 bg-muted rounded-md overflow-hidden">
                     <Image
                       src={
                         getImageUrl(safeMusicProfile.currentObsession.image) ||
@@ -658,11 +717,11 @@ export default function ProfileMusicSection({
                   )}
                 </div>
                 <div className="mt-3 text-center w-full">
-                  <p className="text-sm font-semibold leading-tight px-2">
+                  <p className="text-base font-semibold leading-tight px-2">
                     {getTextContent(safeMusicProfile.currentObsession.name) ||
                       "Unknown Song"}
                   </p>
-                  <p className="text-xs text-muted-foreground leading-tight mt-1 px-2">
+                  <p className="text-sm text-muted-foreground leading-tight mt-0.5 px-2">
                     {getTextContent(
                       safeMusicProfile.currentObsession.primaryArtists ||
                         safeMusicProfile.currentObsession.artists?.primary
@@ -675,7 +734,7 @@ export default function ProfileMusicSection({
               </>
             ) : (
               <>
-                <div className="w-48 h-48 sm:w-56 sm:h-56 lg:w-64 lg:h-64 bg-black/20 rounded-md border border-border/30 flex items-center justify-center">
+                <div className="w-38 h-38 sm:w-45 sm:h-45 lg:w-51 lg:h-51 bg-black/20 rounded-md border border-border/30 flex items-center justify-center">
                   <div className="text-center">
                     <Plus className="h-16 w-16 mx-auto mb-4 text-muted-foreground/50" />
                     <p className="text-sm text-muted-foreground/50">
@@ -698,16 +757,16 @@ export default function ProfileMusicSection({
 
         {/* favorite artist - circle */}
         <div className="flex flex-col">
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center justify-start mb-2">
             <p className="text-sm font-medium text-muted-foreground">
               favorite artist
             </p>
           </div>
-          <div className="flex flex-col items-center flex-1">
+          <div className="flex flex-col items-start flex-1">
             {safeMusicProfile.favoriteArtist ? (
               <>
                 <div className="relative group">
-                  <div className="w-48 h-48 sm:w-56 sm:h-56 lg:w-64 lg:h-64 rounded-full overflow-hidden border-2 border-border/30 shadow-sm">
+                  <div className="w-36 h-36 sm:w-44 sm:h-44 lg:w-48 lg:h-48 rounded-full overflow-hidden border-2 border-border/30 shadow-sm">
                     <Image
                       src={
                         getImageUrl(safeMusicProfile.favoriteArtist.image) ||
@@ -740,7 +799,7 @@ export default function ProfileMusicSection({
                   )}
                 </div>
                 <div className="mt-3 text-center w-full">
-                  <p className="text-sm font-medium leading-tight px-2">
+                  <p className="text-base font-semibold leading-tight px-2">
                     {getTextContent(safeMusicProfile.favoriteArtist?.name) ||
                       PLACEHOLDER.favoriteArtist.name}
                   </p>
@@ -748,7 +807,7 @@ export default function ProfileMusicSection({
               </>
             ) : (
               <>
-                <div className="w-48 h-48 sm:w-56 sm:h-56 lg:w-64 lg:h-64 rounded-full bg-black/20 border-2 border-border/30 shadow-sm flex items-center justify-center">
+                <div className="w-36 h-36 sm:w-44 sm:h-44 lg:w-48 lg:h-48 rounded-full bg-black/20 border-2 border-border/30 shadow-sm flex items-center justify-center">
                   <div className="text-center">
                     <Plus className="h-16 w-16 mx-auto mb-4 text-muted-foreground/50" />
                     <p className="text-sm text-muted-foreground/50">
@@ -768,16 +827,16 @@ export default function ProfileMusicSection({
 
         {/* favorite song */}
         <div className="flex flex-col">
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center justify-start mb-2">
             <p className="text-sm font-medium text-muted-foreground">
               favorite song
             </p>
           </div>
-          <div className="flex flex-col items-center flex-1">
+          <div className="flex flex-col items-start flex-1">
             {safeMusicProfile.favoriteSong ? (
               <>
                 <div className="relative group">
-                  <div className="w-48 h-48 sm:w-56 sm:h-56 lg:w-64 lg:h-64 bg-muted rounded-md overflow-hidden">
+                  <div className="w-36 h-36 sm:w-44 sm:h-44 lg:w-48 lg:h-48 bg-muted rounded-md overflow-hidden">
                     <Image
                       src={
                         getImageUrl(safeMusicProfile.favoriteSong.image) ||
@@ -810,11 +869,11 @@ export default function ProfileMusicSection({
                   )}
                 </div>
                 <div className="mt-3 text-center w-full">
-                  <p className="text-sm font-semibold leading-tight px-2">
+                  <p className="text-base font-semibold leading-tight px-2">
                     {getTextContent(safeMusicProfile.favoriteSong.name) ||
                       "Unknown Song"}
                   </p>
-                  <p className="text-xs text-muted-foreground leading-tight mt-1 px-2">
+                  <p className="text-sm text-muted-foreground leading-tight mt-0.5 px-2">
                     {getTextContent(
                       safeMusicProfile.favoriteSong.primaryArtists ||
                         safeMusicProfile.favoriteSong.artists?.primary
@@ -827,7 +886,7 @@ export default function ProfileMusicSection({
               </>
             ) : (
               <>
-                <div className="w-48 h-48 sm:w-56 sm:h-56 lg:w-64 lg:h-64 bg-black/20 rounded-md border border-border/30 flex items-center justify-center">
+                <div className="w-36 h-36 sm:w-44 sm:h-44 lg:w-48 lg:h-48 bg-black/20 rounded-md border border-border/30 flex items-center justify-center">
                   <div className="text-center">
                     <Plus className="h-16 w-16 mx-auto mb-4 text-muted-foreground/50" />
                     <p className="text-sm text-muted-foreground/50">
@@ -849,95 +908,160 @@ export default function ProfileMusicSection({
         </div>
       </div>
 
-      {/* favorite albums */}
-      <div className="mt-8 mb-16">
-        <div className="flex items-center justify-between mb-0">
-          <p className="text-sm font-medium text-muted-foreground">
-            favorite albums
-          </p>
-        </div>
-        <div className="relative">
-          <div
-            ref={scrollContainerRefs.favoriteAlbums}
-            className="grid grid-cols-4 gap-8 pb-2 items-center justify-items-center"
-          >
-            {limitedFavoriteAlbums.length > 0 ? (
-              limitedFavoriteAlbums.map((album, idx) => (
-                <div key={album.id || idx} className="relative group">
-                  <div className="aspect-square w-48 bg-muted rounded-md overflow-hidden">
-                    <Image
-                      src={
-                        getImageUrl(album.image) ||
-                        PLACEHOLDER.favoriteAlbums[0].cover
-                      }
-                      alt={album.name || "Album"}
-                      width={192}
-                      height={192}
-                      className="w-full h-full object-cover"
-                      onError={(e) => {
-                        const target = e.target as HTMLImageElement;
-                        target.src = PLACEHOLDER.favoriteAlbums[0].cover;
-                      }}
-                    />
-                    {!readOnly && (
+      {/* Bottom row - favorite albums aligned with top grid */}
+      <div className="grid grid-cols-3 gap-4 sm:gap-6 lg:gap-8 max-w-3xl mx-auto">
+        {/* favorite albums - takes first column */}
+        <div className="col-span-3">
+          <div className="flex items-center justify-start mb-4">
+            <p className="text-sm font-medium text-muted-foreground">
+              favorite albums
+            </p>
+          </div>
+          <div className="relative">
+            <div
+              ref={scrollContainerRefs.favoriteAlbums}
+              className="flex justify-start gap-6 overflow-hidden"
+            >
+              {limitedFavoriteAlbums.length > 0 ? (
+                <>
+                  {limitedFavoriteAlbums.map((album, idx) => (
+                    <div
+                      key={album.id || idx}
+                      className="relative group flex-shrink-0"
+                    >
+                      <div className="aspect-square w-40 bg-muted rounded-md overflow-hidden">
+                        <Link href={`/music/album/${album.id}`}>
+                          <Image
+                            src={
+                              getImageUrl(album.image) ||
+                              PLACEHOLDER.favoriteAlbums[0].cover
+                            }
+                            alt={album.name || "Album"}
+                            width={192}
+                            height={192}
+                            className="w-full h-full object-cover cursor-pointer"
+                            onError={(e) => {
+                              const target = e.target as HTMLImageElement;
+                              target.src = PLACEHOLDER.favoriteAlbums[0].cover;
+                            }}
+                          />
+                        </Link>
+                        {!readOnly && (
+                          <div className="absolute top-2 right-2 flex gap-1">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-6 w-6 p-0 bg-black/50 hover:bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity"
+                              onClick={() => openSearchDialog("album", album)}
+                              title="Replace album"
+                            >
+                              <Edit className="h-3 w-3 text-white" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-6 w-6 p-0 bg-red-600/80 hover:bg-red-700/90 opacity-0 group-hover:opacity-100 transition-opacity"
+                              onClick={() =>
+                                handleRemoveItem("album", album.id)
+                              }
+                              title="Delete album"
+                            >
+                              <Trash2 className="h-3 w-3 text-white" />
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                      {/* Album name and artist display */}
+                      <div className="mt-3 text-center w-full">
+                        <p className="text-base font-semibold leading-tight px-2">
+                          {getTextContent(album.name) || "Unknown Album"}
+                        </p>
+                        <p className="text-sm text-muted-foreground leading-tight mt-0.5 px-2">
+                          {getTextContent(
+                            album.primaryArtists ||
+                              album.artists?.primary
+                                ?.map((artist: any) => artist.name)
+                                .join(", ") ||
+                              album.artist ||
+                              album.featuredArtists ||
+                              album.singer ||
+                              "Unknown Artist"
+                          )}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+
+                  {/* Add button for subsequent items - always show when items exist */}
+                  <div className="flex-shrink-0">
+                    <div className="aspect-square w-40 bg-transparent rounded-md border-2 border-gray-600 flex items-center justify-center overflow-visible">
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="absolute top-2 right-2 h-6 w-6 p-0 bg-black/50 hover:bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity"
+                        className="h-12 w-12 p-0 bg-black/70 hover:bg-black/90 text-white rounded-full border-2 border-white/20 shadow-lg"
                         onClick={() => openSearchDialog("album")}
                       >
-                        <Edit className="h-3 w-3 text-white" />
+                        <Plus className="h-6 w-6" />
                       </Button>
-                    )}
+                    </div>
                   </div>
-                  <div className="mt-2 text-center">
-                    <p className="text-sm font-semibold leading-tight">
-                      {getTextContent(album.name) || "Unknown Album"}
+                </>
+              ) : (
+                // Show single Add screen when empty
+                <div className="flex flex-col items-center justify-center min-h-[200px]">
+                  <div className="aspect-square w-40 bg-transparent rounded-md border-2 border-gray-600 flex flex-col items-center justify-center mb-3">
+                    <p className="text-sm text-gray-400 mb-1 text-center">
+                      Add
                     </p>
-                    <p className="text-xs text-muted-foreground leading-tight mt-1">
-                      {getTextContent(
-                        album.primaryArtists ||
-                          album.artists?.primary
-                            ?.map((artist: any) => artist.name)
-                            .join(", ") ||
-                          album.artist ||
-                          album.featuredArtists ||
-                          album.singer ||
-                          "Unknown Artist"
-                      )}
+                    <p className="text-xs text-gray-500 text-center">
+                      No favorite albums
                     </p>
                   </div>
+                  {!readOnly && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="text-xs"
+                      onClick={() => openSearchDialog("album")}
+                    >
+                      <Plus className="h-3 w-3 mr-1" />
+                      Add Album
+                    </Button>
+                  )}
                 </div>
-              ))
-            ) : (
-              // Show single Add screen when empty
-              <div className="flex flex-col items-center justify-center min-h-[200px] w-full">
-                <div className="aspect-square w-48 bg-transparent rounded-md border-2 border-dashed border-gray-600 flex flex-col items-center justify-center mb-3">
-                  <p className="text-sm text-gray-400 mb-1 text-center">Add</p>
-                  <p className="text-xs text-gray-500 text-center">
-                    No favorite albums
-                  </p>
-                </div>
-                {!readOnly && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="text-xs"
-                    onClick={() => openSearchDialog("album")}
-                  >
-                    <Plus className="h-3 w-3 mr-1" />
-                    Add Album
-                  </Button>
-                )}
-              </div>
+              )}
+            </div>
+
+            {/* Navigation arrows for favorite albums */}
+            {limitedFavoriteAlbums.length > 0 && (
+              <>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="absolute left-2 top-1/2 transform -translate-y-1/2 h-8 w-8 p-0 bg-black/80 hover:bg-black backdrop-blur-md border border-white/10 text-white rounded-full shadow-2xl hover:scale-110 transition-all duration-300 z-30"
+                  onClick={() => scrollLeft(scrollContainerRefs.favoriteAlbums)}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="absolute right-2 top-1/2 transform -translate-y-1/2 h-8 w-8 p-0 bg-black/80 hover:bg-black backdrop-blur-md border border-white/10 text-white rounded-full shadow-2xl hover:scale-110 transition-all duration-300 z-30"
+                  onClick={() =>
+                    scrollRight(scrollContainerRefs.favoriteAlbums)
+                  }
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </>
             )}
           </div>
         </div>
       </div>
 
       {/* recommendations */}
-      <div className="mt-2 mb-24">
-        <div className="flex items-center justify-between mb-0 mt-5">
+      <div className="mt-12 max-w-3xl mx-auto">
+        <div className="flex items-center justify-start mb-4">
           <p className="text-sm font-medium text-muted-foreground">
             recommendations
           </p>
@@ -945,61 +1069,98 @@ export default function ProfileMusicSection({
         <div className="relative">
           <div
             ref={scrollContainerRefs.recommendations}
-            className="grid grid-cols-4 gap-8 pb-2 items-center justify-items-center"
+            className="flex justify-start gap-6 overflow-hidden"
           >
             {limitedRecommendations.length > 0 ? (
-              limitedRecommendations.map((song, idx) => (
-                <div key={song.id || idx} className="relative group">
-                  <div className="aspect-square w-48 bg-muted rounded-md overflow-hidden">
-                    <Image
-                      src={
-                        getImageUrl(song.image) ||
-                        PLACEHOLDER.recommendations[0].cover
-                      }
-                      alt={song.name || "Song"}
-                      width={192}
-                      height={192}
-                      className="w-full h-full object-cover cursor-pointer"
-                      onError={(e) => {
-                        const target = e.target as HTMLImageElement;
-                        target.src = PLACEHOLDER.recommendations[0].cover;
-                      }}
-                    />
-                    {!readOnly && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="absolute top-2 right-2 h-6 w-6 p-0 bg-black/50 hover:bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity"
-                        onClick={() => openSearchDialog("recommendation")}
-                      >
-                        <Edit className="h-3 w-3 text-white" />
-                      </Button>
-                    )}
-                  </div>
-                  <div className="mt-2 text-center">
-                    <p className="text-sm font-semibold leading-tight">
-                      {getTextContent(song.name) || "Unknown Song"}
-                    </p>
-                    <p className="text-xs text-muted-foreground leading-tight mt-1">
-                      {getTextContent(
-                        song.primaryArtists ||
-                          song.artists?.primary
-                            ?.map((artist: any) => artist.name)
-                            .join(", ") ||
-                          song.artist ||
-                          song.featuredArtists ||
-                          song.singer ||
-                          "Unknown Artist"
+              <>
+                {limitedRecommendations.map((song, idx) => (
+                  <div
+                    key={song.id || idx}
+                    className="relative group flex-shrink-0"
+                  >
+                    <div className="aspect-square w-40 bg-muted rounded-md overflow-hidden">
+                      <Link href={`/music/song/${song.id}`}>
+                        <Image
+                          src={
+                            getImageUrl(song.image) ||
+                            PLACEHOLDER.recommendations[0].cover
+                          }
+                          alt={song.name || "Song"}
+                          width={192}
+                          height={192}
+                          className="w-full h-full object-cover cursor-pointer"
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            target.src = PLACEHOLDER.recommendations[0].cover;
+                          }}
+                        />
+                      </Link>
+                      {!readOnly && (
+                        <div className="absolute top-2 right-2 flex gap-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 w-6 p-0 bg-black/50 hover:bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={() =>
+                              openSearchDialog("recommendation", song)
+                            }
+                            title="Replace recommendation"
+                          >
+                            <Edit className="h-3 w-3 text-white" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 w-6 p-0 bg-red-600/80 hover:bg-red-700/90 opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={() =>
+                              handleRemoveItem("recommendation", song.id)
+                            }
+                            title="Delete recommendation"
+                          >
+                            <Trash2 className="h-3 w-3 text-white" />
+                          </Button>
+                        </div>
                       )}
-                    </p>
+                    </div>
+                    {/* Song name and artist display */}
+                    <div className="mt-3 text-center w-full">
+                      <p className="text-base font-semibold leading-tight px-2">
+                        {getTextContent(song.name) || "Unknown Song"}
+                      </p>
+                      <p className="text-sm text-muted-foreground leading-tight mt-0.5 px-2">
+                        {getTextContent(
+                          song.primaryArtists ||
+                            song.artists?.primary
+                              ?.map((artist: any) => artist.name)
+                              .join(", ") ||
+                            song.artist ||
+                            song.featuredArtists ||
+                            song.singer ||
+                            "Unknown Artist"
+                        )}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+
+                {/* Add button for subsequent items - always show when items exist */}
+                <div className="flex-shrink-0">
+                  <div className="aspect-square w-40 bg-transparent rounded-md border-2 border-gray-600 flex items-center justify-center overflow-visible">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-12 w-12 p-0 bg-black/70 hover:bg-black/90 text-white rounded-full border-2 border-white/20 shadow-lg"
+                      onClick={() => openSearchDialog("recommendation")}
+                    >
+                      <Plus className="h-6 w-6" />
+                    </Button>
                   </div>
                 </div>
-              ))
+              </>
             ) : (
               // Show placeholder items when empty
-              <div className="flex flex-col items-center justify-center min-h-[200px] w-full">
-                <div className="aspect-square w-48 bg-transparent rounded-md border-2 border-dashed border-gray-600 flex flex-col items-center justify-center mb-3">
-                  <p className="text-sm text-gray-400 mb-1 text-center">Add</p>
+              <div className="flex flex-col items-center justify-center min-h-[200px]">
+                <div className="aspect-square w-40 bg-transparent rounded-md border-2 border-gray-600 flex flex-col items-center justify-center mb-3">
                   <p className="text-xs text-gray-500 text-center">
                     No recommendations
                   </p>
@@ -1018,59 +1179,133 @@ export default function ProfileMusicSection({
               </div>
             )}
           </div>
+
+          {/* Navigation arrows for recommendations */}
+          {limitedRecommendations.length > 0 && (
+            <>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="absolute left-2 top-1/2 transform -translate-y-1/2 h-8 w-8 p-0 bg-black/80 hover:bg-black backdrop-blur-md border border-white/10 text-white rounded-full shadow-2xl hover:scale-110 transition-all duration-300 z-30"
+                onClick={() => scrollLeft(scrollContainerRefs.recommendations)}
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="absolute right-2 top-1/2 transform -translate-y-1/2 h-8 w-8 p-0 bg-black/80 hover:bg-black backdrop-blur-md border border-white/10 text-white rounded-full shadow-2xl hover:scale-110 transition-all duration-300 z-30"
+                onClick={() => scrollRight(scrollContainerRefs.recommendations)}
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </>
+          )}
         </div>
       </div>
 
       {/* rating */}
-      <div className="mb-16">
-        <div className="flex items-center justify-between mb-3">
+      <div className="mt-12 max-w-3xl mx-auto">
+        <div className="flex items-center justify-start mb-4">
           <p className="text-sm font-medium text-muted-foreground">rating</p>
         </div>
         <div className="relative">
           <div
             ref={scrollContainerRefs.ratings}
-            className="grid grid-cols-4 gap-8 pb-2 items-center justify-items-center"
+            className="flex justify-start gap-6 overflow-hidden"
           >
             {limitedRatings.length > 0 ? (
-              limitedRatings.map((rating, idx) => (
-                <div key={rating.song.id || idx} className="relative group">
-                  <div className="aspect-square w-48 bg-muted rounded-md overflow-hidden">
-                    <Image
-                      src={
-                        getImageUrl(rating.song.image) ||
-                        PLACEHOLDER.ratings[0].cover
-                      }
-                      alt={rating.song.name || "Song"}
-                      width={192}
-                      height={192}
-                      className="w-full h-full object-cover"
-                      onError={(e) => {
-                        const target = e.target as HTMLImageElement;
-                        target.src = PLACEHOLDER.ratings[0].cover;
-                      }}
-                    />
-                    {!readOnly && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="absolute top-2 right-2 h-6 w-6 p-0 bg-black/50 hover:bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity"
-                        onClick={() => openSearchDialog("rating")}
-                      >
-                        <Edit className="h-3 w-3 text-white" />
-                      </Button>
-                    )}
-                    <div className="absolute bottom-1 left-1 right-1 flex justify-center gap-1 p-2 bg-black/50 rounded-md">
+              <>
+                {limitedRatings.map((rating, idx) => (
+                  <div
+                    key={rating.song.id || idx}
+                    className="relative group flex-shrink-0"
+                  >
+                    <div className="aspect-square w-40 bg-muted rounded-md overflow-hidden">
+                      <Link href={`/music/song/${rating.song.id}`}>
+                        <Image
+                          src={
+                            getImageUrl(rating.song.image) ||
+                            PLACEHOLDER.ratings[0].cover
+                          }
+                          alt={rating.song.name || "Song"}
+                          width={192}
+                          height={192}
+                          className="w-full h-full object-cover cursor-pointer"
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            target.src = PLACEHOLDER.ratings[0].cover;
+                          }}
+                        />
+                      </Link>
+                      {!readOnly && (
+                        <div className="absolute top-2 right-2 flex gap-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 w-6 p-0 bg-black/50 hover:bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={() =>
+                              openSearchDialog("rating", rating.song)
+                            }
+                            title="Replace rating"
+                          >
+                            <Edit className="h-3 w-3 text-white" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 w-6 p-0 bg-red-600/80 hover:bg-red-700/90 opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={() =>
+                              handleRemoveItem("rating", rating.song.id)
+                            }
+                            title="Delete rating"
+                          >
+                            <Trash2 className="h-3 w-3 text-white" />
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                    {/* Rating stars below image */}
+                    <div className="mt-2 flex justify-center">
                       {renderInteractiveStars(rating.song.id, rating.rating)}
                     </div>
+                    {/* Song and artist name display below rating */}
+                    <div className="mt-2 text-center w-full">
+                      <p className="text-base font-semibold leading-tight px-2">
+                        {getTextContent(rating.song.name) || "Unknown Song"}
+                      </p>
+                      <p className="text-sm text-muted-foreground leading-tight mt-0.5 px-2">
+                        {getTextContent(
+                          rating.song.primaryArtists ||
+                            rating.song.artist ||
+                            rating.song.artists?.primary
+                              ?.map((artist: any) => artist.name)
+                              .join(", ") ||
+                            "Unknown Artist"
+                        )}
+                      </p>
+                    </div>
                   </div>
-                  {/* Removed name and artist display - only poster and rating shown */}
+                ))}
+
+                {/* Add button for subsequent items - always show when items exist */}
+                <div className="flex-shrink-0">
+                  <div className="aspect-square w-40 bg-transparent rounded-md border-2 border-gray-600 flex items-center justify-center overflow-visible">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-12 w-12 p-0 bg-black/70 hover:bg-black/90 text-white rounded-full border-2 border-white/20 shadow-lg"
+                      onClick={() => openSearchDialog("rating")}
+                    >
+                      <Plus className="h-6 w-6" />
+                    </Button>
+                  </div>
                 </div>
-              ))
+              </>
             ) : (
               // Show placeholder items when empty
-              <div className="flex flex-col items-center justify-center min-h-[200px] w-full">
-                <div className="aspect-square w-48 bg-transparent rounded-md border-2 border-dashed border-gray-600 flex flex-col items-center justify-center mb-3">
-                  <p className="text-sm text-gray-400 mb-1 text-center">Add</p>
+              <div className="flex flex-col items-center justify-center min-h-[200px]">
+                <div className="aspect-square w-40 bg-transparent rounded-md border-2 border-gray-600 flex flex-col items-center justify-center mb-3">
                   <p className="text-xs text-gray-500 text-center">
                     No ratings
                   </p>
@@ -1089,6 +1324,28 @@ export default function ProfileMusicSection({
               </div>
             )}
           </div>
+
+          {/* Navigation arrows for ratings */}
+          {limitedRatings.length > 0 && (
+            <>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="absolute left-2 top-1/2 transform -translate-y-1/2 h-8 w-8 p-0 bg-black/80 hover:bg-black backdrop-blur-md border border-white/10 text-white rounded-full shadow-2xl hover:scale-110 transition-all duration-300 z-30"
+                onClick={() => scrollLeft(scrollContainerRefs.ratings)}
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="absolute right-2 top-1/2 transform -translate-y-1/2 h-8 w-8 p-0 bg-black/80 hover:bg-black backdrop-blur-md border border-white/10 text-white rounded-full shadow-2xl hover:scale-110 transition-all duration-300 z-30"
+                onClick={() => scrollRight(scrollContainerRefs.ratings)}
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </>
+          )}
         </div>
       </div>
 
@@ -1097,7 +1354,7 @@ export default function ProfileMusicSection({
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
             <DialogTitle>
-              Search{" "}
+              {editingItem ? "Replace" : "Search"}{" "}
               {activeSearchType === "favoriteArtist"
                 ? "Artists"
                 : activeSearchType === "album"

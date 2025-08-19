@@ -632,7 +632,9 @@ export default function UserProfile({ userId: propUserId }: UserProfileProps) {
                           />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="font-medium truncate">{movie.title}</p>
+                          <p className="font-medium leading-tight line-clamp-2 min-h-[2.5rem] flex items-start">
+                            {movie.title}
+                          </p>
                           <div className="flex items-center gap-2">
                             <Badge variant="secondary" className="text-xs">
                               {movie.status}
@@ -690,7 +692,9 @@ export default function UserProfile({ userId: propUserId }: UserProfileProps) {
                           />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="font-medium truncate">{book.title}</p>
+                          <p className="font-medium leading-tight line-clamp-2 min-h-[2.5rem] flex items-start">
+                            {book.title}
+                          </p>
                           <div className="flex items-center gap-2">
                             <Badge variant="secondary" className="text-xs">
                               {book.status}
@@ -747,7 +751,9 @@ export default function UserProfile({ userId: propUserId }: UserProfileProps) {
                         />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="font-medium truncate">{series.title}</p>
+                        <p className="font-medium leading-tight line-clamp-2 min-h-[2.5rem] flex items-start">
+                          {series.title}
+                        </p>
                         <div className="flex items-center gap-2">
                           <Badge variant="secondary" className="text-xs">
                             {series.status}

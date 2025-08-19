@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
+import { getAuth } from "firebase/auth";
 import { db } from "@/lib/firebase";
 import { searchService, GoogleBook } from "@/lib/search-service";
 
@@ -36,6 +37,14 @@ export const useBooksProfile = (userId: string) => {
     if (!userId) return;
 
     try {
+      // Check if user is authenticated
+      const auth = getAuth();
+      if (!auth.currentUser) {
+        setError("User not authenticated");
+        setLoading(false);
+        return;
+      }
+
       setLoading(true);
       const docRef = doc(db, "users", userId, "profiles", "books");
       const docSnap = await getDoc(docRef);
@@ -303,6 +312,112 @@ export const useBooksProfile = (userId: string) => {
     }
   };
 
+  // Replace functions
+  const replaceFavoriteBook = async (
+    oldBookId: string,
+    newBook: GoogleBookItem
+  ) => {
+    if (!booksProfile || !userId) return;
+
+    const updatedFavoriteBooks = booksProfile.favoriteBooks.map((book) =>
+      book.id === oldBookId ? newBook : book
+    );
+
+    const updatedProfile = {
+      ...booksProfile,
+      favoriteBooks: updatedFavoriteBooks,
+    };
+
+    try {
+      const docRef = doc(db, "users", userId, "profiles", "books");
+      await updateDoc(docRef, { favoriteBooks: updatedFavoriteBooks });
+      setBooksProfile(updatedProfile);
+    } catch (err) {
+      setError("Failed to replace favorite book");
+      console.error("Error replacing favorite book:", err);
+    }
+  };
+
+  const replaceReadingListBook = async (
+    oldBookId: string,
+    newBook: GoogleBookItem
+  ) => {
+    if (!booksProfile || !userId) return;
+
+    const updatedReadingList = booksProfile.readingList.map((book) =>
+      book.id === oldBookId ? newBook : book
+    );
+
+    const updatedProfile = {
+      ...booksProfile,
+      readingList: updatedReadingList,
+    };
+
+    try {
+      const docRef = doc(db, "users", userId, "profiles", "books");
+      await updateDoc(docRef, { readingList: updatedReadingList });
+      setBooksProfile(updatedProfile);
+    } catch (err) {
+      setError("Failed to replace reading list book");
+      console.error("Error replacing reading list book:", err);
+    }
+  };
+
+  const replaceRecommendation = async (
+    oldBookId: string,
+    newBook: GoogleBookItem
+  ) => {
+    if (!booksProfile || !userId) return;
+
+    const updatedRecommendations = booksProfile.recommendations.map((book) =>
+      book.id === oldBookId ? newBook : book
+    );
+
+    const updatedProfile = {
+      ...booksProfile,
+      recommendations: updatedRecommendations,
+    };
+
+    try {
+      const docRef = doc(db, "users", userId, "profiles", "books");
+      await updateDoc(docRef, { recommendations: updatedRecommendations });
+      setBooksProfile(updatedProfile);
+    } catch (err) {
+      setError("Failed to replace recommendation");
+      console.error("Error replacing recommendation:", err);
+    }
+  };
+
+  const replaceRating = async (oldBookId: string, newBook: GoogleBookItem) => {
+    if (!booksProfile || !userId) return;
+
+    // Get the rating for the old book
+    const oldRating = booksProfile.ratings[oldBookId];
+
+    // Create new ratings object
+    const updatedRatings = { ...booksProfile.ratings };
+
+    // Remove old book rating and add new book rating
+    delete updatedRatings[oldBookId];
+    if (oldRating) {
+      updatedRatings[newBook.id] = oldRating;
+    }
+
+    const updatedProfile = {
+      ...booksProfile,
+      ratings: updatedRatings,
+    };
+
+    try {
+      const docRef = doc(db, "users", userId, "profiles", "books");
+      await updateDoc(docRef, { ratings: updatedRatings });
+      setBooksProfile(updatedProfile);
+    } catch (err) {
+      setError("Failed to replace rating");
+      console.error("Error replacing rating:", err);
+    }
+  };
+
   const searchBooks = async (query: string): Promise<GoogleBookItem[]> => {
     try {
       // First try detailed search for better results
@@ -459,13 +574,17 @@ export const useBooksProfile = (userId: string) => {
     updateRecentlyRead,
     addFavoriteBook,
     removeFavoriteBook,
+    replaceFavoriteBook,
     addToReadingList,
     removeFromReadingList,
+    replaceReadingListBook,
     addRecommendation,
     removeRecommendation,
+    replaceRecommendation,
     addRating,
     addRatingWithBook,
     removeRating,
+    replaceRating,
     searchBooks,
     searchBooksByTitleAndAuthor,
     getBookById,

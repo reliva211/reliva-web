@@ -127,8 +127,10 @@ export function MovieCard({
 
       {/* Movie Info */}
       <div className="mt-2">
-        <h4 className="text-sm font-medium truncate">{movie.title}</h4>
-        <p className="text-xs text-muted-foreground">{movie.year}</p>
+        <h4 className="text-sm font-medium leading-tight line-clamp-2 min-h-[2.5rem] flex items-start">
+          {movie.title}
+        </h4>
+        <p className="text-xs text-muted-foreground mt-1">{movie.year}</p>
       </div>
     </div>
   );

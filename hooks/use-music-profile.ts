@@ -8,6 +8,7 @@ import {
   doc,
   setDoc,
 } from "firebase/firestore";
+import { getAuth } from "firebase/auth";
 import { db } from "@/lib/firebase";
 
 export interface SaavnSong {
@@ -93,6 +94,15 @@ export function useMusicProfile(userId: string | undefined) {
     setError(null);
 
     try {
+      // Check if user is authenticated
+      const auth = getAuth();
+      if (!auth.currentUser) {
+        setError("User not authenticated");
+        setLoading(false);
+        return;
+      }
+
+      // Try to fetch data, but handle permission errors gracefully
       const musicCollection = collection(db, "users", userId, "music");
       const musicSnapshot = await getDocs(musicCollection);
 
@@ -137,19 +147,64 @@ export function useMusicProfile(userId: string | undefined) {
         };
 
         setMusicProfile(validatedProfile);
+      } else {
+        // Create default music profile if none exists
+        const defaultProfile = {
+          currentObsession: null,
+          favoriteArtist: null,
+          favoriteSong: null,
+          favoriteAlbums: [],
+          recommendations: [],
+          ratings: [],
+        };
+
+        try {
+          await addDoc(musicCollection, defaultProfile);
+          setMusicProfile(defaultProfile);
+        } catch (createErr) {
+          console.warn(
+            "Could not create music profile, using local state:",
+            createErr
+          );
+          setMusicProfile(defaultProfile);
+        }
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("Error fetching music profile:", err);
-      setError("Failed to fetch music profile");
-      // Set default state on error
-      setMusicProfile({
+
+      // Handle specific Firebase permission errors
+      if (
+        err.code === "permission-denied" ||
+        err.message?.includes("permission")
+      ) {
+        setError(
+          "Missing or insufficient permissions. Please check your authentication."
+        );
+      } else if (err.code === "unauthenticated") {
+        setError("User not authenticated. Please sign in again.");
+      } else {
+        setError("Failed to fetch music profile");
+      }
+
+      // Set default state on error - this allows the app to work offline
+      const fallbackProfile = {
         currentObsession: null,
         favoriteArtist: null,
         favoriteSong: null,
         favoriteAlbums: [],
         recommendations: [],
         ratings: [],
-      });
+      };
+
+      setMusicProfile(fallbackProfile);
+
+      // Try to create the profile document for future use
+      try {
+        const musicCollection = collection(db, "users", userId, "music");
+        await addDoc(musicCollection, fallbackProfile);
+      } catch (createErr) {
+        console.warn("Could not create fallback profile:", createErr);
+      }
     } finally {
       setLoading(false);
     }
@@ -160,6 +215,13 @@ export function useMusicProfile(userId: string | undefined) {
     if (!userId) return;
 
     try {
+      // Check if user is authenticated
+      const auth = getAuth();
+      if (!auth.currentUser) {
+        console.error("User not authenticated");
+        return;
+      }
+
       const musicCollection = collection(db, "users", userId, "music");
       const musicSnapshot = await getDocs(musicCollection);
 
@@ -181,9 +243,23 @@ export function useMusicProfile(userId: string | undefined) {
       }
 
       setMusicProfile(updatedProfile);
-    } catch (err) {
+    } catch (err: any) {
       console.error("Error saving music profile:", err);
-      setError("Failed to save music profile");
+
+      // Handle specific Firebase permission errors
+      if (
+        err.code === "permission-denied" ||
+        err.message?.includes("permission")
+      ) {
+        setError(
+          "Missing or insufficient permissions. Please check your authentication."
+        );
+      } else if (err.code === "unauthenticated") {
+        setError("User not authenticated. Please sign in again.");
+      } else {
+        setError("Failed to save music profile");
+      }
+
       throw err; // Re-throw to let component handle it
     }
   };
@@ -275,6 +351,141 @@ export function useMusicProfile(userId: string | undefined) {
     await saveMusicProfile({ ratings: updatedRatings });
   };
 
+  // Dynamic replace functions that handle various scenarios
+  const replaceFavoriteAlbum = async (oldId: string, newAlbum: SaavnSong) => {
+    if (!oldId || !newAlbum?.id) {
+      console.warn("Invalid parameters for replaceFavoriteAlbum:", {
+        oldId,
+        newAlbum,
+      });
+      return;
+    }
+
+    const updatedAlbums = [...musicProfile.favoriteAlbums];
+
+    // Find the item to replace
+    const existingIndex = updatedAlbums.findIndex(
+      (album) => album.id === oldId
+    );
+
+    if (existingIndex === -1) {
+      console.warn("Album to replace not found:", oldId);
+      return;
+    }
+
+    // Handle different scenarios dynamically
+    if (oldId === newAlbum.id) {
+      // Same ID - just update the content
+      updatedAlbums[existingIndex] = newAlbum;
+    } else {
+      // Different ID - remove duplicates and replace
+      const filteredAlbums = updatedAlbums.filter(
+        (album) => album.id !== newAlbum.id
+      );
+      const newIndex = filteredAlbums.findIndex((album) => album.id === oldId);
+
+      if (newIndex !== -1) {
+        filteredAlbums[newIndex] = newAlbum;
+        await saveMusicProfile({ favoriteAlbums: filteredAlbums });
+        return;
+      }
+    }
+
+    await saveMusicProfile({ favoriteAlbums: updatedAlbums });
+  };
+
+  const replaceRecommendation = async (oldId: string, newSong: SaavnSong) => {
+    if (!oldId || !newSong?.id) {
+      console.warn("Invalid parameters for replaceRecommendation:", {
+        oldId,
+        newSong,
+      });
+      return;
+    }
+
+    const updatedRecommendations = [...musicProfile.recommendations];
+
+    // Find the item to replace
+    const existingIndex = updatedRecommendations.findIndex(
+      (song) => song.id === oldId
+    );
+
+    if (existingIndex === -1) {
+      console.warn("Recommendation to replace not found:", oldId);
+      return;
+    }
+
+    // Handle different scenarios dynamically
+    if (oldId === newSong.id) {
+      // Same ID - just update the content
+      updatedRecommendations[existingIndex] = newSong;
+    } else {
+      // Different ID - remove duplicates and replace
+      const filteredRecommendations = updatedRecommendations.filter(
+        (song) => song.id !== newSong.id
+      );
+      const newIndex = filteredRecommendations.findIndex(
+        (song) => song.id === oldId
+      );
+
+      if (newIndex !== -1) {
+        filteredRecommendations[newIndex] = newSong;
+        await saveMusicProfile({ recommendations: filteredRecommendations });
+        return;
+      }
+    }
+
+    await saveMusicProfile({ recommendations: updatedRecommendations });
+  };
+
+  const replaceRating = async (
+    oldId: string,
+    newSong: SaavnSong,
+    rating: number
+  ) => {
+    if (!oldId || !newSong?.id || typeof rating !== "number") {
+      console.warn("Invalid parameters for replaceRating:", {
+        oldId,
+        newSong,
+        rating,
+      });
+      return;
+    }
+
+    // Validate rating range
+    const validRating = Math.max(1, Math.min(5, Math.round(rating)));
+
+    const updatedRatings = [...musicProfile.ratings];
+
+    // Find the item to replace
+    const existingIndex = updatedRatings.findIndex((r) => r.song.id === oldId);
+
+    if (existingIndex === -1) {
+      console.warn("Rating to replace not found:", oldId);
+      return;
+    }
+
+    // Handle different scenarios dynamically
+    if (oldId === newSong.id) {
+      // Same ID - just update the rating
+      updatedRatings[existingIndex] = { song: newSong, rating: validRating };
+    } else {
+      // Different ID - remove duplicates and replace
+      const filteredRatings = updatedRatings.filter(
+        (r) => r.song.id !== newSong.id
+      );
+      const newIndex = filteredRatings.findIndex((r) => r.song.id === oldId);
+
+      if (newIndex !== -1) {
+        filteredRatings[newIndex] = { song: newSong, rating: validRating };
+        await saveMusicProfile({ ratings: filteredRatings });
+        return;
+      }
+    }
+
+    await saveMusicProfile({ ratings: updatedRatings });
+  };
+
   // Search functionality using Saavn API
   const searchMusic = async (
     query: string,
@@ -314,10 +525,13 @@ export function useMusicProfile(userId: string | undefined) {
     updateFavoriteAlbums,
     addFavoriteAlbum,
     removeFavoriteAlbum,
+    replaceFavoriteAlbum,
     addRecommendation,
     removeRecommendation,
+    replaceRecommendation,
     addRating,
     removeRating,
+    replaceRating,
     searchMusic,
     refreshProfile: fetchMusicProfile,
   };

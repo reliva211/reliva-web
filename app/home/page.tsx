@@ -4,7 +4,7 @@ import { useCurrentUser } from "@/hooks/use-current-user";
 
 // Force dynamic rendering to prevent prerender issues
 export const dynamic = "force-dynamic";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import {
@@ -14,9 +14,11 @@ import {
   UserPlus,
   Play,
   Zap,
+  Edit3,
 } from "lucide-react";
 import ReviewPost from "@/components/review-post";
 import { useFollowedReviews } from "@/hooks/use-followed-reviews";
+import FloatingActionButtons from "@/components/floating-action-buttons";
 
 export default function HomePage() {
   const { user, loading } = useCurrentUser();
@@ -26,6 +28,7 @@ export default function HomePage() {
     error,
     retry,
   } = useFollowedReviews();
+  const welcomeSectionRef = useRef<HTMLDivElement | null>(null);
 
   // Show spinner while auth state is loading
   if (loading) {
@@ -38,159 +41,141 @@ export default function HomePage() {
 
   if (user) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 dark:from-gray-900 dark:via-black dark:to-gray-900 text-gray-900 dark:text-white relative scroll-smooth">
-        <div className="relative z-10 py-8 px-4">
-          <div className="max-w-7xl mx-auto w-full space-y-16">
-            {/* Welcome Section */}
-            <div className="text-center mb-12">
-              <div className="bg-gradient-to-r from-emerald-50 to-blue-50 dark:from-emerald-950/20 dark:to-blue-950/20 rounded-2xl p-8 border border-emerald-200 dark:border-emerald-800 shadow-lg">
-                <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-emerald-600 to-blue-600 dark:from-emerald-400 dark:to-blue-400 bg-clip-text text-transparent">
-                  Welcome back,{" "}
-                  {user.displayName ||
-                    user.email?.split("@")[0] ||
-                    "Media Explorer"}
-                  ! 🎬📚🎵
-                </h1>
-                <p className="text-lg md:text-xl text-gray-600 dark:text-gray-300 mb-6 max-w-3xl mx-auto">
-                  Discover what your friends are watching, reading, and
-                  listening to. Stay connected with the people you follow and
-                  never miss their latest reviews.
-                </p>
-                <div className="flex flex-wrap justify-center gap-4 text-sm text-gray-500 dark:text-gray-400">
-                  <span className="flex items-center gap-2">
-                    <span className="w-2 h-2 bg-emerald-500 rounded-full"></span>
-                    {reviews.length} reviews from people you follow
-                  </span>
-                  <span className="flex items-center gap-2">
-                    <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
-                    Fresh daily updates
-                  </span>
-                  <span className="flex items-center gap-2">
-                    <span className="w-2 h-2 bg-purple-500 rounded-full"></span>
-                    Personalized feed
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Reviews Feed from Followed Users */}
-            <div className="bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 rounded-3xl p-6 md:p-8 border border-gray-200 dark:border-gray-700 shadow-lg">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 md:mb-8 gap-4">
-                <div>
-                  <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-gray-900 dark:text-white mb-2">
-                    Your Reviews & People You Follow
-                  </h2>
-                  <p className="text-gray-600 dark:text-gray-400 text-sm md:text-base">
-                    See your reviews and what your friends are saying about
-                    their favorite media
+      <>
+        <div
+          className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 dark:from-gray-900 dark:via-black dark:to-gray-900 text-gray-900 dark:text-white relative scroll-smooth"
+          style={{ position: "relative" }}
+        >
+          {/* Main Content */}
+          <div className="px-4">
+            <div className="max-w-7xl mx-auto w-full space-y-16">
+              {/* Welcome Section */}
+              <div ref={welcomeSectionRef} className="text-center mb-12">
+                <div className="bg-gradient-to-r from-emerald-50 to-blue-50 dark:from-emerald-950/20 dark:to-blue-950/20 rounded-2xl p-8 border border-emerald-200 dark:border-emerald-800 shadow-lg">
+                  <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-emerald-600 to-blue-600 dark:from-emerald-400 dark:to-blue-400 bg-clip-text text-transparent">
+                    Welcome back,{" "}
+                    {user.displayName ||
+                      user.email?.split("@")[0] ||
+                      "Media Explorer"}
+                    ! 🎬📚🎵
+                  </h1>
+                  <p className="text-lg md:text-xl text-gray-600 dark:text-gray-300 mb-6 max-w-3xl mx-auto">
+                    Discover what your friends are watching, reading, and
+                    listening to. Stay connected with the people you follow and
+                    never miss their latest reviews.
                   </p>
-                </div>
-                <div className="flex gap-2">
-                  <Link href="/users">
-                    <Button
-                      variant="outline"
-                      className="flex items-center gap-2"
-                    >
-                      <Users className="h-4 w-4" />
-                      <span>Find People</span>
-                    </Button>
-                  </Link>
-                  <Link href="/reviews">
-                    <Button className="bg-gradient-to-r from-emerald-600 to-blue-600 hover:from-emerald-700 hover:to-blue-700 text-white transition-all duration-300 px-4 py-3 md:px-6 md:py-3 rounded-xl hover:shadow-lg transform hover:scale-105 font-medium text-sm md:text-base">
-                      <span>Write Review</span>
-                      <ArrowRight className="h-4 w-4 md:h-5 md:w-5" />
-                    </Button>
-                  </Link>
+                  <div className="flex flex-wrap justify-center gap-4 text-sm text-gray-500 dark:text-gray-400">
+                    <span className="flex items-center gap-2">
+                      <span className="w-2 h-2 bg-emerald-500 rounded-full"></span>
+                      {reviews.length} reviews from people you follow
+                    </span>
+                    <span className="flex items-center gap-2">
+                      <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
+                      Fresh daily updates
+                    </span>
+                    <span className="flex items-center gap-2">
+                      <span className="w-2 h-2 bg-purple-500 rounded-full"></span>
+                      Personalized feed
+                    </span>
+                  </div>
                 </div>
               </div>
 
-              {loadingReviews ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
-                  {[...Array(3)].map((_, i) => (
-                    <div
-                      key={i}
-                      className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 p-6 animate-pulse"
-                    >
-                      <div className="flex items-center space-x-4 mb-6">
-                        <div className="w-12 h-12 bg-gray-300 dark:bg-gray-600 rounded-full"></div>
-                        <div className="flex-1">
-                          <div className="h-5 bg-gray-300 dark:bg-gray-600 rounded w-32 mb-3"></div>
-                          <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-20"></div>
+              {/* Floating Action Buttons */}
+              <div className="flex justify-end w-full">
+                <FloatingActionButtons triggerRef={welcomeSectionRef} />
+              </div>
+
+              {/* Reviews Feed from Followed Users */}
+              <div className="bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 rounded-3xl p-6 md:p-8 border border-gray-200 dark:border-gray-700 shadow-lg">
+                {loadingReviews ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
+                    {[...Array(3)].map((_, i) => (
+                      <div
+                        key={i}
+                        className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 p-6 animate-pulse"
+                      >
+                        <div className="flex items-center space-x-4 mb-6">
+                          <div className="w-12 h-12 bg-gray-300 dark:bg-gray-600 rounded-full"></div>
+                          <div className="flex-1">
+                            <div className="h-5 bg-gray-300 dark:bg-gray-600 rounded w-32 mb-3"></div>
+                            <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-20"></div>
+                          </div>
+                        </div>
+                        <div className="space-y-4">
+                          <div className="h-5 bg-gray-300 dark:bg-gray-600 rounded w-full"></div>
+                          <div className="h-5 bg-gray-300 dark:bg-gray-600 rounded w-4/5"></div>
+                          <div className="h-5 bg-gray-300 dark:bg-gray-600 rounded w-3/5"></div>
                         </div>
                       </div>
-                      <div className="space-y-4">
-                        <div className="h-5 bg-gray-300 dark:bg-gray-600 rounded w-full"></div>
-                        <div className="h-5 bg-gray-300 dark:bg-gray-600 rounded w-4/5"></div>
-                        <div className="h-5 bg-gray-300 dark:bg-gray-600 rounded w-3/5"></div>
-                      </div>
+                    ))}
+                  </div>
+                ) : error ? (
+                  <div className="text-center py-12 md:py-16 px-6">
+                    <div className="w-20 h-20 bg-gradient-to-br from-red-100 to-orange-100 dark:from-red-900/30 dark:to-orange-900/30 rounded-full flex items-center justify-center mx-auto mb-6">
+                      <MessageSquare className="h-10 w-10 text-red-600 dark:text-red-400" />
                     </div>
-                  ))}
-                </div>
-              ) : error ? (
-                <div className="text-center py-12 md:py-16 px-6">
-                  <div className="w-20 h-20 bg-gradient-to-br from-red-100 to-orange-100 dark:from-red-900/30 dark:to-orange-900/30 rounded-full flex items-center justify-center mx-auto mb-6">
-                    <MessageSquare className="h-10 w-10 text-red-600 dark:text-red-400" />
+                    <h3 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white mb-4">
+                      Error Loading Reviews
+                    </h3>
+                    <p className="text-gray-600 dark:text-gray-400 mb-8 max-w-md mx-auto text-base md:text-lg leading-relaxed">
+                      {error}
+                    </p>
+                    <Button
+                      onClick={retry}
+                      className="bg-gradient-to-r from-emerald-600 to-blue-600 hover:from-emerald-700 hover:to-blue-700 text-white text-base md:text-lg px-8 py-4 md:px-10 md:py-4 rounded-xl font-semibold shadow-lg transform hover:scale-105 transition-all duration-300"
+                    >
+                      Try Again
+                    </Button>
                   </div>
-                  <h3 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white mb-4">
-                    Error Loading Reviews
-                  </h3>
-                  <p className="text-gray-600 dark:text-gray-400 mb-8 max-w-md mx-auto text-base md:text-lg leading-relaxed">
-                    {error}
-                  </p>
-                  <Button
-                    onClick={retry}
-                    className="bg-gradient-to-r from-emerald-600 to-blue-600 hover:from-emerald-700 hover:to-blue-700 text-white text-base md:text-lg px-8 py-4 md:px-10 md:py-4 rounded-xl font-semibold shadow-lg transform hover:scale-105 transition-all duration-300"
-                  >
-                    Try Again
-                  </Button>
-                </div>
-              ) : reviews.length === 0 ? (
-                <div className="text-center py-12 md:py-16 px-6">
-                  <div className="w-20 h-20 bg-gradient-to-br from-emerald-100 to-blue-100 dark:from-emerald-900/30 dark:to-blue-900/30 rounded-full flex items-center justify-center mx-auto mb-6">
-                    <UserPlus className="h-10 w-10 text-emerald-600 dark:text-emerald-400" />
+                ) : reviews.length === 0 ? (
+                  <div className="text-center py-12 md:py-16 px-6">
+                    <div className="w-20 h-20 bg-gradient-to-br from-emerald-100 to-blue-100 dark:from-emerald-900/30 dark:to-blue-900/30 rounded-full flex items-center justify-center mx-auto mb-6">
+                      <UserPlus className="h-10 w-10 text-emerald-600 dark:text-emerald-400" />
+                    </div>
+                    <h3 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white mb-4">
+                      No reviews yet
+                    </h3>
+                    <p className="text-gray-600 dark:text-gray-400 mb-8 max-w-md mx-auto text-base md:text-lg leading-relaxed">
+                      Start following people to see their reviews, or write your
+                      first review to share with the community!
+                    </p>
+                    <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                      <Link href="/users">
+                        <Button className="bg-gradient-to-r from-emerald-600 to-blue-600 hover:from-emerald-700 hover:to-blue-700 text-white text-base md:text-lg px-8 py-4 md:px-10 md:py-4 rounded-xl font-semibold shadow-lg transform hover:scale-105 transition-all duration-300">
+                          <Users className="h-5 w-5 mr-2" />
+                          Find People to Follow
+                        </Button>
+                      </Link>
+                      <Link href="/reviews">
+                        <Button
+                          variant="outline"
+                          className="text-base md:text-lg px-8 py-4 md:px-10 md:py-4 rounded-xl font-semibold shadow-lg transform hover:scale-105 transition-all duration-300"
+                        >
+                          Write Your First Review
+                        </Button>
+                      </Link>
+                    </div>
                   </div>
-                  <h3 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white mb-4">
-                    No reviews yet
-                  </h3>
-                  <p className="text-gray-600 dark:text-gray-400 mb-8 max-w-md mx-auto text-base md:text-lg leading-relaxed">
-                    Start following people to see their reviews, or write your
-                    first review to share with the community!
-                  </p>
-                  <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                    <Link href="/users">
-                      <Button className="bg-gradient-to-r from-emerald-600 to-blue-600 hover:from-emerald-700 hover:to-blue-700 text-white text-base md:text-lg px-8 py-4 md:px-10 md:py-4 rounded-xl font-semibold shadow-lg transform hover:scale-105 transition-all duration-300">
-                        <Users className="h-5 w-5 mr-2" />
-                        Find People to Follow
-                      </Button>
-                    </Link>
-                    <Link href="/reviews">
-                      <Button
-                        variant="outline"
-                        className="text-base md:text-lg px-8 py-4 md:px-10 md:py-4 rounded-xl font-semibold shadow-lg transform hover:scale-105 transition-all duration-300"
-                      >
-                        Write Your First Review
-                      </Button>
-                    </Link>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
+                    {reviews.slice(0, 9).map((review) => (
+                      <ReviewPost
+                        key={review.id}
+                        review={review}
+                        onLikeToggle={() => {
+                          // The hook will automatically refresh when user changes
+                          // This is handled by the useEffect dependency on user
+                        }}
+                      />
+                    ))}
                   </div>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
-                  {reviews.slice(0, 9).map((review) => (
-                    <ReviewPost
-                      key={review.id}
-                      review={review}
-                      onLikeToggle={() => {
-                        // The hook will automatically refresh when user changes
-                        // This is handled by the useEffect dependency on user
-                      }}
-                    />
-                  ))}
-                </div>
-              )}
+                )}
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      </>
     );
   }
 

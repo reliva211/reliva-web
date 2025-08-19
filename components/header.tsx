@@ -202,7 +202,6 @@ export default function Sidebar({ isLandingPage = false }: SidebarProps) {
                   isCollapsed ? "hidden" : "flex"
                 )}
               >
-
                 <Button
                   variant="ghost"
                   size="icon"
@@ -243,7 +242,7 @@ export default function Sidebar({ isLandingPage = false }: SidebarProps) {
                 <div
                   className={cn(
                     "space-y-2 transition-all duration-300 sidebar-nav-main",
-                    isCollapsed ? "space-y-3" : "space-y-2 lg:space-y-3"
+                    isCollapsed ? "space-y-2" : "space-y-2 lg:space-y-2"
                   )}
                 >
                   {/* Home */}
@@ -431,11 +430,14 @@ export default function Sidebar({ isLandingPage = false }: SidebarProps) {
                   })}
                 </div>
 
+                {/* Spacer for consistent spacing */}
+                <div className="h-2" />
+
                 {/* User & Settings */}
                 <div
                   className={cn(
                     "space-y-2 transition-all duration-300",
-                    isCollapsed ? "space-y-3" : "space-y-2 lg:space-y-3"
+                    isCollapsed ? "space-y-2" : "space-y-2 lg:space-y-2"
                   )}
                 >
                   {navigationItems.slice(4).map((item) => {

@@ -94,7 +94,7 @@ interface MusicAlbum {
   playCount: number;
   songs?: any[];
   addedAt: string;
-  type: 'album' | 'song' | 'artist';
+  type: "album" | "song" | "artist";
 }
 
 interface UserRecommendation {
@@ -185,7 +185,9 @@ export default function RecommendationsPage() {
           // For music, we'll show a toast since it's already in recommendations
           toast({
             title: "Music in recommendations",
-            description: `${(item as MusicAlbum).name} is already in your music recommendations.`,
+            description: `${
+              (item as MusicAlbum).name
+            } is already in your music recommendations.`,
           });
           success = true;
           break;
@@ -293,14 +295,17 @@ export default function RecommendationsPage() {
           ) : activeCategory === "music" ? (
             // Music recommendations section - show followers' music recommendations
             <div className="space-y-6">
-              {recommendations.filter(userRec => userRec.music && userRec.music.length > 0).length === 0 ? (
+              {recommendations.filter(
+                (userRec) => userRec.music && userRec.music.length > 0
+              ).length === 0 ? (
                 <div className="text-center py-8">
-                  <Music className="h-12 h-12 text-muted-foreground mx-auto mb-3" />
+                  <Music className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
                   <h3 className="text-base font-semibold mb-1">
                     No music recommendations from people you follow
                   </h3>
                   <p className="text-muted-foreground mb-4 text-sm">
-                    People you follow haven't added any music to their recommendations yet
+                    People you follow haven't added any music to their
+                    recommendations yet
                   </p>
                   <Button
                     onClick={() => router.push("/music")}
@@ -313,17 +318,21 @@ export default function RecommendationsPage() {
               ) : (
                 <div className="space-y-6">
                   {recommendations
-                    .filter(userRec => userRec.music && userRec.music.length > 0)
+                    .filter(
+                      (userRec) => userRec.music && userRec.music.length > 0
+                    )
                     .map((userRec) => {
                       const musicItems = userRec.music || [];
-                      
+
                       return (
                         <div key={userRec.user.uid} className="space-y-4">
                           {/* User Header */}
                           <div className="flex items-center gap-3">
                             <Avatar
                               className="h-9 w-9 cursor-pointer hover:opacity-80 transition-opacity ring-2 ring-primary/20"
-                              onClick={() => router.push(`/users/${userRec.user.uid}`)}
+                              onClick={() =>
+                                router.push(`/users/${userRec.user.uid}`)
+                              }
                             >
                               <AvatarImage src={userRec.user.photoURL} />
                               <AvatarFallback className="bg-primary/10 text-primary font-semibold text-xs">
@@ -333,12 +342,16 @@ export default function RecommendationsPage() {
                             <div>
                               <h3
                                 className="text-lg font-semibold text-gray-900 dark:text-white cursor-pointer hover:text-primary transition-colors"
-                                onClick={() => router.push(`/users/${userRec.user.uid}`)}
+                                onClick={() =>
+                                  router.push(`/users/${userRec.user.uid}`)
+                                }
                               >
                                 {userRec.user.displayName}
                               </h3>
                               <p className="text-xs text-muted-foreground">
-                                {musicItems.length} music album{musicItems.length !== 1 ? 's' : ''} in their recommendations
+                                {musicItems.length} music album
+                                {musicItems.length !== 1 ? "s" : ""} in their
+                                recommendations
                               </p>
                             </div>
                           </div>
@@ -346,22 +359,32 @@ export default function RecommendationsPage() {
                           {/* Music Items Grid */}
                           <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
                             {musicItems.slice(0, 12).map((album) => (
-                              <div key={album.id} className="group flex-shrink-0">
+                              <div
+                                key={album.id}
+                                className="group flex-shrink-0"
+                              >
                                 <div className="relative w-[156px] h-[231px] rounded-md overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900">
                                   <Link href={`/music/album/${album.id}`}>
                                     <img
-                                      src={album.image?.[2]?.url || album.image?.[1]?.url || album.image?.[0]?.url || "/placeholder.svg"}
+                                      src={
+                                        album.image?.[2]?.url ||
+                                        album.image?.[1]?.url ||
+                                        album.image?.[0]?.url ||
+                                        "/placeholder.svg"
+                                      }
                                       alt={album.name || "Unknown"}
                                       className="w-full h-full object-cover cursor-pointer transition-transform duration-300 group-hover:scale-105"
                                     />
                                   </Link>
                                 </div>
-                                <div className="mt-1.5 space-y-0.5">
-                                  <h4 className="font-medium text-xs truncate text-gray-900 dark:text-white leading-tight">
+                                <div className="mt-1.5 space-y-0.5 w-[156px]">
+                                  <h4 className="font-medium text-xs line-clamp-2 text-gray-900 dark:text-white leading-tight overflow-hidden">
                                     {album.name || "Unknown Title"}
                                   </h4>
                                   <p className="text-xs text-muted-foreground leading-tight">
-                                    {album.artists?.primary?.map((artist) => artist.name).join(", ") || "Unknown Artist"}
+                                    {album.artists?.primary
+                                      ?.map((artist) => artist.name)
+                                      .join(", ") || "Unknown Artist"}
                                   </p>
                                   <p className="text-xs text-muted-foreground">
                                     {album.year}
@@ -450,16 +473,23 @@ export default function RecommendationsPage() {
                             <div className="relative w-[156px] h-[231px] rounded-md overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900">
                               <Link href={`/${activeCategory}/${item.id}`}>
                                 <Image
-                                  src={(item as Movie | Book | Series).cover || "/placeholder.svg"}
-                                  alt={(item as Movie | Book | Series).title || "Unknown"}
+                                  src={
+                                    (item as Movie | Book | Series).cover ||
+                                    "/placeholder.svg"
+                                  }
+                                  alt={
+                                    (item as Movie | Book | Series).title ||
+                                    "Unknown"
+                                  }
                                   fill
                                   className="object-cover cursor-pointer transition-transform duration-300 group-hover:scale-105"
                                 />
                               </Link>
                             </div>
-                            <div className="mt-1.5 space-y-0.5">
-                              <h4 className="font-medium text-xs truncate text-gray-900 dark:text-white leading-tight">
-                                {(item as Movie | Book | Series).title || "Unknown Title"}
+                            <div className="mt-1.5 space-y-0.5 w-[156px]">
+                              <h4 className="font-medium text-xs line-clamp-2 text-gray-900 dark:text-white leading-tight overflow-hidden">
+                                {(item as Movie | Book | Series).title ||
+                                  "Unknown Title"}
                               </h4>
                               <p className="text-xs text-muted-foreground leading-tight">
                                 {activeCategory === "books"

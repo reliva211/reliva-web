@@ -26,6 +26,7 @@ import {
   Heart,
   ThumbsUp,
   Book,
+  Edit,
 } from "lucide-react";
 import {
   useBooksProfile,
@@ -37,6 +38,36 @@ interface ProfileBooksSectionProps {
   userId?: string;
   readOnly?: boolean;
 }
+
+// Placeholder content for empty states - inspired by movie section design
+const PLACEHOLDER = {
+  currentlyReading: {
+    title: "Add your current read",
+    subtitle: "Search for a book you're reading",
+    cover:
+      "https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=256&h=384&fit=crop&crop=center",
+  },
+  favoriteBooks: new Array(4).fill(0).map((_, i) => ({
+    id: `fav-${i}`,
+    cover:
+      "https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=160&h=240&fit=crop&crop=center",
+  })),
+  readingList: new Array(4).fill(0).map((_, i) => ({
+    id: `read-${i}`,
+    cover:
+      "https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=160&h=240&fit=crop&crop=center",
+  })),
+  recommendations: new Array(4).fill(0).map((_, i) => ({
+    id: `rec-${i}`,
+    cover:
+      "https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=160&h=240&fit=crop&crop=center",
+  })),
+  ratings: new Array(4).fill(0).map((_, i) => ({
+    id: `rt-${i}`,
+    cover:
+      "https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=160&h=240&fit=crop&crop=center",
+  })),
+};
 
 // Helper function to clean up text content
 const cleanTextContent = (text: string): string => {
@@ -80,6 +111,10 @@ export default function ProfileBooksSection({
     addRating,
     addRatingWithBook,
     removeRating,
+    replaceFavoriteBook,
+    replaceReadingListBook,
+    replaceRecommendation,
+    replaceRating,
     searchBooks,
     searchBooksByTitleAndAuthor,
     getBookById,
@@ -104,6 +139,7 @@ export default function ProfileBooksSection({
     bookId: string;
     rating: number;
   } | null>(null);
+  const [editingItem, setEditingItem] = useState<any>(null);
 
   // Recently read navigation state
   const [currentRecentlyReadIndex, setCurrentRecentlyReadIndex] = useState(0);
@@ -126,68 +162,27 @@ export default function ProfileBooksSection({
     favoriteAuthors: [],
   };
 
-  // Force re-render when booksProfile changes
-  const profileKey = JSON.stringify({
-    favoriteBooks: safeBooksProfile.favoriteBooks?.length || 0,
-    readingList: safeBooksProfile.readingList?.length || 0,
-    recommendations: safeBooksProfile.recommendations?.length || 0,
-    ratings: Object.keys(safeBooksProfile.ratings || {}).length,
-    ratingsKeys: Object.keys(safeBooksProfile.ratings || {}).sort(),
-  });
-
-  // Track profile updates for debugging
-  useEffect(() => {
-    // This effect ensures the component re-renders when profile changes
-  }, [booksProfile]);
-
   // Recently read list
   const recentlyReadList = safeBooksProfile.recentlyRead || [];
-
-  // Scroll to end when new items are added
-  useEffect(() => {
-    const scrollToEnd = (
-      containerRef: React.RefObject<HTMLDivElement | null>
-    ) => {
-      if (containerRef.current) {
-        containerRef.current.scrollTo({
-          left: containerRef.current.scrollWidth,
-          behavior: "smooth",
-        });
-      }
-    };
-
-    // Only scroll if we have items and the component is mounted
-    if (booksProfile) {
-      if (booksProfile.favoriteBooks?.length > 0) {
-        scrollToEnd(scrollContainerRefs.favoriteBooks);
-      }
-      if (booksProfile.readingList?.length > 0) {
-        scrollToEnd(scrollContainerRefs.readingList);
-      }
-      if (booksProfile.recommendations?.length > 0) {
-        scrollToEnd(scrollContainerRefs.recommendations);
-      }
-      if (Object.keys(booksProfile.ratings || {}).length > 0) {
-        scrollToEnd(scrollContainerRefs.ratings);
-      }
-    }
-  }, [
-    booksProfile?.favoriteBooks?.length,
-    booksProfile?.readingList?.length,
-    booksProfile?.recommendations?.length,
-    Object.keys(booksProfile?.ratings || {}).length,
-  ]);
 
   // Scroll functions
   const scrollLeft = (ref: React.RefObject<HTMLDivElement | null>) => {
     if (ref.current) {
-      ref.current.scrollBy({ left: -300, behavior: "smooth" });
+      const scrollDistance = Math.min(200, ref.current.clientWidth * 0.8);
+      ref.current.scrollBy({
+        left: -scrollDistance,
+        behavior: "smooth",
+      });
     }
   };
 
   const scrollRight = (ref: React.RefObject<HTMLDivElement | null>) => {
     if (ref.current) {
-      ref.current.scrollBy({ left: 300, behavior: "smooth" });
+      const scrollDistance = Math.min(200, ref.current.clientWidth * 0.8);
+      ref.current.scrollBy({
+        left: scrollDistance,
+        behavior: "smooth",
+      });
     }
   };
 
@@ -212,8 +207,7 @@ export default function ProfileBooksSection({
     }
   };
 
-  const renderStars = (bookId: string) => {
-    const currentRating = safeBooksProfile.ratings[bookId] || 0;
+  const renderInteractiveStars = (bookId: string, currentRating: number) => {
     const displayRating =
       hoveredRating?.bookId === bookId ? hoveredRating.rating : currentRating;
 
@@ -224,12 +218,16 @@ export default function ProfileBooksSection({
       return (
         <Star
           key={i}
-          className={`h-4 w-4 cursor-pointer transition-colors ${
+          className={`h-4 w-4 transition-colors ${
             isFullStar ? "fill-yellow-400 text-yellow-400" : "text-gray-300"
-          }`}
-          onMouseEnter={() => handleRatingHover(bookId, starValue)}
-          onMouseLeave={handleRatingLeave}
-          onClick={() => handleRatingClick(bookId, starValue)}
+          } ${!readOnly ? "cursor-pointer" : ""}`}
+          onMouseEnter={
+            !readOnly ? () => handleRatingHover(bookId, starValue) : undefined
+          }
+          onMouseLeave={!readOnly ? handleRatingLeave : undefined}
+          onClick={
+            !readOnly ? () => handleRatingClick(bookId, starValue) : undefined
+          }
         />
       );
     });
@@ -322,31 +320,58 @@ export default function ProfileBooksSection({
     };
 
     try {
-      switch (activeSearchType) {
-        case "recentlyRead":
-          await updateRecentlyRead(formattedItem);
-          break;
-        case "favoriteBooks":
-          await addFavoriteBook(formattedItem);
-          break;
-        case "readingList":
-          await addToReadingList(formattedItem);
-          break;
-        case "recommendations":
-          await addRecommendation(formattedItem);
-          break;
-        case "ratings":
-          // Use the new function that adds both book and rating atomically
-          await addRatingWithBook(formattedItem, 3);
-          break;
+      // Check if we're replacing an existing item
+      if (editingItem) {
+        switch (activeSearchType) {
+          case "recentlyRead":
+            // For recently read, we just update since it's a single item
+            await updateRecentlyRead(formattedItem);
+            break;
+          case "favoriteBooks":
+            await replaceFavoriteBook(editingItem.id, formattedItem);
+            break;
+          case "readingList":
+            await replaceReadingListBook(editingItem.id, formattedItem);
+            break;
+          case "recommendations":
+            await replaceRecommendation(editingItem.id, formattedItem);
+            break;
+          case "ratings":
+            // Get the current rating for the item being replaced
+            const currentRating = safeBooksProfile.ratings[editingItem.id] || 3;
+            await replaceRating(editingItem.id, formattedItem, currentRating);
+            break;
+        }
+      } else {
+        // Adding new items
+        switch (activeSearchType) {
+          case "recentlyRead":
+            await updateRecentlyRead(formattedItem);
+            break;
+          case "favoriteBooks":
+            await addFavoriteBook(formattedItem);
+            break;
+          case "readingList":
+            await addToReadingList(formattedItem);
+            break;
+          case "recommendations":
+            await addRecommendation(formattedItem);
+            break;
+          case "ratings":
+            // Use the new function that adds both book and rating atomically
+            await addRatingWithBook(formattedItem, 3);
+            break;
+        }
       }
+
       setShowSearchDialog(false);
       setSearchQuery("");
       setSearchResults([]);
       setActiveSearchType(null);
+      setEditingItem(null); // Clear the editing item
     } catch (error) {
-      console.error("Error adding item:", error);
-      alert("Failed to add item. Please try again.");
+      console.error("Error adding/replacing item:", error);
+      alert("Failed to add/replace item. Please try again.");
     }
   };
 
@@ -394,38 +419,19 @@ export default function ProfileBooksSection({
     }
   };
 
-  const renderInteractiveStars = (bookId: string, currentRating: number) => {
-    const displayRating =
-      hoveredRating?.bookId === bookId ? hoveredRating.rating : currentRating;
-
-    return Array.from({ length: 5 }, (_, i) => {
-      const starValue = i + 1;
-      const isFullStar = displayRating >= starValue;
-
-      return (
-        <Star
-          key={i}
-          className={`h-4 w-4 transition-colors ${
-            isFullStar ? "fill-yellow-400 text-yellow-400" : "text-gray-300"
-          } ${!readOnly ? "cursor-pointer" : ""}`}
-          onMouseEnter={
-            !readOnly ? () => handleRatingHover(bookId, starValue) : undefined
-          }
-          onMouseLeave={!readOnly ? handleRatingLeave : undefined}
-          onClick={
-            !readOnly ? () => handleRatingClick(bookId, starValue) : undefined
-          }
-        />
-      );
-    });
-  };
-
-  const openSearchDialog = (searchType: any) => {
+  const openSearchDialog = (searchType: any, itemToReplace?: any) => {
     setActiveSearchType(searchType);
     setShowSearchDialog(true);
     setSearchQuery("");
     setSearchResults([]);
     setSearchError(null);
+
+    // Store the item to replace if provided
+    if (itemToReplace) {
+      setEditingItem(itemToReplace);
+    } else {
+      setEditingItem(null);
+    }
   };
 
   // Navigation functions for recently read
@@ -467,7 +473,7 @@ export default function ProfileBooksSection({
   // Show loading state
   if (loading) {
     return (
-      <div className="space-y-5 max-w-[800px] mx-auto">
+      <div className="space-y-5 max-w-5xl mx-auto">
         <div className="grid grid-cols-3 gap-3 sm:gap-4">
           {[1, 2, 3].map((i) => (
             <div key={i} className="animate-pulse">
@@ -491,7 +497,7 @@ export default function ProfileBooksSection({
   // Show error state
   if (error) {
     return (
-      <div className="space-y-5 max-w-[800px] mx-auto">
+      <div className="space-y-5 max-w-5xl mx-auto">
         <div className="text-center p-8">
           <div className="text-red-500 mb-4">
             Error loading books profile: {error}
@@ -505,426 +511,600 @@ export default function ProfileBooksSection({
   }
 
   return (
-    <div key={profileKey} className="space-y-0 max-w-3xl mx-auto">
-      <div>
-        {/* currently reading - simplified format */}
-        <div>
-          <div className="flex items-center justify-between mb-3">
-            <p className="text-sm font-medium text-muted-foreground">
-              currently reading
-            </p>
-            {!readOnly && (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-6 w-6 p-0 hover:bg-muted"
-                onClick={() => openSearchDialog("recentlyRead")}
-              >
-                <Plus className="h-3 w-3" />
-              </Button>
-            )}
-          </div>
+    <div className="space-y-8 max-w-4xl mx-auto">
+      {/* Recently read section - horizontal layout */}
+      <div className="max-w-3xl mx-auto">
+        <div className="flex items-center justify-start mb-4">
+          <p className="text-sm font-medium text-muted-foreground">
+            currently reading
+          </p>
+        </div>
+
+        <div className="relative">
           {currentRecentlyRead ? (
-            <div className="relative">
-              <Button
-                variant="ghost"
-                size="sm"
-                className="absolute left-0 top-1/2 -translate-y-1/2 z-10 h-8 w-8 p-0 bg-black/50 hover:bg-black/70 text-white rounded-full"
-                onClick={navigateRecentlyReadLeft}
-                disabled={recentlyReadList.length <= 1}
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </Button>
-              <div className="flex gap-4 px-8">
-                <div className="aspect-[2/3] w-32 bg-muted rounded-md overflow-hidden flex-shrink-0">
-                  <Image
-                    src={currentRecentlyRead.cover || "/placeholder.svg"}
-                    alt={getTextContent(currentRecentlyRead.title) || "Book"}
-                    width={128}
-                    height={192}
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      const target = e.target as HTMLImageElement;
-                      target.src = "/placeholder.svg";
-                    }}
-                  />
+            <div className="flex gap-4 items-start">
+              {/* Book cover */}
+              <div className="relative group flex-shrink-0">
+                <div className="w-32 h-48 bg-muted rounded-md overflow-hidden">
+                  <Link href={`/books/${currentRecentlyRead.id}`}>
+                    <Image
+                      src={
+                        currentRecentlyRead.cover ||
+                        PLACEHOLDER.currentlyReading.cover
+                      }
+                      alt={getTextContent(currentRecentlyRead.title) || "Book"}
+                      width={128}
+                      height={192}
+                      className="w-full h-full object-cover cursor-pointer"
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.src = PLACEHOLDER.currentlyReading.cover;
+                      }}
+                    />
+                  </Link>
+                  {!readOnly && (
+                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-md flex items-center justify-center">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 w-6 p-0 bg-white/20 hover:bg-white/30 text-white"
+                        onClick={() => openSearchDialog("recentlyRead")}
+                      >
+                        <Edit className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  )}
                 </div>
-                <div className="flex-1 min-w-0">
-                  <h3 className="text-base font-semibold leading-tight mb-2">
-                    {getTextContent(currentRecentlyRead.title) ||
-                      "Unknown Book"}
-                  </h3>
-                  <p className="text-sm text-muted-foreground leading-tight mb-4">
-                    {currentRecentlyRead.description
-                      ? currentRecentlyRead.description.length > 200
-                        ? currentRecentlyRead.description.substring(0, 200) +
-                          "..."
-                        : currentRecentlyRead.description
-                      : "No description available"}
+              </div>
+
+              {/* Content section */}
+              <div className="flex-1 min-w-0">
+                <h3 className="text-lg font-semibold text-foreground mb-1">
+                  {getTextContent(currentRecentlyRead.title) || "Unknown Book"}
+                </h3>
+
+                {/* Author information */}
+                <p className="text-sm text-muted-foreground mb-2">
+                  by{" "}
+                  {currentRecentlyRead.authors?.join(", ") || "Unknown Author"}
+                </p>
+
+                {/* Publication year if available */}
+                {currentRecentlyRead.publishedDate && (
+                  <p className="text-xs text-muted-foreground/70 mb-3">
+                    {currentRecentlyRead.publishedDate.split("-")[0]}
                   </p>
-                  <div className="flex items-center gap-3">
+                )}
+
+                {/* Description */}
+                <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
+                  {currentRecentlyRead.description ||
+                    "No description available"}
+                </p>
+
+                {/* Action buttons and navigation */}
+                <div className="flex items-center gap-4">
+                  {/* Navigation dots */}
+                  {recentlyReadList.length > 1 && (
                     <div className="flex gap-1">
                       {recentlyReadList.map((_, index) => (
                         <div
                           key={index}
-                          className={`w-2 h-2 rounded-full ${
+                          className={`w-2 h-2 rounded-full transition-colors ${
                             index === currentRecentlyReadIndex
-                              ? "bg-muted-foreground"
+                              ? "bg-primary"
                               : "bg-muted-foreground/30"
                           }`}
                         />
                       ))}
                     </div>
-                  </div>
-                  <div className="mt-4 flex items-center gap-2">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-7 w-7 p-0 hover:bg-muted"
-                      onClick={() => handleLikeClick(currentRecentlyRead)}
-                    >
-                      <Heart className="h-3 w-3" />
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="h-7 text-xs px-3"
-                      disabled
-                    >
-                      read
-                    </Button>
-                  </div>
+                  )}
+
+                  {/* Read button */}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-8 px-4"
+                    disabled
+                  >
+                    <BookOpen className="h-3 w-3 mr-1" />
+                    read
+                  </Button>
                 </div>
               </div>
+
+              {/* Navigation arrow */}
+              {recentlyReadList.length > 1 && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-10 w-10 p-0 bg-black/80 hover:bg-black backdrop-blur-md border border-white/10 rounded-full flex-shrink-0 shadow-2xl hover:scale-110 transition-all duration-300 z-30"
+                  onClick={navigateRecentlyReadRight}
+                >
+                  <ChevronRight className="h-5 w-5 text-white" />
+                </Button>
+              )}
+            </div>
+          ) : (
+            <div className="flex gap-4 items-start">
+              {/* Empty state cover */}
+              <div className="w-32 h-48 bg-muted rounded-md border border-border/30 flex items-center justify-center flex-shrink-0">
+                <div className="text-center">
+                  <BookOpen className="h-12 w-12 mx-auto mb-3 text-muted-foreground/50" />
+                  <p className="text-xs text-muted-foreground/50">
+                    Add Current Read
+                  </p>
+                </div>
+              </div>
+
+              {/* Empty state content */}
+              <div className="flex-1 min-w-0">
+                <h3 className="text-lg font-semibold text-muted-foreground/50 mb-1">
+                  Book Title
+                </h3>
+                <p className="text-sm text-muted-foreground/50 mb-2">
+                  by Author Name
+                </p>
+                <p className="text-xs text-muted-foreground/30 mb-3">2024</p>
+                <p className="text-sm text-muted-foreground/50 mb-4">
+                  Book description
+                </p>
+
+                <div className="flex items-center gap-4">
+                  <div className="flex gap-1">
+                    <div className="w-2 h-2 bg-muted-foreground/30 rounded-full"></div>
+                    <div className="w-2 h-2 bg-muted-foreground/30 rounded-full"></div>
+                    <div className="w-2 h-2 bg-muted-foreground/30 rounded-full"></div>
+                  </div>
+
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-8 px-4"
+                    disabled
+                  >
+                    <BookOpen className="h-3 w-3 mr-1" />
+                    read
+                  </Button>
+                </div>
+              </div>
+
+              {/* Navigation arrow */}
               <Button
                 variant="ghost"
                 size="sm"
-                className="absolute right-0 top-1/2 -translate-y-1/2 z-10 h-8 w-8 p-0 bg-black/50 hover:bg-black/70 text-white rounded-full"
-                onClick={navigateRecentlyReadRight}
-                disabled={recentlyReadList.length <= 1}
+                className="h-10 w-10 p-0 bg-black/80 hover:bg-black backdrop-blur-md border border-white/10 rounded-full flex-shrink-0 shadow-2xl hover:scale-110 transition-all duration-300 z-30"
+                disabled
               >
-                <ChevronRight className="h-4 w-4" />
-              </Button>
-            </div>
-          ) : (
-            <div className="text-center py-8 text-muted-foreground">
-              <BookOpen className="h-12 w-12 mx-auto mb-2 opacity-50" />
-              <p className="text-sm">No currently reading books</p>
-              <Button
-                variant="outline"
-                size="sm"
-                className="mt-2"
-                onClick={() => openSearchDialog("recentlyRead")}
-              >
-                <Plus className="h-3 w-3 mr-1" />
-                Add Book
+                <ChevronRight className="h-5 w-5 text-white/50" />
               </Button>
             </div>
           )}
         </div>
       </div>
 
-      {/* favorite books */}
-      <div>
-        <div className="flex items-center justify-between mb-3">
-          <p className="text-sm font-medium text-muted-foreground">favorite</p>
-          {!readOnly && (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-6 w-6 p-0 hover:bg-muted"
-              onClick={() => openSearchDialog("favoriteBooks")}
+      {/* Bottom row - favorite books aligned with top grid */}
+      <div className="grid grid-cols-3 gap-4 sm:gap-6 lg:gap-8 max-w-3xl mx-auto">
+        {/* favorite books - takes first column */}
+        <div className="col-span-3">
+          <div className="flex items-center justify-start mb-4">
+            <p className="text-sm font-medium text-muted-foreground">
+              favorite books
+            </p>
+          </div>
+          <div className="relative">
+            <div
+              ref={scrollContainerRefs.favoriteBooks}
+              className="flex justify-start gap-6 overflow-hidden"
             >
-              <Plus className="h-3 w-3" />
-            </Button>
-          )}
-        </div>
-        <div className="relative">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="absolute left-0 top-1/2 -translate-y-1/2 z-10 h-8 w-8 p-0 bg-black/50 hover:bg-black/70 text-white rounded-full"
-            onClick={() => scrollLeft(scrollContainerRefs.favoriteBooks)}
-          >
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
-          <div
-            ref={scrollContainerRefs.favoriteBooks}
-            className="flex gap-4 overflow-x-auto scrollbar-hide"
-            style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
-          >
-            {limitedFavoriteBooks.length > 0
-              ? limitedFavoriteBooks.map((book, idx) => (
-                  <div
-                    key={book.id || idx}
-                    className="relative group flex-shrink-0 w-32"
-                  >
-                    <div className="aspect-[2/3] w-full bg-muted rounded-md overflow-hidden">
-                      <Image
-                        src={book.cover || "/placeholder.svg"}
-                        alt={book.title || "Book"}
-                        width={128}
-                        height={192}
-                        className="w-full h-full object-cover"
-                        onError={(e) => {
-                          const target = e.target as HTMLImageElement;
-                          target.src = "/placeholder.svg";
-                        }}
-                      />
-                      {!readOnly && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="absolute top-1 right-1 h-6 w-6 p-0 bg-black/50 hover:bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity"
-                          onClick={() =>
-                            handleRemoveItem("favoriteBooks", book.id)
-                          }
-                        >
-                          <X className="h-3 w-3 text-white" />
-                        </Button>
-                      )}
-                    </div>
-                    <div className="mt-2 text-center">
-                      <p className="text-sm font-semibold leading-tight">
-                        {getTextContent(book.title) || "Unknown Book"}
-                      </p>
-                      <p className="text-xs text-muted-foreground leading-tight mt-1">
-                        {book.authors?.join(", ") || "Unknown Author"}
-                      </p>
-                    </div>
-                  </div>
-                ))
-              : // Show single Add screen when empty
-                (
-                  <div className="flex-shrink-0 w-32">
-                    <div className="aspect-[2/3] w-full bg-black/20 rounded-md border border-border/30 flex items-center justify-center">
-                      <div className="text-center flex items-center justify-center h-full">
-                        <p className="text-sm text-muted-foreground/50">Add</p>
+              {limitedFavoriteBooks.length > 0 ? (
+                <>
+                  {limitedFavoriteBooks.map((book, idx) => (
+                    <div
+                      key={book.id || idx}
+                      className="relative group flex-shrink-0"
+                    >
+                      <div className="aspect-[2/3] w-32 bg-muted rounded-md overflow-hidden">
+                        <Link href={`/books/${book.id}`}>
+                          <Image
+                            src={
+                              book.cover || PLACEHOLDER.favoriteBooks[0].cover
+                            }
+                            alt={book.title || "Book"}
+                            width={128}
+                            height={192}
+                            className="w-full h-full object-cover cursor-pointer"
+                            onError={(e) => {
+                              const target = e.target as HTMLImageElement;
+                              target.src = PLACEHOLDER.favoriteBooks[0].cover;
+                            }}
+                          />
+                        </Link>
+                        {!readOnly && (
+                          <div className="absolute top-2 right-2 flex gap-1">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-6 w-6 p-0 bg-black/50 hover:bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity"
+                              onClick={() =>
+                                openSearchDialog("favoriteBooks", book)
+                              }
+                              title="Replace book"
+                            >
+                              <Edit className="h-3 w-3 text-white" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-6 w-6 p-0 bg-red-600/80 hover:bg-red-700/90 opacity-0 group-hover:opacity-100 transition-opacity"
+                              onClick={() =>
+                                handleRemoveItem("favoriteBooks", book.id)
+                              }
+                              title="Delete book"
+                            >
+                              <Trash2 className="h-3 w-3 text-white" />
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                      {/* Book name and author display */}
+                      <div className="mt-3 text-center w-full">
+                        <p className="text-sm font-semibold leading-tight px-2 truncate min-h-[1.25rem] flex items-center justify-center">
+                          {getTextContent(book.title) || "Unknown Book"}
+                        </p>
+                        <p className="text-xs text-muted-foreground leading-tight mt-0.5 px-2 truncate min-h-[1rem] flex items-center justify-center">
+                          {book.authors?.join(", ") || "Unknown Author"}
+                        </p>
                       </div>
                     </div>
+                  ))}
+
+                  {/* Add button for subsequent items - always show when items exist */}
+                  <div className="flex-shrink-0">
+                    <div className="aspect-[2/3] w-32 bg-transparent rounded-md border-2 border-gray-600 flex items-center justify-center overflow-visible">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-12 w-12 p-0 bg-black/70 hover:bg-black/90 text-white rounded-full border-2 border-white/20 shadow-lg"
+                        onClick={() => openSearchDialog("favoriteBooks")}
+                      >
+                        <Plus className="h-6 w-6" />
+                      </Button>
+                    </div>
                   </div>
-                )}
+                </>
+              ) : (
+                // Show single Add screen when empty
+                <div className="flex flex-col items-center justify-center min-h-[200px]">
+                  <div className="aspect-[2/3] w-32 bg-transparent rounded-md border-2 border-gray-600 flex flex-col items-center justify-center mb-3">
+                    <p className="text-sm text-gray-400 mb-1 text-center">
+                      Add
+                    </p>
+                    <p className="text-xs text-gray-500 text-center">
+                      No favorite books
+                    </p>
+                  </div>
+                  {!readOnly && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="text-xs"
+                      onClick={() => openSearchDialog("favoriteBooks")}
+                    >
+                      <Plus className="h-3 w-3 mr-1" />
+                      Add Book
+                    </Button>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Navigation arrows for favorite books */}
+            {limitedFavoriteBooks.length > 0 && (
+              <>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="absolute left-2 top-1/2 transform -translate-y-1/2 h-8 w-8 p-0 bg-black/80 hover:bg-black backdrop-blur-md border border-white/10 text-white rounded-full shadow-2xl hover:scale-110 transition-all duration-300 z-30"
+                  onClick={() => scrollLeft(scrollContainerRefs.favoriteBooks)}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="absolute right-2 top-1/2 transform -translate-y-1/2 h-8 w-8 p-0 bg-black/80 hover:bg-black backdrop-blur-md border border-white/10 text-white rounded-full shadow-2xl hover:scale-110 transition-all duration-300 z-30"
+                  onClick={() => scrollRight(scrollContainerRefs.favoriteBooks)}
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </>
+            )}
           </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="absolute right-0 top-1/2 -translate-y-1/2 z-10 h-8 w-8 p-0 bg-black/50 hover:bg-black/70 text-white rounded-full"
-            onClick={() => scrollRight(scrollContainerRefs.favoriteBooks)}
-          >
-            <ChevronRight className="h-4 w-4" />
-          </Button>
         </div>
       </div>
 
       {/* reading list */}
-      <div>
-        <div className="flex items-center justify-between mb-3">
+      <div className="mt-12 max-w-3xl mx-auto">
+        <div className="flex items-center justify-start mb-4">
           <p className="text-sm font-medium text-muted-foreground">
             reading list
           </p>
-          {!readOnly && (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-6 w-6 p-0 hover:bg-muted"
-              onClick={() => openSearchDialog("readingList")}
-            >
-              <Plus className="h-3 w-3" />
-            </Button>
-          )}
         </div>
         <div className="relative">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="absolute left-0 top-1/2 -translate-y-1/2 z-10 h-8 w-8 p-0 bg-black/50 hover:bg-black/70 text-white rounded-full"
-            onClick={() => scrollLeft(scrollContainerRefs.readingList)}
-          >
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
           <div
             ref={scrollContainerRefs.readingList}
-            className="flex gap-4 overflow-x-auto scrollbar-hide"
-            style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+            className="flex justify-start gap-6 overflow-hidden"
           >
-            {limitedReadingList.length > 0
-              ? limitedReadingList.map((book, idx) => (
+            {limitedReadingList.length > 0 ? (
+              <>
+                {limitedReadingList.map((book, idx) => (
                   <div
                     key={book.id || idx}
-                    className="relative group flex-shrink-0 w-32"
+                    className="relative group flex-shrink-0"
                   >
-                    <div className="aspect-[2/3] w-full bg-muted rounded-md overflow-hidden">
-                      <Image
-                        src={book.cover || "/placeholder.svg"}
-                        alt={book.title || "Book"}
-                        width={128}
-                        height={192}
-                        className="w-full h-full object-cover"
-                        onError={(e) => {
-                          const target = e.target as HTMLImageElement;
-                          target.src = "/placeholder.svg";
-                        }}
-                      />
-                      {!readOnly && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="absolute top-1 right-1 h-6 w-6 p-0 bg-black/50 hover:bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity"
-                          onClick={() =>
-                            handleRemoveItem("readingList", book.id)
-                          }
-                        >
-                          <X className="h-3 w-3 text-white" />
-                        </Button>
-                      )}
-                    </div>
-                    <div className="mt-2 text-center">
-                      <p className="text-sm font-semibold leading-tight">
-                        {getTextContent(book.title) || "Unknown Book"}
-                      </p>
-                      <p className="text-xs text-muted-foreground leading-tight mt-1">
-                        {book.authors?.join(", ") || "Unknown Author"}
-                      </p>
-                    </div>
-                  </div>
-                ))
-              : // Show placeholder items when empty
-                (
-                  <div className="flex-shrink-0 w-32">
-                    <div className="aspect-[2/3] w-full bg-black/20 rounded-md border border-border/30 flex items-center justify-center">
-                      <div className="text-center flex items-center justify-center h-full">
-                        <p className="text-sm text-muted-foreground/50">Add</p>
-                      </div>
-                    </div>
-                  </div>
-                )}
-          </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="absolute right-0 top-1/2 -translate-y-1/2 z-10 h-8 w-8 p-0 bg-black/50 hover:bg-black/70 text-white rounded-full"
-            onClick={() => scrollRight(scrollContainerRefs.readingList)}
-          >
-            <ChevronRight className="h-4 w-4" />
-          </Button>
-        </div>
-      </div>
-
-      {/* recommendations */}
-      <div>
-        <div className="flex items-center justify-between mb-3">
-          <p className="text-sm font-medium text-muted-foreground">
-            recommendations
-          </p>
-          {!readOnly && (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-6 w-6 p-0 hover:bg-muted"
-              onClick={() => openSearchDialog("recommendations")}
-            >
-              <Plus className="h-3 w-3" />
-            </Button>
-          )}
-        </div>
-        <div className="relative">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="absolute left-0 top-1/2 -translate-y-1/2 z-10 h-8 w-8 p-0 bg-black/50 hover:bg-black/70 text-white rounded-full"
-            onClick={() => scrollLeft(scrollContainerRefs.recommendations)}
-          >
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
-          <div
-            ref={scrollContainerRefs.recommendations}
-            className="flex gap-4 overflow-x-auto scrollbar-hide"
-            style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
-          >
-            {limitedRecommendations.length > 0
-              ? limitedRecommendations.map((book, idx) => (
-                  <div
-                    key={book.id || idx}
-                    className="relative flex-shrink-0 w-32"
-                  >
-                    <div className="aspect-[2/3] w-full bg-muted rounded-md overflow-hidden">
+                    <div className="aspect-[2/3] w-32 bg-muted rounded-md overflow-hidden">
                       <Link href={`/books/${book.id}`}>
                         <Image
-                          src={book.cover || "/placeholder.svg"}
+                          src={book.cover || PLACEHOLDER.readingList[0].cover}
                           alt={book.title || "Book"}
                           width={128}
                           height={192}
                           className="w-full h-full object-cover cursor-pointer"
                           onError={(e) => {
                             const target = e.target as HTMLImageElement;
-                            target.src = "/placeholder.svg";
+                            target.src = PLACEHOLDER.readingList[0].cover;
                           }}
                         />
                       </Link>
+                      {!readOnly && (
+                        <div className="absolute top-2 right-2 flex gap-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 w-6 p-0 bg-black/50 hover:bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={() =>
+                              openSearchDialog("readingList", book)
+                            }
+                            title="Replace book"
+                          >
+                            <Edit className="h-3 w-3 text-white" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 w-6 p-0 bg-red-600/80 hover:bg-red-700/90 opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={() =>
+                              handleRemoveItem("readingList", book.id)
+                            }
+                            title="Delete book"
+                          >
+                            <Trash2 className="h-3 w-3 text-white" />
+                          </Button>
+                        </div>
+                      )}
                     </div>
-                    <div className="mt-2 text-center">
-                      <p className="text-sm font-semibold leading-tight">
+                    {/* Book name and author display */}
+                    <div className="mt-3 text-center w-full">
+                      <p className="text-sm font-semibold leading-tight px-2 truncate min-h-[1.25rem] flex items-center justify-center">
                         {getTextContent(book.title) || "Unknown Book"}
                       </p>
-                      <p className="text-xs text-muted-foreground leading-tight mt-1">
+                      <p className="text-xs text-muted-foreground leading-tight mt-0.5 px-2 truncate min-h-[1rem] flex items-center justify-center">
                         {book.authors?.join(", ") || "Unknown Author"}
                       </p>
                     </div>
                   </div>
-                ))
-              : // Show placeholder items when empty
-                (
-                  <div className="flex-shrink-0 w-32">
-                    <div className="aspect-[2/3] w-full bg-black/20 rounded-md border border-border/30 flex items-center justify-center">
-                      <div className="text-center flex items-center justify-center h-full">
-                        <p className="text-sm text-muted-foreground/50">Add</p>
-                      </div>
-                    </div>
+                ))}
+
+                {/* Add button for subsequent items - always show when items exist */}
+                <div className="flex-shrink-0">
+                  <div className="aspect-[2/3] w-32 bg-transparent rounded-md border-2 border-gray-600 flex items-center justify-center overflow-visible">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-12 w-12 p-0 bg-black/70 hover:bg-black/90 text-white rounded-full border-2 border-white/20 shadow-lg"
+                      onClick={() => openSearchDialog("readingList")}
+                    >
+                      <Plus className="h-6 w-6" />
+                    </Button>
                   </div>
+                </div>
+              </>
+            ) : (
+              // Show single Add screen when empty
+              <div className="flex flex-col items-center justify-center min-h-[200px]">
+                <div className="aspect-[2/3] w-32 bg-transparent rounded-md border-2 border-gray-600 flex flex-col items-center justify-center mb-3">
+                  <p className="text-xs text-gray-500 text-center">
+                    No reading list books
+                  </p>
+                </div>
+                {!readOnly && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="text-xs"
+                    onClick={() => openSearchDialog("readingList")}
+                  >
+                    <Plus className="h-3 w-3 mr-1" />
+                    Add Book
+                  </Button>
                 )}
+              </div>
+            )}
           </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="absolute right-0 top-1/2 -translate-y-1/2 z-10 h-8 w-8 p-0 bg-black/50 hover:bg-black/70 text-white rounded-full"
-            onClick={() => scrollRight(scrollContainerRefs.recommendations)}
-          >
-            <ChevronRight className="h-4 w-4" />
-          </Button>
+
+          {/* Navigation arrows for reading list */}
+          {limitedReadingList.length > 0 && (
+            <>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="absolute left-2 top-1/2 transform -translate-y-1/2 h-8 w-8 p-0 bg-black/80 hover:bg-black backdrop-blur-md border border-white/10 text-white rounded-full shadow-2xl hover:scale-110 transition-all duration-300 z-30"
+                onClick={() => scrollLeft(scrollContainerRefs.readingList)}
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="absolute right-2 top-1/2 transform -translate-y-1/2 h-8 w-8 p-0 bg-black/80 hover:bg-black backdrop-blur-md border border-white/10 text-white rounded-full shadow-2xl hover:scale-110 transition-all duration-300 z-30"
+                onClick={() => scrollRight(scrollContainerRefs.readingList)}
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </>
+          )}
         </div>
       </div>
 
-      {/* Ratings Section */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h3 className="text-lg font-semibold">Ratings</h3>
-          {!readOnly && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => openSearchDialog("ratings")}
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Add Rating
-            </Button>
-          )}
+      {/* recommendations */}
+      <div className="mt-12 max-w-3xl mx-auto">
+        <div className="flex items-center justify-start mb-4">
+          <p className="text-sm font-medium text-muted-foreground">
+            recommendations
+          </p>
         </div>
         <div className="relative">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="absolute left-0 top-1/2 -translate-y-1/2 z-10 h-8 w-8 p-0 bg-black/50 hover:bg-black/70 text-white rounded-full"
-            onClick={() => scrollLeft(scrollContainerRefs.ratings)}
+          <div
+            ref={scrollContainerRefs.recommendations}
+            className="flex justify-start gap-6 overflow-hidden"
           >
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
+            {limitedRecommendations.length > 0 ? (
+              <>
+                {limitedRecommendations.map((book, idx) => (
+                  <div
+                    key={book.id || idx}
+                    className="relative group flex-shrink-0"
+                  >
+                    <div className="aspect-[2/3] w-32 bg-muted rounded-md overflow-hidden">
+                      <Link href={`/books/${book.id}`}>
+                        <Image
+                          src={
+                            book.cover || PLACEHOLDER.recommendations[0].cover
+                          }
+                          alt={book.title || "Book"}
+                          width={128}
+                          height={192}
+                          className="w-full h-full object-cover cursor-pointer"
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            target.src = PLACEHOLDER.recommendations[0].cover;
+                          }}
+                        />
+                      </Link>
+                      {!readOnly && (
+                        <div className="absolute top-2 right-2 flex gap-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 w-6 p-0 bg-black/50 hover:bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={() =>
+                              openSearchDialog("recommendations", book)
+                            }
+                            title="Replace recommendation"
+                          >
+                            <Edit className="h-3 w-3 text-white" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 w-6 p-0 bg-red-600/80 hover:bg-red-700/90 opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={() =>
+                              handleRemoveItem("recommendations", book.id)
+                            }
+                            title="Delete recommendation"
+                          >
+                            <Trash2 className="h-3 w-3 text-white" />
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                    {/* Book name and author display */}
+                    <div className="mt-3 text-center w-full">
+                      <p className="text-sm font-semibold leading-tight px-2 truncate min-h-[1.25rem] flex items-center justify-center">
+                        {getTextContent(book.title) || "Unknown Book"}
+                      </p>
+                      <p className="text-xs text-muted-foreground leading-tight mt-0.5 px-2 truncate min-h-[1rem] flex items-center justify-center">
+                        {book.authors?.join(", ") || "Unknown Author"}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+
+                {/* Add button for subsequent items - always show when items exist */}
+                <div className="flex-shrink-0">
+                  <div className="aspect-[2/3] w-32 bg-transparent rounded-md border-2 border-gray-600 flex items-center justify-center overflow-visible">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-12 w-12 p-0 bg-black/70 hover:bg-black/90 text-white rounded-full border-2 border-white/20 shadow-lg"
+                      onClick={() => openSearchDialog("recommendations")}
+                    >
+                      <Plus className="h-6 w-6" />
+                    </Button>
+                  </div>
+                </div>
+              </>
+            ) : (
+              // Show single Add screen when empty
+              <div className="flex flex-col items-center justify-center min-h-[200px]">
+                <div className="aspect-[2/3] w-32 bg-transparent rounded-md border-2 border-gray-600 flex flex-col items-center justify-center mb-3">
+                  <p className="text-xs text-gray-500 text-center">
+                    No recommendations
+                  </p>
+                </div>
+                {!readOnly && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="text-xs"
+                    onClick={() => openSearchDialog("recommendations")}
+                  >
+                    <Plus className="h-3 w-3 mr-1" />
+                    Add Recommendation
+                  </Button>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Navigation arrows for recommendations */}
+          {limitedRecommendations.length > 0 && (
+            <>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="absolute left-2 top-1/2 transform -translate-y-1/2 h-8 w-8 p-0 bg-black/80 hover:bg-black backdrop-blur-md border border-white/10 text-white rounded-full shadow-2xl hover:scale-110 transition-all duration-300 z-30"
+                onClick={() => scrollLeft(scrollContainerRefs.recommendations)}
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="absolute right-2 top-1/2 transform -translate-y-1/2 h-8 w-8 p-0 bg-black/80 hover:bg-black backdrop-blur-md border border-white/10 text-white rounded-full shadow-2xl hover:scale-110 transition-all duration-300 z-30"
+                onClick={() => scrollRight(scrollContainerRefs.recommendations)}
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* ratings */}
+      <div className="mt-12 max-w-3xl mx-auto">
+        <div className="flex items-center justify-start mb-4">
+          <p className="text-sm font-medium text-muted-foreground">ratings</p>
+        </div>
+        <div className="relative">
           <div
             ref={scrollContainerRefs.ratings}
-            className="flex gap-4 overflow-x-auto scrollbar-hide"
-            style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+            className="flex justify-start gap-6 overflow-hidden"
           >
-            {Object.keys(safeBooksProfile.ratings).length > 0
-              ? Object.entries(safeBooksProfile.ratings)
+            {Object.keys(safeBooksProfile.ratings).length > 0 ? (
+              <>
+                {Object.entries(safeBooksProfile.ratings)
                   .map(([bookId, rating]) => {
                     const book =
                       safeBooksProfile.favoriteBooks?.find(
@@ -945,150 +1125,231 @@ export default function ProfileBooksSection({
                     return (
                       <div
                         key={bookId}
-                        className="relative group flex-shrink-0 w-32"
+                        className="relative group flex-shrink-0"
                       >
-                        <div className="aspect-[2/3] w-full bg-muted rounded-md overflow-hidden">
-                          <Image
-                            src={book.cover || "/placeholder.svg"}
-                            alt={book.title || "Book"}
-                            width={128}
-                            height={192}
-                            className="w-full h-full object-cover"
-                            onError={(e) => {
-                              const target = e.target as HTMLImageElement;
-                              target.src = "/placeholder.svg";
-                            }}
-                          />
+                        <div className="aspect-[2/3] w-32 bg-muted rounded-md overflow-hidden">
+                          <Link href={`/books/${book.id}`}>
+                            <Image
+                              src={book.cover || PLACEHOLDER.ratings[0].cover}
+                              alt={book.title || "Book"}
+                              width={128}
+                              height={192}
+                              className="w-full h-full object-cover cursor-pointer"
+                              onError={(e) => {
+                                const target = e.target as HTMLImageElement;
+                                target.src = PLACEHOLDER.ratings[0].cover;
+                              }}
+                            />
+                          </Link>
                           {!readOnly && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="absolute top-1 right-1 h-6 w-6 p-0 bg-black/50 hover:bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity"
-                              onClick={() => handleRemoveRating(bookId)}
-                            >
-                              <X className="h-3 w-3 text-white" />
-                            </Button>
+                            <div className="absolute top-2 right-2 flex gap-1">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-6 w-6 p-0 bg-black/50 hover:bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity"
+                                onClick={() =>
+                                  openSearchDialog("ratings", book)
+                                }
+                                title="Replace rating"
+                              >
+                                <Edit className="h-3 w-3 text-white" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-6 w-6 p-0 bg-red-600/80 hover:bg-red-700/90 opacity-0 group-hover:opacity-100 transition-opacity"
+                                onClick={() =>
+                                  handleRemoveItem("rating", book.id)
+                                }
+                                title="Delete rating"
+                              >
+                                <Trash2 className="h-3 w-3 text-white" />
+                              </Button>
+                            </div>
                           )}
-                          <div className="absolute bottom-1 left-1 right-1 flex justify-center gap-1 p-2 bg-black/50 rounded-md">
-                            {renderInteractiveStars(bookId, rating)}
-                          </div>
                         </div>
-                        {/* Removed name and author display - only poster and rating shown */}
+                        {/* Rating stars - above the book name */}
+                        <div className="mt-3 flex justify-center gap-1">
+                          {renderInteractiveStars(bookId, rating)}
+                        </div>
+                        {/* Book name and author display - below the rating */}
+                        <div className="mt-2 text-center w-full">
+                          <p className="text-sm font-semibold leading-tight px-2 truncate min-h-[1.5rem] flex items-center justify-center">
+                            {getTextContent(book.title) || "Unknown Book"}
+                          </p>
+                          <p className="text-xs text-muted-foreground leading-tight mt-0.5 px-2">
+                            {book.authors?.join(", ") || "Unknown Author"}
+                          </p>
+                        </div>
                       </div>
                     );
                   })
-                  .filter(Boolean)
-              : // Show placeholder items when empty
-                (
-                  <div className="flex-shrink-0 w-32">
-                    <div className="aspect-[2/3] w-full bg-black/20 rounded-md border border-border/30 flex items-center justify-center">
-                      <div className="text-center flex items-center justify-center h-full">
-                        <p className="text-sm text-muted-foreground/50">Add</p>
-                      </div>
-                    </div>
+                  .filter(Boolean)}
+
+                {/* Add button for subsequent items - always show when items exist */}
+                <div className="flex-shrink-0">
+                  <div className="aspect-[2/3] w-32 bg-transparent rounded-md border-2 border-gray-600 flex items-center justify-center overflow-visible">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-12 w-12 p-0 bg-black/70 hover:bg-black/90 text-white rounded-full border-2 border-white/20 shadow-lg"
+                      onClick={() => openSearchDialog("ratings")}
+                    >
+                      <Plus className="h-6 w-6" />
+                    </Button>
                   </div>
+                </div>
+              </>
+            ) : (
+              // Show single Add screen when empty
+              <div className="flex flex-col items-center justify-center min-h-[200px]">
+                <div className="aspect-[2/3] w-32 bg-transparent rounded-md border-2 border-gray-600 flex flex-col items-center justify-center mb-3">
+                  <p className="text-xs text-gray-500 text-center">
+                    No rated books
+                  </p>
+                </div>
+                {!readOnly && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="text-xs"
+                    onClick={() => openSearchDialog("ratings")}
+                  >
+                    <Plus className="h-3 w-3 mr-1" />
+                    Add Rating
+                  </Button>
                 )}
+              </div>
+            )}
           </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="absolute right-0 top-1/2 -translate-y-1/2 z-10 h-8 w-8 p-0 bg-black/50 hover:bg-black/70 text-white rounded-full"
-            onClick={() => scrollRight(scrollContainerRefs.ratings)}
-          >
-            <ChevronRight className="h-4 w-4" />
-          </Button>
+
+          {/* Navigation arrows for ratings */}
+          {Object.keys(safeBooksProfile.ratings).length > 0 && (
+            <>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="absolute left-2 top-1/2 transform -translate-y-1/2 h-8 w-8 p-0 bg-black/80 hover:bg-black backdrop-blur-md border border-white/10 text-white rounded-full shadow-2xl hover:scale-110 transition-all duration-300 z-30"
+                onClick={() => scrollLeft(scrollContainerRefs.ratings)}
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="absolute right-2 top-1/2 transform -translate-y-1/2 h-8 w-8 p-0 bg-black/80 hover:bg-black backdrop-blur-md border border-white/10 text-white rounded-full shadow-2xl hover:scale-110 transition-all duration-300 z-30"
+                onClick={() => scrollRight(scrollContainerRefs.ratings)}
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </>
+          )}
         </div>
       </div>
 
       {/* Search Dialog */}
       <Dialog open={showSearchDialog} onOpenChange={setShowSearchDialog}>
-        <DialogContent className="max-w-2xl max-h-[80vh] overflow-hidden flex flex-col">
+        <DialogContent className="sm:max-w-[600px] lg:max-w-[700px]">
           <DialogHeader>
             <DialogTitle>
-              Search Books - Add to{" "}
-              {activeSearchType
-                ? activeSearchType.replace(/([A-Z])/g, " $1").toLowerCase()
-                : ""}
+              {editingItem ? "Replace" : "Search"}{" "}
+              {activeSearchType === "recentlyRead"
+                ? "Recently Read"
+                : activeSearchType === "favoriteBooks"
+                ? "Favorite Books"
+                : activeSearchType === "readingList"
+                ? "Reading List"
+                : activeSearchType === "recommendations"
+                ? "Recommendations"
+                : activeSearchType === "ratings"
+                ? "Ratings"
+                : "Books"}
             </DialogTitle>
           </DialogHeader>
-          <div className="flex-1 overflow-hidden flex flex-col">
-            <div className="flex gap-2 mb-4">
-              <Input
-                placeholder="Search for books..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    handleSearch(searchQuery, activeSearchType!);
-                  }
-                }}
-              />
+          <div className="space-y-4">
+            <div className="flex gap-2">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                <Input
+                  placeholder={`${
+                    editingItem ? "Search for replacement" : "Search"
+                  } ${
+                    activeSearchType === "recentlyRead"
+                      ? "books for currently reading"
+                      : activeSearchType === "favoriteBooks"
+                      ? "books for favorites"
+                      : activeSearchType === "readingList"
+                      ? "books for reading list"
+                      : activeSearchType === "recommendations"
+                      ? "books for recommendations"
+                      : activeSearchType === "ratings"
+                      ? "books for ratings"
+                      : "books"
+                  }...`}
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onKeyPress={(e) => {
+                    if (e.key === "Enter") {
+                      handleSearch(searchQuery, activeSearchType!);
+                    }
+                  }}
+                  className="pl-10 text-sm"
+                />
+              </div>
               <Button
                 onClick={() => handleSearch(searchQuery, activeSearchType!)}
-                disabled={isSearching}
+                disabled={isSearching || !searchQuery.trim()}
+                className="flex-shrink-0"
               >
-                {isSearching ? (
-                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                ) : (
-                  <Search className="h-4 w-4" />
-                )}
+                {isSearching
+                  ? "Searching..."
+                  : editingItem
+                  ? "Search for Replacement"
+                  : "Search"}
               </Button>
             </div>
 
             {searchError && (
-              <div className="text-red-500 text-sm mb-4">{searchError}</div>
+              <div className="text-red-500 text-sm text-center">
+                {searchError}
+              </div>
             )}
 
-            <div className="flex-1 overflow-y-auto">
-              {searchResults.length > 0 ? (
-                <div className="space-y-2">
-                  {searchResults.map((item) => (
-                    <div
-                      key={item.id}
-                      className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted cursor-pointer"
-                      onClick={() => handleSelectItem(item)}
-                    >
-                      <div className="aspect-[2/3] w-12 bg-muted rounded-md overflow-hidden flex-shrink-0">
-                        <Image
-                          src={item.cover || "/placeholder.svg"}
-                          alt={item.title || "Book"}
-                          width={48}
-                          height={64}
-                          className="w-full h-full object-cover"
-                          onError={(e) => {
-                            const target = e.target as HTMLImageElement;
-                            target.src = "/placeholder.svg";
-                          }}
-                        />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <h4 className="font-medium text-sm line-clamp-1">
-                          {getTextContent(item.title)}
-                        </h4>
-                        {item.authors && item.authors.length > 0 && (
-                          <p className="text-xs text-muted-foreground line-clamp-1">
-                            {item.authors.join(", ")}
-                          </p>
-                        )}
-                        {item.publishedDate && (
-                          <p className="text-xs text-muted-foreground">
-                            {item.publishedDate}
-                          </p>
-                        )}
-                      </div>
-                      <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
-                        <Plus className="h-3 w-3" />
-                      </Button>
+            {searchResults.length > 0 && (
+              <div className="max-h-60 overflow-y-auto space-y-2">
+                {searchResults.map((item, index) => (
+                  <div
+                    key={item.id || index}
+                    className="flex items-center gap-3 p-2 rounded-md hover:bg-muted cursor-pointer"
+                    onClick={() => handleSelectItem(item)}
+                  >
+                    <div className="w-12 h-16 rounded-md overflow-hidden flex-shrink-0">
+                      <Image
+                        src={item.cover || "/placeholder.svg"}
+                        alt={getTextContent(item.title || item.name) || "Book"}
+                        width={48}
+                        height={64}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.src = "/placeholder.svg";
+                        }}
+                      />
                     </div>
-                  ))}
-                </div>
-              ) : searchQuery && !isSearching ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  <Book className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                  <p className="text-sm">No books found</p>
-                </div>
-              ) : null}
-            </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold truncate leading-tight">
+                        {cleanTextContent(
+                          getTextContent(item.title || item.name)
+                        ) || "Unknown"}
+                      </p>
+                      <p className="text-xs text-muted-foreground truncate leading-tight mt-0.5">
+                        {item.authors?.join(", ") || "Unknown Author"}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </DialogContent>
       </Dialog>

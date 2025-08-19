@@ -8,6 +8,7 @@ import {
   doc,
   setDoc,
 } from "firebase/firestore";
+import { getAuth } from "firebase/auth";
 import { db } from "@/lib/firebase";
 import { searchMovies } from "@/lib/tmdb";
 
@@ -61,6 +62,14 @@ export function useMovieProfile(userId: string | undefined) {
     setError(null);
 
     try {
+      // Check if user is authenticated
+      const auth = getAuth();
+      if (!auth.currentUser) {
+        setError("User not authenticated");
+        setLoading(false);
+        return;
+      }
+
       const movieCollection = collection(db, "users", userId, "movies");
       const movieSnapshot = await getDocs(movieCollection);
 
@@ -375,6 +384,181 @@ export function useMovieProfile(userId: string | undefined) {
     await saveMovieProfile({ ratings: updatedRatings });
   };
 
+  // Replace functions for editing items
+  const replaceFavoriteMovie = async (oldId: string, newMovie: TMDBMovie) => {
+    if (!oldId || !newMovie?.id) {
+      console.warn("Invalid parameters for replaceFavoriteMovie:", {
+        oldId,
+        newMovie,
+      });
+      return;
+    }
+
+    const updatedMovies = [...movieProfile.favoriteMovies];
+
+    // Find the item to replace
+    const existingIndex = updatedMovies.findIndex(
+      (movie) => movie.id === oldId
+    );
+
+    if (existingIndex === -1) {
+      console.warn("Movie to replace not found:", oldId);
+      return;
+    }
+
+    // Handle different scenarios dynamically
+    if (oldId === newMovie.id) {
+      // Same ID - just update the content
+      updatedMovies[existingIndex] = newMovie;
+    } else {
+      // Different ID - remove duplicates and replace
+      const filteredMovies = updatedMovies.filter(
+        (movie) => movie.id !== newMovie.id
+      );
+      const newIndex = filteredMovies.findIndex((movie) => movie.id === oldId);
+
+      if (newIndex !== -1) {
+        filteredMovies[newIndex] = newMovie;
+        await saveMovieProfile({ favoriteMovies: filteredMovies });
+        return;
+      }
+    }
+
+    await saveMovieProfile({ favoriteMovies: updatedMovies });
+  };
+
+  const replaceWatchlistMovie = async (oldId: string, newMovie: TMDBMovie) => {
+    if (!oldId || !newMovie?.id) {
+      console.warn("Invalid parameters for replaceWatchlistMovie:", {
+        oldId,
+        newMovie,
+      });
+      return;
+    }
+
+    const updatedWatchlist = [...movieProfile.watchlist];
+
+    // Find the item to replace
+    const existingIndex = updatedWatchlist.findIndex(
+      (movie) => movie.id === oldId
+    );
+
+    if (existingIndex === -1) {
+      console.warn("Movie to replace not found:", oldId);
+      return;
+    }
+
+    // Handle different scenarios dynamically
+    if (oldId === newMovie.id) {
+      // Same ID - just update the content
+      updatedWatchlist[existingIndex] = newMovie;
+    } else {
+      // Different ID - remove duplicates and replace
+      const filteredWatchlist = updatedWatchlist.filter(
+        (movie) => movie.id !== newMovie.id
+      );
+      const newIndex = filteredWatchlist.findIndex(
+        (movie) => movie.id === oldId
+      );
+
+      if (newIndex !== -1) {
+        filteredWatchlist[newIndex] = newMovie;
+        await saveMovieProfile({ watchlist: filteredWatchlist });
+        return;
+      }
+    }
+
+    await saveMovieProfile({ watchlist: updatedWatchlist });
+  };
+
+  const replaceRecommendation = async (oldId: string, newMovie: TMDBMovie) => {
+    if (!oldId || !newMovie?.id) {
+      console.warn("Invalid parameters for replaceRecommendation:", {
+        oldId,
+        newMovie,
+      });
+      return;
+    }
+
+    const updatedRecommendations = [...movieProfile.recommendations];
+
+    // Find the item to replace
+    const existingIndex = updatedRecommendations.findIndex(
+      (movie) => movie.id === oldId
+    );
+
+    if (existingIndex === -1) {
+      console.warn("Movie to replace not found:", oldId);
+      return;
+    }
+
+    // Handle different scenarios dynamically
+    if (oldId === newMovie.id) {
+      // Same ID - just update the content
+      updatedRecommendations[existingIndex] = newMovie;
+    } else {
+      // Different ID - remove duplicates and replace
+      const filteredRecommendations = updatedRecommendations.filter(
+        (movie) => movie.id !== newMovie.id
+      );
+      const newIndex = filteredRecommendations.findIndex(
+        (movie) => movie.id === oldId
+      );
+
+      if (newIndex !== -1) {
+        filteredRecommendations[newIndex] = newMovie;
+        await saveMovieProfile({ recommendations: filteredRecommendations });
+        return;
+      }
+    }
+
+    await saveMovieProfile({ recommendations: updatedRecommendations });
+  };
+
+  const replaceRating = async (
+    oldId: string,
+    newMovie: TMDBMovie,
+    rating: number
+  ) => {
+    if (!oldId || !newMovie?.id) {
+      console.warn("Invalid parameters for replaceRating:", {
+        oldId,
+        newMovie,
+      });
+      return;
+    }
+
+    const updatedRatings = [...movieProfile.ratings];
+
+    // Find the item to replace
+    const existingIndex = updatedRatings.findIndex((r) => r.movie.id === oldId);
+
+    if (existingIndex === -1) {
+      console.warn("Rating to replace not found:", oldId);
+      return;
+    }
+
+    // Handle different scenarios dynamically
+    if (oldId === newMovie.id) {
+      // Same ID - just update the content
+      updatedRatings[existingIndex] = { movie: newMovie, rating };
+    } else {
+      // Different ID - remove duplicates and replace
+      const filteredRatings = updatedRatings.filter(
+        (r) => r.movie.id !== newMovie.id
+      );
+      const newIndex = filteredRatings.findIndex((r) => r.movie.id === oldId);
+
+      if (newIndex !== -1) {
+        filteredRatings[newIndex] = { movie: newMovie, rating };
+        await saveMovieProfile({ ratings: filteredRatings });
+        return;
+      }
+    }
+
+    await saveMovieProfile({ ratings: updatedRatings });
+  };
+
   // Search functionality using TMDB API
   const searchMovie = async (query: string, limit: number = 10) => {
     try {
@@ -445,12 +629,16 @@ export function useMovieProfile(userId: string | undefined) {
     updateFavoriteDirector,
     addFavoriteMovie,
     removeFavoriteMovie,
+    replaceFavoriteMovie,
     addToWatchlist,
     removeFromWatchlist,
+    replaceWatchlistMovie,
     addRecommendation,
     removeRecommendation,
+    replaceRecommendation,
     addRating,
     removeRating,
+    replaceRating,
     searchMovie,
     searchDirector,
     refreshProfile: fetchMovieProfile,
