@@ -31,7 +31,7 @@ import {
   UserCheck,
   ArrowRight,
   Sparkles,
-  TrendingUp,
+
   Heart,
   MessageCircle,
   MoreHorizontal,
@@ -70,8 +70,7 @@ export default function UsersPage() {
   >({});
   const [hasSearched, setHasSearched] = useState(false);
   const [activeTab, setActiveTab] = useState("discover");
-  const [suggestedUsers, setSuggestedUsers] = useState<UserData[]>([]);
-  const [loadingSuggested, setLoadingSuggested] = useState(false);
+
 
   // Debounced search function
   useEffect(() => {
@@ -87,56 +86,26 @@ export default function UsersPage() {
     return () => clearTimeout(timeoutId);
   }, [searchQuery]);
 
-  // Load suggested users on component mount
+  // Initialize following states for followers and following
   useEffect(() => {
-    if (!currentUserLoading && currentUser) {
-      loadSuggestedUsers();
-    }
-  }, [currentUserLoading, currentUser]);
-
-  // Load suggested users (users not followed by current user)
-  const loadSuggestedUsers = async () => {
-    setLoadingSuggested(true);
-    try {
-      const usersRef = collection(db, "users");
-      const usersSnapshot = await getDocs(usersRef);
-      const allUsers: UserData[] = [];
-
-      usersSnapshot.forEach((doc) => {
-        const userData = doc.data() as UserData;
-        // Filter out current user and users already followed
-        if (
-          userData.uid !== currentUser?.uid &&
-          currentUser?.uid &&
-          !(userData.followers || []).includes(currentUser.uid)
-        ) {
-          allUsers.push({
-            ...userData,
-            followers: userData.followers || [],
-            following: userData.following || [],
-          });
-        }
-      });
-
-      // Sort by follower count and take top 6
-      const sortedUsers = allUsers
-        .sort((a, b) => (b.followers?.length || 0) - (a.followers?.length || 0))
-        .slice(0, 6);
-
-      setSuggestedUsers(sortedUsers);
-
-      // Initialize following states for suggested users
+    if (followers.length > 0 || following.length > 0) {
       const followingStatesMap: Record<string, boolean> = {};
-      sortedUsers.forEach((user) => {
-        followingStatesMap[user.uid] = false;
+      
+      // Initialize states for followers
+      followers.forEach((user) => {
+        followingStatesMap[user.uid] = following.some(followingUser => followingUser.uid === user.uid);
       });
+      
+      // Initialize states for following (these should all be true)
+      following.forEach((user) => {
+        followingStatesMap[user.uid] = true;
+      });
+      
       setFollowingStates((prev) => ({ ...prev, ...followingStatesMap }));
-    } catch (error) {
-      console.error("Error loading suggested users:", error);
-    } finally {
-      setLoadingSuggested(false);
     }
-  };
+  }, [followers, following]);
+
+
 
   // Perform fuzzy search
   const performSearch = async (query: string) => {
@@ -220,9 +189,9 @@ export default function UsersPage() {
 
     try {
       const isFollowing = followingStates[targetUserId];
-      const targetUser =
-        searchResults.find((user) => user.uid === targetUserId) ||
-        suggestedUsers.find((user) => user.uid === targetUserId);
+      const targetUser = searchResults.find((user) => user.uid === targetUserId) || 
+                        followers.find((user) => user.uid === targetUserId) ||
+                        following.find((user) => user.uid === targetUserId);
 
       if (!targetUser) return;
 
@@ -268,20 +237,7 @@ export default function UsersPage() {
         })
       );
 
-      // Update suggested users
-      setSuggestedUsers((prev) =>
-        prev.map((user) => {
-          if (user.uid === targetUserId) {
-            return {
-              ...user,
-              followers: isFollowing
-                ? (user.followers || []).filter((id) => id !== currentUser.uid)
-                : [...(user.followers || []), currentUser.uid],
-            };
-          }
-          return user;
-        })
-      );
+
     } catch (error) {
       console.error("Error updating follow status:", error);
     }
@@ -321,26 +277,26 @@ export default function UsersPage() {
 
       {/* Enhanced Tabs - Positioned at extreme left */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="flex justify-start w-full mb-8 bg-muted/50 p-1 rounded-xl ml-0">
+        <TabsList className="flex justify-start w-full mb-8 bg-muted/50 p-3 rounded-xl ml-0">
           <TabsTrigger
             value="discover"
-            className="data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-lg transition-all duration-200"
+            className="data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-xl transition-all duration-200 px-6 py-3"
           >
-            <Sparkles className="h-4 w-4 mr-2" />
+            <Sparkles className="h-5 w-5 mr-2" />
             Discover
           </TabsTrigger>
           <TabsTrigger
             value="following"
-            className="data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-lg transition-all duration-200"
+            className="data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-xl transition-all duration-200 px-6 py-3"
           >
-            <UserCheck className="h-4 w-4 mr-2" />
+            <UserCheck className="h-5 w-5 mr-2" />
             Following ({following.length})
           </TabsTrigger>
           <TabsTrigger
             value="followers"
-            className="data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-lg transition-all duration-200"
+            className="data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-xl transition-all duration-200 px-6 py-3"
           >
-            <Users className="h-4 w-4 mr-2" />
+            <Users className="h-5 w-5 mr-2" />
             Followers ({followers.length})
           </TabsTrigger>
         </TabsList>
@@ -369,173 +325,20 @@ export default function UsersPage() {
             )}
           </div>
 
-          {/* Search Results or Suggested Users */}
-          {!hasSearched ? (
-            <div className="space-y-6">
-              {/* Suggested Users Section */}
-              <div className="space-y-4">
-                <div className="flex items-center gap-2 mb-6">
-                  <TrendingUp className="h-5 w-5 text-primary" />
-                  <h2 className="text-xl font-semibold">Suggested for you</h2>
-                </div>
-
-                {loadingSuggested ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {[...Array(6)].map((_, i) => (
-                      <Card
-                        key={i}
-                        className="border-0 bg-gradient-to-br from-card to-card/50 backdrop-blur-sm"
-                      >
-                        <CardContent className="p-6">
-                          <div className="flex items-start gap-4">
-                            <div className="h-16 w-16 bg-muted rounded-full animate-pulse" />
-                            <div className="flex-1 space-y-3">
-                              <div className="h-4 bg-muted rounded animate-pulse" />
-                              <div className="h-3 bg-muted rounded w-2/3 animate-pulse" />
-                              <div className="h-3 bg-muted rounded w-1/2 animate-pulse" />
-                              <div className="h-9 bg-muted rounded animate-pulse" />
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                ) : suggestedUsers.length === 0 ? (
-            <div className="text-center py-12">
-                    <Users className="h-16 w-16 text-muted-foreground/50 mx-auto mb-4" />
-                    <h3 className="text-lg font-semibold mb-2">
-                      No suggestions yet
-                    </h3>
-              <p className="text-muted-foreground">
-                      Start following people to get personalized suggestions
-                    </p>
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {suggestedUsers.map((user) => (
-                      <Card
-                        key={user.uid}
-                        className="border-0 bg-gradient-to-br from-card to-card/50 backdrop-blur-sm"
-                      >
-                        <CardContent className="p-6">
-                          <div className="flex items-start gap-4">
-                            <Avatar
-                              className="h-16 w-16 cursor-pointer ring-2 ring-primary/20"
-                              onClick={() => router.push(`/users/${user.uid}`)}
-                            >
-                              <AvatarImage
-                                src={user.avatarUrl || ""}
-                                alt={user.fullName || user.username}
-                              />
-                              <AvatarFallback className="bg-gradient-to-br from-primary/20 to-primary/10 text-primary font-semibold">
-                                {(user.fullName || user.username)
-                                  .charAt(0)
-                                  .toUpperCase()}
-                              </AvatarFallback>
-                            </Avatar>
-
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-start justify-between mb-2">
-                                <div className="flex-1 min-w-0">
-                                  <h3
-                                    className="font-semibold text-base truncate cursor-pointer"
-                                    onClick={() =>
-                                      router.push(`/users/${user.uid}`)
-                                    }
-                                  >
-                                    {user.fullName || "No name"}
-                                  </h3>
-                                  <p className="text-sm text-muted-foreground truncate">
-                                    @{user.username}
-                                  </p>
-                                </div>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="opacity-0"
-                                >
-                                  <MoreHorizontal className="h-4 w-4" />
-                                </Button>
-                              </div>
-
-                              {user.tagline && (
-                                <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
-                                  {user.tagline}
-                                </p>
-                              )}
-
-                              <div className="flex items-center gap-4 mb-4 text-xs text-muted-foreground">
-                                <span className="flex items-center gap-1 bg-muted/50 px-2 py-1 rounded-full">
-                                  <Heart className="h-3 w-3 text-primary" />
-                                  {(user.followers || []).length} followers
-                                </span>
-                                <span className="flex items-center gap-1 bg-muted/50 px-2 py-1 rounded-full">
-                                  <User className="h-3 w-3 text-primary" />
-                                  {(user.following || []).length} following
-                                </span>
-                              </div>
-
-                              <Button
-                                variant={
-                                  followingStates[user.uid]
-                                    ? "outline"
-                                    : "default"
-                                }
-                                size="sm"
-                                onClick={() => handleFollowToggle(user.uid)}
-                                disabled={!currentUser}
-                                className="w-full h-9 rounded-lg transition-all duration-200"
-                              >
-                                {followingStates[user.uid] ? (
-                                  <>
-                                    <UserCheck className="h-4 w-4 mr-2" />
-                                    Following
-                                  </>
-                                ) : (
-                                  <>
-                                    <UserPlus className="h-4 w-4 mr-2" />
-                                    Follow
-                                  </>
-                                )}
-                              </Button>
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-          ) : searchResults.length === 0 ? (
+          {/* Search Results */}
+          {searchResults.length === 0 ? (
             <div className="text-center py-16">
-              <div className="relative">
-                <User className="h-20 w-20 text-muted-foreground/30 mx-auto mb-6" />
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <Search className="h-8 w-8 text-muted-foreground/50" />
-                </div>
-              </div>
-              <h3 className="text-xl font-semibold mb-3">
-                {searching ? "Searching..." : "No users found"}
-              </h3>
-              <p className="text-muted-foreground mb-6 max-w-md mx-auto">
-                {searching
-                  ? "Looking for users that match your search..."
-                  : "Try adjusting your search terms or browse our suggested users"}
-              </p>
-              {!searching && (
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    setSearchQuery("");
-                    setHasSearched(false);
-                  }}
-                  className="rounded-lg"
-                >
-                  <ArrowRight className="h-4 w-4 mr-2 rotate-180" />
-                  Back to Suggestions
-                </Button>
-              )}
+                             <div className="relative">
+                 <Search className="h-20 w-20 text-muted-foreground/30 mx-auto mb-6" />
+               </div>
+                             <h3 className="text-xl font-semibold mb-3">
+                 {searching ? "Searching..." : ""}
+               </h3>
+                             <p className="text-muted-foreground mb-6 max-w-md mx-auto">
+                 {searching
+                   ? "Looking for users that match your search..."
+                   : "Find friends to see their favorites and get their recommendations"}
+               </p>
             </div>
           ) : (
             <div className="space-y-4">
@@ -543,18 +346,7 @@ export default function UsersPage() {
                 <h3 className="text-lg font-semibold">
                   Search Results ({searchResults.length})
                 </h3>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => {
-                    setSearchQuery("");
-                    setHasSearched(false);
-                  }}
-                  className="text-muted-foreground"
-                >
-                  <ArrowRight className="h-4 w-4 mr-2 rotate-180" />
-                  Back to Suggestions
-                </Button>
+                
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -718,9 +510,7 @@ export default function UsersPage() {
                           @{user.username}
                         </p>
                       </div>
-                          <Badge variant="secondary" className="text-xs">
-                            Following
-                          </Badge>
+
                     </div>
 
                         <div className="flex gap-2 mt-4">
@@ -734,6 +524,16 @@ export default function UsersPage() {
                           <UserCheck className="h-4 w-4 mr-2" />
                           View Profile
                         </Link>
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleFollowToggle(user.uid)}
+                        disabled={!currentUser}
+                        className="flex-1 h-9 rounded-lg transition-all duration-200"
+                      >
+                        <UserCheck className="h-4 w-4 mr-2" />
+                        Following
                       </Button>
                         </div>
                       </div>
@@ -808,23 +608,40 @@ export default function UsersPage() {
                           @{user.username}
                         </p>
                       </div>
-                          <Badge variant="outline" className="text-xs">
-                            Follower
-                          </Badge>
-                    </div>
+
+                        </div>
 
                         <div className="flex gap-2 mt-4">
-                      <Button
-                        variant="outline"
-                        size="sm"
+                          <Button
+                            variant="outline"
+                            size="sm"
                             className="flex-1 h-9 rounded-lg"
-                        asChild
-                      >
-                        <Link href={`/users/${user.uid}`}>
-                          <UserCheck className="h-4 w-4 mr-2" />
-                          View Profile
-                        </Link>
-                      </Button>
+                            asChild
+                          >
+                            <Link href={`/users/${user.uid}`}>
+                              <UserCheck className="h-4 w-4 mr-2" />
+                              View Profile
+                            </Link>
+                          </Button>
+                          <Button
+                            variant={followingStates[user.uid] ? "outline" : "default"}
+                            size="sm"
+                            onClick={() => handleFollowToggle(user.uid)}
+                            disabled={!currentUser}
+                            className="flex-1 h-9 rounded-lg transition-all duration-200"
+                          >
+                            {followingStates[user.uid] ? (
+                              <>
+                                <UserCheck className="h-4 w-4 mr-2" />
+                                Following
+                              </>
+                            ) : (
+                              <>
+                                <UserPlus className="h-4 w-4 mr-2" />
+                                Follow Back
+                              </>
+                            )}
+                          </Button>
                         </div>
                       </div>
                     </div>
