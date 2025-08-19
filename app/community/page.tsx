@@ -3,7 +3,7 @@ import CommunityFeed from "@/components/community-feed"
 
 export default function Home() {
   return (
-    <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+    <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false} disableTransitionOnChange>
       <CommunityFeed />
     </ThemeProvider>
   )

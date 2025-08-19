@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { ModeToggle } from "@/components/mode-toggle";
+
 import {
   Music,
   Film,
@@ -202,7 +202,7 @@ export default function Sidebar({ isLandingPage = false }: SidebarProps) {
                   isCollapsed ? "hidden" : "flex"
                 )}
               >
-                <ModeToggle />
+
                 <Button
                   variant="ghost"
                   size="icon"

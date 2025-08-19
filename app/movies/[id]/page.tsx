@@ -87,6 +87,15 @@ interface UserList {
   isPublic?: boolean;
 }
 
+interface SimilarMovie {
+  id: number;
+  title: string;
+  poster_path: string | null;
+  release_date: string;
+  vote_average: number;
+  vote_count: number;
+}
+
 export default function MovieDetailPage({
   params,
 }: {
@@ -105,6 +114,8 @@ export default function MovieDetailPage({
   const [activeTab, setActiveTab] = useState("overview");
   const [trailerOpen, setTrailerOpen] = useState(false);
   const [selectedTrailer, setSelectedTrailer] = useState<Video | null>(null);
+  const [similarMovies, setSimilarMovies] = useState<SimilarMovie[]>([]);
+  const [loadingSimilar, setLoadingSimilar] = useState(false);
 
   // Default collections for movies
   const defaultCollections = [
@@ -146,6 +157,27 @@ export default function MovieDetailPage({
       }
     };
 
+    const fetchSimilarMovies = async () => {
+      try {
+        setLoadingSimilar(true);
+        const apiKey = process.env.NEXT_PUBLIC_TMDB_API_KEY;
+        const response = await fetch(
+          `https://api.themoviedb.org/3/movie/${resolvedParams.id}/similar?api_key=${apiKey}`
+        );
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch similar movies");
+        }
+
+        const data = await response.json();
+        setSimilarMovies(data.results || []);
+      } catch (err) {
+        console.error("Error fetching similar movies:", err);
+      } finally {
+        setLoadingSimilar(false);
+      }
+    };
+
     const fetchUserLists = async () => {
       if (!user?.uid) return;
       try {
@@ -182,6 +214,7 @@ export default function MovieDetailPage({
     };
 
     fetchMovieDetails();
+    fetchSimilarMovies();
     fetchUserLists();
   }, [resolvedParams.id, user]);
 
@@ -328,15 +361,19 @@ export default function MovieDetailPage({
         {/* Hero Section with Backdrop */}
         <div className="relative mb-12 rounded-3xl overflow-hidden">
           {movie.backdrop_path && (
-            <div className="absolute inset-0">
-              <Image
-                src={`https://image.tmdb.org/t/p/original${movie.backdrop_path}`}
-                alt={movie.title}
-                fill
-                className="object-cover blur-sm"
-                priority
-              />
-            </div>
+            <>
+              <div className="absolute inset-0">
+                <Image
+                  src={`https://image.tmdb.org/t/p/original${movie.backdrop_path}`}
+                  alt={movie.title}
+                  fill
+                  className="object-cover blur-sm"
+                  priority
+                />
+              </div>
+              {/* Overlay to reduce background image opacity */}
+              <div className="absolute inset-0 bg-black/60"></div>
+            </>
           )}
 
           <div className="relative z-10 p-8 lg:p-12">
@@ -529,38 +566,223 @@ export default function MovieDetailPage({
           {/* Content Area */}
           <div className="min-h-[400px] bg-card/50 backdrop-blur-sm rounded-2xl p-8 border border-border/30 shadow-lg">
             {activeTab === "overview" && (
-              <div className="space-y-6">
-                <h3 className="text-2xl font-semibold bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent">
-                  Movie Information
-                </h3>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-                  <div className="p-4 rounded-xl bg-muted/30 backdrop-blur-sm border border-border/20">
-                    <span className="text-muted-foreground text-sm">
-                      Release Date
-                    </span>
-                    <p className="font-medium">
-                      {new Date(movie.release_date).toLocaleDateString()}
-                    </p>
-                  </div>
-                  <div className="p-4 rounded-xl bg-muted/30 backdrop-blur-sm border border-border/20">
-                    <span className="text-muted-foreground text-sm">
-                      Runtime
-                    </span>
-                    <p className="font-medium">{movie.runtime} minutes</p>
-                  </div>
-                  <div className="p-4 rounded-xl bg-muted/30 backdrop-blur-sm border border-border/20">
-                    <span className="text-muted-foreground text-sm">
-                      Status
-                    </span>
-                    <p className="font-medium">{movie.status}</p>
-                  </div>
-                  <div className="p-4 rounded-xl bg-muted/30 backdrop-blur-sm border border-border/20">
-                    <span className="text-muted-foreground text-sm">
-                      Rating
-                    </span>
-                    <p className="font-medium">{movie.vote_average}/10</p>
+              <div className="space-y-8">
+                {/* Movie Information */}
+                <div className="space-y-6">
+                  <h3 className="text-2xl font-semibold bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent">
+                    Movie Information
+                  </h3>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                    <div className="p-4 rounded-xl bg-muted/30 backdrop-blur-sm border border-border/20">
+                      <span className="text-muted-foreground text-sm">
+                        Release Date
+                      </span>
+                      <p className="font-medium">
+                        {new Date(movie.release_date).toLocaleDateString()}
+                      </p>
+                    </div>
+                    <div className="p-4 rounded-xl bg-muted/30 backdrop-blur-sm border border-border/20">
+                      <span className="text-muted-foreground text-sm">
+                        Runtime
+                      </span>
+                      <p className="font-medium">{movie.runtime} minutes</p>
+                    </div>
+                    <div className="p-4 rounded-xl bg-muted/30 backdrop-blur-sm border border-border/20">
+                      <span className="text-muted-foreground text-sm">
+                        Status
+                      </span>
+                      <p className="font-medium">{movie.status}</p>
+                    </div>
+                    <div className="p-4 rounded-xl bg-muted/30 backdrop-blur-sm border border-border/20">
+                      <span className="text-muted-foreground text-sm">
+                        Rating
+                      </span>
+                      <p className="font-medium">{movie.vote_average}/10</p>
+                    </div>
                   </div>
                 </div>
+
+                {/* Top 10 Cast */}
+                {movie.credits?.cast && movie.credits.cast.length > 0 && (
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-2xl font-semibold bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent">
+                        Top Cast
+                      </h3>
+                      <button
+                        onClick={() => setActiveTab("cast/crew")}
+                        className="text-emerald-400 hover:text-emerald-300 font-medium transition-colors duration-200"
+                      >
+                        View More
+                      </button>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                      {movie.credits.cast.slice(0, 10).map((actor, index) => (
+                        <div
+                          key={`overview-cast-${actor.id}-${index}`}
+                          className="flex items-center space-x-3 p-3 bg-muted/30 backdrop-blur-sm rounded-xl cursor-pointer hover:bg-muted/50 transition-all duration-200 group border border-border/20"
+                          onClick={() => router.push(`/person/${actor.id}`)}
+                        >
+                          {actor.profile_path ? (
+                            <Image
+                              src={`https://image.tmdb.org/t/p/w92${actor.profile_path}`}
+                              alt={actor.name}
+                              width={40}
+                              height={40}
+                              className="rounded-full object-cover group-hover:scale-110 transition-transform duration-200"
+                              onError={(e) => {
+                                const target = e.target as HTMLImageElement;
+                                target.src = "/placeholder-user.jpg";
+                              }}
+                            />
+                          ) : (
+                            <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center group-hover:scale-110 transition-transform duration-200">
+                              <span className="text-xs font-medium text-muted-foreground">
+                                {actor.name.charAt(0)}
+                              </span>
+                            </div>
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium text-sm text-foreground truncate group-hover:text-primary transition-colors duration-200">
+                              {actor.name}
+                            </p>
+                            <p className="text-xs text-muted-foreground truncate">
+                              {actor.character}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Top 10 Crew */}
+                {movie.credits?.crew && movie.credits.crew.length > 0 && (
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-2xl font-semibold bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent">
+                        Top Crew
+                      </h3>
+                      <button
+                        onClick={() => setActiveTab("cast/crew")}
+                        className="text-emerald-400 hover:text-emerald-300 font-medium transition-colors duration-200"
+                      >
+                        View More
+                      </button>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                      {movie.credits.crew.slice(0, 10).map((person, index) => (
+                        <div
+                          key={`overview-crew-${person.id}-${index}`}
+                          className="flex items-center space-x-3 p-3 bg-muted/30 backdrop-blur-sm rounded-xl cursor-pointer hover:bg-muted/50 transition-all duration-200 group border border-border/20"
+                          onClick={() => router.push(`/person/${person.id}`)}
+                        >
+                          {person.profile_path ? (
+                            <Image
+                              src={`https://image.tmdb.org/t/p/w92${person.profile_path}`}
+                              alt={person.name}
+                              width={40}
+                              height={40}
+                              className="rounded-full object-cover group-hover:scale-110 transition-transform duration-200"
+                              onError={(e) => {
+                                const target = e.target as HTMLImageElement;
+                                target.src = "/placeholder-user.jpg";
+                              }}
+                            />
+                          ) : (
+                            <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center group-hover:scale-110 transition-transform duration-200">
+                              <span className="text-xs font-medium text-muted-foreground">
+                                {person.name.charAt(0)}
+                              </span>
+                            </div>
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium text-sm text-foreground truncate group-hover:text-primary transition-colors duration-200">
+                              {person.name}
+                            </p>
+                            <p className="text-xs text-muted-foreground truncate">
+                              {person.job}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Reviews Section */}
+                <div className="space-y-4">
+                  <h3 className="text-2xl font-semibold bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent">
+                    Reviews
+                  </h3>
+                  <div className="p-6 rounded-xl bg-muted/30 backdrop-blur-sm border border-border/20">
+                    <p className="text-muted-foreground">
+                      No reviews available for this movie yet. Be the first to write a review!
+                    </p>
+                    <Button 
+                      className="mt-4"
+                      onClick={() => router.push(`/reviews?type=movie&id=${movie.id}&title=${encodeURIComponent(movie.title)}&cover=${encodeURIComponent(movie.poster_path || '')}`)}
+                    >
+                      Write a Review
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Top 5 Similar Movies */}
+                {similarMovies.length > 0 && (
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-2xl font-semibold bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent">
+                        Similar Movies
+                      </h3>
+                      <button
+                        onClick={() => setActiveTab("similar")}
+                        className="text-emerald-400 hover:text-emerald-300 font-medium transition-colors duration-200"
+                      >
+                        View More
+                      </button>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                      {similarMovies.slice(0, 5).map((similarMovie) => (
+                        <div
+                          key={similarMovie.id}
+                          className="group cursor-pointer transition-all duration-200 hover:scale-105"
+                          onClick={() => router.push(`/movies/${similarMovie.id}`)}
+                        >
+                          <div className="relative aspect-[2/3] rounded-xl overflow-hidden bg-muted/30 border border-border/20">
+                            {similarMovie.poster_path ? (
+                              <Image
+                                src={`https://image.tmdb.org/t/p/w500${similarMovie.poster_path}`}
+                                alt={similarMovie.title}
+                                fill
+                                className="object-cover group-hover:scale-110 transition-transform duration-300"
+                                onError={(e) => {
+                                  const target = e.target as HTMLImageElement;
+                                  target.src = "/placeholder.svg";
+                                }}
+                              />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center bg-muted/50">
+                                <span className="text-muted-foreground text-sm">No Image</span>
+                              </div>
+                            )}
+                            
+
+                          </div>
+                          
+                          <div className="mt-3 space-y-1">
+                            <h4 className="font-medium text-sm text-foreground line-clamp-2 group-hover:text-primary transition-colors duration-200">
+                              {similarMovie.title}
+                            </h4>
+                            <p className="text-xs text-muted-foreground">
+                              {similarMovie.release_date ? new Date(similarMovie.release_date).getFullYear() : 'Unknown'}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
@@ -682,8 +904,61 @@ export default function MovieDetailPage({
               </div>
             )}
             {activeTab === "similar" && (
-              <div className="text-center text-muted-foreground py-12">
-                <p className="text-lg">Similar movies coming soon...</p>
+              <div className="space-y-6">
+                <h3 className="text-2xl font-semibold bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent">
+                  Similar Movies
+                </h3>
+                
+                {loadingSimilar ? (
+                  <div className="text-center text-muted-foreground py-12">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+                    <p className="text-lg">Loading similar movies...</p>
+                  </div>
+                ) : similarMovies.length > 0 ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                    {similarMovies.map((similarMovie) => (
+                      <div
+                        key={similarMovie.id}
+                        className="group cursor-pointer transition-all duration-200 hover:scale-105"
+                        onClick={() => router.push(`/movies/${similarMovie.id}`)}
+                      >
+                        <div className="relative aspect-[2/3] rounded-xl overflow-hidden bg-muted/30 border border-border/20">
+                          {similarMovie.poster_path ? (
+                            <Image
+                              src={`https://image.tmdb.org/t/p/w500${similarMovie.poster_path}`}
+                              alt={similarMovie.title}
+                              fill
+                              className="object-cover group-hover:scale-110 transition-transform duration-300"
+                              onError={(e) => {
+                                const target = e.target as HTMLImageElement;
+                                target.src = "/placeholder.svg";
+                              }}
+                            />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center bg-muted/50">
+                              <span className="text-muted-foreground text-sm">No Image</span>
+                            </div>
+                          )}
+                          
+
+                        </div>
+                        
+                        <div className="mt-3 space-y-1">
+                          <h4 className="font-medium text-sm text-foreground line-clamp-2 group-hover:text-primary transition-colors duration-200">
+                            {similarMovie.title}
+                          </h4>
+                          <p className="text-xs text-muted-foreground">
+                            {similarMovie.release_date ? new Date(similarMovie.release_date).getFullYear() : 'Unknown'}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center text-muted-foreground py-12">
+                    <p className="text-lg">No similar movies found.</p>
+                  </div>
+                )}
               </div>
             )}
           </div>

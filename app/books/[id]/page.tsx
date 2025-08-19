@@ -82,6 +82,15 @@ export default function BookDetailPage({
   const [addToListOpen, setAddToListOpen] = useState(false);
   const [isSavingToList, setIsSavingToList] = useState(false);
   const [activeTab, setActiveTab] = useState("overview");
+  const [showFullDescription, setShowFullDescription] = useState(false);
+
+  // Helper function to truncate description to 100 words
+  const truncateDescription = (text: string, wordLimit: number = 100) => {
+    if (!text) return "";
+    const words = text.split(' ');
+    if (words.length <= wordLimit) return text;
+    return words.slice(0, wordLimit).join(' ') + '...';
+  };
 
   // Default collections for books
   const defaultCollections = [
@@ -283,21 +292,25 @@ export default function BookDetailPage({
         {/* Hero Section with Backdrop */}
         <div className="relative mb-12 rounded-3xl overflow-hidden">
           {book.imageLinks?.thumbnail && (
-            <div className="absolute inset-0">
-              <Image
-                src={book.imageLinks.thumbnail.replace("http://", "https://")}
-                alt={book.title}
-                fill
-                className="object-cover blur-sm"
-                priority
-              />
-            </div>
+            <>
+              <div className="absolute inset-0">
+                <Image
+                  src={book.imageLinks.thumbnail.replace("http://", "https://")}
+                  alt={book.title}
+                  fill
+                  className="object-cover blur-sm"
+                  priority
+                />
+              </div>
+              {/* Overlay to reduce background image opacity */}
+              <div className="absolute inset-0 bg-black/60"></div>
+            </>
           )}
 
           <div className="relative z-10 p-8 lg:p-12">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-end">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-start">
               {/* Cover */}
-              <div className="lg:col-span-1">
+              <div className="lg:col-span-1 lg:sticky lg:top-8">
                 <div className="relative group max-w-xs mx-auto lg:mx-0">
                   <div className="aspect-[2/3] rounded-2xl overflow-hidden bg-gradient-to-br from-muted to-muted/50 shadow-2xl group-hover:shadow-3xl transition-all duration-300">
                     <Image
@@ -365,14 +378,23 @@ export default function BookDetailPage({
 
                 {/* Overview */}
                 <div className="p-6 rounded-2xl bg-background/60 backdrop-blur-sm border border-border/50 shadow-lg">
-                  <div
-                    className="text-foreground leading-relaxed text-base"
-                    dangerouslySetInnerHTML={{
-                      __html:
-                        book.description ||
-                        "No description available for this book.",
-                    }}
-                  />
+                  <div className="text-foreground leading-relaxed text-base">
+                    <div
+                      dangerouslySetInnerHTML={{
+                        __html: showFullDescription
+                          ? book.description || "No description available for this book."
+                          : truncateDescription(book.description || "No description available for this book."),
+                      }}
+                    />
+                    {book.description && book.description.split(' ').length > 100 && (
+                      <button
+                        onClick={() => setShowFullDescription(!showFullDescription)}
+                        className="mt-3 text-emerald-400 hover:text-emerald-300 font-medium transition-colors duration-200 underline"
+                      >
+                        {showFullDescription ? "Read Less" : "Read More"}
+                      </button>
+                    )}
+                  </div>
                 </div>
 
                 {/* Categories */}

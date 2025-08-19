@@ -49,7 +49,7 @@ export default function LandingPage() {
   if (user) {
     // Show personalized feed for signed-in users
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 dark:from-gray-900 dark:via-black dark:to-gray-900 text-gray-900 dark:text-white relative scroll-smooth">
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900 text-white relative scroll-smooth">
         <div className="relative z-10 py-8 px-4">
           <div className="max-w-7xl mx-auto w-full space-y-16">
             {/* Welcome Section */}
@@ -58,13 +58,13 @@ export default function LandingPage() {
                 <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-4 bg-gradient-to-r from-emerald-400 to-blue-500 bg-clip-text text-transparent">
                   Welcome, {user.displayName || user.email?.split("@")[0] || "username"}.
                 </h1>
-                <p className="text-xl md:text-2xl text-gray-600 dark:text-gray-300 leading-relaxed mb-2">
+                <p className="text-xl md:text-2xl text-gray-300 leading-relaxed mb-2">
                   Here's what your friends have been upto.
                 </p>
-                <p className="text-sm md:text-base text-gray-600 dark:text-gray-300 leading-relaxed mb-6 max-w-4xl mx-auto">
+                <p className="text-sm md:text-base text-gray-300 leading-relaxed mb-6 max-w-4xl mx-auto">
                   Discover what your friends are watching, reading, and listening to. Stay connected with the people you follow and never miss their latest recommendations and reviews.
                 </p>
-                <div className="flex flex-wrap justify-center gap-6 text-sm text-gray-500 dark:text-gray-400">
+                <div className="flex flex-wrap justify-center gap-6 text-sm text-gray-400">
                   <span className="flex items-center gap-2">
                     <span className="w-2 h-2 bg-emerald-500 rounded-full"></span>
                     {reviews.length} reviews from people you follow
@@ -82,7 +82,7 @@ export default function LandingPage() {
               {/* Main Content Area */}
               <div className="flex-1">
                 <div className="mb-6">
-                  <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+                  <h2 className="text-xl font-semibold text-white mb-2">
                     Your friend's and your reviews
                   </h2>
                 </div>
@@ -90,24 +90,24 @@ export default function LandingPage() {
               {loadingReviews ? (
                 <div className="space-y-8">
                   {[...Array(3)].map((_, i) => (
-                    <div key={i} className="py-6 border-b border-gray-200 dark:border-gray-700 animate-pulse">
+                    <div key={i} className="py-6 border-b border-gray-700 animate-pulse">
                       {/* User info skeleton */}
                       <div className="flex items-center gap-3 mb-4">
-                        <div className="w-12 h-12 bg-gray-300 dark:bg-gray-600 rounded-full"></div>
-                        <div className="h-5 bg-gray-300 dark:bg-gray-600 rounded w-32"></div>
+                        <div className="w-12 h-12 bg-gray-600 rounded-full"></div>
+                        <div className="h-5 bg-gray-600 rounded w-32"></div>
                       </div>
                       {/* Media content skeleton */}
                       <div className="flex items-start gap-4">
-                        <div className="w-32 h-48 sm:w-40 sm:h-56 bg-gray-300 dark:bg-gray-600 rounded-lg"></div>
+                        <div className="w-32 h-48 sm:w-40 sm:h-56 bg-gray-600 rounded-lg"></div>
                         <div className="flex-1 space-y-3">
-                          <div className="h-6 bg-gray-300 dark:bg-gray-600 rounded w-3/4"></div>
+                          <div className="h-6 bg-gray-600 rounded w-3/4"></div>
                           <div className="flex gap-1">
                             {[...Array(5)].map((_, j) => (
-                              <div key={j} className="w-6 h-6 bg-gray-300 dark:bg-gray-600 rounded"></div>
+                              <div key={j} className="w-6 h-6 bg-gray-600 rounded"></div>
                             ))}
                           </div>
-                          <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-full"></div>
-                          <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-2/3"></div>
+                          <div className="h-4 bg-gray-600 rounded w-full"></div>
+                          <div className="h-4 bg-gray-600 rounded w-2/3"></div>
                         </div>
                       </div>
                     </div>
@@ -115,13 +115,13 @@ export default function LandingPage() {
                 </div>
               ) : error ? (
                 <div className="text-center py-12 md:py-16 px-6">
-                  <div className="w-20 h-20 bg-gradient-to-br from-red-100 to-orange-100 dark:from-red-900/30 dark:to-orange-900/30 rounded-full flex items-center justify-center mx-auto mb-6">
-                    <MessageSquare className="h-10 w-10 text-red-600 dark:text-red-400" />
+                  <div className="w-20 h-20 bg-gradient-to-br from-red-900/30 to-orange-900/30 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <MessageSquare className="h-10 w-10 text-red-400" />
                   </div>
-                  <h3 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white mb-4">
+                  <h3 className="text-xl md:text-2xl font-bold text-white mb-4">
                     Error Loading Reviews
                   </h3>
-                  <p className="text-gray-600 dark:text-gray-400 mb-8 max-w-md mx-auto text-base md:text-lg leading-relaxed">
+                  <p className="text-gray-400 mb-8 max-w-md mx-auto text-base md:text-lg leading-relaxed">
                     {error}
                   </p>
                   <Button 
@@ -133,13 +133,13 @@ export default function LandingPage() {
                 </div>
               ) : reviews.length === 0 ? (
                 <div className="text-center py-12 md:py-16 px-6">
-                  <div className="w-20 h-20 bg-gradient-to-br from-emerald-100 to-blue-100 dark:from-emerald-900/30 dark:to-blue-900/30 rounded-full flex items-center justify-center mx-auto mb-6">
-                    <UserPlus className="h-10 w-10 text-emerald-600 dark:text-emerald-400" />
+                  <div className="w-20 h-20 bg-gradient-to-br from-emerald-900/30 to-blue-900/30 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <UserPlus className="h-10 w-10 text-emerald-400" />
                   </div>
-                  <h3 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white mb-4">
+                  <h3 className="text-xl md:text-2xl font-bold text-white mb-4">
                     No reviews yet
                   </h3>
-                  <p className="text-gray-600 dark:text-gray-400 mb-8 max-w-md mx-auto text-base md:text-lg leading-relaxed">
+                  <p className="text-gray-400 mb-8 max-w-md mx-auto text-base md:text-lg leading-relaxed">
                     Start following people to see their reviews, or write your first review to share with the community!
                   </p>
                   <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -176,10 +176,10 @@ export default function LandingPage() {
                 <div className="w-64 flex-shrink-0">
                   <div className="sticky top-4 z-10 bg-background/80 backdrop-blur-sm rounded-lg p-4 space-y-4">
                     <Link href="/users">
-                      <Button
-                        variant="outline"
-                        className="w-full flex items-center justify-center gap-2 h-12 text-base font-medium border-2 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-                      >
+                                          <Button
+                      variant="outline"
+                      className="w-full flex items-center justify-center gap-2 h-12 text-base font-medium border-2 hover:bg-gray-800 transition-colors"
+                    >
                         <Users className="h-5 w-5" />
                         <span>find friends</span>
                       </Button>
