@@ -9,7 +9,7 @@ export interface BookSearchResult {
   publishedDate?: string;
   pageCount?: number;
 }
-
+ 
 export interface BookDetails {
   id: string;
   title: string;
