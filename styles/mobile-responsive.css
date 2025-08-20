@@ -1,6 +1,6 @@
-/* Mobile Responsive Styles for Discover Sections */
+/* Comprehensive Mobile Responsive Styles for All Pages */
 
-/* Base mobile optimizations */
+/* ===== BASE MOBILE OPTIMIZATIONS ===== */
 @media (max-width: 640px) {
   /* Improve touch targets */
   button,
@@ -19,6 +19,31 @@
   .text-sm {
     font-size: 0.875rem;
     line-height: 1.25rem;
+  }
+
+  .text-base {
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+  }
+
+  .text-lg {
+    font-size: 1rem;
+    line-height: 1.5rem;
+  }
+
+  .text-xl {
+    font-size: 1.125rem;
+    line-height: 1.75rem;
+  }
+
+  .text-2xl {
+    font-size: 1.25rem;
+    line-height: 1.75rem;
+  }
+
+  .text-3xl {
+    font-size: 1.5rem;
+    line-height: 2rem;
   }
 
   /* Improve scrolling performance */
@@ -143,9 +168,455 @@
     min-width: 2.5rem;
     height: 2.5rem;
   }
+
+  /* Discover Section Mobile Optimizations */
+  .horizontal-scroll-container {
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+  }
+
+  /* Improve discover section cards on mobile */
+  .discover-card {
+    width: 160px !important;
+    flex-shrink: 0;
+    margin-right: 16px;
+  }
+
+  .discover-card:last-child {
+    margin-right: 0;
+  }
+
+  /* Better text readability on mobile */
+  .discover-title {
+    font-size: 1.125rem !important;
+    line-height: 1.25rem !important;
+    font-weight: 700 !important;
+  }
+
+  .discover-subtitle {
+    font-size: 0.875rem !important;
+    line-height: 1.25rem !important;
+  }
+
+  /* Improve navigation arrows on mobile */
+  .discover-nav-arrow {
+    min-width: 44px !important;
+    min-height: 44px !important;
+    padding: 12px !important;
+    background-color: rgba(0, 0, 0, 0.9) !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  }
+
+  /* Better spacing for mobile */
+  .discover-section {
+    padding: 0 16px;
+    margin-bottom: 24px;
+  }
+
+  .discover-header {
+    margin-bottom: 16px;
+    padding: 0 8px;
+  }
+
+  /* Ensure proper card spacing */
+  .horizontal-scroll-container {
+    gap: 16px !important;
+  }
+
+  /* Prevent card overlap */
+  .discover-card {
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Improve rating display on mobile */
+  .flex-shrink-0 {
+    flex-shrink: 0 !important;
+  }
+
+  /* Ensure rating stars are visible */
+  .flex.items-center.gap-1 {
+    gap: 0.25rem !important;
+  }
+
+  /* Prevent rating text from being cut off */
+  .text-xs.text-gray-400 {
+    font-size: 0.75rem !important;
+    line-height: 1rem !important;
+  }
+
+  /* Profile music section mobile optimizations */
+  .space-y-6.sm\:space-y-8 {
+    gap: 1.5rem !important;
+  }
+
+  /* Improve text readability on mobile */
+  .text-base.font-semibold {
+    font-size: 0.875rem !important;
+    line-height: 1.25rem !important;
+  }
+
+  .text-sm.text-muted-foreground {
+    font-size: 0.75rem !important;
+    line-height: 1rem !important;
+  }
+
+  /* Better spacing for mobile cards */
+  .mt-3.text-center {
+    margin-top: 0.75rem !important;
+  }
+
+  /* Improve horizontal scrolling on mobile */
+  .overflow-x-auto.scrollbar-hide {
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+  }
+
+  /* Mobile star size optimization */
+  .w-2\.5.h-2\.5 {
+    width: 0.625rem !important;
+    height: 0.625rem !important;
+  }
+
+  .w-2.h-2 {
+    width: 0.5rem !important;
+    height: 0.5rem !important;
+  }
+
+  /* Ensure smaller gaps on mobile */
+  .gap-0\.5 {
+    gap: 0.125rem !important;
+  }
+
+  /* Music navigation tabs mobile optimization */
+  .horizontal-scroll-container {
+    gap: 0.75rem !important;
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+  }
+
+  /* Ensure navigation buttons don't overlap */
+  .horizontal-scroll-container button {
+    flex-shrink: 0 !important;
+    min-width: fit-content !important;
+    margin-right: 0.5rem !important;
+  }
+
+  .horizontal-scroll-container button:last-child {
+    margin-right: 0 !important;
+  }
+
+  /* ===== PAGE-SPECIFIC MOBILE OPTIMIZATIONS ===== */
+
+  /* Home page optimizations */
+  .hero-section {
+    padding: 2rem 1rem;
+    text-align: center;
+  }
+
+  .hero-title {
+    font-size: 2rem !important;
+    line-height: 2.5rem !important;
+    margin-bottom: 1rem;
+  }
+
+  .hero-subtitle {
+    font-size: 1rem !important;
+    line-height: 1.5rem !important;
+    margin-bottom: 2rem;
+  }
+
+  /* Dashboard optimizations */
+  .dashboard-grid {
+    grid-template-columns: 1fr !important;
+    gap: 1rem !important;
+  }
+
+  .dashboard-card {
+    padding: 1rem !important;
+  }
+
+  /* Books page optimizations */
+  .books-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 0.75rem !important;
+  }
+
+  .book-card {
+    width: 100% !important;
+  }
+
+  /* Movies page optimizations */
+  .movies-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 0.75rem !important;
+  }
+
+  .movie-card {
+    width: 100% !important;
+  }
+
+  /* Series page optimizations */
+  .series-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 0.75rem !important;
+  }
+
+  .series-card {
+    width: 100% !important;
+  }
+
+  /* Music page optimizations */
+  .music-tabs {
+    gap: 0.5rem !important;
+    padding: 0 1rem !important;
+  }
+
+  .music-tab {
+    padding: 0.5rem 1rem !important;
+    font-size: 0.875rem !important;
+  }
+
+  /* Profile page optimizations */
+  .profile-header {
+    padding: 1rem !important;
+    text-align: center;
+  }
+
+  .profile-avatar {
+    width: 80px !important;
+    height: 80px !important;
+  }
+
+  .profile-tabs {
+    gap: 0.5rem !important;
+    padding: 0 1rem !important;
+  }
+
+  /* Community page optimizations */
+  .community-feed {
+    padding: 1rem !important;
+  }
+
+  .post-card {
+    margin-bottom: 1rem !important;
+    padding: 1rem !important;
+  }
+
+  /* Reviews page optimizations */
+  .reviews-grid {
+    grid-template-columns: 1fr !important;
+    gap: 1rem !important;
+  }
+
+  .review-card {
+    padding: 1rem !important;
+  }
+
+  /* Notifications page optimizations */
+  .notifications-list {
+    padding: 1rem !important;
+  }
+
+  .notification-item {
+    padding: 0.75rem !important;
+    margin-bottom: 0.5rem !important;
+  }
+
+  /* Contact page optimizations */
+  .contact-form {
+    padding: 1rem !important;
+  }
+
+  .contact-input {
+    margin-bottom: 1rem !important;
+  }
+
+  /* ===== COMPONENT-SPECIFIC OPTIMIZATIONS ===== */
+
+  /* Header component */
+  .header {
+    padding: 0.75rem 1rem !important;
+  }
+
+  .header-logo {
+    font-size: 1.25rem !important;
+  }
+
+  .header-nav {
+    gap: 0.5rem !important;
+  }
+
+  /* Footer component */
+  .footer {
+    padding: 2rem 1rem !important;
+    text-align: center;
+  }
+
+  .footer-links {
+    flex-direction: column !important;
+    gap: 1rem !important;
+  }
+
+  /* Search component */
+  .search-container {
+    padding: 1rem !important;
+  }
+
+  .search-input {
+    width: 100% !important;
+    margin-bottom: 0.75rem !important;
+  }
+
+  /* Modal component */
+  .modal {
+    margin: 1rem !important;
+    max-width: calc(100vw - 2rem) !important;
+  }
+
+  .modal-header {
+    padding: 1rem !important;
+  }
+
+  .modal-content {
+    padding: 1rem !important;
+  }
+
+  /* Button component */
+  .btn {
+    padding: 0.5rem 1rem !important;
+    font-size: 0.875rem !important;
+  }
+
+  .btn-sm {
+    padding: 0.375rem 0.75rem !important;
+    font-size: 0.75rem !important;
+  }
+
+  .btn-lg {
+    padding: 0.75rem 1.5rem !important;
+    font-size: 1rem !important;
+  }
+
+  /* Card component */
+  .card {
+    padding: 1rem !important;
+    margin-bottom: 1rem !important;
+  }
+
+  .card-header {
+    padding-bottom: 0.75rem !important;
+  }
+
+  .card-content {
+    padding-top: 0.75rem !important;
+  }
+
+  /* Form component */
+  .form-group {
+    margin-bottom: 1rem !important;
+  }
+
+  .form-label {
+    font-size: 0.875rem !important;
+    margin-bottom: 0.5rem !important;
+  }
+
+  .form-input {
+    padding: 0.5rem !important;
+    font-size: 0.875rem !important;
+  }
+
+  /* ===== UTILITY CLASSES ===== */
+
+  /* Spacing utilities */
+  .p-1 {
+    padding: 0.25rem !important;
+  }
+  .p-2 {
+    padding: 0.5rem !important;
+  }
+  .p-3 {
+    padding: 0.75rem !important;
+  }
+  .p-4 {
+    padding: 1rem !important;
+  }
+
+  .m-1 {
+    margin: 0.25rem !important;
+  }
+  .m-2 {
+    margin: 0.5rem !important;
+  }
+  .m-3 {
+    margin: 0.75rem !important;
+  }
+  .m-4 {
+    margin: 1rem !important;
+  }
+
+  /* Text utilities */
+  .text-center {
+    text-align: center !important;
+  }
+  .text-left {
+    text-align: left !important;
+  }
+  .text-right {
+    text-align: right !important;
+  }
+
+  /* Display utilities */
+  .block {
+    display: block !important;
+  }
+  .inline-block {
+    display: inline-block !important;
+  }
+  .flex {
+    display: flex !important;
+  }
+  .grid {
+    display: grid !important;
+  }
+
+  /* Flex utilities */
+  .flex-col {
+    flex-direction: column !important;
+  }
+  .flex-row {
+    flex-direction: row !important;
+  }
+  .items-center {
+    align-items: center !important;
+  }
+  .justify-center {
+    justify-content: center !important;
+  }
+  .justify-between {
+    justify-content: space-between !important;
+  }
+
+  /* Grid utilities */
+  .grid-cols-1 {
+    grid-template-columns: repeat(1, minmax(0, 1fr)) !important;
+  }
+  .grid-cols-2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+  .gap-2 {
+    gap: 0.5rem !important;
+  }
+  .gap-3 {
+    gap: 0.75rem !important;
+  }
+  .gap-4 {
+    gap: 1rem !important;
+  }
 }
 
-/* Tablet optimizations */
+/* ===== TABLET OPTIMIZATIONS ===== */
 @media (min-width: 641px) and (max-width: 1024px) {
   /* Improve grid layouts for tablets */
   .grid {
@@ -172,9 +643,33 @@
     padding: 0.75rem 1.5rem;
     font-size: 1rem;
   }
+
+  /* Books page tablet optimizations */
+  .books-grid {
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 1rem !important;
+  }
+
+  /* Movies page tablet optimizations */
+  .movies-grid {
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 1rem !important;
+  }
+
+  /* Series page tablet optimizations */
+  .series-grid {
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 1rem !important;
+  }
+
+  /* Dashboard tablet optimizations */
+  .dashboard-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 1.5rem !important;
+  }
 }
 
-/* Large screen optimizations */
+/* ===== LARGE SCREEN OPTIMIZATIONS ===== */
 @media (min-width: 1025px) {
   /* Optimize for larger screens */
   .collection-card {
@@ -189,9 +684,33 @@
     padding: 1rem 2rem;
     font-size: 1.125rem;
   }
+
+  /* Books page desktop optimizations */
+  .books-grid {
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 1.5rem !important;
+  }
+
+  /* Movies page desktop optimizations */
+  .movies-grid {
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 1.5rem !important;
+  }
+
+  /* Series page desktop optimizations */
+  .series-grid {
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 1.5rem !important;
+  }
+
+  /* Dashboard desktop optimizations */
+  .dashboard-grid {
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 2rem !important;
+  }
 }
 
-/* Touch device optimizations */
+/* ===== TOUCH DEVICE OPTIMIZATIONS ===== */
 @media (hover: none) and (pointer: coarse) {
   /* Improve touch interactions */
   button:hover,
@@ -213,7 +732,7 @@
   }
 }
 
-/* High DPI display optimizations */
+/* ===== HIGH DPI DISPLAY OPTIMIZATIONS ===== */
 @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
   /* Ensure crisp images */
   img {
@@ -222,7 +741,7 @@
   }
 }
 
-/* Dark mode optimizations for mobile */
+/* ===== DARK MODE OPTIMIZATIONS FOR MOBILE ===== */
 @media (prefers-color-scheme: dark) {
   /* Improve contrast on mobile */
   .text-gray-400 {
@@ -244,7 +763,7 @@
   }
 }
 
-/* Accessibility improvements for mobile */
+/* ===== ACCESSIBILITY IMPROVEMENTS FOR MOBILE ===== */
 @media (prefers-reduced-motion: reduce) {
   /* Disable animations for users who prefer reduced motion */
   *,
@@ -257,7 +776,7 @@
   }
 }
 
-/* Landscape orientation optimizations */
+/* ===== LANDSCAPE ORIENTATION OPTIMIZATIONS ===== */
 @media (orientation: landscape) and (max-height: 500px) {
   /* Optimize for landscape mobile */
   .header {
@@ -282,7 +801,7 @@
   }
 }
 
-/* Print styles for discover sections */
+/* ===== PRINT STYLES ===== */
 @media print {
   /* Hide interactive elements when printing */
   button,
@@ -311,3 +830,34 @@
   }
 }
 
+/* ===== CUSTOM SCROLLBAR STYLES ===== */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* Mobile optimizations for horizontal scrolling */
+@media (max-width: 640px) {
+  .horizontal-scroll-container {
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  /* Improve touch scrolling performance */
+  .horizontal-scroll-container {
+    overscroll-behavior-x: contain;
+  }
+}
+
+/* Tablet optimizations */
+@media (min-width: 641px) and (max-width: 1024px) {
+  .horizontal-scroll-container {
+    -webkit-overflow-scrolling: touch;
+  }
+}

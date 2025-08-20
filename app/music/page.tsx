@@ -584,14 +584,14 @@ export default function MusicApp() {
     currentRating: number;
   }) => {
     return (
-      <div className="flex items-center gap-1">
+      <div className="flex items-center gap-0.5 sm:gap-1 flex-shrink-0">
         {[1, 2, 3, 4, 5].map((star) => (
           <Star
             key={star}
-            className={`w-4 h-4 cursor-pointer transition-colors ${
+            className={`w-2.5 h-2.5 sm:w-3 sm:h-3 md:w-4 md:h-4 cursor-pointer transition-colors ${
               star <= currentRating
                 ? "fill-yellow-400 text-yellow-400"
-                : "text-gray-400 hover:text-yellow-300"
+                : "text-gray-300 hover:text-yellow-300"
             }`}
             onClick={(e) => {
               e.stopPropagation();
@@ -599,7 +599,7 @@ export default function MusicApp() {
             }}
           />
         ))}
-        <span className="text-sm text-gray-400 ml-2">
+        <span className="text-xs text-gray-400 ml-1 whitespace-nowrap">
           {currentRating > 0 ? `${currentRating}/5` : "Rate"}
         </span>
       </div>
@@ -725,9 +725,12 @@ export default function MusicApp() {
     }
   };
 
-  const handleAddAlbumToRecommendations = async (album: Album, e: React.MouseEvent) => {
+  const handleAddAlbumToRecommendations = async (
+    album: Album,
+    e: React.MouseEvent
+  ) => {
     e.stopPropagation();
-    
+
     try {
       if (isAlbumInRecommendations(album.id)) {
         await removeAlbumFromRecommendations(album.id);
@@ -746,12 +749,13 @@ export default function MusicApp() {
           language: album.language || "Unknown",
           songCount: album.songCount || 0,
           playCount: album.playCount || 0,
-          songs: album.songs?.map((song) => ({
-            ...song,
-            addedAt: new Date().toISOString(),
-          })) || [],
+          songs:
+            album.songs?.map((song) => ({
+              ...song,
+              addedAt: new Date().toISOString(),
+            })) || [],
         };
-        
+
         await addAlbumToRecommendations(musicAlbum);
         toast({
           title: "Added to recommendations",
@@ -912,11 +916,11 @@ export default function MusicApp() {
           </div>
 
           {/* Navigation Tabs */}
-          <div className="flex items-center gap-2 sm:gap-3 overflow-x-auto pb-4 scrollbar-hide w-full horizontal-scroll-container">
+          <div className="flex items-center gap-3 sm:gap-4 overflow-x-auto pb-4 scrollbar-hide w-full horizontal-scroll-container px-2 sm:px-0">
             <button
               onClick={() => handleTabChange("explore")}
               className={cn(
-                "flex items-center gap-2 sm:gap-3 px-4 sm:px-6 py-2 sm:py-3 rounded-xl transition-all duration-300 whitespace-nowrap font-medium text-sm sm:text-base",
+                "flex items-center gap-1 sm:gap-2 px-3 sm:px-4 py-2 sm:py-3 rounded-xl transition-all duration-300 whitespace-nowrap font-medium text-sm sm:text-base flex-shrink-0",
                 activeTab === "explore"
                   ? "bg-gradient-to-r from-gray-800 to-gray-700 text-white shadow-lg border border-gray-600"
                   : "hover:bg-gray-800/50 text-gray-300 hover:text-white"
@@ -927,7 +931,7 @@ export default function MusicApp() {
             <button
               onClick={() => handleTabChange("artists")}
               className={cn(
-                "flex items-center gap-2 sm:gap-3 px-4 sm:px-6 py-2 sm:py-3 rounded-xl transition-all duration-300 whitespace-nowrap font-medium text-sm sm:text-base",
+                "flex items-center gap-1 sm:gap-2 px-3 sm:px-4 py-2 sm:py-3 rounded-xl transition-all duration-300 whitespace-nowrap font-medium text-sm sm:text-base flex-shrink-0",
                 activeTab === "artists"
                   ? "bg-gradient-to-r from-gray-800 to-gray-700 text-white shadow-lg border border-gray-600"
                   : "hover:bg-gray-800/50 text-gray-300 hover:text-white"
@@ -950,7 +954,7 @@ export default function MusicApp() {
             <button
               onClick={() => handleTabChange("albums")}
               className={cn(
-                "flex items-center gap-2 sm:gap-3 px-4 sm:px-6 py-2 sm:py-3 rounded-xl transition-all duration-300 whitespace-nowrap font-medium text-sm sm:text-base",
+                "flex items-center gap-1 sm:gap-2 px-3 sm:px-4 py-2 sm:py-3 rounded-xl transition-all duration-300 whitespace-nowrap font-medium text-sm sm:text-base flex-shrink-0",
                 activeTab === "albums"
                   ? "bg-gradient-to-r from-gray-800 to-gray-700 text-white shadow-lg border border-gray-600"
                   : "hover:bg-gray-800/50 text-gray-300 hover:text-white"
@@ -973,7 +977,7 @@ export default function MusicApp() {
             <button
               onClick={() => handleTabChange("songs")}
               className={cn(
-                "flex items-center gap-2 sm:gap-3 px-4 sm:px-6 py-2 sm:py-3 rounded-xl transition-all duration-300 whitespace-nowrap font-medium text-sm sm:text-base",
+                "flex items-center gap-1 sm:gap-2 px-3 sm:px-4 py-2 sm:py-3 rounded-xl transition-all duration-300 whitespace-nowrap font-medium text-sm sm:text-base flex-shrink-0",
                 activeTab === "songs"
                   ? "bg-gradient-to-r from-gray-800 to-gray-700 text-white shadow-lg border border-gray-600"
                   : "hover:bg-gray-800/50 text-gray-300 hover:text-white"
@@ -996,7 +1000,7 @@ export default function MusicApp() {
             <button
               onClick={() => handleTabChange("recommended")}
               className={cn(
-                "flex items-center gap-2 sm:gap-3 px-4 sm:px-6 py-2 sm:py-3 rounded-xl transition-all duration-300 whitespace-nowrap font-medium text-sm sm:text-base",
+                "flex items-center gap-1 sm:gap-2 px-3 sm:px-4 py-2 sm:py-3 rounded-xl transition-all duration-300 whitespace-nowrap font-medium text-sm sm:text-base flex-shrink-0",
                 activeTab === "recommended"
                   ? "bg-gradient-to-r from-gray-800 to-gray-700 text-white shadow-lg border border-gray-600"
                   : "hover:bg-gray-800/50 text-gray-300 hover:text-white"
@@ -1210,13 +1214,22 @@ export default function MusicApp() {
                                       <Heart className="w-5 h-5 text-white fill-white" />
                                     </button>
                                     <button
-                                      onClick={(e) => handleAddAlbumToRecommendations(album, e)}
+                                      onClick={(e) =>
+                                        handleAddAlbumToRecommendations(
+                                          album,
+                                          e
+                                        )
+                                      }
                                       className={`w-12 h-12 backdrop-blur-sm rounded-full flex items-center justify-center transition-all duration-200 hover:scale-110 ${
                                         isAlbumInRecommendations(album.id)
                                           ? "bg-green-500/80 hover:bg-green-600/80"
                                           : "bg-white/20 hover:bg-white/30"
                                       }`}
-                                      title={isAlbumInRecommendations(album.id) ? "Remove from list" : "Add to list"}
+                                      title={
+                                        isAlbumInRecommendations(album.id)
+                                          ? "Remove from list"
+                                          : "Add to list"
+                                      }
                                     >
                                       {isAlbumInRecommendations(album.id) ? (
                                         <Check className="w-5 h-5 text-white fill-white" />
@@ -1520,7 +1533,11 @@ export default function MusicApp() {
                                 ? "bg-green-500/80 hover:bg-green-600/80"
                                 : "bg-white/20 hover:bg-white/30"
                             }`}
-                            title={isAlbumInRecommendations(album.id) ? "Remove from list" : "Add to list"}
+                            title={
+                              isAlbumInRecommendations(album.id)
+                                ? "Remove from list"
+                                : "Add to list"
+                            }
                           >
                             {isAlbumInRecommendations(album.id) ? (
                               <Check className="w-5 h-5 text-white fill-white" />
@@ -1637,8 +1654,8 @@ export default function MusicApp() {
                               {song.album?.name}
                             </p>
                           </div>
-                          <div className="flex items-center gap-4">
-                            <div className="text-sm text-gray-400">
+                          <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+                            <div className="text-sm text-gray-400 whitespace-nowrap">
                               {formatDuration(song.duration)}
                             </div>
                             <StarRating
@@ -1648,7 +1665,7 @@ export default function MusicApp() {
                             <Button
                               size="sm"
                               variant="ghost"
-                              className="text-red-400 hover:text-red-300"
+                              className="text-red-400 hover:text-red-300 flex-shrink-0"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 handleLikeSong(song);
@@ -1686,7 +1703,8 @@ export default function MusicApp() {
                       No Recommendations Yet
                     </h3>
                     <p className="text-gray-400 mb-4">
-                      Start adding albums to your recommendations list from the music section!
+                      Start adding albums to your recommendations list from the
+                      music section!
                     </p>
                     <Button
                       onClick={() => handleTabChange("explore")}
@@ -1701,18 +1719,23 @@ export default function MusicApp() {
                       <h3 className="text-lg font-semibold text-white">
                         Albums in Your Recommendations
                       </h3>
-                      <Badge variant="outline" className="text-gray-300 border-gray-600">
+                      <Badge
+                        variant="outline"
+                        className="text-gray-300 border-gray-600"
+                      >
                         {musicRecommendations.length} albums
                       </Badge>
                     </div>
-                    
+
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
                       {musicRecommendations.map((album) => (
                         <div key={album.id} className="group">
                           <div className="relative w-full aspect-square rounded-lg overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900">
                             <div
                               className="cursor-pointer"
-                              onClick={() => router.push(`/music/album/${album.id}`)}
+                              onClick={() =>
+                                router.push(`/music/album/${album.id}`)
+                              }
                             >
                               <img
                                 src={getImageUrl(album.image)}
@@ -1749,7 +1772,9 @@ export default function MusicApp() {
                               {album.name || "Unknown Title"}
                             </h4>
                             <p className="text-xs text-gray-400 leading-tight">
-                              {album.artists?.primary?.map((artist) => artist.name).join(", ") || "Unknown Artist"}
+                              {album.artists?.primary
+                                ?.map((artist) => artist.name)
+                                .join(", ") || "Unknown Artist"}
                             </p>
                             <p className="text-xs text-gray-500">
                               {album.year}
@@ -1875,7 +1900,12 @@ export default function MusicApp() {
                     {isAlbumLiked(selectedAlbum.id) ? "Liked" : "Like"}
                   </Button>
                   <Button
-                    onClick={() => handleAddAlbumToRecommendations(selectedAlbum, {} as React.MouseEvent)}
+                    onClick={() =>
+                      handleAddAlbumToRecommendations(
+                        selectedAlbum,
+                        {} as React.MouseEvent
+                      )
+                    }
                     variant="outline"
                     className={`${
                       isAlbumInRecommendations(selectedAlbum.id)

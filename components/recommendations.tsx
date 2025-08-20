@@ -93,14 +93,14 @@ export function Recommendations({
     currentRating: number;
   }) => {
     return (
-      <div className="flex items-center gap-1">
+      <div className="flex items-center gap-0.5 sm:gap-1 flex-shrink-0">
         {[1, 2, 3, 4, 5].map((star) => (
           <Star
             key={star}
-            className={`w-3 h-3 cursor-pointer transition-colors ${
+            className={`w-2 h-2 sm:w-2.5 sm:h-2.5 md:w-3 md:h-3 cursor-pointer transition-colors ${
               star <= currentRating
                 ? "fill-yellow-400 text-yellow-400"
-                : "text-gray-400 hover:text-yellow-300"
+                : "text-gray-300 hover:text-yellow-300"
             }`}
             onClick={(e) => {
               e.stopPropagation();

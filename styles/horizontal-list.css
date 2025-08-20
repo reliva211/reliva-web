@@ -6,3 +6,25 @@
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
 }
+
+/* Mobile optimizations for horizontal scrolling */
+@media (max-width: 640px) {
+  .horizontal-scroll-container {
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  /* Improve touch scrolling performance */
+  .horizontal-scroll-container {
+    overscroll-behavior-x: contain;
+  }
+}
+
+/* Tablet optimizations */
+@media (min-width: 641px) and (max-width: 1024px) {
+  .horizontal-scroll-container {
+    -webkit-overflow-scrolling: touch;
+  }
+}

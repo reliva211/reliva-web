@@ -501,13 +501,13 @@ export default function BooksPage() {
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black w-full overflow-x-hidden">
       {/* Header */}
       <div className="border-b border-gray-800 bg-gradient-to-r from-gray-900/95 to-gray-800/95 backdrop-blur-sm w-full">
-        <div className="container mx-auto px-4 sm:px-6 py-6 sm:py-8 max-w-full">
+        <div className="container mx-auto px-4 sm:px-6 py-4 sm:py-6 md:py-8 max-w-full">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold bg-gradient-to-r from-white via-gray-200 to-gray-400 bg-clip-text text-transparent">
+              <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-white via-gray-200 to-gray-400 bg-clip-text text-transparent">
                 Books
               </h1>
-              <p className="text-gray-400 mt-1 sm:mt-2 text-sm sm:text-lg">
+              <p className="text-gray-400 mt-1 sm:mt-2 text-sm sm:text-base md:text-lg">
                 Discover and organize your favorite books
               </p>
             </div>
@@ -515,10 +515,10 @@ export default function BooksPage() {
         </div>
       </div>
 
-      <div className="container mx-auto px-4 sm:px-6 py-6 sm:py-8 max-w-full overflow-x-hidden">
+      <div className="container mx-auto px-4 sm:px-6 py-4 sm:py-6 md:py-8 max-w-full overflow-x-hidden">
         {/* Search and Filters */}
-        <div className="mb-8 sm:mb-10 w-full">
-          <div className="flex flex-col gap-4 sm:gap-6 mb-6 sm:mb-8 w-full">
+        <div className="mb-6 sm:mb-8 md:mb-10 w-full">
+          <div className="flex flex-col gap-3 sm:gap-4 md:gap-6 mb-4 sm:mb-6 md:mb-8 w-full">
             {/* Search */}
             <div className="flex-1 w-full">
               <form
@@ -531,7 +531,7 @@ export default function BooksPage() {
                     placeholder="Search books..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-10 sm:pl-12 h-11 sm:h-12 bg-gray-800/50 border-gray-700 text-white placeholder:text-gray-400 focus:border-gray-500 focus:ring-gray-500 rounded-xl text-sm sm:text-base w-full"
+                    className="pl-10 sm:pl-12 h-10 sm:h-11 md:h-12 bg-gray-800/50 border-gray-700 text-white placeholder:text-gray-400 focus:border-gray-500 focus:ring-gray-500 rounded-xl text-sm sm:text-base w-full"
                   />
                   {searchQuery && (
                     <button
@@ -546,7 +546,7 @@ export default function BooksPage() {
                 <Button
                   type="submit"
                   disabled={isSearching}
-                  className="h-11 sm:h-12 px-6 sm:px-8 bg-gradient-to-r from-gray-800 to-gray-700 hover:from-gray-700 hover:to-gray-600 text-white font-semibold rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl border border-gray-600 text-sm sm:text-base"
+                  className="h-10 sm:h-11 md:h-12 px-4 sm:px-6 md:px-8 bg-gradient-to-r from-gray-800 to-gray-700 hover:from-gray-700 hover:to-gray-600 text-white font-semibold rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl border border-gray-600 text-sm sm:text-base"
                 >
                   {isSearching ? "Searching..." : "Search"}
                 </Button>
@@ -555,14 +555,14 @@ export default function BooksPage() {
           </div>
 
           {/* Collections Tabs */}
-          <div className="flex items-center gap-2 sm:gap-3 overflow-x-auto pb-4 scrollbar-hide w-full horizontal-scroll-container">
+          <div className="flex items-center gap-2 sm:gap-3 overflow-x-auto pb-4 scrollbar-hide w-full horizontal-scroll-container px-2 sm:px-0">
             {/* Trending Tab */}
             <button
               onClick={() => {
                 setShowDiscover(true);
                 setSelectedCollection("");
               }}
-              className={`flex items-center gap-2 sm:gap-3 px-4 sm:px-6 py-2 sm:py-3 rounded-xl transition-all duration-300 whitespace-nowrap font-medium text-sm sm:text-base ${
+              className={`flex items-center gap-1 sm:gap-2 px-3 sm:px-4 md:px-6 py-2 sm:py-3 rounded-xl transition-all duration-300 whitespace-nowrap font-medium text-sm sm:text-base flex-shrink-0 ${
                 showDiscover
                   ? "bg-gradient-to-r from-gray-800 to-gray-700 text-white shadow-lg border border-gray-600"
                   : "hover:bg-gray-800/50 text-gray-300 hover:text-white"
@@ -583,7 +583,7 @@ export default function BooksPage() {
                     handleCollectionSelect(collection.id);
                     setShowDiscover(false);
                   }}
-                  className={`flex items-center gap-2 sm:gap-3 px-4 sm:px-6 py-2 sm:py-3 rounded-xl transition-all duration-300 whitespace-nowrap font-medium text-sm sm:text-base ${
+                  className={`flex items-center gap-1 sm:gap-2 px-3 sm:px-4 md:px-6 py-2 sm:py-3 rounded-xl transition-all duration-300 whitespace-nowrap font-medium text-sm sm:text-base flex-shrink-0 ${
                     selectedCollection === collection.id
                       ? "bg-gradient-to-r from-gray-800 to-gray-700 text-white shadow-lg border border-gray-600"
                       : "hover:bg-gray-800/50 text-gray-300 hover:text-white"
@@ -715,9 +715,9 @@ export default function BooksPage() {
             </div>
           ) : searchResults.length > 0 ? (
             <div>
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 sm:gap-0 mb-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 sm:gap-0 mb-4 sm:mb-6">
                 <div>
-                  <h2 className="text-xl sm:text-2xl md:text-3xl font-bold bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
+                  <h2 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
                     Search Results ({searchResults.length})
                   </h2>
                   <p className="text-gray-400 mt-1 sm:mt-2 text-sm sm:text-base">
@@ -727,7 +727,7 @@ export default function BooksPage() {
                 <Button
                   variant="outline"
                   onClick={clearSearch}
-                  className="border-gray-600 hover:bg-gray-800 hover:border-gray-500 transition-all duration-200 text-sm sm:text-base px-4 sm:px-6 py-2 sm:py-3"
+                  className="border-gray-600 hover:bg-gray-800 hover:border-gray-500 transition-all duration-200 text-sm sm:text-base px-3 sm:px-4 md:px-6 py-2 sm:py-3"
                 >
                   Clear Search
                 </Button>
@@ -735,7 +735,7 @@ export default function BooksPage() {
               <div
                 className={
                   viewMode === "grid"
-                    ? "grid grid-cols-5 gap-4 w-full max-w-full"
+                    ? "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4 w-full max-w-full"
                     : "space-y-3 sm:space-y-4"
                 }
               >
@@ -753,9 +753,9 @@ export default function BooksPage() {
             </div>
           ) : filteredAndSortedBooks.length > 0 ? (
             <div>
-              <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center justify-between mb-4 sm:mb-6">
                 <div>
-                  <h2 className="text-xl sm:text-2xl md:text-3xl font-bold bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
+                  <h2 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
                     {getCollectionInfo(selectedCollection)?.name || "Books"} (
                     {filteredAndSortedBooks.length})
                   </h2>
@@ -771,7 +771,7 @@ export default function BooksPage() {
               <div
                 className={
                   viewMode === "grid"
-                    ? "grid grid-cols-5 gap-4 w-full max-w-full"
+                    ? "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4 w-full max-w-full"
                     : "space-y-3 sm:space-y-4"
                 }
               >

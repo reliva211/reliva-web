@@ -62,24 +62,24 @@ export default function LandingPage() {
     // Show personalized feed for signed-in users
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900 text-white relative scroll-smooth">
-        <div className="relative z-10 py-8 px-4">
-          <div className="max-w-7xl mx-auto w-full space-y-16">
+        <div className="relative z-10 py-4 sm:py-8 px-4">
+          <div className="max-w-7xl mx-auto w-full space-y-8 sm:space-y-16">
             {/* Welcome Section */}
-            <div className="mb-12">
-              <div className="bg-transparent rounded-2xl p-8 border border-emerald-500 text-center">
-                <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-4 bg-gradient-to-r from-emerald-400 to-blue-500 bg-clip-text text-transparent">
+            <div className="mb-8 sm:mb-12">
+              <div className="bg-transparent rounded-2xl p-4 sm:p-8 border border-emerald-500 text-center">
+                <h1 className="text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-4 bg-gradient-to-r from-emerald-400 to-blue-500 bg-clip-text text-transparent">
                   Welcome,{" "}
                   {user.displayName || user.email?.split("@")[0] || "username"}.
                 </h1>
-                <p className="text-xl md:text-2xl text-gray-300 leading-relaxed mb-2">
+                <p className="text-lg sm:text-xl md:text-2xl text-gray-300 leading-relaxed mb-2">
                   Here's what your friends have been upto.
                 </p>
-                <p className="text-sm md:text-base text-gray-300 leading-relaxed mb-6 max-w-4xl mx-auto">
+                <p className="text-sm md:text-base text-gray-300 leading-relaxed mb-4 sm:mb-6 max-w-4xl mx-auto">
                   Discover what your friends are watching, reading, and
                   listening to. Stay connected with the people you follow and
                   never miss their latest recommendations and reviews.
                 </p>
-                <div className="flex flex-wrap justify-center gap-6 text-sm text-gray-400">
+                <div className="flex flex-col sm:flex-row flex-wrap justify-center gap-3 sm:gap-6 text-sm text-gray-400">
                   <span className="flex items-center gap-2">
                     <span className="w-2 h-2 bg-emerald-500 rounded-full"></span>
                     {reviews.length} reviews from people you follow
@@ -93,88 +93,88 @@ export default function LandingPage() {
             </div>
 
             {/* Main Content with Sidebar Layout */}
-            <div className="flex gap-8">
+            <div className="flex flex-col lg:flex-row gap-4 sm:gap-8">
               {/* Main Content Area */}
               <div className="flex-1">
-                <div className="mb-6">
-                  <h2 className="text-xl font-semibold text-white mb-2">
+                <div className="mb-4 sm:mb-6">
+                  <h2 className="text-lg sm:text-xl font-semibold text-white mb-2">
                     Your friend's and your reviews
                   </h2>
                 </div>
 
                 {loadingReviews ? (
-                  <div className="space-y-8">
+                  <div className="space-y-6 sm:space-y-8">
                     {[...Array(3)].map((_, i) => (
                       <div
                         key={i}
-                        className="py-6 border-b border-gray-700 animate-pulse"
+                        className="py-4 sm:py-6 border-b border-gray-700 animate-pulse"
                       >
                         {/* User info skeleton */}
-                        <div className="flex items-center gap-3 mb-4">
-                          <div className="w-12 h-12 bg-gray-600 rounded-full"></div>
-                          <div className="h-5 bg-gray-600 rounded w-32"></div>
+                        <div className="flex items-center gap-3 mb-3 sm:mb-4">
+                          <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gray-600 rounded-full"></div>
+                          <div className="h-4 sm:h-5 bg-gray-600 rounded w-24 sm:w-32"></div>
                         </div>
                         {/* Media content skeleton */}
-                        <div className="flex items-start gap-4">
-                          <div className="w-32 h-48 sm:w-40 sm:h-56 bg-gray-600 rounded-lg"></div>
-                          <div className="flex-1 space-y-3">
-                            <div className="h-6 bg-gray-600 rounded w-3/4"></div>
+                        <div className="flex items-start gap-3 sm:gap-4">
+                          <div className="w-24 h-36 sm:w-32 sm:h-48 md:w-40 md:h-56 bg-gray-600 rounded-lg"></div>
+                          <div className="flex-1 space-y-2 sm:space-y-3">
+                            <div className="h-5 sm:h-6 bg-gray-600 rounded w-3/4"></div>
                             <div className="flex gap-1">
                               {[...Array(5)].map((_, j) => (
                                 <div
                                   key={j}
-                                  className="w-6 h-6 bg-gray-600 rounded"
+                                  className="w-4 h-4 sm:w-6 sm:h-6 bg-gray-600 rounded"
                                 ></div>
                               ))}
                             </div>
-                            <div className="h-4 bg-gray-600 rounded w-full"></div>
-                            <div className="h-4 bg-gray-600 rounded w-2/3"></div>
+                            <div className="h-3 sm:h-4 bg-gray-600 rounded w-full"></div>
+                            <div className="h-3 sm:h-4 bg-gray-600 rounded w-2/3"></div>
                           </div>
                         </div>
                       </div>
                     ))}
                   </div>
                 ) : error ? (
-                  <div className="text-center py-12 md:py-16 px-6">
-                    <div className="w-20 h-20 bg-gradient-to-br from-red-900/30 to-orange-900/30 rounded-full flex items-center justify-center mx-auto mb-6">
-                      <MessageSquare className="h-10 w-10 text-red-400" />
+                  <div className="text-center py-8 sm:py-12 md:py-16 px-4 sm:px-6">
+                    <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-red-900/30 to-orange-900/30 rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-6">
+                      <MessageSquare className="h-8 w-8 sm:h-10 sm:w-10 text-red-400" />
                     </div>
-                    <h3 className="text-xl md:text-2xl font-bold text-white mb-4">
+                    <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-white mb-3 sm:mb-4">
                       Error Loading Reviews
                     </h3>
-                    <p className="text-gray-400 mb-8 max-w-md mx-auto text-base md:text-lg leading-relaxed">
+                    <p className="text-gray-400 mb-6 sm:mb-8 max-w-md mx-auto text-sm sm:text-base md:text-lg leading-relaxed">
                       {error}
                     </p>
                     <Button
                       onClick={retry}
-                      className="bg-gradient-to-r from-emerald-600 to-blue-600 hover:from-emerald-700 hover:to-blue-700 text-white text-base md:text-lg px-8 py-4 md:px-10 md:py-4 rounded-xl font-semibold shadow-lg transform hover:scale-105 transition-all duration-300"
+                      className="bg-gradient-to-r from-emerald-600 to-blue-600 hover:from-emerald-700 hover:to-blue-700 text-white text-sm sm:text-base md:text-lg px-6 sm:px-8 py-3 sm:py-4 md:px-10 md:py-4 rounded-xl font-semibold shadow-lg transform hover:scale-105 transition-all duration-300"
                     >
                       Try Again
                     </Button>
                   </div>
                 ) : reviews.length === 0 ? (
-                  <div className="text-center py-12 md:py-16 px-6">
-                    <div className="w-20 h-20 bg-gradient-to-br from-emerald-900/30 to-blue-900/30 rounded-full flex items-center justify-center mx-auto mb-6">
-                      <UserPlus className="h-10 w-10 text-emerald-400" />
+                  <div className="text-center py-8 sm:py-12 md:py-16 px-4 sm:px-6">
+                    <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-emerald-900/30 to-blue-900/30 rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-6">
+                      <UserPlus className="h-8 w-8 sm:h-10 sm:w-10 text-emerald-400" />
                     </div>
-                    <h3 className="text-xl md:text-2xl font-bold text-white mb-4">
+                    <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-white mb-3 sm:mb-4">
                       No reviews yet
                     </h3>
-                    <p className="text-gray-400 mb-8 max-w-md mx-auto text-base md:text-lg leading-relaxed">
+                    <p className="text-gray-400 mb-6 sm:mb-8 max-w-md mx-auto text-sm sm:text-base md:text-lg leading-relaxed">
                       Start following people to see their reviews, or write your
                       first review to share with the community!
                     </p>
-                    <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                    <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center">
                       <Link href="/users">
-                        <Button className="bg-gradient-to-r from-emerald-600 to-blue-600 hover:from-emerald-700 hover:to-blue-700 text-white text-base md:text-lg px-8 py-4 md:px-10 md:py-4 rounded-xl font-semibold shadow-lg transform hover:scale-105 transition-all duration-300">
-                          <Users className="h-5 w-5 mr-2" />
+                        <Button className="bg-gradient-to-r from-emerald-600 to-blue-600 hover:from-emerald-700 hover:to-blue-700 text-white text-sm sm:text-base md:text-lg px-6 sm:px-8 py-3 sm:py-4 md:px-10 md:py-4 rounded-xl font-semibold shadow-lg transform hover:scale-105 transition-all duration-300">
+                          <Users className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
                           Find People to Follow
                         </Button>
                       </Link>
                       <Link href="/reviews">
                         <Button
                           variant="outline"
-                          className="text-base md:text-lg px-8 py-4 md:px-10 md:py-4 rounded-xl font-semibold shadow-lg transform hover:scale-105 transition-all duration-300"
+                          className="text-sm sm:text-base md:text-lg px-6 sm:px-8 py-3 sm:py-4 md:px-10 md:py-4 rounded-xl font-semibold shadow-lg transform hover:scale-105 transition-all duration-300"
                         >
                           Write Your First Review
                         </Button>

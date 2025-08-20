@@ -260,7 +260,7 @@ export default function ProfileMusicSection({
         <div key={i} className="relative inline-block">
           {/* Full star */}
           <Star
-            className={`h-4 w-4 transition-colors ${
+            className={`h-3 w-3 sm:h-4 sm:w-4 transition-colors ${
               isFullStar ? "fill-yellow-400 text-yellow-400" : "text-gray-300"
             } ${!readOnly ? "cursor-pointer" : ""}`}
             onMouseEnter={
@@ -275,7 +275,7 @@ export default function ProfileMusicSection({
           {isHalfStar && (
             <div className="absolute inset-0 overflow-hidden">
               <Star
-                className={`h-4 w-4 fill-yellow-400 text-yellow-400 ${
+                className={`h-3 w-3 sm:h-4 sm:w-4 fill-yellow-400 text-yellow-400 ${
                   !readOnly ? "cursor-pointer" : ""
                 }`}
                 onMouseEnter={
@@ -669,9 +669,9 @@ export default function ProfileMusicSection({
   }
 
   return (
-    <div className="space-y-8 max-w-4xl mx-auto">
+    <div className="space-y-6 sm:space-y-8 max-w-4xl mx-auto px-4 sm:px-0">
       {/* Top row - 3 sections in grid */}
-      <div className="grid grid-cols-3 gap-4 sm:gap-6 lg:gap-8 max-w-3xl mx-auto">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 lg:gap-8 max-w-3xl mx-auto">
         {/* current obsession - card */}
         <div className="flex flex-col">
           <div className="flex items-center justify-start mb-2">
@@ -683,7 +683,7 @@ export default function ProfileMusicSection({
             {safeMusicProfile.currentObsession ? (
               <>
                 <div className="relative group">
-                  <div className="w-36 h-36 sm:w-44 sm:h-44 lg:w-48 lg:h-48 bg-muted rounded-md overflow-hidden">
+                  <div className="w-32 h-32 sm:w-36 sm:h-36 md:w-44 md:h-44 lg:w-48 lg:h-48 bg-muted rounded-md overflow-hidden">
                     <Image
                       src={
                         getImageUrl(safeMusicProfile.currentObsession.image) ||
@@ -734,7 +734,7 @@ export default function ProfileMusicSection({
               </>
             ) : (
               <>
-                <div className="w-38 h-38 sm:w-45 sm:h-45 lg:w-51 lg:h-51 bg-black/20 rounded-md border border-border/30 flex items-center justify-center">
+                <div className="w-32 h-32 sm:w-36 sm:h-36 md:w-44 md:h-44 lg:w-48 lg:h-48 bg-black/20 rounded-md border border-border/30 flex items-center justify-center">
                   <div className="text-center">
                     <Plus className="h-16 w-16 mx-auto mb-4 text-muted-foreground/50" />
                     <p className="text-sm text-muted-foreground/50">
@@ -766,7 +766,7 @@ export default function ProfileMusicSection({
             {safeMusicProfile.favoriteArtist ? (
               <>
                 <div className="relative group">
-                  <div className="w-36 h-36 sm:w-44 sm:h-44 lg:w-48 lg:h-48 rounded-full overflow-hidden border-2 border-border/30 shadow-sm">
+                  <div className="w-32 h-32 sm:w-36 sm:h-36 md:w-44 md:h-44 lg:w-48 lg:h-48 rounded-full overflow-hidden border-2 border-border/30 shadow-sm">
                     <Image
                       src={
                         getImageUrl(safeMusicProfile.favoriteArtist.image) ||
@@ -807,7 +807,7 @@ export default function ProfileMusicSection({
               </>
             ) : (
               <>
-                <div className="w-36 h-36 sm:w-44 sm:h-44 lg:w-48 lg:h-48 rounded-full bg-black/20 border-2 border-border/30 shadow-sm flex items-center justify-center">
+                <div className="w-32 h-32 sm:w-36 sm:h-36 md:w-44 md:h-44 lg:w-48 lg:h-48 rounded-full bg-black/20 border-2 border-border/30 shadow-sm flex items-center justify-center">
                   <div className="text-center">
                     <Plus className="h-16 w-16 mx-auto mb-4 text-muted-foreground/50" />
                     <p className="text-sm text-muted-foreground/50">
@@ -836,7 +836,7 @@ export default function ProfileMusicSection({
             {safeMusicProfile.favoriteSong ? (
               <>
                 <div className="relative group">
-                  <div className="w-36 h-36 sm:w-44 sm:h-44 lg:w-48 lg:h-48 bg-muted rounded-md overflow-hidden">
+                  <div className="w-32 h-32 sm:w-36 sm:h-36 md:w-44 md:h-44 lg:w-48 lg:h-48 bg-muted rounded-md overflow-hidden">
                     <Image
                       src={
                         getImageUrl(safeMusicProfile.favoriteSong.image) ||
@@ -886,7 +886,7 @@ export default function ProfileMusicSection({
               </>
             ) : (
               <>
-                <div className="w-36 h-36 sm:w-44 sm:h-44 lg:w-48 lg:h-48 bg-black/20 rounded-md border border-border/30 flex items-center justify-center">
+                <div className="w-32 h-32 sm:w-36 sm:h-36 md:w-44 md:h-44 lg:w-48 lg:h-48 bg-black/20 rounded-md border border-border/30 flex items-center justify-center">
                   <div className="text-center">
                     <Plus className="h-16 w-16 mx-auto mb-4 text-muted-foreground/50" />
                     <p className="text-sm text-muted-foreground/50">
@@ -909,9 +909,9 @@ export default function ProfileMusicSection({
       </div>
 
       {/* Bottom row - favorite albums aligned with top grid */}
-      <div className="grid grid-cols-3 gap-4 sm:gap-6 lg:gap-8 max-w-3xl mx-auto">
+      <div className="max-w-3xl mx-auto">
         {/* favorite albums - takes first column */}
-        <div className="col-span-3">
+        <div className="w-full">
           <div className="flex items-center justify-start mb-4">
             <p className="text-sm font-medium text-muted-foreground">
               favorite albums
@@ -920,7 +920,7 @@ export default function ProfileMusicSection({
           <div className="relative">
             <div
               ref={scrollContainerRefs.favoriteAlbums}
-              className="flex justify-start gap-6 overflow-hidden"
+              className="flex justify-start gap-3 sm:gap-6 overflow-x-auto scrollbar-hide px-2 sm:px-0"
             >
               {limitedFavoriteAlbums.length > 0 ? (
                 <>
@@ -929,7 +929,7 @@ export default function ProfileMusicSection({
                       key={album.id || idx}
                       className="relative group flex-shrink-0"
                     >
-                      <div className="aspect-square w-40 bg-muted rounded-md overflow-hidden">
+                      <div className="aspect-square w-32 sm:w-40 bg-muted rounded-md overflow-hidden">
                         <Link href={`/music/album/${album.id}`}>
                           <Image
                             src={
@@ -994,7 +994,7 @@ export default function ProfileMusicSection({
 
                   {/* Add button for subsequent items - always show when items exist */}
                   <div className="flex-shrink-0">
-                    <div className="aspect-square w-40 bg-transparent rounded-md border-2 border-gray-600 flex items-center justify-center overflow-visible">
+                    <div className="aspect-square w-32 sm:w-40 bg-transparent rounded-md border-2 border-gray-600 flex items-center justify-center overflow-visible">
                       <Button
                         variant="ghost"
                         size="sm"
@@ -1060,7 +1060,7 @@ export default function ProfileMusicSection({
       </div>
 
       {/* recommendations */}
-      <div className="mt-12 max-w-3xl mx-auto">
+      <div className="mt-8 sm:mt-12 max-w-3xl mx-auto">
         <div className="flex items-center justify-start mb-4">
           <p className="text-sm font-medium text-muted-foreground">
             recommendations
@@ -1069,7 +1069,7 @@ export default function ProfileMusicSection({
         <div className="relative">
           <div
             ref={scrollContainerRefs.recommendations}
-            className="flex justify-start gap-6 overflow-hidden"
+            className="flex justify-start gap-3 sm:gap-6 overflow-x-auto scrollbar-hide px-2 sm:px-0"
           >
             {limitedRecommendations.length > 0 ? (
               <>
@@ -1205,14 +1205,14 @@ export default function ProfileMusicSection({
       </div>
 
       {/* rating */}
-      <div className="mt-12 max-w-3xl mx-auto">
+      <div className="mt-8 sm:mt-12 max-w-3xl mx-auto">
         <div className="flex items-center justify-start mb-4">
           <p className="text-sm font-medium text-muted-foreground">rating</p>
         </div>
         <div className="relative">
           <div
             ref={scrollContainerRefs.ratings}
-            className="flex justify-start gap-6 overflow-hidden"
+            className="flex justify-start gap-3 sm:gap-6 overflow-x-auto scrollbar-hide px-2 sm:px-0"
           >
             {limitedRatings.length > 0 ? (
               <>
@@ -1221,7 +1221,7 @@ export default function ProfileMusicSection({
                     key={rating.song.id || idx}
                     className="relative group flex-shrink-0"
                   >
-                    <div className="aspect-square w-40 bg-muted rounded-md overflow-hidden">
+                    <div className="aspect-square w-32 sm:w-40 bg-muted rounded-md overflow-hidden">
                       <Link href={`/music/song/${rating.song.id}`}>
                         <Image
                           src={
