@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { Star, Heart, MoreHorizontal, Trash2 } from "lucide-react";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { doc, updateDoc, arrayUnion, arrayRemove, deleteDoc } from "firebase/firestore";
@@ -132,7 +133,12 @@ export default function ReviewPost({ review, onLikeToggle, onDelete }: ReviewPos
           </div>
           <div className="flex-1 min-w-0">
             <h4 className="font-bold text-white text-sm sm:text-base line-clamp-2 mb-2">
-              {review.mediaTitle}
+              <Link 
+                href={`/reviews/${review.id}`}
+                className="hover:text-emerald-400 transition-colors duration-200 cursor-pointer"
+              >
+                {review.mediaTitle}
+              </Link>
             </h4>
             <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-3">
               <span className="inline-block px-2 py-1 text-xs font-medium bg-emerald-900/30 text-emerald-400 rounded-full border border-emerald-800">
