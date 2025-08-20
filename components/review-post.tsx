@@ -1,10 +1,10 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import Image from "next/image";
-import { Star, Heart, MoreHorizontal } from "lucide-react";
+import { Star, Heart, MoreHorizontal, Trash2 } from "lucide-react";
 import { useCurrentUser } from "@/hooks/use-current-user";
-import { doc, updateDoc, arrayUnion, arrayRemove } from "firebase/firestore";
+import { doc, updateDoc, arrayUnion, arrayRemove, deleteDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 
 interface ReviewPostProps {
@@ -16,18 +16,23 @@ interface ReviewPostProps {
     mediaTitle: string;
     mediaType: string;
     mediaCover: string;
+    mediaSubType?: string;
     rating: number;
     reviewText: string;
     timestamp: any;
     likes: string[];
   };
   onLikeToggle?: () => void;
+  onDelete?: () => void;
 }
 
-export default function ReviewPost({ review, onLikeToggle }: ReviewPostProps) {
+export default function ReviewPost({ review, onLikeToggle, onDelete }: ReviewPostProps) {
   const { user } = useCurrentUser();
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const isLiked = user ? review.likes?.includes(user.uid) : false;
   const likeCount = review.likes?.length || 0;
+  const isOwnReview = user && review.userId === user.uid;
 
   const handleLike = async () => {
     if (!user) return;
@@ -45,6 +50,24 @@ export default function ReviewPost({ review, onLikeToggle }: ReviewPostProps) {
       }
     } catch (error) {
       console.error("Error toggling like:", error);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!user || !isOwnReview) return;
+
+    setIsDeleting(true);
+    try {
+      await deleteDoc(doc(db, "reviews", review.id));
+      
+      if (onDelete) {
+        onDelete();
+      }
+    } catch (error) {
+      console.error("Error deleting review:", error);
+    } finally {
+      setIsDeleting(false);
+      setShowDeleteConfirm(false);
     }
   };
 
@@ -79,9 +102,20 @@ export default function ReviewPost({ review, onLikeToggle }: ReviewPostProps) {
               </p>
             </div>
           </div>
-          <button className="p-2 hover:bg-gray-700 rounded-full transition-colors flex-shrink-0">
-            <MoreHorizontal className="h-4 w-4 sm:h-5 sm:w-5 text-gray-400" />
-          </button>
+          <div className="flex items-center space-x-2">
+            {isOwnReview && (
+              <button
+                onClick={() => setShowDeleteConfirm(true)}
+                className="p-2 hover:bg-red-950/20 hover:text-red-400 rounded-full transition-colors flex-shrink-0"
+                title="Delete review"
+              >
+                <Trash2 className="h-4 w-4 sm:h-5 sm:w-5 text-gray-400 hover:text-red-400" />
+              </button>
+            )}
+            <button className="p-2 hover:bg-gray-700 rounded-full transition-colors flex-shrink-0">
+              <MoreHorizontal className="h-4 w-4 sm:h-5 sm:w-5 text-gray-400" />
+            </button>
+          </div>
         </div>
       </div>
 
@@ -102,7 +136,7 @@ export default function ReviewPost({ review, onLikeToggle }: ReviewPostProps) {
             </h4>
             <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-3">
               <span className="inline-block px-2 py-1 text-xs font-medium bg-emerald-900/30 text-emerald-400 rounded-full border border-emerald-800">
-                {review.mediaType.toUpperCase()}
+                {review.mediaType.toUpperCase()}{review.mediaSubType ? ` - ${review.mediaSubType.toUpperCase()}` : ''}
               </span>
               <div className="flex items-center space-x-1">
                 {[...Array(5)].map((_, i) => (
@@ -157,6 +191,36 @@ export default function ReviewPost({ review, onLikeToggle }: ReviewPostProps) {
 
         </div>
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-gray-800 rounded-lg p-6 max-w-md w-full mx-4">
+            <h3 className="text-lg font-semibold text-white mb-4">
+              Delete Review
+            </h3>
+            <p className="text-gray-300 mb-6">
+              Are you sure you want to delete your review for "{review.mediaTitle}"? This action cannot be undone.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={handleDelete}
+                disabled={isDeleting}
+                className="flex-1 bg-red-600 hover:bg-red-700 disabled:bg-red-800 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+              >
+                {isDeleting ? "Deleting..." : "Delete"}
+              </button>
+              <button
+                onClick={() => setShowDeleteConfirm(false)}
+                disabled={isDeleting}
+                className="flex-1 bg-gray-600 hover:bg-gray-700 disabled:bg-gray-800 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 } 

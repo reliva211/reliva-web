@@ -28,9 +28,23 @@ function ReviewsPageContent() {
   const { user } = useCurrentUser();
   const searchParams = useSearchParams();
 
+  // Define the media type interface
+  interface MediaItem {
+    id: string;
+    title: string;
+    cover: string;
+    year: number | null;
+    type: string;
+    author?: string | null;
+    artist?: string | null;
+    album?: string | null;
+    mediaSubType?: string;
+    data: any;
+  }
+
   // Search state
   const [searchQuery, setSearchQuery] = useState("");
-  const [searchResults, setSearchResults] = useState([]);
+  const [searchResults, setSearchResults] = useState<MediaItem[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [searchType, setSearchType] = useState("movie"); // movie, series, book, music
 
@@ -55,7 +69,7 @@ function ReviewsPageContent() {
       const decodedArtist = artist ? decodeURIComponent(artist) : null;
 
       // Create media object directly from URL parameters (no search needed)
-      const mediaFromUrl = {
+      const mediaFromUrl: MediaItem = {
         id: id,
         title: decodedTitle,
         cover: decodedCover,
@@ -84,7 +98,7 @@ function ReviewsPageContent() {
   }, [searchType, searchQuery, searchParams]); // Only trigger for manual searches
 
   // Review state
-  const [selectedMedia, setSelectedMedia] = useState(null);
+  const [selectedMedia, setSelectedMedia] = useState<MediaItem | null>(null);
   const [rating, setRating] = useState(0);
   const [reviewText, setReviewText] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -95,12 +109,12 @@ function ReviewsPageContent() {
 
     setIsSearching(true);
     try {
-      let results = [];
+      let results: MediaItem[] = [];
 
       if (searchType === "movie") {
         const movies = await searchService.searchMovies(searchQuery);
         results = movies.map((movie) => ({
-          id: movie.id,
+          id: movie.id.toString(),
           title: movie.title,
           cover: movie.poster_path
             ? `https://image.tmdb.org/t/p/w300${movie.poster_path}`
@@ -114,7 +128,7 @@ function ReviewsPageContent() {
       } else if (searchType === "series") {
         const series = await searchService.searchSeries(searchQuery);
         results = series.map((show) => ({
-          id: show.id,
+          id: show.id.toString(),
           title: show.name,
           cover: show.poster_path
             ? `https://image.tmdb.org/t/p/w300${show.poster_path}`
@@ -139,26 +153,49 @@ function ReviewsPageContent() {
           data: book,
         }));
       } else if (searchType === "music") {
-        // Search for music using Saavn API
+        // Search for music using Saavn API - always show both songs and albums
         try {
-          const response = await fetch(`/api/saavn/search?q=${encodeURIComponent(searchQuery)}&type=song&limit=10`);
-          const data = await response.json();
+          // Search for both songs and albums in parallel
+          const [songResponse, albumResponse] = await Promise.all([
+            fetch(`/api/saavn/search?q=${encodeURIComponent(searchQuery)}&type=song&limit=5`),
+            fetch(`/api/saavn/search?q=${encodeURIComponent(searchQuery)}&type=album&limit=5`)
+          ]);
           
-          if (data.data?.results) {
-            results = data.data.results.map((track) => ({
-              id: track.id,
+          const songData = await songResponse.json();
+          const albumData = await albumResponse.json();
+          
+          // Add songs
+          if (songData.data?.results) {
+            const songs = songData.data.results.map((track: any) => ({
+              id: `song_${track.id}`,
               title: track.name,
               cover: track.image?.[2]?.url || track.image?.[1]?.url || track.image?.[0]?.url || "/placeholder.svg",
               year: track.year || null,
               type: "music",
-              artist: track.artists?.primary?.map(artist => artist.name).join(", ") || "Unknown Artist",
+              mediaSubType: "song",
+              artist: track.artists?.primary?.map((artist: any) => artist.name).join(", ") || track.primaryArtists || "Unknown Artist",
               album: track.album?.name || "Unknown Album",
               data: track,
             }));
+            results.push(...songs);
+          }
+          
+          // Add albums
+          if (albumData.data?.results) {
+            const albums = albumData.data.results.map((album: any) => ({
+              id: `album_${album.id}`,
+              title: album.name || album.title,
+              cover: album.image?.[2]?.url || album.image?.[1]?.url || album.image?.[0]?.url || "/placeholder.svg",
+              year: album.year || null,
+              type: "music",
+              mediaSubType: "album",
+              artist: album.artists?.primary?.map((artist: any) => artist.name).join(", ") || album.primaryArtists || "Unknown Artist",
+              data: album,
+            }));
+            results.push(...albums);
           }
         } catch (error) {
           console.error("Music search error:", error);
-          results = [];
         }
       }
 
@@ -175,7 +212,7 @@ function ReviewsPageContent() {
     }
   };
 
-  const selectMedia = (media) => {
+  const selectMedia = (media: MediaItem) => {
     setSelectedMedia(media);
     setSearchResults([]);
     setSearchQuery("");
@@ -205,6 +242,7 @@ function ReviewsPageContent() {
         mediaYear: selectedMedia.year,
         mediaAuthor: selectedMedia.author || null,
         mediaArtist: selectedMedia.artist || null,
+        mediaSubType: selectedMedia.mediaSubType || null,
         rating: rating,
         reviewText: reviewText.trim(),
         timestamp: serverTimestamp(),
@@ -340,7 +378,7 @@ function ReviewsPageContent() {
               <div className="flex gap-2">
                 <input
                   type="text"
-                  placeholder={`Search for ${searchType === "music" ? "songs/albums" : searchType}s...`}
+                  placeholder={`Search for ${searchType === "music" ? "songs and albums" : searchType}s...`}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && searchMedia()}
@@ -379,9 +417,10 @@ function ReviewsPageContent() {
                           {result.year && <span>{result.year}</span>}
                           {result.author && <span> • {result.author}</span>}
                           {result.artist && <span> • {result.artist}</span>}
+                          {result.mediaSubType && <span> • {result.mediaSubType.toUpperCase()}</span>}
                         </div>
                         <span className="inline-block px-2 py-1 text-xs bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded mt-1">
-                          {result.type.toUpperCase()}
+                          {result.type.toUpperCase()}{result.mediaSubType ? ` - ${result.mediaSubType.toUpperCase()}` : ''}
                         </span>
                       </div>
                     </div>
@@ -422,9 +461,12 @@ function ReviewsPageContent() {
                     {selectedMedia.artist && (
                       <span> • {selectedMedia.artist}</span>
                     )}
+                    {selectedMedia.mediaSubType && (
+                      <span> • {selectedMedia.mediaSubType.toUpperCase()}</span>
+                    )}
                   </div>
                   <span className="inline-block px-2 py-1 text-xs bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300 rounded mt-1">
-                    {selectedMedia.type.toUpperCase()}
+                    {selectedMedia.type.toUpperCase()}{selectedMedia.mediaSubType ? ` - ${selectedMedia.mediaSubType.toUpperCase()}` : ''}
                   </span>
                 </div>
                 <button

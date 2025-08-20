@@ -30,6 +30,14 @@ export default function HomePage() {
   } = useFollowedReviews();
   const welcomeSectionRef = useRef<HTMLDivElement | null>(null);
 
+  // Handle review deletion
+  const handleReviewDelete = () => {
+    // The hook will automatically refresh when user changes
+    // This is handled by the useEffect dependency on user
+    // We can also manually trigger a refresh if needed
+    retry();
+  };
+
   // Show spinner while auth state is loading
   if (loading) {
     return (
@@ -167,6 +175,7 @@ export default function HomePage() {
                           // The hook will automatically refresh when user changes
                           // This is handled by the useEffect dependency on user
                         }}
+                        onDelete={handleReviewDelete}
                       />
                     ))}
                   </div>

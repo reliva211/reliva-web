@@ -33,6 +33,14 @@ export default function LandingPage() {
     retry,
   } = useFollowedReviews();
 
+  // Handle review deletion
+  const handleReviewDelete = () => {
+    // The hook will automatically refresh when user changes
+    // This is handled by the useEffect dependency on user
+    // We can also manually trigger a refresh if needed
+    retry();
+  };
+
   // Prevent vertical scrolling when hovering over scrollable containers
   useEffect(() => {
     const handleWheel = (e: WheelEvent) => {
@@ -191,6 +199,7 @@ export default function LandingPage() {
                           // The hook will automatically refresh when user changes
                           // This is handled by the useEffect dependency on user
                         }}
+                        onDelete={handleReviewDelete}
                       />
                     ))}
                   </div>
