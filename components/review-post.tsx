@@ -23,7 +23,7 @@ interface ReviewPostProps {
     timestamp: any;
     likes: string[];
   };
-  onLikeToggle?: () => void;
+  onLikeToggle?: (updatedReview?: any) => void;
   onDelete?: () => void;
 }
 
@@ -31,12 +31,26 @@ export default function ReviewPost({ review, onLikeToggle, onDelete }: ReviewPos
   const { user } = useCurrentUser();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
-  const isLiked = user ? review.likes?.includes(user.uid) : false;
-  const likeCount = review.likes?.length || 0;
+  const [localLikes, setLocalLikes] = useState<string[]>(review.likes || []);
+  
+  // Sync local likes state when review prop changes
+  useEffect(() => {
+    setLocalLikes(review.likes || []);
+  }, [review.likes, review.id]);
+  
+  const isLiked = user ? localLikes.includes(user.uid) : false;
+  const likeCount = localLikes.length;
   const isOwnReview = user && review.userId === user.uid;
 
   const handleLike = async () => {
     if (!user) return;
+
+    // Optimistic update - update local state immediately
+    const newLikes = isLiked 
+      ? localLikes.filter(id => id !== user.uid)
+      : [...localLikes, user.uid];
+    
+    setLocalLikes(newLikes);
 
     try {
       const reviewRef = doc(db, "reviews", review.id);
@@ -46,11 +60,19 @@ export default function ReviewPost({ review, onLikeToggle, onDelete }: ReviewPos
           : arrayUnion(user.uid)
       });
       
+      // Call the callback with the updated review data
       if (onLikeToggle) {
-        onLikeToggle();
+        const updatedReview = {
+          ...review,
+          likes: newLikes
+        };
+        onLikeToggle(updatedReview);
       }
     } catch (error) {
       console.error("Error toggling like:", error);
+      
+      // Revert optimistic update on error
+      setLocalLikes(review.likes || []);
     }
   };
 
@@ -184,13 +206,6 @@ export default function ReviewPost({ review, onLikeToggle, onDelete }: ReviewPos
             >
               <Heart className={`h-4 w-4 sm:h-5 sm:w-5 ${isLiked ? "fill-current" : ""}`} />
               <span className="font-medium">{likeCount}</span>
-            </button>
-            
-            <button className="flex items-center space-x-2 px-3 py-2 rounded-lg text-gray-400 hover:bg-gray-700 hover:text-gray-200 transition-all duration-200 text-sm font-medium border border-gray-600">
-              <svg className="h-4 w-4 sm:h-5 sm:w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-              </svg>
-              <span className="font-medium">Add to list</span>
             </button>
           </div>
           

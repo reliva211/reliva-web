@@ -29,6 +29,17 @@ export function useFollowedReviews() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Function to update a specific review in the local state
+  const updateReview = (reviewId: string, updates: Partial<Review>) => {
+    setReviews(prevReviews => 
+      prevReviews.map(review => 
+        review.id === reviewId 
+          ? { ...review, ...updates }
+          : review
+      )
+    );
+  };
+
   useEffect(() => {
     if (!user) {
       setReviews([]);
@@ -286,5 +297,5 @@ export function useFollowedReviews() {
     }
   };
 
-  return { reviews, loading, error, retry };
+  return { reviews, loading, error, retry, updateReview };
 } 

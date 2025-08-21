@@ -27,6 +27,7 @@ export default function HomePage() {
     loading: loadingReviews,
     error,
     retry,
+    updateReview,
   } = useFollowedReviews();
   const welcomeSectionRef = useRef<HTMLDivElement | null>(null);
 
@@ -171,9 +172,11 @@ export default function HomePage() {
                       <ReviewPost
                         key={review.id}
                         review={review}
-                        onLikeToggle={() => {
-                          // The hook will automatically refresh when user changes
-                          // This is handled by the useEffect dependency on user
+                        onLikeToggle={(updatedReview) => {
+                          // Update the local state immediately for real-time updates
+                          if (updatedReview) {
+                            updateReview(review.id, updatedReview);
+                          }
                         }}
                         onDelete={handleReviewDelete}
                       />

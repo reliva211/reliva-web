@@ -31,6 +31,7 @@ export default function LandingPage() {
     loading: loadingReviews,
     error,
     retry,
+    updateReview,
   } = useFollowedReviews();
 
   // Handle review deletion
@@ -195,9 +196,11 @@ export default function LandingPage() {
                       <ReviewPost
                         key={review.id}
                         review={review}
-                        onLikeToggle={() => {
-                          // The hook will automatically refresh when user changes
-                          // This is handled by the useEffect dependency on user
+                        onLikeToggle={(updatedReview) => {
+                          // Update the local state immediately for real-time updates
+                          if (updatedReview) {
+                            updateReview(review.id, updatedReview);
+                          }
                         }}
                         onDelete={handleReviewDelete}
                       />
