@@ -211,6 +211,29 @@ export default function MusicApp() {
     }
   }, []);
 
+  // Handle URL parameters for search
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const searchParam = urlParams.get("search");
+    const typeParam = urlParams.get("type") as
+      | "all"
+      | "song"
+      | "album"
+      | "artist"
+      | null;
+
+    if (searchParam) {
+      setSearchQuery(searchParam);
+      if (typeParam && ["all", "song", "album", "artist"].includes(typeParam)) {
+        setSearchType(typeParam);
+      }
+      // Trigger search automatically
+      setTimeout(() => {
+        handleSearch();
+      }, 100);
+    }
+  }, []);
+
   // Click outside handler to close search dropdown
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -1434,7 +1457,11 @@ export default function MusicApp() {
               ) : (
                 <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                   {followedArtists.map((artist) => (
-                    <div key={artist.id} className="cursor-pointer group">
+                    <div
+                      key={artist.id}
+                      className="cursor-pointer"
+                      onClick={() => router.push(`/music/artist/${artist.id}`)}
+                    >
                       <div className="relative">
                         <img
                           src={getImageUrl(artist.image)}

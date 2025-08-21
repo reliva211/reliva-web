@@ -5,6 +5,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Play, Heart, TrendingUp, Music } from "lucide-react"
+import { useRouter } from "next/navigation"
 
 interface Song {
   id: string;
@@ -69,6 +70,7 @@ interface TrendingSongsProps {
 }
 
 export default function TrendingSongs({ onPlaySong, onToggleLike, likedSongs }: TrendingSongsProps) {
+  const router = useRouter()
   const [trendingSongs, setTrendingSongs] = useState<Song[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -224,8 +226,20 @@ export default function TrendingSongs({ onPlaySong, onToggleLike, likedSongs }: 
                 <h4 className="font-semibold text-white truncate" title={song.name}>
                   {song.name}
                 </h4>
-                <p className="text-sm text-gray-400 truncate">
+                <p 
+                  className="text-sm text-gray-400 truncate cursor-pointer hover:text-blue-400 transition-colors"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    // Extract artist name and navigate to artist page
+                    const artistName = song.artists?.primary?.[0]?.name || song.primaryArtists
+                    if (artistName && artistName !== "Unknown Artist") {
+                      // For now, we'll search for the artist since we don't have direct artist IDs
+                      router.push(`/music?search=${encodeURIComponent(artistName)}&type=artist`)
+                    }
+                  }}
+                >
                   {song.artists?.primary?.map((artist) => artist.name).join(", ") ||
+                    song.primaryArtists ||
                     "Unknown Artist"}
                 </p>
                 {song.album?.name && <p className="text-xs text-gray-500 truncate">{song.album.name}</p>}

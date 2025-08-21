@@ -127,6 +127,15 @@ const getTextContent = (text: any): string => {
   return "";
 };
 
+// Helper function to truncate music titles
+const truncateTitle = (title: string, maxLength: number = 10): string => {
+  if (!title) return "Unknown Song";
+  const cleanTitle = cleanTextContent(title);
+  return cleanTitle.length > maxLength
+    ? cleanTitle.substring(0, maxLength) + "..."
+    : cleanTitle;
+};
+
 export default function ProfileMusicSection({
   userId,
   readOnly = false,
@@ -608,8 +617,9 @@ export default function ProfileMusicSection({
     );
   }
 
-  // Show all items (no limits)
-  const limitedFavoriteAlbums = safeMusicProfile.favoriteAlbums || [];
+  // Limit items to specified limits per section
+  const limitedFavoriteAlbums =
+    safeMusicProfile.favoriteAlbums?.slice(0, 5) || [];
   const limitedRecommendations = safeMusicProfile.recommendations || [];
   const limitedRatings = safeMusicProfile.ratings || [];
 
@@ -716,7 +726,7 @@ export default function ProfileMusicSection({
                     </div>
                   )}
                 </div>
-                <div className="mt-3 text-center w-full">
+                <div className="mt-3 text-left w-full">
                   <p className="text-base font-semibold leading-tight px-2">
                     {getTextContent(safeMusicProfile.currentObsession.name) ||
                       "Unknown Song"}
@@ -868,7 +878,7 @@ export default function ProfileMusicSection({
                     </div>
                   )}
                 </div>
-                <div className="mt-3 text-center w-full">
+                <div className="mt-3 text-left w-full">
                   <p className="text-base font-semibold leading-tight px-2">
                     {getTextContent(safeMusicProfile.favoriteSong.name) ||
                       "Unknown Song"}
@@ -894,7 +904,7 @@ export default function ProfileMusicSection({
                     </p>
                   </div>
                 </div>
-                <div className="mt-3 text-center w-full">
+                <div className="mt-3 text-left w-full">
                   <p className="text-sm font-semibold leading-tight text-muted-foreground/50 px-2">
                     Song Name
                   </p>
@@ -920,7 +930,7 @@ export default function ProfileMusicSection({
           <div className="relative">
             <div
               ref={scrollContainerRefs.favoriteAlbums}
-              className="flex justify-start gap-3 sm:gap-6 overflow-x-auto scrollbar-hide px-2 sm:px-0"
+              className="flex justify-center gap-3 sm:gap-4 overflow-hidden max-w-full mx-auto"
             >
               {limitedFavoriteAlbums.length > 0 ? (
                 <>
@@ -929,7 +939,7 @@ export default function ProfileMusicSection({
                       key={album.id || idx}
                       className="relative group flex-shrink-0"
                     >
-                      <div className="aspect-square w-32 sm:w-40 bg-muted rounded-md overflow-hidden">
+                      <div className="aspect-square w-28 sm:w-32 bg-muted rounded-md overflow-hidden">
                         <Link href={`/music/album/${album.id}`}>
                           <Image
                             src={
@@ -973,10 +983,10 @@ export default function ProfileMusicSection({
                       </div>
                       {/* Album name and artist display */}
                       <div className="mt-3 text-center w-full">
-                        <p className="text-base font-semibold leading-tight px-2">
-                          {getTextContent(album.name) || "Unknown Album"}
+                        <p className="text-base font-semibold leading-tight px-2 truncate min-h-[1.5rem] flex items-center justify-center">
+                          {truncateTitle(getTextContent(album.name))}
                         </p>
-                        <p className="text-sm text-muted-foreground leading-tight mt-0.5 px-2">
+                        <p className="text-sm text-muted-foreground leading-tight mt-0.5 px-2 truncate min-h-[1rem] flex items-center justify-center">
                           {getTextContent(
                             album.primaryArtists ||
                               album.artists?.primary
@@ -992,24 +1002,26 @@ export default function ProfileMusicSection({
                     </div>
                   ))}
 
-                  {/* Add button for subsequent items - always show when items exist */}
-                  <div className="flex-shrink-0">
-                    <div className="aspect-square w-32 sm:w-40 bg-transparent rounded-md border-2 border-gray-600 flex items-center justify-center overflow-visible">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-12 w-12 p-0 bg-black/70 hover:bg-black/90 text-white rounded-full border-2 border-white/20 shadow-lg"
-                        onClick={() => openSearchDialog("album")}
-                      >
-                        <Plus className="h-6 w-6" />
-                      </Button>
+                  {/* Add button - only show when less than 5 items */}
+                  {limitedFavoriteAlbums.length < 5 && (
+                    <div className="flex-shrink-0">
+                      <div className="aspect-square w-28 sm:w-32 bg-transparent rounded-md border-2 border-gray-600 flex items-center justify-center overflow-visible">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-12 w-12 p-0 bg-black/70 hover:bg-black/90 text-white rounded-full border-2 border-white/20 shadow-lg"
+                          onClick={() => openSearchDialog("album")}
+                        >
+                          <Plus className="h-6 w-6" />
+                        </Button>
+                      </div>
                     </div>
-                  </div>
+                  )}
                 </>
               ) : (
                 // Show single Add screen when empty
                 <div className="flex flex-col items-center justify-center min-h-[200px]">
-                  <div className="aspect-square w-40 bg-transparent rounded-md border-2 border-gray-600 flex flex-col items-center justify-center mb-3">
+                  <div className="aspect-square w-28 sm:w-32 bg-transparent rounded-md border-2 border-gray-600 flex flex-col items-center justify-center mb-3">
                     <p className="text-sm text-gray-400 mb-1 text-center">
                       Add
                     </p>
@@ -1031,30 +1043,6 @@ export default function ProfileMusicSection({
                 </div>
               )}
             </div>
-
-            {/* Navigation arrows for favorite albums */}
-            {limitedFavoriteAlbums.length > 0 && (
-              <>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="absolute left-2 top-1/2 transform -translate-y-1/2 h-8 w-8 p-0 bg-black/80 hover:bg-black backdrop-blur-md border border-white/10 text-white rounded-full shadow-2xl hover:scale-110 transition-all duration-300 z-30"
-                  onClick={() => scrollLeft(scrollContainerRefs.favoriteAlbums)}
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="absolute right-2 top-1/2 transform -translate-y-1/2 h-8 w-8 p-0 bg-black/80 hover:bg-black backdrop-blur-md border border-white/10 text-white rounded-full shadow-2xl hover:scale-110 transition-all duration-300 z-30"
-                  onClick={() =>
-                    scrollRight(scrollContainerRefs.favoriteAlbums)
-                  }
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
-              </>
-            )}
           </div>
         </div>
       </div>
@@ -1124,10 +1112,10 @@ export default function ProfileMusicSection({
                     </div>
                     {/* Song name and artist display */}
                     <div className="mt-3 text-center w-full">
-                      <p className="text-base font-semibold leading-tight px-2">
-                        {getTextContent(song.name) || "Unknown Song"}
+                      <p className="text-base font-semibold leading-tight px-2 truncate min-h-[1.5rem] flex items-center justify-center">
+                        {truncateTitle(getTextContent(song.name))}
                       </p>
-                      <p className="text-sm text-muted-foreground leading-tight mt-0.5 px-2">
+                      <p className="text-sm text-muted-foreground leading-tight mt-0.5 px-2 truncate min-h-[1rem] flex items-center justify-center">
                         {getTextContent(
                           song.primaryArtists ||
                             song.artists?.primary

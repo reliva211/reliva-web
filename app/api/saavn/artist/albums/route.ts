@@ -12,10 +12,10 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Try different approaches to get all albums
-    let allAlbums = [];
+    console.log(`Fetching albums for artist ID: ${id}`);
 
-    // Approach 0: Check if main artist endpoint has more complete album data
+    // First, get the artist details to get the name
+    let artistName = "";
     try {
       const artistResponse = await fetch(
         `https://saavn.dev/api/artists?id=${id}`,
@@ -28,26 +28,21 @@ export async function GET(request: NextRequest) {
 
       if (artistResponse.ok) {
         const artistData = await artistResponse.json();
-        console.log("Main artist response:", artistData);
-        if (
-          artistData.data &&
-          artistData.data.topAlbums &&
-          artistData.data.topAlbums.length > 10
-        ) {
-          console.log(
-            "Main artist has more albums:",
-            artistData.data.topAlbums.length
-          );
+        if (artistData.data && artistData.data.name) {
+          artistName = artistData.data.name;
+          console.log(`Artist name: ${artistName}`);
         }
       }
     } catch (error) {
-      console.log("Artist endpoint check failed:", error);
+      console.log("Failed to get artist name:", error);
     }
 
-    // Approach 1: Try with no pagination parameters
+    let allAlbums = [];
+
+    // Approach 1: Try the direct albums endpoint
     try {
-      const response1 = await fetch(
-        `https://saavn.dev/api/artists/${id}/albums`,
+      const response = await fetch(
+        `https://saavn.dev/api/artists/${id}/albums?limit=100`,
         {
           headers: {
             "Content-Type": "application/json",
@@ -55,22 +50,25 @@ export async function GET(request: NextRequest) {
         }
       );
 
-      if (response1.ok) {
-        const data1 = await response1.json();
-        console.log("Response 1:", data1);
-        if (data1.data && data1.data.albums) {
-          allAlbums = data1.data.albums;
+      if (response.ok) {
+        const data = await response.json();
+        console.log("Direct albums response:", data);
+        if (data.data && data.data.albums) {
+          allAlbums = data.data.albums;
+          console.log(`Found ${allAlbums.length} albums via direct endpoint`);
         }
       }
     } catch (error) {
-      console.log("Approach 1 failed:", error);
+      console.log("Direct albums endpoint failed:", error);
     }
 
-    // Approach 2: Try with different limit parameter
-    if (allAlbums.length <= 10) {
+    // Approach 2: If we have artist name, search for albums
+    if (artistName && allAlbums.length < 5) {
       try {
-        const response2 = await fetch(
-          `https://saavn.dev/api/artists/${id}/albums?limit=1000`,
+        const searchResponse = await fetch(
+          `https://saavn.dev/api/search/albums?query=${encodeURIComponent(
+            artistName
+          )}&page=1&limit=50`,
           {
             headers: {
               "Content-Type": "application/json",
@@ -78,114 +76,75 @@ export async function GET(request: NextRequest) {
           }
         );
 
-        if (response2.ok) {
-          const data2 = await response2.json();
-          console.log("Response 2:", data2);
-          if (
-            data2.data &&
-            data2.data.albums &&
-            data2.data.albums.length > allAlbums.length
-          ) {
-            allAlbums = data2.data.albums;
-          }
-        }
-      } catch (error) {
-        console.log("Approach 2 failed:", error);
-      }
-    }
-
-    // Approach 3: Try with different endpoint structure
-    if (allAlbums.length <= 10) {
-      try {
-        const response3 = await fetch(
-          `https://saavn.dev/api/artists/${id}/albums?page=1&limit=1000&sort=year&order=desc`,
-          {
-            headers: {
-              "Content-Type": "application/json",
-            },
-          }
-        );
-
-        if (response3.ok) {
-          const data3 = await response3.json();
-          console.log("Response 3:", data3);
-          if (
-            data3.data &&
-            data3.data.albums &&
-            data3.data.albums.length > allAlbums.length
-          ) {
-            allAlbums = data3.data.albums;
-          }
-        }
-      } catch (error) {
-        console.log("Approach 3 failed:", error);
-      }
-    }
-
-    // Approach 4: Try different endpoint - search for artist albums
-    if (allAlbums.length <= 10) {
-      try {
-        // Get artist name first
-        const artistResponse = await fetch(
-          `https://saavn.dev/api/artists?id=${id}`,
-          {
-            headers: {
-              "Content-Type": "application/json",
-            },
-          }
-        );
-
-        if (artistResponse.ok) {
-          const artistData = await artistResponse.json();
-          if (artistData.data && artistData.data.name) {
-            // Search for albums by artist name
-            const searchResponse = await fetch(
-              `https://saavn.dev/api/search/albums?query=${encodeURIComponent(
-                artistData.data.name
-              )}&page=1&limit=100`,
-              {
-                headers: {
-                  "Content-Type": "application/json",
-                },
-              }
+        if (searchResponse.ok) {
+          const searchData = await searchResponse.json();
+          console.log("Search albums response:", searchData);
+          if (searchData.data && searchData.data.results) {
+            // Filter results to only include albums by this artist
+            const filteredAlbums = searchData.data.results.filter(
+              (album: any) =>
+                album.artists &&
+                album.artists.primary &&
+                album.artists.primary.some(
+                  (artist: any) =>
+                    artist.id === id || artist.name === artistName
+                )
             );
-
-            if (searchResponse.ok) {
-              const searchData = await searchResponse.json();
-              console.log("Search response:", searchData);
-              if (searchData.data && searchData.data.results) {
-                // Filter results to only include albums by this artist
-                const filteredAlbums = searchData.data.results.filter(
-                  (album: any) =>
-                    album.artists &&
-                    album.artists.primary &&
-                    album.artists.primary.some(
-                      (artist: any) => artist.id === id
-                    )
-                );
-                console.log(
-                  "Filtered albums from search:",
-                  filteredAlbums.length
-                );
-                if (filteredAlbums.length > allAlbums.length) {
-                  allAlbums = filteredAlbums;
-                }
-              }
+            console.log(`Found ${filteredAlbums.length} albums via search`);
+            if (filteredAlbums.length > allAlbums.length) {
+              allAlbums = filteredAlbums;
             }
           }
         }
       } catch (error) {
-        console.log("Approach 4 failed:", error);
+        console.log("Search albums failed:", error);
       }
     }
 
-    console.log(`Final albums count: ${allAlbums.length}`);
+    // Approach 3: Try alternative API endpoint
+    if (allAlbums.length < 5) {
+      try {
+        const altResponse = await fetch(
+          `https://jiosavan-api-with-playlist.vercel.app/api/artists/${id}/albums`,
+          {
+            headers: {
+              "Content-Type": "application/json",
+            },
+          }
+        );
+
+        if (altResponse.ok) {
+          const altData = await altResponse.json();
+          console.log("Alternative API response:", altData);
+          if (altData.data && altData.data.albums) {
+            console.log(
+              `Found ${altData.data.albums.length} albums via alternative API`
+            );
+            if (altData.data.albums.length > allAlbums.length) {
+              allAlbums = altData.data.albums;
+            }
+          }
+        }
+      } catch (error) {
+        console.log("Alternative API failed:", error);
+      }
+    }
+
+    // Remove duplicate albums based on ID
+    const uniqueAlbums = allAlbums.filter(
+      (album: any, index: number, self: any[]) =>
+        index === self.findIndex((a) => a.id === album.id)
+    );
+
+    console.log(
+      `Final albums count: ${allAlbums.length}, Unique albums: ${uniqueAlbums.length}`
+    );
 
     const data = {
       success: true,
       data: {
-        total: allAlbums.length,
-        albums: allAlbums,
+        total: uniqueAlbums.length,
+        albums: uniqueAlbums,
       },
     };
 

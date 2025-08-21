@@ -56,7 +56,6 @@ import ProfileMovieSection from "@/components/profile-movie-section";
 import ProfileSeriesSection from "@/components/profile-series-section";
 import ProfileBooksSection from "@/components/profile-books-section";
 import ErrorBoundary from "@/components/error-boundary";
-import { DebugPanel } from "@/components/debug-panel";
 import { db } from "@/lib/firebase";
 import { collection, getDocs, query, where } from "firebase/firestore";
 
@@ -1061,69 +1060,6 @@ export default function ProfilePage() {
             saving={saving}
           />
         )}
-
-        {/* Debug Panel (Development Only) */}
-        <DebugPanel
-          data={{
-            user: user
-              ? { uid: user.uid, displayName: user.displayName }
-              : null,
-            profile: profile
-              ? { bio: profile.bio, avatarUrl: profile.avatarUrl }
-              : null,
-            collections: {
-              movies: movies.length,
-              series: series.length,
-              books: books.length,
-            },
-            publicCollections: {
-              collections: publicCollections.length,
-              loading: loadingPublicCollections,
-              items: Object.keys(publicCollectionItems).length,
-              movieCollections: getPublicMovieCollections().length,
-              seriesCollections: getPublicSeriesCollections().length,
-              bookCollections: getPublicBookCollections().length,
-            },
-            selectedCollections: {
-              movies: "N/A (removed)",
-              series: "N/A (removed)",
-              books: "N/A (removed)",
-            },
-            search: {
-              movieSearch: {
-                query: movieSearch.query,
-                results: movieSearch.results.length,
-                isSearching: movieSearch.isSearching,
-                error: movieSearch.error,
-              },
-              seriesSearch: {
-                query: seriesSearch.query,
-                results: seriesSearch.results.length,
-                isSearching: seriesSearch.isSearching,
-                error: seriesSearch.error,
-              },
-              bookSearch: {
-                query: bookSearch.query,
-                results: bookSearch.results.length,
-                isSearching: bookSearch.isSearching,
-                error: bookSearch.error,
-              },
-            },
-            modals: {
-              addMovieModalOpen,
-              addSeriesModalOpen,
-              addBookModalOpen,
-              addMusicModalOpen,
-            },
-            sections: {
-              selectedMovieSection,
-              selectedSeriesSection,
-              selectedBookSection,
-              selectedMusicSection,
-            },
-          }}
-          title="Profile Page Debug"
-        />
       </div>
     </ErrorBoundary>
   );

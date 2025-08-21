@@ -208,6 +208,7 @@ export default function ArtistDetailPage({
   const [artist, setArtist] = useState<Artist | null>(null);
   const [albums, setAlbums] = useState<Album[]>([]);
   const [songs, setSongs] = useState<Song[]>([]);
+  const [similarArtists, setSimilarArtists] = useState<any[]>([]);
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -239,32 +240,103 @@ export default function ArtistDetailPage({
 
       setLoading(true);
       try {
-        // Fetch artist details and albums first
-        const [artistResponse, albumsResponse] = await Promise.all([
-          fetch(`/api/saavn/artist?id=${resolvedParams.id}`),
-          fetch(`/api/saavn/artist/albums?id=${resolvedParams.id}`),
-        ]);
-
+        // Fetch artist details first
+        console.log(`Attempting to fetch artist with ID: ${resolvedParams.id}`);
+        const artistResponse = await fetch(
+          `/api/saavn/artist?id=${resolvedParams.id}`
+        );
         const artistData = await artistResponse.json();
-        const albumsData = await albumsResponse.json();
+
+        console.log("Artist API response:", artistData);
 
         if (artistData.data) {
           setArtist(artistData.data);
-          setSongs(artistData.data.topSongs || []);
 
-          // Use the dedicated albums endpoint for complete album list
-          if (albumsData.data && albumsData.data.albums) {
+          // Set songs from artist data
+          const topSongs = artistData.data.topSongs || [];
+          setSongs(topSongs);
+          console.log(`Fetched ${topSongs.length} top songs`);
+
+          // Fetch similar artists
+          try {
             console.log(
-              `Fetched ${albumsData.data.albums.length} albums out of ${albumsData.data.total} total albums`
+              `Fetching similar artists for artist ID: ${resolvedParams.id}`
             );
-            setAlbums(albumsData.data.albums);
-          } else {
-            // Fallback to topAlbums if albums endpoint fails
+            const similarResponse = await fetch(
+              `/api/saavn/artist/similar?id=${resolvedParams.id}`
+            );
+            const similarData = await similarResponse.json();
+
+            console.log("Similar artists API response:", similarData);
+
+            if (similarData.data && Array.isArray(similarData.data)) {
+              setSimilarArtists(similarData.data);
+              console.log(`Fetched ${similarData.data.length} similar artists`);
+            } else {
+              console.log("No similar artists data found in response");
+              setSimilarArtists([]);
+            }
+          } catch (similarError) {
+            console.error("Error fetching similar artists:", similarError);
+            setSimilarArtists([]);
+          }
+
+          // Try to fetch albums from dedicated endpoint
+          try {
+            const albumsResponse = await fetch(
+              `/api/saavn/artist/albums?id=${resolvedParams.id}`
+            );
+            const albumsData = await albumsResponse.json();
+
+            if (
+              albumsData.data &&
+              albumsData.data.albums &&
+              albumsData.data.albums.length > 0
+            ) {
+              console.log(
+                `Fetched ${albumsData.data.albums.length} albums from albums endpoint`
+              );
+              // Remove duplicate albums based on ID
+              const uniqueAlbums = albumsData.data.albums.filter(
+                (album: any, index: number, self: any[]) =>
+                  index === self.findIndex((a) => a.id === album.id)
+              );
+              console.log(
+                `After deduplication: ${uniqueAlbums.length} unique albums`
+              );
+              setAlbums(uniqueAlbums);
+            } else {
+              // Fallback to topAlbums from artist data
+              const topAlbums = artistData.data.topAlbums || [];
+              console.log(
+                `Using fallback topAlbums: ${topAlbums.length} albums`
+              );
+              // Remove duplicate albums based on ID
+              const uniqueTopAlbums = topAlbums.filter(
+                (album: any, index: number, self: any[]) =>
+                  index === self.findIndex((a) => a.id === album.id)
+              );
+              console.log(
+                `After deduplication: ${uniqueTopAlbums.length} unique top albums`
+              );
+              setAlbums(uniqueTopAlbums);
+            }
+          } catch (albumError) {
+            console.error("Error fetching albums:", albumError);
+            // Fallback to topAlbums from artist data
+            const topAlbums = artistData.data.topAlbums || [];
             console.log(
-              "Using fallback topAlbums:",
-              artistData.data.topAlbums?.length || 0
+              `Using fallback topAlbums after error: ${topAlbums.length} albums`
             );
-            setAlbums(artistData.data.topAlbums || []);
+            // Remove duplicate albums based on ID
+            const uniqueTopAlbums = topAlbums.filter(
+              (album: any, index: number, self: any[]) =>
+                index === self.findIndex((a) => a.id === album.id)
+            );
+            console.log(
+              `After deduplication: ${uniqueTopAlbums.length} unique top albums`
+            );
+            setAlbums(uniqueTopAlbums);
           }
         } else {
           setError("Artist not found");
@@ -443,7 +515,7 @@ export default function ArtistDetailPage({
                   size="sm"
                   className="rounded-xl hover:scale-105 transition-all duration-200 bg-green-600 hover:bg-green-700"
                 >
-                  <Play className="w-4 h-4 mr-2" />
+                  <Star className="w-4 h-4 mr-2" />
                   Rate
                 </Button>
                 <Button
@@ -493,6 +565,12 @@ export default function ArtistDetailPage({
                 className="inline-flex items-center justify-center whitespace-nowrap rounded-lg px-6 py-2 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm hover:bg-muted/50"
               >
                 Popular Songs ({songs.length})
+              </TabsTrigger>
+              <TabsTrigger
+                value="similar-artists"
+                className="inline-flex items-center justify-center whitespace-nowrap rounded-lg px-6 py-2 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm hover:bg-muted/50"
+              >
+                Similar Artists ({similarArtists.length})
               </TabsTrigger>
               <TabsTrigger
                 value="reviews"
@@ -596,6 +674,42 @@ export default function ArtistDetailPage({
                   </div>
                 </div>
               </div>
+
+              {/* Similar Artists Section */}
+              {similarArtists.length > 0 && (
+                <div className="space-y-4">
+                  <h3 className="text-xl font-semibold text-foreground px-4">
+                    Similar Artists
+                  </h3>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 px-4">
+                    {similarArtists.slice(0, 6).map((similarArtist) => (
+                      <div
+                        key={similarArtist.id}
+                        className="cursor-pointer group"
+                        onClick={() =>
+                          router.push(`/music/artist/${similarArtist.id}`)
+                        }
+                      >
+                        <div className="relative">
+                          <img
+                            src={getImageUrl(similarArtist.image)}
+                            alt={similarArtist.name}
+                            className="w-full aspect-square rounded-full object-cover group-hover:scale-105 transition-transform duration-300"
+                          />
+                        </div>
+                        <div className="mt-3 text-center">
+                          <h4 className="font-semibold text-foreground truncate text-sm">
+                            {similarArtist.name}
+                          </h4>
+                          <p className="text-xs text-muted-foreground mt-0.5">
+                            {similarArtist.type || "Artist"}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </TabsContent>
 
             {/* Albums Tab */}
@@ -659,6 +773,46 @@ export default function ArtistDetailPage({
                   </div>
                 ))}
               </div>
+            </TabsContent>
+
+            {/* Similar Artists Tab */}
+            <TabsContent value="similar-artists" className="space-y-6">
+              {similarArtists.length === 0 ? (
+                <div className="text-center py-12">
+                  <Users className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
+                  <p className="text-muted-foreground">
+                    No similar artists found
+                  </p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6 px-4">
+                  {similarArtists.map((similarArtist) => (
+                    <div
+                      key={similarArtist.id}
+                      className="cursor-pointer group"
+                      onClick={() =>
+                        router.push(`/music/artist/${similarArtist.id}`)
+                      }
+                    >
+                      <div className="relative">
+                        <img
+                          src={getImageUrl(similarArtist.image)}
+                          alt={similarArtist.name}
+                          className="w-full aspect-square rounded-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        />
+                      </div>
+                      <div className="mt-3 text-center">
+                        <h4 className="font-semibold text-foreground truncate text-sm">
+                          {similarArtist.name}
+                        </h4>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          {similarArtist.type || "Artist"}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </TabsContent>
 
             {/* Reviews Tab */}

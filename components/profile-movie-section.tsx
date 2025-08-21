@@ -136,6 +136,15 @@ const getTextContent = (text: any): string => {
   return "";
 };
 
+// Helper function to truncate movie titles
+const truncateTitle = (title: string, maxLength: number = 10): string => {
+  if (!title) return "Unknown Movie";
+  const cleanTitle = cleanTextContent(title);
+  return cleanTitle.length > maxLength
+    ? cleanTitle.substring(0, maxLength) + "..."
+    : cleanTitle;
+};
+
 export default function ProfileMovieSection({
   userId,
   readOnly = false,
@@ -894,8 +903,8 @@ export default function ProfileMovieSection({
                       </div>
                       {/* Movie name and year display */}
                       <div className="mt-3 text-center w-full">
-                        <p className="text-base font-semibold leading-tight px-2">
-                          {getTextContent(movie.title) || "Unknown Movie"}
+                        <p className="text-base font-semibold leading-tight px-2 truncate min-h-[1.5rem] flex items-center justify-center">
+                          {truncateTitle(getTextContent(movie.title))}
                         </p>
                         <p className="text-sm text-muted-foreground leading-tight mt-0.5 px-2">
                           {movie.year || "Unknown Year"}
@@ -904,19 +913,21 @@ export default function ProfileMovieSection({
                     </div>
                   ))}
 
-                  {/* Add button for subsequent items - always show when items exist */}
-                  <div className="flex-shrink-0">
-                    <div className="aspect-[2/3] w-32 bg-transparent rounded-md border-2 border-gray-600 flex items-center justify-center overflow-visible">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-12 w-12 p-0 bg-black/70 hover:bg-black/90 text-white rounded-full border-2 border-white/20 shadow-lg"
-                        onClick={() => openSearchDialog("favoriteMovies")}
-                      >
-                        <Plus className="h-6 w-6" />
-                      </Button>
+                  {/* Add button - only show when less than 5 items */}
+                  {limitedFavoriteMovies.length < 5 && (
+                    <div className="flex-shrink-0">
+                      <div className="aspect-[2/3] w-32 bg-transparent rounded-md border-2 border-gray-600 flex items-center justify-center overflow-visible">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-12 w-12 p-0 bg-black/70 hover:bg-black/90 text-white rounded-full border-2 border-white/20 shadow-lg"
+                          onClick={() => openSearchDialog("favoriteMovies")}
+                        >
+                          <Plus className="h-6 w-6" />
+                        </Button>
+                      </div>
                     </div>
-                  </div>
+                  )}
                 </>
               ) : (
                 // Show single Add screen when empty
@@ -943,30 +954,6 @@ export default function ProfileMovieSection({
                 </div>
               )}
             </div>
-
-            {/* Navigation arrows for favorite movies */}
-            {limitedFavoriteMovies.length > 0 && (
-              <>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="absolute left-2 top-1/2 transform -translate-y-1/2 h-8 w-8 p-0 bg-black/80 hover:bg-black backdrop-blur-md border border-white/10 text-white rounded-full shadow-2xl hover:scale-110 transition-all duration-300 z-30"
-                  onClick={() => scrollLeft(scrollContainerRefs.favoriteMovies)}
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="absolute right-2 top-1/2 transform -translate-y-1/2 h-8 w-8 p-0 bg-black/80 hover:bg-black backdrop-blur-md border border-white/10 text-white rounded-full shadow-2xl hover:scale-110 transition-all duration-300 z-30"
-                  onClick={() =>
-                    scrollRight(scrollContainerRefs.favoriteMovies)
-                  }
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
-              </>
-            )}
           </div>
         </div>
       </div>
@@ -1029,8 +1016,8 @@ export default function ProfileMovieSection({
                     </div>
                     {/* Movie name and year display */}
                     <div className="mt-3 text-center w-full">
-                      <p className="text-base font-semibold leading-tight px-2">
-                        {getTextContent(movie.title) || "Unknown Movie"}
+                      <p className="text-base font-semibold leading-tight px-2 truncate min-h-[1.5rem] flex items-center justify-center">
+                        {truncateTitle(getTextContent(movie.title))}
                       </p>
                       <p className="text-sm text-muted-foreground leading-tight mt-0.5 px-2">
                         {movie.year || "Unknown Year"}
@@ -1164,8 +1151,8 @@ export default function ProfileMovieSection({
                     </div>
                     {/* Movie name and year display */}
                     <div className="mt-3 text-center w-full">
-                      <p className="text-base font-semibold leading-tight px-2">
-                        {getTextContent(movie.title) || "Unknown Movie"}
+                      <p className="text-base font-semibold leading-tight px-2 truncate min-h-[1.5rem] flex items-center justify-center">
+                        {truncateTitle(getTextContent(movie.title))}
                       </p>
                       <p className="text-sm text-muted-foreground leading-tight mt-0.5 px-2">
                         {movie.year || "Unknown Year"}
@@ -1302,7 +1289,7 @@ export default function ProfileMovieSection({
                     {/* Movie name and year display - below the rating */}
                     <div className="mt-2 text-center w-full">
                       <p className="text-sm font-semibold leading-tight px-2 truncate min-h-[1.5rem] flex items-center justify-center">
-                        {getTextContent(rating.movie.title) || "Unknown Movie"}
+                        {truncateTitle(getTextContent(rating.movie.title))}
                       </p>
                       <p className="text-xs text-muted-foreground leading-tight mt-0.5 px-2">
                         {rating.movie.year || "Unknown Year"}
