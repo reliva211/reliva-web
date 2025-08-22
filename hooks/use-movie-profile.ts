@@ -7,6 +7,8 @@ import {
   deleteDoc,
   doc,
   setDoc,
+  query,
+  where,
 } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
 import { db } from "@/lib/firebase";
@@ -26,6 +28,7 @@ export interface TMDBMovie {
   genres?: string[];
   director?: string;
   cast?: string[];
+  collections?: string[];
 }
 
 export interface MovieProfile {
@@ -70,60 +73,138 @@ export function useMovieProfile(userId: string | undefined) {
         return;
       }
 
-      const movieCollection = collection(db, "users", userId, "movies");
-      const movieSnapshot = await getDocs(movieCollection);
+      // Fetch from the new collection structure
+      const movieListsRef = collection(db, "users", userId, "movieCollections");
+      const movieListsSnapshot = await getDocs(movieListsRef);
 
-      if (!movieSnapshot.empty) {
-        const movieData = movieSnapshot.docs[0].data();
+      let watchlist: TMDBMovie[] = [];
+      let recommendations: TMDBMovie[] = [];
+      let ratings: Array<{ movie: TMDBMovie; rating: number }> = [];
+      let favoriteMovies: TMDBMovie[] = [];
+      let recentlyWatched: TMDBMovie[] = [];
+      let favoriteMovie: TMDBMovie | null = null;
+      let favoriteDirector: { id: string; name: string; image: string } | null = null;
 
-        // Validate and sanitize the data
-        const validatedProfile = {
-          recentlyWatched: Array.isArray(movieData.recentlyWatched)
-            ? movieData.recentlyWatched.filter(
-                (movie) => movie && typeof movie === "object"
-              )
-            : movieData.recentlyWatched &&
-              typeof movieData.recentlyWatched === "object"
-            ? [movieData.recentlyWatched]
-            : [],
-          favoriteMovie:
-            movieData.favoriteMovie &&
-            typeof movieData.favoriteMovie === "object"
-              ? movieData.favoriteMovie
-              : null,
-          favoriteDirector:
-            movieData.favoriteDirector &&
-            typeof movieData.favoriteDirector === "object"
-              ? movieData.favoriteDirector
-              : null,
-          favoriteMovies: Array.isArray(movieData.favoriteMovies)
-            ? movieData.favoriteMovies.filter(
-                (movie) => movie && typeof movie === "object"
-              )
-            : [],
-          watchlist: Array.isArray(movieData.watchlist)
-            ? movieData.watchlist.filter(
-                (movie) => movie && typeof movie === "object"
-              )
-            : [],
-          recommendations: Array.isArray(movieData.recommendations)
-            ? movieData.recommendations.filter(
-                (movie) => movie && typeof movie === "object"
-              )
-            : [],
-          ratings: Array.isArray(movieData.ratings)
-            ? movieData.ratings.filter(
-                (rating) =>
-                  rating &&
-                  typeof rating === "object" &&
-                  rating.movie &&
-                  rating.rating
-              )
-            : [],
+      // Fetch all movies first
+      const moviesRef = collection(db, "users", userId, "movies");
+      const moviesSnapshot = await getDocs(moviesRef);
+      const allMovies: TMDBMovie[] = moviesSnapshot.docs.map((movieDoc) => {
+        const movieData = movieDoc.data();
+        return {
+          id: movieDoc.id,
+          title: movieData.title || "",
+          year: movieData.year || 0,
+          cover: movieData.cover || "",
+          rating: movieData.rating || 0,
+          overview: movieData.overview || "",
+          release_date: movieData.release_date || "",
+          vote_average: movieData.vote_average || 0,
+          vote_count: movieData.vote_count || 0,
+          genre_ids: Array.isArray(movieData.genre_ids) ? movieData.genre_ids : [],
+          genres: Array.isArray(movieData.genres) ? movieData.genres : [],
+          director: movieData.director || "",
+          cast: Array.isArray(movieData.cast) ? movieData.cast : [],
+          collections: movieData.collections || [],
         };
+      });
 
-        setMovieProfile(validatedProfile);
+      // Process each movie collection and categorize movies
+      for (const collectionDoc of movieListsSnapshot.docs) {
+        const collectionData = collectionDoc.data();
+        const collectionName = collectionData.name?.toLowerCase() || '';
+        const collectionId = collectionDoc.id;
+
+        // Find movies that belong to this collection
+        const collectionMovies = allMovies.filter(movie => 
+          movie.collections && movie.collections.includes(collectionId)
+        );
+
+        // Categorize movies based on collection name
+        if (collectionName.includes('watchlist') || collectionName.includes('to watch')) {
+          watchlist = [...watchlist, ...collectionMovies];
+        } else if (collectionName.includes('recommendation') || collectionName.includes('recommended')) {
+          recommendations = [...recommendations, ...collectionMovies];
+        } else if (collectionName.includes('favorite') || collectionName.includes('favourites')) {
+          favoriteMovies = [...favoriteMovies, ...collectionMovies];
+        } else if (collectionName.includes('currently watching') || collectionName.includes('watching')) {
+          recentlyWatched = [...recentlyWatched, ...collectionMovies];
+        } else if (collectionName.includes('rated') || collectionName.includes('ratings')) {
+          // For ratings, we need to extract the rating from the movie data
+          const ratedMovies = collectionMovies.map(movie => ({
+            movie,
+            rating: movie.rating || 0
+          }));
+          ratings = [...ratings, ...ratedMovies];
+        } else {
+          // Default collection - add to watchlist
+          watchlist = [...watchlist, ...collectionMovies];
+        }
       }
+
+      // Set the first movie as favorite movie if available
+      if (favoriteMovies.length > 0) {
+        favoriteMovie = favoriteMovies[0];
+      }
+
+      // Set the first movie as recently watched if available
+      if (recentlyWatched.length === 0 && watchlist.length > 0) {
+        recentlyWatched = [watchlist[0]];
+      }
+
+      // Also fetch movie reviews to get ratings
+      try {
+        const reviewsRef = collection(db, "reviews");
+        const reviewsSnapshot = await getDocs(
+          query(reviewsRef, where("userId", "==", userId), where("mediaType", "==", "movie"))
+        );
+        
+        const movieReviews = reviewsSnapshot.docs.map(reviewDoc => {
+          const reviewData = reviewDoc.data();
+          return {
+            movie: {
+              id: reviewData.mediaId || reviewDoc.id,
+              title: reviewData.mediaTitle || "",
+              year: reviewData.mediaYear || 0,
+              cover: reviewData.mediaCover || "",
+              rating: reviewData.rating || 0,
+              overview: reviewData.reviewText || "",
+              release_date: "",
+              vote_average: 0,
+              vote_count: 0,
+              genre_ids: [],
+              genres: [],
+              director: "",
+              cast: [],
+            },
+            rating: reviewData.rating || 0
+          };
+        });
+
+        // Merge with existing ratings and deduplicate by movie ID
+        const allRatings = [...ratings, ...movieReviews];
+        const seenMovieIds = new Set();
+        ratings = allRatings.filter(rating => {
+          if (seenMovieIds.has(rating.movie.id)) {
+            return false;
+          }
+          seenMovieIds.add(rating.movie.id);
+          return true;
+        });
+      } catch (reviewError) {
+        console.log("Could not fetch movie reviews:", reviewError);
+      }
+
+      const validatedProfile = {
+        recentlyWatched,
+        favoriteMovie,
+        favoriteDirector,
+        favoriteMovies,
+        watchlist,
+        recommendations,
+        ratings,
+      };
+
+      setMovieProfile(validatedProfile);
     } catch (err) {
       console.error("Error fetching movie profile:", err);
       setError("Failed to fetch movie profile");
@@ -570,20 +651,25 @@ export function useMovieProfile(userId: string | undefined) {
       if (!response.ok) {
         const errorText = await response.text();
         console.error("TMDB API response error:", response.status, errorText);
-        throw new Error(`Failed to search movies: ${response.status}`);
+        // Return empty array instead of throwing error
+        return [];
       }
 
       const data = await response.json();
       console.log("TMDB search results:", data);
 
-      if (data.error) {
-        throw new Error(data.error);
+      // If there's an error but we have fallback data, use it
+      if (data.error && !data.fallback) {
+        console.warn("Search error with no fallback:", data.error);
+        return [];
       }
 
-      return data.results.slice(0, limit);
+      // Return results or empty array if no results
+      return (data.results || []).slice(0, limit);
     } catch (err) {
       console.error("Search error:", err);
-      throw err;
+      // Return empty array instead of throwing error to prevent UI crashes
+      return [];
     }
   };
 
@@ -598,20 +684,25 @@ export function useMovieProfile(userId: string | undefined) {
       if (!response.ok) {
         const errorText = await response.text();
         console.error("TMDB API response error:", response.status, errorText);
-        throw new Error(`Failed to search directors: ${response.status}`);
+        // Return empty array instead of throwing error
+        return [];
       }
 
       const data = await response.json();
       console.log("TMDB director search results:", data);
 
-      if (data.error) {
-        throw new Error(data.error);
+      // If there's an error but we have fallback data, use it
+      if (data.error && !data.fallback) {
+        console.warn("Search error with no fallback:", data.error);
+        return [];
       }
 
-      return data.results.slice(0, limit);
+      // Return results or empty array if no results
+      return (data.results || []).slice(0, limit);
     } catch (err) {
       console.error("Search error:", err);
-      throw err;
+      // Return empty array instead of throwing error to prevent UI crashes
+      return [];
     }
   };
 

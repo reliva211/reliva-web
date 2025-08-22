@@ -1236,7 +1236,7 @@ export default function ProfileMovieSection({
               <>
                 {limitedRatings.map((rating, idx) => (
                   <div
-                    key={rating.movie.id || idx}
+                    key={`rating-${rating.movie.id}-${idx}`}
                     className="relative group flex-shrink-0"
                   >
                     <div className="aspect-[2/3] w-32 bg-muted rounded-md overflow-hidden">
