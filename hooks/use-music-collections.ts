@@ -197,7 +197,13 @@ export function useMusicCollections() {
 
   // Add song to liked songs
   const likeSong = async (song: Omit<MusicSong, "addedAt">) => {
-    if (!user?.id) return;
+    console.log("likeSong called with user:", user);
+    console.log("User ID:", user?.id);
+    
+    if (!user?.id) {
+      console.error("No user ID found, cannot like song");
+      return;
+    }
 
     try {
       const songData = {
@@ -205,8 +211,12 @@ export function useMusicCollections() {
         addedAt: new Date().toISOString(),
       };
 
+      console.log("Song data to save:", songData);
       const songRef = doc(db, "users", user.id, "musicSongs", song.id);
+      console.log("Song reference:", songRef.path);
+      
       await setDoc(songRef, songData);
+      console.log("Song saved successfully");
 
       setLikedSongs((prev) => {
         const existing = prev.find((s) => s.id === song.id);
@@ -217,6 +227,8 @@ export function useMusicCollections() {
         }
         return [...prev, songData];
       });
+      
+      console.log("Local state updated");
     } catch (err) {
       console.error("Error liking song:", err);
       throw err;
@@ -225,13 +237,23 @@ export function useMusicCollections() {
 
   // Remove song from liked songs
   const unlikeSong = async (songId: string) => {
-    if (!user?.id) return;
+    console.log("unlikeSong called with songId:", songId);
+    console.log("User ID:", user?.id);
+    
+    if (!user?.id) {
+      console.error("No user ID found, cannot unlike song");
+      return;
+    }
 
     try {
       const songRef = doc(db, "users", user.id, "musicSongs", songId);
+      console.log("Song reference to delete:", songRef.path);
+      
       await deleteDoc(songRef);
+      console.log("Song deleted successfully");
 
       setLikedSongs((prev) => prev.filter((s) => s.id !== songId));
+      console.log("Local state updated");
     } catch (err) {
       console.error("Error unliking song:", err);
       throw err;

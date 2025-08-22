@@ -495,6 +495,7 @@ export default function MusicApp() {
           });
         }
       } catch (error) {
+        console.error("Error in handleLikeSong:", error);
         toast({
           title: "Error",
           description: "Failed to update liked songs. Please try again.",
@@ -1133,15 +1134,16 @@ export default function MusicApp() {
                                     <button
                                       onClick={(e) => {
                                         e.stopPropagation();
-                                        // Placeholder for like functionality
-                                        console.log(
-                                          "Like artist:",
-                                          artist.name
-                                        );
+                                        handleFollowArtist(artist);
                                       }}
-                                      className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-white/30 transition-all duration-200 hover:scale-110"
+                                      className={`w-12 h-12 backdrop-blur-sm rounded-full flex items-center justify-center transition-all duration-200 hover:scale-110 ${
+                                        isArtistFollowed(artist.id)
+                                          ? "bg-red-500/80 hover:bg-red-600/80"
+                                          : "bg-white/20 hover:bg-white/30"
+                                      }`}
+                                      title={isArtistFollowed(artist.id) ? "Unfollow artist" : "Follow artist"}
                                     >
-                                      <Heart className="w-5 h-5 text-white fill-white" />
+                                      <Heart className={`w-5 h-5 text-white ${isArtistFollowed(artist.id) ? "fill-red-400" : "fill-white"}`} />
                                     </button>
                                   </div>
                                 </div>
@@ -1229,12 +1231,16 @@ export default function MusicApp() {
                                     <button
                                       onClick={(e) => {
                                         e.stopPropagation();
-                                        // Placeholder for like functionality
-                                        console.log("Like album:", album.name);
+                                        handleLikeAlbum(album);
                                       }}
-                                      className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-white/30 transition-all duration-200 hover:scale-110"
+                                      className={`w-12 h-12 backdrop-blur-sm rounded-full flex items-center justify-center transition-all duration-200 hover:scale-110 ${
+                                        isAlbumLiked(album.id)
+                                          ? "bg-red-500/80 hover:bg-red-600/80"
+                                          : "bg-white/20 hover:bg-white/30"
+                                      }`}
+                                      title={isAlbumLiked(album.id) ? "Remove from liked albums" : "Add to liked albums"}
                                     >
-                                      <Heart className="w-5 h-5 text-white fill-white" />
+                                      <Heart className={`w-5 h-5 text-white ${isAlbumLiked(album.id) ? "fill-red-400" : "fill-white"}`} />
                                     </button>
                                     <button
                                       onClick={(e) =>
@@ -1346,12 +1352,16 @@ export default function MusicApp() {
                                     <button
                                       onClick={(e) => {
                                         e.stopPropagation();
-                                        // Placeholder for like functionality
-                                        console.log("Like song:", song.name);
+                                        handleLikeSong(song);
                                       }}
-                                      className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-white/30 transition-all duration-200 hover:scale-110"
+                                      className={`w-12 h-12 backdrop-blur-sm rounded-full flex items-center justify-center transition-all duration-200 hover:scale-110 ${
+                                        isSongLiked(song.id)
+                                          ? "bg-red-500/80 hover:bg-red-600/80"
+                                          : "bg-white/20 hover:bg-white/30"
+                                      }`}
+                                      title={isSongLiked(song.id) ? "Remove from liked songs" : "Add to liked songs"}
                                     >
-                                      <Heart className="w-5 h-5 text-white fill-white" />
+                                      <Heart className={`w-5 h-5 text-white ${isSongLiked(song.id) ? "fill-red-400" : "fill-white"}`} />
                                     </button>
                                   </div>
                                 </div>
@@ -1543,12 +1553,16 @@ export default function MusicApp() {
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
-                              // Placeholder for like functionality
-                              console.log("Like album:", album.name);
+                              handleLikeAlbum(album);
                             }}
-                            className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-white/30 transition-all duration-200 hover:scale-110"
+                            className={`w-12 h-12 backdrop-blur-sm rounded-full flex items-center justify-center transition-all duration-200 hover:scale-110 ${
+                              isAlbumLiked(album.id)
+                                ? "bg-red-500/80 hover:bg-red-600/80"
+                                : "bg-white/20 hover:bg-white/30"
+                            }`}
+                            title={isAlbumLiked(album.id) ? "Remove from liked albums" : "Add to liked albums"}
                           >
-                            <Heart className="w-5 h-5 text-white fill-white" />
+                            <Heart className={`w-5 h-5 text-white ${isAlbumLiked(album.id) ? "fill-red-400" : "fill-white"}`} />
                           </button>
                           <button
                             onClick={(e) => {
@@ -1659,12 +1673,16 @@ export default function MusicApp() {
                               <button
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  // Placeholder for like functionality
-                                  console.log("Like song:", song.name);
+                                  handleLikeSong(song);
                                 }}
-                                className="w-8 h-8 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-white/30 transition-all duration-200 hover:scale-110"
+                                className={`w-8 h-8 backdrop-blur-sm rounded-full flex items-center justify-center transition-all duration-200 hover:scale-110 ${
+                                  isSongLiked(song.id)
+                                    ? "bg-red-500/80 hover:bg-red-600/80"
+                                    : "bg-white/20 hover:bg-white/30"
+                                }`}
+                                title={isSongLiked(song.id) ? "Remove from liked songs" : "Add to liked songs"}
                               >
-                                <Heart className="w-3 h-3 text-white fill-white" />
+                                <Heart className={`w-3 h-3 text-white ${isSongLiked(song.id) ? "fill-red-400" : "fill-white"}`} />
                               </button>
                             </div>
                           </div>
