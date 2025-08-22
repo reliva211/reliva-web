@@ -19,28 +19,46 @@ import {
   MessageSquare,
   Users,
   UserPlus,
+  Edit3,
 } from "lucide-react";
 import { RatingStars } from "@/components/rating-stars";
 import ReviewPost from "@/components/review-post";
 import { useFollowedReviews } from "@/hooks/use-followed-reviews";
+import { useAllReviews } from "@/hooks/use-all-reviews";
 
 export default function LandingPage() {
   const { user, loading } = useCurrentUser();
+  const [activeTab, setActiveTab] = useState<"following" | "forYou">("following");
+  
   const {
-    reviews,
-    loading: loadingReviews,
-    error,
-    retry,
-    updateReview,
+    reviews: followedReviews,
+    loading: loadingFollowedReviews,
+    error: followedReviewsError,
+    retry: retryFollowedReviews,
+    updateReview: updateFollowedReview,
   } = useFollowedReviews();
+  
+  const {
+    reviews: allReviews,
+    loading: loadingAllReviews,
+    error: allReviewsError,
+    retry: retryAllReviews,
+    updateReview: updateAllReview,
+  } = useAllReviews();
 
   // Handle review deletion
   const handleReviewDelete = () => {
-    // The hook will automatically refresh when user changes
-    // This is handled by the useEffect dependency on user
-    // We can also manually trigger a refresh if needed
-    retry();
+    // Retry both hooks to refresh data
+    retryFollowedReviews();
+    retryAllReviews();
   };
+
+  // Get current data based on active tab
+  const currentReviews = activeTab === "following" ? followedReviews : allReviews;
+  const currentLoading = activeTab === "following" ? loadingFollowedReviews : loadingAllReviews;
+  const currentError = activeTab === "following" ? followedReviewsError : allReviewsError;
+  const currentRetry = activeTab === "following" ? retryFollowedReviews : retryAllReviews;
+  const currentUpdateReview = activeTab === "following" ? updateFollowedReview : updateAllReview;
 
   // Prevent vertical scrolling when hovering over scrollable containers
   useEffect(() => {
@@ -91,12 +109,44 @@ export default function LandingPage() {
                 <div className="flex flex-col sm:flex-row flex-wrap justify-center gap-3 sm:gap-6 text-sm text-gray-400">
                   <span className="flex items-center gap-2">
                     <span className="w-2 h-2 bg-emerald-500 rounded-full"></span>
-                    {reviews.length} reviews from people you follow
+                    {followedReviews.length} reviews from people you follow
                   </span>
                   <span className="flex items-center gap-2">
                     <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
                     Discover what's trending
                   </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Tab Navigation */}
+            <div className="flex justify-center mb-6 sm:mb-8">
+              <div className="bg-gray-800/50 backdrop-blur-sm rounded-2xl p-2 border border-gray-600 shadow-lg">
+                <div className="flex space-x-2">
+                  <Button
+                    variant={activeTab === "following" ? "default" : "ghost"}
+                    onClick={() => setActiveTab("following")}
+                    className={`px-6 py-3 rounded-xl font-semibold transition-all duration-300 ${
+                      activeTab === "following"
+                        ? "bg-gradient-to-r from-emerald-600 to-blue-600 text-white shadow-lg"
+                        : "text-gray-300 hover:text-white hover:bg-gray-700/50"
+                    }`}
+                  >
+                    <Users className="h-4 w-4 mr-2" />
+                    Following
+                  </Button>
+                  <Button
+                    variant={activeTab === "forYou" ? "default" : "ghost"}
+                    onClick={() => setActiveTab("forYou")}
+                    className={`px-6 py-3 rounded-xl font-semibold transition-all duration-300 ${
+                      activeTab === "forYou"
+                        ? "bg-gradient-to-r from-emerald-600 to-blue-600 text-white shadow-lg"
+                        : "text-gray-300 hover:text-white hover:bg-gray-700/50"
+                    }`}
+                  >
+                    <Zap className="h-4 w-4 mr-2" />
+                    For You
+                  </Button>
                 </div>
               </div>
             </div>
@@ -107,11 +157,17 @@ export default function LandingPage() {
               <div className="flex-1">
                 <div className="mb-4 sm:mb-6">
                   <h2 className="text-lg sm:text-xl font-semibold text-white mb-2">
-                    Your friend's and your reviews
+                    {activeTab === "following" ? "Reviews from People You Follow" : "Discover All Reviews"}
                   </h2>
+                  <p className="text-sm text-gray-400 mb-2">
+                    {activeTab === "following" 
+                      ? "Stay updated with reviews from your network"
+                      : "Explore reviews from the entire community"
+                    }
+                  </p>
                 </div>
 
-                {loadingReviews ? (
+                {currentLoading ? (
                   <div className="space-y-6 sm:space-y-8">
                     {[...Array(3)].map((_, i) => (
                       <div
@@ -143,7 +199,7 @@ export default function LandingPage() {
                       </div>
                     ))}
                   </div>
-                ) : error ? (
+                ) : currentError ? (
                   <div className="text-center py-8 sm:py-12 md:py-16 px-4 sm:px-6">
                     <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-red-900/30 to-orange-900/30 rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-6">
                       <MessageSquare className="h-8 w-8 sm:h-10 sm:w-10 text-red-400" />
@@ -152,54 +208,71 @@ export default function LandingPage() {
                       Error Loading Reviews
                     </h3>
                     <p className="text-gray-400 mb-6 sm:mb-8 max-w-md mx-auto text-sm sm:text-base md:text-lg leading-relaxed">
-                      {error}
+                      {currentError}
                     </p>
                     <Button
-                      onClick={retry}
+                      onClick={currentRetry}
                       className="bg-gradient-to-r from-emerald-600 to-blue-600 hover:from-emerald-700 hover:to-blue-700 text-white text-sm sm:text-base md:text-lg px-6 sm:px-8 py-3 sm:py-4 md:px-10 md:py-4 rounded-xl font-semibold shadow-lg transform hover:scale-105 transition-all duration-300"
                     >
                       Try Again
                     </Button>
                   </div>
-                ) : reviews.length === 0 ? (
+                ) : currentReviews.length === 0 ? (
                   <div className="text-center py-8 sm:py-12 md:py-16 px-4 sm:px-6">
                     <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-emerald-900/30 to-blue-900/30 rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-6">
-                      <UserPlus className="h-8 w-8 sm:h-10 sm:w-10 text-emerald-400" />
+                      {activeTab === "following" ? (
+                        <UserPlus className="h-8 w-8 sm:h-10 sm:w-10 text-emerald-400" />
+                      ) : (
+                        <Zap className="h-8 w-8 sm:h-10 sm:w-10 text-blue-400" />
+                      )}
                     </div>
                     <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-white mb-3 sm:mb-4">
-                      No reviews yet
+                      {activeTab === "following" ? "No reviews yet" : "No reviews available"}
                     </h3>
                     <p className="text-gray-400 mb-6 sm:mb-8 max-w-md mx-auto text-sm sm:text-base md:text-lg leading-relaxed">
-                      Start following people to see their reviews, or write your
-                      first review to share with the community!
+                      {activeTab === "following" 
+                        ? "Start following people to see their reviews, or write your first review to share with the community!"
+                        : "Be the first to share a review and start building the community!"
+                      }
                     </p>
                     <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center">
-                      <Link href="/users">
-                        <Button className="bg-gradient-to-r from-emerald-600 to-blue-600 hover:from-emerald-700 hover:to-blue-700 text-white text-sm sm:text-base md:text-lg px-6 sm:px-8 py-3 sm:py-4 md:px-10 md:py-4 rounded-xl font-semibold shadow-lg transform hover:scale-105 transition-all duration-300">
-                          <Users className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
-                          Find People to Follow
-                        </Button>
-                      </Link>
-                      <Link href="/reviews">
-                        <Button
-                          variant="outline"
-                          className="text-sm sm:text-base md:text-lg px-6 sm:px-8 py-3 sm:py-4 md:px-10 md:py-4 rounded-xl font-semibold shadow-lg transform hover:scale-105 transition-all duration-300"
-                        >
-                          Write Your First Review
-                        </Button>
-                      </Link>
+                      {activeTab === "following" ? (
+                        <>
+                          <Link href="/users">
+                            <Button className="bg-gradient-to-r from-emerald-600 to-blue-600 hover:from-emerald-700 hover:to-blue-700 text-white text-sm sm:text-base md:text-lg px-6 sm:px-8 py-3 sm:py-4 md:px-10 md:py-4 rounded-xl font-semibold shadow-lg transform hover:scale-105 transition-all duration-300">
+                              <Users className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
+                              Find People to Follow
+                            </Button>
+                          </Link>
+                          <Link href="/reviews">
+                            <Button
+                              variant="outline"
+                              className="text-sm sm:text-base md:text-lg px-6 sm:px-8 py-3 sm:py-4 md:px-10 md:py-4 rounded-xl font-semibold shadow-lg transform hover:scale-105 transition-all duration-300"
+                            >
+                              Write Your First Review
+                            </Button>
+                          </Link>
+                        </>
+                      ) : (
+                        <Link href="/reviews">
+                          <Button className="bg-gradient-to-r from-emerald-600 to-blue-600 hover:from-emerald-700 hover:to-blue-700 text-white text-sm sm:text-base md:text-lg px-6 sm:px-8 py-3 sm:py-4 md:px-10 md:py-4 rounded-xl font-semibold shadow-lg transform hover:scale-105 transition-all duration-300">
+                            <Edit3 className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
+                            Write Your First Review
+                          </Button>
+                        </Link>
+                      )}
                     </div>
                   </div>
                 ) : (
                   <div>
-                    {reviews.slice(0, 9).map((review) => (
+                    {currentReviews.slice(0, 9).map((review) => (
                       <ReviewPost
                         key={review.id}
                         review={review}
                         onLikeToggle={(updatedReview) => {
                           // Update the local state immediately for real-time updates
                           if (updatedReview) {
-                            updateReview(review.id, updatedReview);
+                            currentUpdateReview(review.id, updatedReview);
                           }
                         }}
                         onDelete={handleReviewDelete}
