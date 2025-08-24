@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -33,13 +34,30 @@ import {
   Video,
   Bookmark,
   Share2,
+  Folder,
 } from "lucide-react";
 import { useSeriesProfile, type TMDBSeries } from "@/hooks/use-series-profile";
 import { useCurrentUser } from "@/hooks/use-current-user";
 
+interface PublicCollection {
+  id: string;
+  name: string;
+  isPublic: boolean;
+  isDefault: boolean;
+  type: "movies" | "series" | "books";
+  itemCount: number;
+}
+
+interface PublicCollectionItems {
+  [collectionId: string]: any[];
+}
+
 interface ProfileSeriesSectionProps {
   userId?: string;
   readOnly?: boolean;
+  publicCollections?: PublicCollection[];
+  publicCollectionItems?: PublicCollectionItems;
+  loadingPublicCollections?: boolean;
 }
 
 // Placeholder content for empty states - inspired by movies section design
@@ -93,6 +111,21 @@ const cleanTextContent = (text: string): string => {
     .trim(); // Remove leading/trailing spaces
 };
 
+// Helper function to strip HTML tags and decode HTML entities
+const stripHtmlTags = (html: string): string => {
+  if (!html) return html;
+  return html
+    .replace(/<[^>]*>/g, "") // Remove HTML tags
+    .replace(/&amp;/g, "&") // Decode HTML entities
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&nbsp;/g, " ") // Replace non-breaking spaces
+    .replace(/\s+/g, " ") // Normalize whitespace
+    .trim();
+};
+
 // Helper function to safely get text content
 const getTextContent = (text: any): string => {
   if (typeof text === "string") {
@@ -112,6 +145,15 @@ const truncateTitle = (title: string, maxLength: number = 10): string => {
   return cleanTitle.length > maxLength
     ? cleanTitle.substring(0, maxLength) + "..."
     : cleanTitle;
+};
+
+// Helper function to truncate title to first few words
+const truncateTitleToWords = (title: string, maxWords: number = 1): string => {
+  if (!title) return "Unknown Series";
+  const cleanTitle = cleanTextContent(title);
+  const words = cleanTitle.split(" ");
+  if (words.length <= maxWords) return cleanTitle;
+  return words.slice(0, maxWords).join(" ") + "...";
 };
 
 // Helper function to safely extract image URLs from various API response formats
@@ -142,8 +184,12 @@ const getImageUrl = (image: any): string => {
 export default function ProfileSeriesSection({
   userId,
   readOnly = false,
+  publicCollections = [],
+  publicCollectionItems = {},
+  loadingPublicCollections = false,
 }: ProfileSeriesSectionProps) {
   const { user } = useCurrentUser();
+  const router = useRouter();
   const targetUserId = userId || user?.uid;
   const {
     seriesProfile,
@@ -492,6 +538,38 @@ export default function ProfileSeriesSection({
     }
   };
 
+  // Function to handle plus button clicks
+  const handlePlusClick = (sectionType: string, itemToReplace?: any) => {
+    // For favorite sections, open search dialog
+    if (
+      sectionType === "favoriteSeries" ||
+      sectionType === "favoriteSeriesList"
+    ) {
+      openSearchDialog(sectionType, itemToReplace);
+    } else {
+      // For all other sections, redirect to discover page with specific section
+      let section = "";
+      switch (sectionType) {
+        case "recentlyWatched":
+          section = "currently-watching";
+          break;
+        case "watchlist":
+          section = "watchlist";
+          break;
+        case "recommendation":
+          section = "recommendations";
+          break;
+        case "rating":
+          section = "ratings";
+          break;
+        default:
+          section = "";
+      }
+      const url = section ? `/series?section=${section}` : `/series`;
+      router.push(url);
+    }
+  };
+
   const openSearchDialog = (searchType: any, itemToReplace?: any) => {
     setActiveSearchType(searchType);
     setShowSearchDialog(true);
@@ -668,6 +746,80 @@ export default function ProfileSeriesSection({
 
   return (
     <div className="space-y-8 max-w-4xl mx-auto">
+      {/* Public Collections Section */}
+      {publicCollections.length > 0 && (
+        <div className="max-w-3xl mx-auto">
+          <div className="flex items-center justify-start mb-4">
+            <p className="text-sm font-medium text-muted-foreground">
+              public collections
+            </p>
+          </div>
+          {loadingPublicCollections ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="animate-pulse">
+                  <div className="h-4 bg-muted rounded mb-2"></div>
+                  <div className="h-32 bg-muted rounded"></div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {publicCollections.map((collection) => {
+                const items = publicCollectionItems[collection.id] || [];
+                return (
+                  <Card key={collection.id} className="overflow-hidden">
+                    <CardContent className="p-4">
+                      <div className="flex items-center gap-2 mb-3">
+                        <Folder className="h-4 w-4 text-muted-foreground" />
+                        <h3 className="font-semibold text-sm truncate">
+                          {collection.name}
+                        </h3>
+                      </div>
+                      <div className="flex gap-2 overflow-x-auto pb-2">
+                        {items.slice(0, 4).map((item, idx) => (
+                          <div
+                            key={item.id || idx}
+                            className="flex-shrink-0 w-16 h-24 bg-muted rounded-md overflow-hidden"
+                          >
+                            <Image
+                              src={
+                                item.cover || item.poster_path
+                                  ? `https://image.tmdb.org/t/p/w200${item.poster_path}`
+                                  : "/placeholder.svg"
+                              }
+                              alt={item.title || item.name || "Series"}
+                              width={64}
+                              height={96}
+                              className="w-full h-full object-cover"
+                              onError={(e) => {
+                                const target = e.target as HTMLImageElement;
+                                target.src = "/placeholder.svg";
+                              }}
+                            />
+                          </div>
+                        ))}
+                        {items.length === 0 && (
+                          <div className="flex-shrink-0 w-16 h-24 bg-muted rounded-md flex items-center justify-center">
+                            <Tv className="h-6 w-6 text-muted-foreground/50" />
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex items-center justify-between text-xs text-muted-foreground">
+                        <span>{collection.itemCount} series</span>
+                        {items.length > 4 && (
+                          <span>+{items.length - 4} more</span>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
       <div className="max-w-3xl mx-auto">
         <div className="flex items-center justify-start mb-4">
           <p className="text-sm font-medium text-muted-foreground">
@@ -706,7 +858,7 @@ export default function ProfileSeriesSection({
                         variant="ghost"
                         size="sm"
                         className="h-8 w-8 p-0 bg-white/20 hover:bg-white/30 text-white"
-                        onClick={() => openSearchDialog("recentlyWatched")}
+                        onClick={() => handlePlusClick("recentlyWatched")}
                       >
                         <Edit className="h-4 w-4" />
                       </Button>
@@ -722,8 +874,9 @@ export default function ProfileSeriesSection({
                     "Unknown Series"}
                 </h3>
                 <p className="text-sm text-muted-foreground mb-4 line-clamp-3">
-                  {currentRecentlyWatched.overview ||
-                    "No description available"}
+                  {currentRecentlyWatched.overview
+                    ? stripHtmlTags(currentRecentlyWatched.overview)
+                    : "No description available"}
                 </p>
 
                 {/* Action buttons and navigation */}
@@ -865,7 +1018,7 @@ export default function ProfileSeriesSection({
                             size="sm"
                             className="h-6 w-6 p-0 bg-black/50 hover:bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity"
                             onClick={() =>
-                              openSearchDialog("favoriteSeriesList", series)
+                              handlePlusClick("favoriteSeriesList", series)
                             }
                             title="Replace series"
                           >
@@ -889,10 +1042,10 @@ export default function ProfileSeriesSection({
                       )}
                     </div>
                     <div className="mt-2 text-center">
-                      <p className="text-sm font-semibold leading-tight truncate min-h-[1.5rem] flex items-center justify-center">
-                        {truncateTitle(getTextContent(series.name))}
+                      <p className="text-sm font-semibold leading-tight min-h-[1.5rem] truncate">
+                        {truncateTitleToWords(series.name)}
                       </p>
-                      <p className="text-xs text-muted-foreground leading-tight mt-0.5">
+                      <p className="text-xs text-muted-foreground leading-tight mt-0.5 truncate">
                         {series.first_air_date?.split("-")[0] || "Unknown Year"}
                       </p>
                     </div>
@@ -907,7 +1060,7 @@ export default function ProfileSeriesSection({
                         variant="ghost"
                         size="sm"
                         className="h-12 w-12 p-0 bg-black/70 hover:bg-black/90 text-white rounded-full border-2 border-white/20 shadow-lg"
-                        onClick={() => openSearchDialog("favoriteSeriesList")}
+                        onClick={() => handlePlusClick("favoriteSeriesList")}
                       >
                         <Plus className="h-6 w-6" />
                       </Button>
@@ -928,7 +1081,7 @@ export default function ProfileSeriesSection({
                     variant="outline"
                     size="sm"
                     className="text-xs"
-                    onClick={() => openSearchDialog("favoriteSeriesList")}
+                    onClick={() => handlePlusClick("favoriteSeriesList")}
                   >
                     <Plus className="h-3 w-3 mr-1" />
                     Add Series
@@ -981,9 +1134,7 @@ export default function ProfileSeriesSection({
                             variant="ghost"
                             size="sm"
                             className="h-6 w-6 p-0 bg-black/50 hover:bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity"
-                            onClick={() =>
-                              openSearchDialog("watchlist", series)
-                            }
+                            onClick={() => handlePlusClick("watchlist", series)}
                             title="Replace series"
                           >
                             <Edit className="h-3 w-3 text-white" />
@@ -1007,7 +1158,7 @@ export default function ProfileSeriesSection({
                     </div>
                     <div className="mt-2 text-center">
                       <p className="text-sm font-semibold leading-tight truncate min-h-[1.5rem] flex items-center justify-center">
-                        {truncateTitle(getTextContent(series.name))}
+                        {truncateTitleToWords(series.name)}
                       </p>
                       <p className="text-xs text-muted-foreground leading-tight mt-0.5">
                         {series.first_air_date?.split("-")[0] || "Unknown Year"}
@@ -1016,19 +1167,21 @@ export default function ProfileSeriesSection({
                   </div>
                 ))}
 
-                {/* Add button for subsequent items - always show when items exist */}
-                <div className="flex-shrink-0">
-                  <div className="aspect-[2/3] w-32 bg-transparent rounded-md border-2 border-gray-600 flex items-center justify-center overflow-visible">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-12 w-12 p-0 bg-black/70 hover:bg-black/90 text-white rounded-full border-2 border-white/20 shadow-lg"
-                      onClick={() => openSearchDialog("watchlist")}
-                    >
-                      <Plus className="h-6 w-6" />
-                    </Button>
+                {/* Add button for subsequent items - only show when not read-only */}
+                {!readOnly && (
+                  <div className="flex-shrink-0">
+                    <div className="aspect-[2/3] w-32 bg-transparent rounded-md border-2 border-gray-600 flex items-center justify-center overflow-visible">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-12 w-12 p-0 bg-black/70 hover:bg-black/90 text-white rounded-full border-2 border-white/20 shadow-lg"
+                        onClick={() => handlePlusClick("watchlist")}
+                      >
+                        <Plus className="h-6 w-6" />
+                      </Button>
+                    </div>
                   </div>
-                </div>
+                )}
               </>
             ) : (
               // Show single Add screen when empty
@@ -1043,7 +1196,7 @@ export default function ProfileSeriesSection({
                     variant="outline"
                     size="sm"
                     className="text-xs"
-                    onClick={() => openSearchDialog("watchlist")}
+                    onClick={() => handlePlusClick("watchlist")}
                   >
                     <Plus className="h-3 w-3 mr-1" />
                     Add Series
@@ -1121,7 +1274,7 @@ export default function ProfileSeriesSection({
                             size="sm"
                             className="h-6 w-6 p-0 bg-black/50 hover:bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity"
                             onClick={() =>
-                              openSearchDialog("recommendation", series)
+                              handlePlusClick("recommendation", series)
                             }
                             title="Replace recommendation"
                           >
@@ -1146,7 +1299,7 @@ export default function ProfileSeriesSection({
                     </div>
                     <div className="mt-2 text-center">
                       <p className="text-sm font-semibold leading-tight truncate min-h-[1.5rem] flex items-center justify-center">
-                        {truncateTitle(getTextContent(series.name))}
+                        {truncateTitleToWords(series.name)}
                       </p>
                       <p className="text-xs text-muted-foreground leading-tight mt-0.5">
                         {series.first_air_date?.split("-")[0] || "Unknown Year"}
@@ -1155,23 +1308,25 @@ export default function ProfileSeriesSection({
                   </div>
                 ))}
 
-                {/* Add button for subsequent items - always show when items exist */}
-                <div className="flex-shrink-0">
-                  <div className="aspect-[2/3] w-32 bg-transparent rounded-md border-2 border-gray-600 flex items-center justify-center overflow-visible">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-12 w-12 p-0 bg-black/70 hover:bg-black/90 text-white rounded-full border-2 border-white/20 shadow-lg"
-                      onClick={() => openSearchDialog("recommendation")}
-                    >
-                      <Plus className="h-6 w-6" />
-                    </Button>
+                {/* Add button for subsequent items - only show when not read-only */}
+                {!readOnly && (
+                  <div className="flex-shrink-0">
+                    <div className="aspect-[2/3] w-32 bg-transparent rounded-md border-2 border-gray-600 flex items-center justify-center overflow-visible">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-12 w-12 p-0 bg-black/70 hover:bg-black/90 text-white rounded-full border-2 border-white/20 shadow-lg"
+                        onClick={() => handlePlusClick("recommendation")}
+                      >
+                        <Plus className="h-6 w-6" />
+                      </Button>
+                    </div>
                   </div>
-                </div>
+                )}
               </>
             ) : (
               // Show single Add screen when empty
-              <div className="flex flex-col items-center justify-center min-h-[200px]">
+              <div className="flex flex-col items-start justify-start min-h-[200px]">
                 <div className="aspect-[2/3] w-32 bg-transparent rounded-md border-2 border-gray-600 flex flex-col items-center justify-center mb-3">
                   <p className="text-xs text-gray-500 text-center">
                     No recommendations
@@ -1182,7 +1337,7 @@ export default function ProfileSeriesSection({
                     variant="outline"
                     size="sm"
                     className="text-xs"
-                    onClick={() => openSearchDialog("recommendation")}
+                    onClick={() => handlePlusClick("recommendation")}
                   >
                     <Plus className="h-3 w-3 mr-1" />
                     Add Recommendation
@@ -1258,7 +1413,7 @@ export default function ProfileSeriesSection({
                             size="sm"
                             className="h-6 w-6 p-0 bg-black/50 hover:bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity"
                             onClick={() =>
-                              openSearchDialog("rating", rating.series)
+                              handlePlusClick("rating", rating.series)
                             }
                             title="Replace rating"
                           >
@@ -1290,10 +1445,10 @@ export default function ProfileSeriesSection({
                     </div>
                     {/* Series name and year display - below the rating */}
                     <div className="mt-2 text-center w-full">
-                      <p className="text-sm font-semibold leading-tight px-2 truncate min-h-[1.5rem] flex items-center justify-center">
-                        {getTextContent(rating.series.name) || "Unknown Series"}
+                      <p className="text-sm font-semibold leading-tight px-2 min-h-[1.5rem] truncate">
+                        {truncateTitleToWords(rating.series.name)}
                       </p>
-                      <p className="text-xs text-muted-foreground leading-tight -mt-1 px-2">
+                      <p className="text-xs text-muted-foreground leading-tight -mt-1 px-2 truncate">
                         {rating.series.first_air_date?.split("-")[0] ||
                           "Unknown Year"}
                       </p>
@@ -1301,19 +1456,21 @@ export default function ProfileSeriesSection({
                   </div>
                 ))}
 
-                {/* Add button for subsequent items - always show when items exist */}
-                <div className="flex-shrink-0">
-                  <div className="aspect-[2/3] w-32 bg-transparent rounded-md border-2 border-gray-600 flex items-center justify-center overflow-visible">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-12 w-12 p-0 bg-black/70 hover:bg-black/90 text-white rounded-full border-2 border-white/20 shadow-lg"
-                      onClick={() => openSearchDialog("rating")}
-                    >
-                      <Plus className="h-6 w-6" />
-                    </Button>
+                {/* Add button for subsequent items - only show when not read-only */}
+                {!readOnly && (
+                  <div className="flex-shrink-0">
+                    <div className="aspect-[2/3] w-32 bg-transparent rounded-md border-2 border-gray-600 flex items-center justify-center overflow-visible">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-12 w-12 p-0 bg-black/70 hover:bg-black/90 text-white rounded-full border-2 border-white/20 shadow-lg"
+                        onClick={() => handlePlusClick("rating")}
+                      >
+                        <Plus className="h-6 w-6" />
+                      </Button>
+                    </div>
                   </div>
-                </div>
+                )}
               </>
             ) : (
               // Show single Add screen when empty
@@ -1328,7 +1485,7 @@ export default function ProfileSeriesSection({
                     variant="outline"
                     size="sm"
                     className="text-xs"
-                    onClick={() => openSearchDialog("rating")}
+                    onClick={() => handlePlusClick("rating")}
                   >
                     <Plus className="h-3 w-3 mr-1" />
                     Add Rating

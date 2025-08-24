@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,6 +28,7 @@ import {
   ThumbsUp,
   Book,
   Edit,
+  Folder,
 } from "lucide-react";
 import {
   useBooksProfile,
@@ -34,9 +36,25 @@ import {
 } from "@/hooks/use-books-profile";
 import { useCurrentUser } from "@/hooks/use-current-user";
 
+interface PublicCollection {
+  id: string;
+  name: string;
+  isPublic: boolean;
+  isDefault: boolean;
+  type: "movies" | "series" | "books";
+  itemCount: number;
+}
+
+interface PublicCollectionItems {
+  [collectionId: string]: any[];
+}
+
 interface ProfileBooksSectionProps {
   userId?: string;
   readOnly?: boolean;
+  publicCollections?: PublicCollection[];
+  publicCollectionItems?: PublicCollectionItems;
+  loadingPublicCollections?: boolean;
 }
 
 // Placeholder content for empty states - inspired by movie section design
@@ -79,6 +97,30 @@ const cleanTextContent = (text: string): string => {
     .trim(); // Remove leading/trailing spaces
 };
 
+// Helper function to strip HTML tags and decode HTML entities
+const stripHtmlTags = (html: string): string => {
+  if (!html) return html;
+  return html
+    .replace(/<[^>]*>/g, "") // Remove HTML tags
+    .replace(/&amp;/g, "&") // Decode HTML entities
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&nbsp;/g, " ") // Replace non-breaking spaces
+    .replace(/\s+/g, " ") // Normalize whitespace
+    .trim();
+};
+
+// Helper function to truncate title to first few words
+const truncateTitleToWords = (title: string, maxWords: number = 1): string => {
+  if (!title) return "Unknown Book";
+  const cleanTitle = cleanTextContent(title);
+  const words = cleanTitle.split(" ");
+  if (words.length <= maxWords) return cleanTitle;
+  return words.slice(0, maxWords).join(" ") + "...";
+};
+
 // Helper function to safely get text content
 const getTextContent = (text: any): string => {
   if (typeof text === "string") {
@@ -103,8 +145,12 @@ const truncateTitle = (title: string, maxLength: number = 10): string => {
 export default function ProfileBooksSection({
   userId,
   readOnly = false,
+  publicCollections = [],
+  publicCollectionItems = {},
+  loadingPublicCollections = false,
 }: ProfileBooksSectionProps) {
   const { user } = useCurrentUser();
+  const router = useRouter();
   const targetUserId = userId || user?.uid;
   const {
     booksProfile,
@@ -167,12 +213,15 @@ export default function ProfileBooksSection({
     favoriteBooks: [],
     readingList: [],
     recommendations: [],
-    ratings: {},
+    ratings: [],
     favoriteAuthors: [],
   };
 
   // Recently read list
   const recentlyReadList = safeBooksProfile.recentlyRead || [];
+
+  // Limited lists for display
+  const limitedRatings = safeBooksProfile.ratings || [];
 
   // Scroll functions
   const scrollLeft = (ref: React.RefObject<HTMLDivElement | null>) => {
@@ -347,8 +396,10 @@ export default function ProfileBooksSection({
             break;
           case "ratings":
             // Get the current rating for the item being replaced
-            const currentRating = safeBooksProfile.ratings[editingItem.id] || 3;
-            await replaceRating(editingItem.id, formattedItem, currentRating);
+            const currentRating =
+              safeBooksProfile.ratings.find((r) => r.book.id === editingItem.id)
+                ?.rating || 3;
+            await replaceRating(editingItem.id, formattedItem);
             break;
         }
       } else {
@@ -425,6 +476,35 @@ export default function ProfileBooksSection({
     } catch (error) {
       console.error("Error removing rating:", error);
       alert("Failed to remove rating. Please try again.");
+    }
+  };
+
+  // Function to handle plus button clicks
+  const handlePlusClick = (sectionType: string, itemToReplace?: any) => {
+    // For favorite sections, open search dialog
+    if (sectionType === "favoriteBooks") {
+      openSearchDialog(sectionType, itemToReplace);
+    } else {
+      // For all other sections, redirect to discover page with specific section
+      let section = "";
+      switch (sectionType) {
+        case "recentlyRead":
+          section = "currently-reading";
+          break;
+        case "readingList":
+          section = "reading-list";
+          break;
+        case "recommendations":
+          section = "recommendations";
+          break;
+        case "ratings":
+          section = "ratings";
+          break;
+        default:
+          section = "";
+      }
+      const url = section ? `/books?section=${section}` : `/books`;
+      router.push(url);
     }
   };
 
@@ -521,6 +601,80 @@ export default function ProfileBooksSection({
 
   return (
     <div className="space-y-8 max-w-4xl mx-auto">
+      {/* Public Collections Section */}
+      {publicCollections.length > 0 && (
+        <div className="max-w-3xl mx-auto">
+          <div className="flex items-center justify-start mb-4">
+            <p className="text-sm font-medium text-muted-foreground">
+              public collections
+            </p>
+          </div>
+          {loadingPublicCollections ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="animate-pulse">
+                  <div className="h-4 bg-muted rounded mb-2"></div>
+                  <div className="h-32 bg-muted rounded"></div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {publicCollections.map((collection) => {
+                const items = publicCollectionItems[collection.id] || [];
+                return (
+                  <Card key={collection.id} className="overflow-hidden">
+                    <CardContent className="p-4">
+                      <div className="flex items-center gap-2 mb-3">
+                        <Folder className="h-4 w-4 text-muted-foreground" />
+                        <h3 className="font-semibold text-sm truncate">
+                          {collection.name}
+                        </h3>
+                      </div>
+                      <div className="flex gap-2 overflow-x-auto pb-2">
+                        {items.slice(0, 4).map((item, idx) => (
+                          <div
+                            key={item.id || idx}
+                            className="flex-shrink-0 w-16 h-24 bg-muted rounded-md overflow-hidden"
+                          >
+                            <Image
+                              src={
+                                item.cover ||
+                                item.imageLinks?.thumbnail ||
+                                "/placeholder.svg"
+                              }
+                              alt={item.title || item.name || "Book"}
+                              width={64}
+                              height={96}
+                              className="w-full h-full object-cover"
+                              onError={(e) => {
+                                const target = e.target as HTMLImageElement;
+                                target.src = "/placeholder.svg";
+                              }}
+                            />
+                          </div>
+                        ))}
+                        {items.length === 0 && (
+                          <div className="flex-shrink-0 w-16 h-24 bg-muted rounded-md flex items-center justify-center">
+                            <Book className="h-6 w-6 text-muted-foreground/50" />
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex items-center justify-between text-xs text-muted-foreground">
+                        <span>{collection.itemCount} books</span>
+                        {items.length > 4 && (
+                          <span>+{items.length - 4} more</span>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Recently read section - horizontal layout */}
       <div className="max-w-3xl mx-auto">
         <div className="flex items-center justify-start mb-4">
@@ -557,7 +711,7 @@ export default function ProfileBooksSection({
                         variant="ghost"
                         size="sm"
                         className="h-6 w-6 p-0 bg-white/20 hover:bg-white/30 text-white"
-                        onClick={() => openSearchDialog("recentlyRead")}
+                        onClick={() => handlePlusClick("recentlyRead")}
                       >
                         <Edit className="h-3 w-3" />
                       </Button>
@@ -587,8 +741,9 @@ export default function ProfileBooksSection({
 
                 {/* Description */}
                 <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
-                  {currentRecentlyRead.description ||
-                    "No description available"}
+                  {currentRecentlyRead.description
+                    ? stripHtmlTags(currentRecentlyRead.description)
+                    : "No description available"}
                 </p>
 
                 {/* Action buttons and navigation */}
@@ -736,7 +891,7 @@ export default function ProfileBooksSection({
                               size="sm"
                               className="h-6 w-6 p-0 bg-black/50 hover:bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity"
                               onClick={() =>
-                                openSearchDialog("favoriteBooks", book)
+                                handlePlusClick("favoriteBooks", book)
                               }
                               title="Replace book"
                             >
@@ -758,10 +913,10 @@ export default function ProfileBooksSection({
                       </div>
                       {/* Book name and author display */}
                       <div className="mt-3 text-center w-full">
-                        <p className="text-sm font-semibold leading-tight px-2 truncate min-h-[1.25rem] flex items-center justify-center">
-                          {truncateTitle(getTextContent(book.title))}
+                        <p className="text-sm font-semibold leading-tight px-2 min-h-[1.25rem] truncate">
+                          {truncateTitleToWords(book.title)}
                         </p>
-                        <p className="text-xs text-muted-foreground leading-tight mt-0.5 px-2 truncate min-h-[1rem] flex items-center justify-center">
+                        <p className="text-xs text-muted-foreground leading-tight mt-0.5 px-2 truncate">
                           {book.authors?.join(", ") || "Unknown Author"}
                         </p>
                       </div>
@@ -776,7 +931,7 @@ export default function ProfileBooksSection({
                           variant="ghost"
                           size="sm"
                           className="h-12 w-12 p-0 bg-black/70 hover:bg-black/90 text-white rounded-full border-2 border-white/20 shadow-lg"
-                          onClick={() => openSearchDialog("favoriteBooks")}
+                          onClick={() => handlePlusClick("favoriteBooks")}
                         >
                           <Plus className="h-6 w-6" />
                         </Button>
@@ -800,7 +955,7 @@ export default function ProfileBooksSection({
                       variant="outline"
                       size="sm"
                       className="text-xs"
-                      onClick={() => openSearchDialog("favoriteBooks")}
+                      onClick={() => handlePlusClick("favoriteBooks")}
                     >
                       <Plus className="h-3 w-3 mr-1" />
                       Add Book
@@ -852,9 +1007,7 @@ export default function ProfileBooksSection({
                             variant="ghost"
                             size="sm"
                             className="h-6 w-6 p-0 bg-black/50 hover:bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity"
-                            onClick={() =>
-                              openSearchDialog("readingList", book)
-                            }
+                            onClick={() => handlePlusClick("readingList", book)}
                             title="Replace book"
                           >
                             <Edit className="h-3 w-3 text-white" />
@@ -875,29 +1028,31 @@ export default function ProfileBooksSection({
                     </div>
                     {/* Book name and author display */}
                     <div className="mt-3 text-center w-full">
-                      <p className="text-sm font-semibold leading-tight px-2 truncate min-h-[1.25rem] flex items-center justify-center">
-                        {truncateTitle(getTextContent(book.title))}
+                      <p className="text-sm font-semibold leading-tight px-2 min-h-[1.25rem] truncate">
+                        {truncateTitleToWords(book.title)}
                       </p>
-                      <p className="text-xs text-muted-foreground leading-tight mt-0.5 px-2 truncate min-h-[1rem] flex items-center justify-center">
+                      <p className="text-xs text-muted-foreground leading-tight mt-0.5 px-2 truncate">
                         {book.authors?.join(", ") || "Unknown Author"}
                       </p>
                     </div>
                   </div>
                 ))}
 
-                {/* Add button for subsequent items - always show when items exist */}
-                <div className="flex-shrink-0">
-                  <div className="aspect-[2/3] w-32 bg-transparent rounded-md border-2 border-gray-600 flex items-center justify-center overflow-visible">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-12 w-12 p-0 bg-black/70 hover:bg-black/90 text-white rounded-full border-2 border-white/20 shadow-lg"
-                      onClick={() => openSearchDialog("readingList")}
-                    >
-                      <Plus className="h-6 w-6" />
-                    </Button>
+                {/* Add button for subsequent items - only show when not read-only */}
+                {!readOnly && (
+                  <div className="flex-shrink-0">
+                    <div className="aspect-[2/3] w-32 bg-transparent rounded-md border-2 border-gray-600 flex items-center justify-center overflow-visible">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-12 w-12 p-0 bg-black/70 hover:bg-black/90 text-white rounded-full border-2 border-white/20 shadow-lg"
+                        onClick={() => handlePlusClick("readingList")}
+                      >
+                        <Plus className="h-6 w-6" />
+                      </Button>
+                    </div>
                   </div>
-                </div>
+                )}
               </>
             ) : (
               // Show single Add screen when empty
@@ -912,7 +1067,7 @@ export default function ProfileBooksSection({
                     variant="outline"
                     size="sm"
                     className="text-xs"
-                    onClick={() => openSearchDialog("readingList")}
+                    onClick={() => handlePlusClick("readingList")}
                   >
                     <Plus className="h-3 w-3 mr-1" />
                     Add Book
@@ -988,7 +1143,7 @@ export default function ProfileBooksSection({
                             size="sm"
                             className="h-6 w-6 p-0 bg-black/50 hover:bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity"
                             onClick={() =>
-                              openSearchDialog("recommendations", book)
+                              handlePlusClick("recommendations", book)
                             }
                             title="Replace recommendation"
                           >
@@ -1010,33 +1165,35 @@ export default function ProfileBooksSection({
                     </div>
                     {/* Book name and author display */}
                     <div className="mt-3 text-center w-full">
-                      <p className="text-sm font-semibold leading-tight px-2 truncate min-h-[1.25rem] flex items-center justify-center">
-                        {truncateTitle(getTextContent(book.title))}
+                      <p className="text-sm font-semibold leading-tight px-2 min-h-[1.25rem] truncate">
+                        {truncateTitleToWords(book.title)}
                       </p>
-                      <p className="text-xs text-muted-foreground leading-tight mt-0.5 px-2 truncate min-h-[1rem] flex items-center justify-center">
+                      <p className="text-xs text-muted-foreground leading-tight mt-0.5 px-2 truncate">
                         {book.authors?.join(", ") || "Unknown Author"}
                       </p>
                     </div>
                   </div>
                 ))}
 
-                {/* Add button for subsequent items - always show when items exist */}
-                <div className="flex-shrink-0">
-                  <div className="aspect-[2/3] w-32 bg-transparent rounded-md border-2 border-gray-600 flex items-center justify-center overflow-visible">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-12 w-12 p-0 bg-black/70 hover:bg-black/90 text-white rounded-full border-2 border-white/20 shadow-lg"
-                      onClick={() => openSearchDialog("recommendations")}
-                    >
-                      <Plus className="h-6 w-6" />
-                    </Button>
+                {/* Add button for subsequent items - only show when not read-only */}
+                {!readOnly && (
+                  <div className="flex-shrink-0">
+                    <div className="aspect-[2/3] w-32 bg-transparent rounded-md border-2 border-gray-600 flex items-center justify-center overflow-visible">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-12 w-12 p-0 bg-black/70 hover:bg-black/90 text-white rounded-full border-2 border-white/20 shadow-lg"
+                        onClick={() => handlePlusClick("recommendations")}
+                      >
+                        <Plus className="h-6 w-6" />
+                      </Button>
+                    </div>
                   </div>
-                </div>
+                )}
               </>
             ) : (
               // Show single Add screen when empty
-              <div className="flex flex-col items-center justify-center min-h-[200px]">
+              <div className="flex flex-col items-start justify-start min-h-[200px]">
                 <div className="aspect-[2/3] w-32 bg-transparent rounded-md border-2 border-gray-600 flex flex-col items-center justify-center mb-3">
                   <p className="text-xs text-gray-500 text-center">
                     No recommendations
@@ -1047,7 +1204,7 @@ export default function ProfileBooksSection({
                     variant="outline"
                     size="sm"
                     className="text-xs"
-                    onClick={() => openSearchDialog("recommendations")}
+                    onClick={() => handlePlusClick("recommendations")}
                   >
                     <Plus className="h-3 w-3 mr-1" />
                     Add Recommendation
@@ -1091,103 +1248,87 @@ export default function ProfileBooksSection({
             ref={scrollContainerRefs.ratings}
             className="flex justify-start gap-6 overflow-hidden"
           >
-            {Object.keys(safeBooksProfile.ratings).length > 0 ? (
+            {limitedRatings.length > 0 ? (
               <>
-                {Object.entries(safeBooksProfile.ratings)
-                  .map(([bookId, rating]) => {
-                    const book =
-                      safeBooksProfile.favoriteBooks?.find(
-                        (b) => b.id === bookId
-                      ) ||
-                      safeBooksProfile.recentlyRead?.find(
-                        (b) => b.id === bookId
-                      ) ||
-                      safeBooksProfile.readingList?.find(
-                        (b) => b.id === bookId
-                      ) ||
-                      safeBooksProfile.recommendations?.find(
-                        (b) => b.id === bookId
-                      );
-
-                    if (!book) return null;
-
-                    return (
-                      <div
-                        key={bookId}
-                        className="relative group flex-shrink-0"
-                      >
-                        <div className="aspect-[2/3] w-32 bg-muted rounded-md overflow-hidden">
-                          <Link href={`/books/${book.id}`}>
-                            <Image
-                              src={book.cover || PLACEHOLDER.ratings[0].cover}
-                              alt={book.title || "Book"}
-                              width={128}
-                              height={192}
-                              className="w-full h-full object-cover cursor-pointer"
-                              onError={(e) => {
-                                const target = e.target as HTMLImageElement;
-                                target.src = PLACEHOLDER.ratings[0].cover;
-                              }}
-                            />
-                          </Link>
-                          {!readOnly && (
-                            <div className="absolute top-2 right-2 flex gap-1">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-6 w-6 p-0 bg-black/50 hover:bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity"
-                                onClick={() =>
-                                  openSearchDialog("ratings", book)
-                                }
-                                title="Replace rating"
-                              >
-                                <Edit className="h-3 w-3 text-white" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-6 w-6 p-0 bg-red-600/80 hover:bg-red-700/90 opacity-0 group-hover:opacity-100 transition-opacity"
-                                onClick={() =>
-                                  handleRemoveItem("rating", book.id)
-                                }
-                                title="Delete rating"
-                              >
-                                <Trash2 className="h-3 w-3 text-white" />
-                              </Button>
-                            </div>
-                          )}
+                {limitedRatings.map((rating, idx) => (
+                  <div
+                    key={`rating-${rating.book.id}-${idx}`}
+                    className="relative group flex-shrink-0"
+                  >
+                    <div className="aspect-[2/3] w-32 bg-muted rounded-md overflow-hidden">
+                      <Link href={`/books/${rating.book.id}`}>
+                        <Image
+                          src={
+                            rating.book.cover || PLACEHOLDER.ratings[0].cover
+                          }
+                          alt={rating.book.title || "Book"}
+                          width={128}
+                          height={192}
+                          className="w-full h-full object-cover cursor-pointer"
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            target.src = PLACEHOLDER.ratings[0].cover;
+                          }}
+                        />
+                      </Link>
+                      {!readOnly && (
+                        <div className="absolute top-2 right-2 flex gap-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 w-6 p-0 bg-black/50 hover:bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={() =>
+                              handlePlusClick("rating", rating.book)
+                            }
+                            title="Replace rating"
+                          >
+                            <Edit className="h-3 w-3 text-white" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 w-6 p-0 bg-red-600/80 hover:bg-red-700/90 opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={() =>
+                              handleRemoveItem("rating", rating.book.id)
+                            }
+                            title="Delete rating"
+                          >
+                            <Trash2 className="h-3 w-3 text-white" />
+                          </Button>
                         </div>
-                        {/* Rating stars - above the book name */}
-                        <div className="mt-3 flex justify-center gap-1">
-                          {renderInteractiveStars(bookId, rating)}
-                        </div>
-                        {/* Book name and author display - below the rating */}
-                        <div className="mt-2 text-center w-full">
-                          <p className="text-sm font-semibold leading-tight px-2 truncate min-h-[1.5rem] flex items-center justify-center">
-                            {getTextContent(book.title) || "Unknown Book"}
-                          </p>
-                          <p className="text-xs text-muted-foreground leading-tight mt-0.5 px-2">
-                            {book.authors?.join(", ") || "Unknown Author"}
-                          </p>
-                        </div>
-                      </div>
-                    );
-                  })
-                  .filter(Boolean)}
-
-                {/* Add button for subsequent items - always show when items exist */}
-                <div className="flex-shrink-0">
-                  <div className="aspect-[2/3] w-32 bg-transparent rounded-md border-2 border-gray-600 flex items-center justify-center overflow-visible">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-12 w-12 p-0 bg-black/70 hover:bg-black/90 text-white rounded-full border-2 border-white/20 shadow-lg"
-                      onClick={() => openSearchDialog("ratings")}
-                    >
-                      <Plus className="h-6 w-6" />
-                    </Button>
+                      )}
+                    </div>
+                    {/* Rating stars - above the book name */}
+                    <div className="mt-3 flex justify-center gap-1">
+                      {renderInteractiveStars(rating.book.id, rating.rating)}
+                    </div>
+                    {/* Book name and author display - below the rating */}
+                    <div className="mt-2 text-center w-full">
+                      <p className="text-sm font-semibold leading-tight px-2 min-h-[1.5rem] truncate">
+                        {truncateTitleToWords(rating.book.title)}
+                      </p>
+                      <p className="text-xs text-muted-foreground leading-tight mt-0.5 px-2 truncate">
+                        {rating.book.authors?.join(", ") || "Unknown Author"}
+                      </p>
+                    </div>
                   </div>
-                </div>
+                ))}
+
+                {/* Add button for subsequent items - only show when not read-only */}
+                {!readOnly && (
+                  <div className="flex-shrink-0">
+                    <div className="aspect-[2/3] w-32 bg-transparent rounded-md border-2 border-gray-600 flex items-center justify-center overflow-visible">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-12 w-12 p-0 bg-black/70 hover:bg-black/90 text-white rounded-full border-2 border-white/20 shadow-lg"
+                        onClick={() => handlePlusClick("ratings")}
+                      >
+                        <Plus className="h-6 w-6" />
+                      </Button>
+                    </div>
+                  </div>
+                )}
               </>
             ) : (
               // Show single Add screen when empty
@@ -1202,7 +1343,7 @@ export default function ProfileBooksSection({
                     variant="outline"
                     size="sm"
                     className="text-xs"
-                    onClick={() => openSearchDialog("ratings")}
+                    onClick={() => handlePlusClick("ratings")}
                   >
                     <Plus className="h-3 w-3 mr-1" />
                     Add Rating
@@ -1213,7 +1354,7 @@ export default function ProfileBooksSection({
           </div>
 
           {/* Navigation arrows for ratings */}
-          {Object.keys(safeBooksProfile.ratings).length > 0 && (
+          {limitedRatings.length > 0 && (
             <>
               <Button
                 variant="ghost"

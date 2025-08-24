@@ -83,7 +83,8 @@ export function useMovieProfile(userId: string | undefined) {
       let favoriteMovies: TMDBMovie[] = [];
       let recentlyWatched: TMDBMovie[] = [];
       let favoriteMovie: TMDBMovie | null = null;
-      let favoriteDirector: { id: string; name: string; image: string } | null = null;
+      let favoriteDirector: { id: string; name: string; image: string } | null =
+        null;
 
       // Fetch all movies first
       const moviesRef = collection(db, "users", userId, "movies");
@@ -100,7 +101,9 @@ export function useMovieProfile(userId: string | undefined) {
           release_date: movieData.release_date || "",
           vote_average: movieData.vote_average || 0,
           vote_count: movieData.vote_count || 0,
-          genre_ids: Array.isArray(movieData.genre_ids) ? movieData.genre_ids : [],
+          genre_ids: Array.isArray(movieData.genre_ids)
+            ? movieData.genre_ids
+            : [],
           genres: Array.isArray(movieData.genres) ? movieData.genres : [],
           director: movieData.director || "",
           cast: Array.isArray(movieData.cast) ? movieData.cast : [],
@@ -111,28 +114,44 @@ export function useMovieProfile(userId: string | undefined) {
       // Process each movie collection and categorize movies
       for (const collectionDoc of movieListsSnapshot.docs) {
         const collectionData = collectionDoc.data();
-        const collectionName = collectionData.name?.toLowerCase() || '';
+        const collectionName = collectionData.name?.toLowerCase() || "";
         const collectionId = collectionDoc.id;
 
         // Find movies that belong to this collection
-        const collectionMovies = allMovies.filter(movie => 
-          movie.collections && movie.collections.includes(collectionId)
+        const collectionMovies = allMovies.filter(
+          (movie) =>
+            movie.collections && movie.collections.includes(collectionId)
         );
 
         // Categorize movies based on collection name
-        if (collectionName.includes('watchlist') || collectionName.includes('to watch')) {
+        if (
+          collectionName.includes("watchlist") ||
+          collectionName.includes("to watch")
+        ) {
           watchlist = [...watchlist, ...collectionMovies];
-        } else if (collectionName.includes('recommendation') || collectionName.includes('recommended')) {
+        } else if (
+          collectionName.includes("recommendation") ||
+          collectionName.includes("recommended")
+        ) {
           recommendations = [...recommendations, ...collectionMovies];
-        } else if (collectionName.includes('favorite') || collectionName.includes('favourites')) {
+        } else if (
+          collectionName.includes("favorite") ||
+          collectionName.includes("favourites")
+        ) {
           favoriteMovies = [...favoriteMovies, ...collectionMovies];
-        } else if (collectionName.includes('currently watching') || collectionName.includes('watching')) {
+        } else if (
+          collectionName.includes("currently watching") ||
+          collectionName.includes("watching")
+        ) {
           recentlyWatched = [...recentlyWatched, ...collectionMovies];
-        } else if (collectionName.includes('rated') || collectionName.includes('ratings')) {
+        } else if (
+          collectionName.includes("rated") ||
+          collectionName.includes("ratings")
+        ) {
           // For ratings, we need to extract the rating from the movie data
-          const ratedMovies = collectionMovies.map(movie => ({
+          const ratedMovies = collectionMovies.map((movie) => ({
             movie,
-            rating: movie.rating || 0
+            rating: movie.rating || 0,
           }));
           ratings = [...ratings, ...ratedMovies];
         } else {
@@ -155,10 +174,14 @@ export function useMovieProfile(userId: string | undefined) {
       try {
         const reviewsRef = collection(db, "reviews");
         const reviewsSnapshot = await getDocs(
-          query(reviewsRef, where("userId", "==", userId), where("mediaType", "==", "movie"))
+          query(
+            reviewsRef,
+            where("userId", "==", userId),
+            where("mediaType", "==", "movie")
+          )
         );
-        
-        const movieReviews = reviewsSnapshot.docs.map(reviewDoc => {
+
+        const movieReviews = reviewsSnapshot.docs.map((reviewDoc) => {
           const reviewData = reviewDoc.data();
           return {
             movie: {
@@ -176,14 +199,14 @@ export function useMovieProfile(userId: string | undefined) {
               director: "",
               cast: [],
             },
-            rating: reviewData.rating || 0
+            rating: reviewData.rating || 0,
           };
         });
 
         // Merge with existing ratings and deduplicate by movie ID
         const allRatings = [...ratings, ...movieReviews];
         const seenMovieIds = new Set();
-        ratings = allRatings.filter(rating => {
+        ratings = allRatings.filter((rating) => {
           if (seenMovieIds.has(rating.movie.id)) {
             return false;
           }

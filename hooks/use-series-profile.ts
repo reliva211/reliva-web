@@ -10,6 +10,8 @@ import {
   getDocs,
   addDoc,
   deleteDoc,
+  query,
+  where,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 
@@ -63,25 +65,148 @@ export function useSeriesProfile(userId: string | undefined) {
     setError(null);
 
     try {
-      const docRef = doc(db, "seriesProfiles", userId);
-      const docSnap = await getDoc(docRef);
+      // Fetch series from the same source as the series page
+      const seriesRef = collection(db, "users", userId, "series");
+      const seriesSnapshot = await getDocs(seriesRef);
+      const seriesData = seriesSnapshot.docs.map((doc) => ({
+        id: parseInt(doc.id),
+        ...doc.data(),
+      })) as any[];
 
-      if (docSnap.exists()) {
-        setSeriesProfile(docSnap.data() as SeriesProfile);
-      } else {
-        // Create default profile
-        const defaultProfile: SeriesProfile = {
-          recentlyWatched: [],
-          favoriteSeries: null,
-          favoriteCreator: null,
-          favoriteSeriesList: [],
-          watchlist: [],
-          recommendations: [],
-          ratings: [],
-        };
-        await setDoc(docRef, defaultProfile);
-        setSeriesProfile(defaultProfile);
+      // Fetch collections to understand the structure
+      const collectionsRef = collection(
+        db,
+        "users",
+        userId,
+        "seriesCollections"
+      );
+      const collectionsSnapshot = await getDocs(collectionsRef);
+      const collectionsData = collectionsSnapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      })) as any[];
+
+      // Organize series by collection names
+      const watchedSeries = seriesData.filter((series) =>
+        series.collections?.some((collectionId: string) => {
+          const collection = collectionsData.find(
+            (col) => col.id === collectionId
+          );
+          return collection?.name === "Watched";
+        })
+      );
+
+      const watchingSeries = seriesData.filter((series) =>
+        series.collections?.some((collectionId: string) => {
+          const collection = collectionsData.find(
+            (col) => col.id === collectionId
+          );
+          return collection?.name === "Watching";
+        })
+      );
+
+      const watchlistSeries = seriesData.filter((series) =>
+        series.collections?.some((collectionId: string) => {
+          const collection = collectionsData.find(
+            (col) => col.id === collectionId
+          );
+          return collection?.name === "Watchlist";
+        })
+      );
+
+      const recommendationsSeries = seriesData.filter((series) =>
+        series.collections?.some((collectionId: string) => {
+          const collection = collectionsData.find(
+            (col) => col.id === collectionId
+          );
+          return collection?.name === "Recommendations";
+        })
+      );
+
+      // Convert series data to TMDBSeries format
+      const convertToTMDBSeries = (series: any): TMDBSeries => ({
+        id: series.id,
+        name: series.title,
+        overview: series.overview || "",
+        first_air_date: series.first_air_date || "",
+        poster_path: series.cover || "",
+        vote_average: series.rating || 0,
+        vote_count: 0,
+        genre_ids: [],
+        number_of_seasons: series.number_of_seasons || 1,
+        number_of_episodes: series.number_of_episodes || 1,
+        status: series.status || "",
+        type: "Scripted",
+      });
+
+      // Create series profile from the fetched data
+      const profile: SeriesProfile = {
+        recentlyWatched: watchingSeries.slice(0, 10).map(convertToTMDBSeries), // Use watching for currently watching
+        favoriteSeries:
+          watchedSeries.length > 0
+            ? convertToTMDBSeries(watchedSeries[0])
+            : null,
+        favoriteCreator: null, // This would need separate logic
+        favoriteSeriesList: watchedSeries.slice(0, 5).map(convertToTMDBSeries),
+        watchlist: watchlistSeries.map(convertToTMDBSeries),
+        recommendations: recommendationsSeries.map(convertToTMDBSeries),
+        ratings: watchedSeries
+          .filter((series) => series.rating && series.rating > 0)
+          .map((series) => ({
+            series: convertToTMDBSeries(series),
+            rating: series.rating,
+          })),
+      };
+
+      // Also fetch series reviews to get ratings
+      try {
+        const reviewsRef = collection(db, "reviews");
+        const reviewsSnapshot = await getDocs(
+          query(
+            reviewsRef,
+            where("userId", "==", userId),
+            where("mediaType", "==", "series")
+          )
+        );
+
+        const seriesReviews = reviewsSnapshot.docs.map((reviewDoc) => {
+          const reviewData = reviewDoc.data() as any;
+          return {
+            series: {
+              id: reviewData.mediaId || reviewDoc.id,
+              name: reviewData.mediaTitle || "",
+              overview: reviewData.reviewText || "",
+              first_air_date: reviewData.mediaYear
+                ? reviewData.mediaYear.toString()
+                : "",
+              poster_path: reviewData.mediaCover || "",
+              vote_average: reviewData.rating || 0,
+              vote_count: 0,
+              genre_ids: [],
+              number_of_seasons: 1,
+              number_of_episodes: 1,
+              status: "",
+              type: "Scripted",
+            },
+            rating: reviewData.rating || 0,
+          };
+        });
+
+        // Merge with existing ratings and deduplicate by series ID
+        const allRatings = [...profile.ratings, ...seriesReviews];
+        const seenSeriesIds = new Set();
+        profile.ratings = allRatings.filter((rating) => {
+          if (seenSeriesIds.has(rating.series.id)) {
+            return false;
+          }
+          seenSeriesIds.add(rating.series.id);
+          return true;
+        });
+      } catch (reviewError) {
+        console.log("Could not fetch series reviews:", reviewError);
       }
+
+      setSeriesProfile(profile);
     } catch (err) {
       console.error("Error fetching series profile:", err);
       setError("Failed to load series profile");
@@ -99,24 +224,66 @@ export function useSeriesProfile(userId: string | undefined) {
     if (!userId) return;
 
     try {
-      const updatedProfile = { ...seriesProfile };
-      // Remove if already exists
-      updatedProfile.recentlyWatched = updatedProfile.recentlyWatched.filter(
-        (s) => s.id !== series.id
+      // Find the "Watching" collection (for currently watching)
+      const collectionsRef = collection(
+        db,
+        "users",
+        userId,
+        "seriesCollections"
       );
-      // Add to beginning
-      updatedProfile.recentlyWatched.unshift(series);
-      // Keep only first 10
-      updatedProfile.recentlyWatched = updatedProfile.recentlyWatched.slice(
-        0,
-        10
+      const collectionsSnapshot = await getDocs(collectionsRef);
+      const watchingCollection = collectionsSnapshot.docs.find(
+        (doc) => doc.data().name === "Watching"
       );
 
-      await updateDoc(doc(db, "seriesProfiles", userId), {
-        recentlyWatched: updatedProfile.recentlyWatched,
-      });
+      if (!watchingCollection) {
+        throw new Error("Watching collection not found");
+      }
 
-      setSeriesProfile(updatedProfile);
+      // Check if series already exists
+      const seriesRef = doc(
+        db,
+        "users",
+        userId,
+        "series",
+        series.id.toString()
+      );
+      const seriesDoc = await getDoc(seriesRef);
+
+      if (seriesDoc.exists()) {
+        // Update existing series with Watching collection
+        const existingData = seriesDoc.data();
+        const updatedCollections = existingData.collections?.includes(
+          watchingCollection.id
+        )
+          ? existingData.collections
+          : [...(existingData.collections || []), watchingCollection.id];
+
+        await updateDoc(seriesRef, {
+          collections: updatedCollections,
+        });
+      } else {
+        // Create new series with Watching collection
+        const seriesData = {
+          id: series.id,
+          title: series.name,
+          year: new Date(series.first_air_date).getFullYear(),
+          cover: series.poster_path,
+          status: "Watching",
+          rating: series.vote_average,
+          notes: "",
+          collections: [watchingCollection.id],
+          overview: series.overview,
+          first_air_date: series.first_air_date,
+          number_of_seasons: series.number_of_seasons,
+          number_of_episodes: series.number_of_episodes,
+        };
+
+        await setDoc(seriesRef, seriesData);
+      }
+
+      // Refresh the profile data
+      await fetchSeriesProfile();
     } catch (err) {
       console.error("Error updating recently watched:", err);
       throw err;
@@ -128,11 +295,66 @@ export function useSeriesProfile(userId: string | undefined) {
     if (!userId) return;
 
     try {
-      await updateDoc(doc(db, "seriesProfiles", userId), {
-        favoriteSeries: series,
-      });
+      // Find the "Watched" collection
+      const collectionsRef = collection(
+        db,
+        "users",
+        userId,
+        "seriesCollections"
+      );
+      const collectionsSnapshot = await getDocs(collectionsRef);
+      const watchedCollection = collectionsSnapshot.docs.find(
+        (doc) => doc.data().name === "Watched"
+      );
 
-      setSeriesProfile((prev) => ({ ...prev, favoriteSeries: series }));
+      if (!watchedCollection) {
+        throw new Error("Watched collection not found");
+      }
+
+      // Check if series already exists
+      const seriesRef = doc(
+        db,
+        "users",
+        userId,
+        "series",
+        series.id.toString()
+      );
+      const seriesDoc = await getDoc(seriesRef);
+
+      if (seriesDoc.exists()) {
+        // Update existing series with Watched collection
+        const existingData = seriesDoc.data();
+        const updatedCollections = existingData.collections?.includes(
+          watchedCollection.id
+        )
+          ? existingData.collections
+          : [...(existingData.collections || []), watchedCollection.id];
+
+        await updateDoc(seriesRef, {
+          collections: updatedCollections,
+        });
+      } else {
+        // Create new series with Watched collection
+        const seriesData = {
+          id: series.id,
+          title: series.name,
+          year: new Date(series.first_air_date).getFullYear(),
+          cover: series.poster_path,
+          status: "Watched",
+          rating: series.vote_average,
+          notes: "",
+          collections: [watchedCollection.id],
+          overview: series.overview,
+          first_air_date: series.first_air_date,
+          number_of_seasons: series.number_of_seasons,
+          number_of_episodes: series.number_of_episodes,
+        };
+
+        await setDoc(seriesRef, seriesData);
+      }
+
+      // Refresh the profile data
+      await fetchSeriesProfile();
     } catch (err) {
       console.error("Error updating favorite series:", err);
       throw err;
@@ -159,43 +381,120 @@ export function useSeriesProfile(userId: string | undefined) {
     }
   };
 
-  // Add to favorite series
+  // Add to favorite series (Watched collection)
   const addFavoriteSeries = async (series: TMDBSeries) => {
     if (!userId) return;
 
     try {
-      const updatedProfile = { ...seriesProfile };
-      if (!updatedProfile.favoriteSeriesList.find((s) => s.id === series.id)) {
-        updatedProfile.favoriteSeriesList.push(series);
+      // First, find the "Watched" collection
+      const collectionsRef = collection(
+        db,
+        "users",
+        userId,
+        "seriesCollections"
+      );
+      const collectionsSnapshot = await getDocs(collectionsRef);
+      const watchedCollection = collectionsSnapshot.docs.find(
+        (doc) => doc.data().name === "Watched"
+      );
+
+      if (!watchedCollection) {
+        throw new Error("Watched collection not found");
       }
 
-      await updateDoc(doc(db, "seriesProfiles", userId), {
-        favoriteSeriesList: updatedProfile.favoriteSeriesList,
-      });
+      // Check if series already exists
+      const seriesRef = doc(
+        db,
+        "users",
+        userId,
+        "series",
+        series.id.toString()
+      );
+      const seriesDoc = await getDoc(seriesRef);
 
-      setSeriesProfile(updatedProfile);
+      if (seriesDoc.exists()) {
+        // Update existing series with Watched collection
+        const existingData = seriesDoc.data();
+        const updatedCollections = [
+          ...(existingData.collections || []),
+          watchedCollection.id,
+        ];
+        await updateDoc(seriesRef, {
+          collections: updatedCollections,
+        });
+      } else {
+        // Create new series with Watched collection
+        const seriesData = {
+          id: series.id,
+          title: series.name,
+          year: new Date(series.first_air_date).getFullYear(),
+          cover: series.poster_path,
+          status: "Watched",
+          rating: series.vote_average,
+          notes: "",
+          collections: [watchedCollection.id],
+          overview: series.overview,
+          first_air_date: series.first_air_date,
+          number_of_seasons: series.number_of_seasons,
+          number_of_episodes: series.number_of_episodes,
+        };
+
+        await setDoc(seriesRef, seriesData);
+      }
+
+      // Refresh the profile data
+      await fetchSeriesProfile();
     } catch (err) {
       console.error("Error adding favorite series:", err);
       throw err;
     }
   };
 
-  // Remove from favorite series
+  // Remove from favorite series (Watched collection)
   const removeFavoriteSeries = async (seriesId: string) => {
     if (!userId) return;
 
     try {
-      const updatedProfile = { ...seriesProfile };
-      updatedProfile.favoriteSeriesList =
-        updatedProfile.favoriteSeriesList.filter(
-          (s) => s.id.toString() !== seriesId
-        );
+      // Find the "Watched" collection
+      const collectionsRef = collection(
+        db,
+        "users",
+        userId,
+        "seriesCollections"
+      );
+      const collectionsSnapshot = await getDocs(collectionsRef);
+      const watchedCollection = collectionsSnapshot.docs.find(
+        (doc) => doc.data().name === "Watched"
+      );
 
-      await updateDoc(doc(db, "seriesProfiles", userId), {
-        favoriteSeriesList: updatedProfile.favoriteSeriesList,
-      });
+      if (!watchedCollection) {
+        throw new Error("Watched collection not found");
+      }
 
-      setSeriesProfile(updatedProfile);
+      // Remove series from Watched collection
+      const seriesRef = doc(db, "users", userId, "series", seriesId);
+      const seriesDoc = await getDoc(seriesRef);
+
+      if (seriesDoc.exists()) {
+        const existingData = seriesDoc.data();
+        const updatedCollections =
+          existingData.collections?.filter(
+            (id: string) => id !== watchedCollection.id
+          ) || [];
+
+        if (updatedCollections.length === 0) {
+          // Remove series entirely if no collections left
+          await deleteDoc(seriesRef);
+        } else {
+          // Update series with remaining collections
+          await updateDoc(seriesRef, {
+            collections: updatedCollections,
+          });
+        }
+      }
+
+      // Refresh the profile data
+      await fetchSeriesProfile();
     } catch (err) {
       console.error("Error removing favorite series:", err);
       throw err;
@@ -207,16 +506,64 @@ export function useSeriesProfile(userId: string | undefined) {
     if (!userId) return;
 
     try {
-      const updatedProfile = { ...seriesProfile };
-      if (!updatedProfile.watchlist.find((s) => s.id === series.id)) {
-        updatedProfile.watchlist.push(series);
+      // First, find the "Watchlist" collection
+      const collectionsRef = collection(
+        db,
+        "users",
+        userId,
+        "seriesCollections"
+      );
+      const collectionsSnapshot = await getDocs(collectionsRef);
+      const watchlistCollection = collectionsSnapshot.docs.find(
+        (doc) => doc.data().name === "Watchlist"
+      );
+
+      if (!watchlistCollection) {
+        throw new Error("Watchlist collection not found");
       }
 
-      await updateDoc(doc(db, "seriesProfiles", userId), {
-        watchlist: updatedProfile.watchlist,
-      });
+      // Check if series already exists
+      const seriesRef = doc(
+        db,
+        "users",
+        userId,
+        "series",
+        series.id.toString()
+      );
+      const seriesDoc = await getDoc(seriesRef);
 
-      setSeriesProfile(updatedProfile);
+      if (seriesDoc.exists()) {
+        // Update existing series with Watchlist collection
+        const existingData = seriesDoc.data();
+        const updatedCollections = [
+          ...(existingData.collections || []),
+          watchlistCollection.id,
+        ];
+        await updateDoc(seriesRef, {
+          collections: updatedCollections,
+        });
+      } else {
+        // Create new series with Watchlist collection
+        const seriesData = {
+          id: series.id,
+          title: series.name,
+          year: new Date(series.first_air_date).getFullYear(),
+          cover: series.poster_path,
+          status: "Watchlist",
+          rating: series.vote_average,
+          notes: "",
+          collections: [watchlistCollection.id],
+          overview: series.overview,
+          first_air_date: series.first_air_date,
+          number_of_seasons: series.number_of_seasons,
+          number_of_episodes: series.number_of_episodes,
+        };
+
+        await setDoc(seriesRef, seriesData);
+      }
+
+      // Refresh the profile data
+      await fetchSeriesProfile();
     } catch (err) {
       console.error("Error adding to watchlist:", err);
       throw err;
@@ -228,16 +575,46 @@ export function useSeriesProfile(userId: string | undefined) {
     if (!userId) return;
 
     try {
-      const updatedProfile = { ...seriesProfile };
-      updatedProfile.watchlist = updatedProfile.watchlist.filter(
-        (s) => s.id.toString() !== seriesId
+      // Find the "Watchlist" collection
+      const collectionsRef = collection(
+        db,
+        "users",
+        userId,
+        "seriesCollections"
+      );
+      const collectionsSnapshot = await getDocs(collectionsRef);
+      const watchlistCollection = collectionsSnapshot.docs.find(
+        (doc) => doc.data().name === "Watchlist"
       );
 
-      await updateDoc(doc(db, "seriesProfiles", userId), {
-        watchlist: updatedProfile.watchlist,
-      });
+      if (!watchlistCollection) {
+        throw new Error("Watchlist collection not found");
+      }
 
-      setSeriesProfile(updatedProfile);
+      // Remove series from Watchlist collection
+      const seriesRef = doc(db, "users", userId, "series", seriesId);
+      const seriesDoc = await getDoc(seriesRef);
+
+      if (seriesDoc.exists()) {
+        const existingData = seriesDoc.data();
+        const updatedCollections =
+          existingData.collections?.filter(
+            (id: string) => id !== watchlistCollection.id
+          ) || [];
+
+        if (updatedCollections.length === 0) {
+          // Remove series entirely if no collections left
+          await deleteDoc(seriesRef);
+        } else {
+          // Update series with remaining collections
+          await updateDoc(seriesRef, {
+            collections: updatedCollections,
+          });
+        }
+      }
+
+      // Refresh the profile data
+      await fetchSeriesProfile();
     } catch (err) {
       console.error("Error removing from watchlist:", err);
       throw err;
@@ -249,16 +626,64 @@ export function useSeriesProfile(userId: string | undefined) {
     if (!userId) return;
 
     try {
-      const updatedProfile = { ...seriesProfile };
-      if (!updatedProfile.recommendations.find((s) => s.id === series.id)) {
-        updatedProfile.recommendations.push(series);
+      // First, find the "Recommendations" collection
+      const collectionsRef = collection(
+        db,
+        "users",
+        userId,
+        "seriesCollections"
+      );
+      const collectionsSnapshot = await getDocs(collectionsRef);
+      const recommendationsCollection = collectionsSnapshot.docs.find(
+        (doc) => doc.data().name === "Recommendations"
+      );
+
+      if (!recommendationsCollection) {
+        throw new Error("Recommendations collection not found");
       }
 
-      await updateDoc(doc(db, "seriesProfiles", userId), {
-        recommendations: updatedProfile.recommendations,
-      });
+      // Check if series already exists
+      const seriesRef = doc(
+        db,
+        "users",
+        userId,
+        "series",
+        series.id.toString()
+      );
+      const seriesDoc = await getDoc(seriesRef);
 
-      setSeriesProfile(updatedProfile);
+      if (seriesDoc.exists()) {
+        // Update existing series with Recommendations collection
+        const existingData = seriesDoc.data();
+        const updatedCollections = [
+          ...(existingData.collections || []),
+          recommendationsCollection.id,
+        ];
+        await updateDoc(seriesRef, {
+          collections: updatedCollections,
+        });
+      } else {
+        // Create new series with Recommendations collection
+        const seriesData = {
+          id: series.id,
+          title: series.name,
+          year: new Date(series.first_air_date).getFullYear(),
+          cover: series.poster_path,
+          status: "Recommendations",
+          rating: series.vote_average,
+          notes: "",
+          collections: [recommendationsCollection.id],
+          overview: series.overview,
+          first_air_date: series.first_air_date,
+          number_of_seasons: series.number_of_seasons,
+          number_of_episodes: series.number_of_episodes,
+        };
+
+        await setDoc(seriesRef, seriesData);
+      }
+
+      // Refresh the profile data
+      await fetchSeriesProfile();
     } catch (err) {
       console.error("Error adding recommendation:", err);
       throw err;
@@ -270,16 +695,46 @@ export function useSeriesProfile(userId: string | undefined) {
     if (!userId) return;
 
     try {
-      const updatedProfile = { ...seriesProfile };
-      updatedProfile.recommendations = updatedProfile.recommendations.filter(
-        (s) => s.id.toString() !== seriesId
+      // Find the "Recommendations" collection
+      const collectionsRef = collection(
+        db,
+        "users",
+        userId,
+        "seriesCollections"
+      );
+      const collectionsSnapshot = await getDocs(collectionsRef);
+      const recommendationsCollection = collectionsSnapshot.docs.find(
+        (doc) => doc.data().name === "Recommendations"
       );
 
-      await updateDoc(doc(db, "seriesProfiles", userId), {
-        recommendations: updatedProfile.recommendations,
-      });
+      if (!recommendationsCollection) {
+        throw new Error("Recommendations collection not found");
+      }
 
-      setSeriesProfile(updatedProfile);
+      // Remove series from Recommendations collection
+      const seriesRef = doc(db, "users", userId, "series", seriesId);
+      const seriesDoc = await getDoc(seriesRef);
+
+      if (seriesDoc.exists()) {
+        const existingData = seriesDoc.data();
+        const updatedCollections =
+          existingData.collections?.filter(
+            (id: string) => id !== recommendationsCollection.id
+          ) || [];
+
+        if (updatedCollections.length === 0) {
+          // Remove series entirely if no collections left
+          await deleteDoc(seriesRef);
+        } else {
+          // Update series with remaining collections
+          await updateDoc(seriesRef, {
+            collections: updatedCollections,
+          });
+        }
+      }
+
+      // Refresh the profile data
+      await fetchSeriesProfile();
     } catch (err) {
       console.error("Error removing recommendation:", err);
       throw err;
@@ -291,19 +746,67 @@ export function useSeriesProfile(userId: string | undefined) {
     if (!userId) return;
 
     try {
-      const updatedProfile = { ...seriesProfile };
-      // Remove existing rating for this series
-      updatedProfile.ratings = updatedProfile.ratings.filter(
-        (r) => r.series.id !== series.id
+      // Find the "Watched" collection (ratings are typically for watched series)
+      const collectionsRef = collection(
+        db,
+        "users",
+        userId,
+        "seriesCollections"
       );
-      // Add new rating
-      updatedProfile.ratings.push({ series, rating });
+      const collectionsSnapshot = await getDocs(collectionsRef);
+      const watchedCollection = collectionsSnapshot.docs.find(
+        (doc) => doc.data().name === "Watched"
+      );
 
-      await updateDoc(doc(db, "seriesProfiles", userId), {
-        ratings: updatedProfile.ratings,
-      });
+      if (!watchedCollection) {
+        throw new Error("Watched collection not found");
+      }
 
-      setSeriesProfile(updatedProfile);
+      // Check if series already exists
+      const seriesRef = doc(
+        db,
+        "users",
+        userId,
+        "series",
+        series.id.toString()
+      );
+      const seriesDoc = await getDoc(seriesRef);
+
+      if (seriesDoc.exists()) {
+        // Update existing series with rating and ensure it's in Watched collection
+        const existingData = seriesDoc.data();
+        const updatedCollections = existingData.collections?.includes(
+          watchedCollection.id
+        )
+          ? existingData.collections
+          : [...(existingData.collections || []), watchedCollection.id];
+
+        await updateDoc(seriesRef, {
+          rating: rating,
+          collections: updatedCollections,
+        });
+      } else {
+        // Create new series with rating and Watched collection
+        const seriesData = {
+          id: series.id,
+          title: series.name,
+          year: new Date(series.first_air_date).getFullYear(),
+          cover: series.poster_path,
+          status: "Watched",
+          rating: rating,
+          notes: "",
+          collections: [watchedCollection.id],
+          overview: series.overview,
+          first_air_date: series.first_air_date,
+          number_of_seasons: series.number_of_seasons,
+          number_of_episodes: series.number_of_episodes,
+        };
+
+        await setDoc(seriesRef, seriesData);
+      }
+
+      // Refresh the profile data
+      await fetchSeriesProfile();
     } catch (err) {
       console.error("Error adding rating:", err);
       throw err;
@@ -315,16 +818,18 @@ export function useSeriesProfile(userId: string | undefined) {
     if (!userId) return;
 
     try {
-      const updatedProfile = { ...seriesProfile };
-      updatedProfile.ratings = updatedProfile.ratings.filter(
-        (r) => r.series.id.toString() !== seriesId
-      );
+      // Remove rating from series
+      const seriesRef = doc(db, "users", userId, "series", seriesId);
+      const seriesDoc = await getDoc(seriesRef);
 
-      await updateDoc(doc(db, "seriesProfiles", userId), {
-        ratings: updatedProfile.ratings,
-      });
+      if (seriesDoc.exists()) {
+        await updateDoc(seriesRef, {
+          rating: 0, // Set rating to 0 to indicate no rating
+        });
+      }
 
-      setSeriesProfile(updatedProfile);
+      // Refresh the profile data
+      await fetchSeriesProfile();
     } catch (err) {
       console.error("Error removing rating:", err);
       throw err;
@@ -355,7 +860,6 @@ export function useSeriesProfile(userId: string | undefined) {
             number_of_episodes: 73,
             status: "Ended",
             type: "Scripted",
-            fallback: true,
           },
           {
             id: 2316,
@@ -370,7 +874,6 @@ export function useSeriesProfile(userId: string | undefined) {
             number_of_episodes: 201,
             status: "Ended",
             type: "Scripted",
-            fallback: true,
           },
         ];
       }
@@ -421,14 +924,12 @@ export function useSeriesProfile(userId: string | undefined) {
             name: "David Benioff",
             profile_path: "/placeholder.jpg",
             known_for_department: "Writing",
-            fallback: true,
           },
           {
             id: 2,
             name: "D.B. Weiss",
             profile_path: "/placeholder.jpg",
             known_for_department: "Writing",
-            fallback: true,
           },
         ];
       }
@@ -471,24 +972,53 @@ export function useSeriesProfile(userId: string | undefined) {
     if (!userId) return;
 
     try {
-      const docRef = doc(db, "seriesProfiles", userId);
-      const docSnap = await getDoc(docRef);
+      // Find the "Watched" collection
+      const collectionsRef = collection(
+        db,
+        "users",
+        userId,
+        "seriesCollections"
+      );
+      const collectionsSnapshot = await getDocs(collectionsRef);
+      const watchedCollection = collectionsSnapshot.docs.find(
+        (doc) => doc.data().name === "Watched"
+      );
 
-      if (docSnap.exists()) {
-        const currentData = docSnap.data() as SeriesProfile;
-        const updatedFavoriteSeriesList = currentData.favoriteSeriesList.map(
-          (series) => (series.id.toString() === oldId ? newSeries : series)
-        );
-
-        await updateDoc(docRef, {
-          favoriteSeriesList: updatedFavoriteSeriesList,
-        });
-
-        setSeriesProfile((prev) => ({
-          ...prev,
-          favoriteSeriesList: updatedFavoriteSeriesList,
-        }));
+      if (!watchedCollection) {
+        throw new Error("Watched collection not found");
       }
+
+      // Delete the old series
+      const oldSeriesRef = doc(db, "users", userId, "series", oldId);
+      await deleteDoc(oldSeriesRef);
+
+      // Create the new series with the same collections
+      const newSeriesRef = doc(
+        db,
+        "users",
+        userId,
+        "series",
+        newSeries.id.toString()
+      );
+      const seriesData = {
+        id: newSeries.id,
+        title: newSeries.name,
+        year: new Date(newSeries.first_air_date).getFullYear(),
+        cover: newSeries.poster_path,
+        status: "Watched",
+        rating: newSeries.vote_average,
+        notes: "",
+        collections: [watchedCollection.id],
+        overview: newSeries.overview,
+        first_air_date: newSeries.first_air_date,
+        number_of_seasons: newSeries.number_of_seasons,
+        number_of_episodes: newSeries.number_of_episodes,
+      };
+
+      await setDoc(newSeriesRef, seriesData);
+
+      // Refresh the profile data
+      await fetchSeriesProfile();
     } catch (err) {
       console.error("Error replacing favorite series:", err);
       throw new Error("Failed to replace favorite series");
@@ -502,24 +1032,53 @@ export function useSeriesProfile(userId: string | undefined) {
     if (!userId) return;
 
     try {
-      const docRef = doc(db, "seriesProfiles", userId);
-      const docSnap = await getDoc(docRef);
+      // Find the "Watchlist" collection
+      const collectionsRef = collection(
+        db,
+        "users",
+        userId,
+        "seriesCollections"
+      );
+      const collectionsSnapshot = await getDocs(collectionsRef);
+      const watchlistCollection = collectionsSnapshot.docs.find(
+        (doc) => doc.data().name === "Watchlist"
+      );
 
-      if (docSnap.exists()) {
-        const currentData = docSnap.data() as SeriesProfile;
-        const updatedWatchlist = currentData.watchlist.map((series) =>
-          series.id.toString() === oldId ? newSeries : series
-        );
-
-        await updateDoc(docRef, {
-          watchlist: updatedWatchlist,
-        });
-
-        setSeriesProfile((prev) => ({
-          ...prev,
-          watchlist: updatedWatchlist,
-        }));
+      if (!watchlistCollection) {
+        throw new Error("Watchlist collection not found");
       }
+
+      // Delete the old series
+      const oldSeriesRef = doc(db, "users", userId, "series", oldId);
+      await deleteDoc(oldSeriesRef);
+
+      // Create the new series with the same collections
+      const newSeriesRef = doc(
+        db,
+        "users",
+        userId,
+        "series",
+        newSeries.id.toString()
+      );
+      const seriesData = {
+        id: newSeries.id,
+        title: newSeries.name,
+        year: new Date(newSeries.first_air_date).getFullYear(),
+        cover: newSeries.poster_path,
+        status: "Watchlist",
+        rating: newSeries.vote_average,
+        notes: "",
+        collections: [watchlistCollection.id],
+        overview: newSeries.overview,
+        first_air_date: newSeries.first_air_date,
+        number_of_seasons: newSeries.number_of_seasons,
+        number_of_episodes: newSeries.number_of_episodes,
+      };
+
+      await setDoc(newSeriesRef, seriesData);
+
+      // Refresh the profile data
+      await fetchSeriesProfile();
     } catch (err) {
       console.error("Error replacing watchlist series:", err);
       throw new Error("Failed to replace watchlist series");
@@ -533,24 +1092,53 @@ export function useSeriesProfile(userId: string | undefined) {
     if (!userId) return;
 
     try {
-      const docRef = doc(db, "seriesProfiles", userId);
-      const docSnap = await getDoc(docRef);
+      // Find the "Recommendations" collection
+      const collectionsRef = collection(
+        db,
+        "users",
+        userId,
+        "seriesCollections"
+      );
+      const collectionsSnapshot = await getDocs(collectionsRef);
+      const recommendationsCollection = collectionsSnapshot.docs.find(
+        (doc) => doc.data().name === "Recommendations"
+      );
 
-      if (docSnap.exists()) {
-        const currentData = docSnap.data() as SeriesProfile;
-        const updatedRecommendations = currentData.recommendations.map(
-          (series) => (series.id.toString() === oldId ? newSeries : series)
-        );
-
-        await updateDoc(docRef, {
-          recommendations: updatedRecommendations,
-        });
-
-        setSeriesProfile((prev) => ({
-          ...prev,
-          recommendations: updatedRecommendations,
-        }));
+      if (!recommendationsCollection) {
+        throw new Error("Recommendations collection not found");
       }
+
+      // Delete the old series
+      const oldSeriesRef = doc(db, "users", userId, "series", oldId);
+      await deleteDoc(oldSeriesRef);
+
+      // Create the new series with the same collections
+      const newSeriesRef = doc(
+        db,
+        "users",
+        userId,
+        "series",
+        newSeries.id.toString()
+      );
+      const seriesData = {
+        id: newSeries.id,
+        title: newSeries.name,
+        year: new Date(newSeries.first_air_date).getFullYear(),
+        cover: newSeries.poster_path,
+        status: "Recommendations",
+        rating: newSeries.vote_average,
+        notes: "",
+        collections: [recommendationsCollection.id],
+        overview: newSeries.overview,
+        first_air_date: newSeries.first_air_date,
+        number_of_seasons: newSeries.number_of_seasons,
+        number_of_episodes: newSeries.number_of_episodes,
+      };
+
+      await setDoc(newSeriesRef, seriesData);
+
+      // Refresh the profile data
+      await fetchSeriesProfile();
     } catch (err) {
       console.error("Error replacing recommendation:", err);
       throw new Error("Failed to replace recommendation");
@@ -565,26 +1153,53 @@ export function useSeriesProfile(userId: string | undefined) {
     if (!userId) return;
 
     try {
-      const docRef = doc(db, "seriesProfiles", userId);
-      const docSnap = await getDoc(docRef);
+      // Find the "Watched" collection
+      const collectionsRef = collection(
+        db,
+        "users",
+        userId,
+        "seriesCollections"
+      );
+      const collectionsSnapshot = await getDocs(collectionsRef);
+      const watchedCollection = collectionsSnapshot.docs.find(
+        (doc) => doc.data().name === "Watched"
+      );
 
-      if (docSnap.exists()) {
-        const currentData = docSnap.data() as SeriesProfile;
-        const updatedRatings = currentData.ratings.map((rating) =>
-          rating.series.id.toString() === oldId
-            ? { series: newSeries, rating: newRating }
-            : rating
-        );
-
-        await updateDoc(docRef, {
-          ratings: updatedRatings,
-        });
-
-        setSeriesProfile((prev) => ({
-          ...prev,
-          ratings: updatedRatings,
-        }));
+      if (!watchedCollection) {
+        throw new Error("Watched collection not found");
       }
+
+      // Delete the old series
+      const oldSeriesRef = doc(db, "users", userId, "series", oldId);
+      await deleteDoc(oldSeriesRef);
+
+      // Create the new series with rating and Watched collection
+      const newSeriesRef = doc(
+        db,
+        "users",
+        userId,
+        "series",
+        newSeries.id.toString()
+      );
+      const seriesData = {
+        id: newSeries.id,
+        title: newSeries.name,
+        year: new Date(newSeries.first_air_date).getFullYear(),
+        cover: newSeries.poster_path,
+        status: "Watched",
+        rating: newRating,
+        notes: "",
+        collections: [watchedCollection.id],
+        overview: newSeries.overview,
+        first_air_date: newSeries.first_air_date,
+        number_of_seasons: newSeries.number_of_seasons,
+        number_of_episodes: newSeries.number_of_episodes,
+      };
+
+      await setDoc(newSeriesRef, seriesData);
+
+      // Refresh the profile data
+      await fetchSeriesProfile();
     } catch (err) {
       console.error("Error replacing rating:", err);
       throw new Error("Failed to replace rating");

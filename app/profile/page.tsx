@@ -943,21 +943,39 @@ export default function ProfilePage() {
             {/* Movies Tab */}
             {profile?.visibleSections?.movies !== false && (
               <TabsContent value="movie-profile" className="mt-6">
-                <ProfileMovieSection />
+                <ProfileMovieSection
+                  userId={user?.uid}
+                  readOnly={false}
+                  publicCollections={getPublicMovieCollections()}
+                  publicCollectionItems={publicCollectionItems}
+                  loadingPublicCollections={loadingPublicCollections}
+                />
               </TabsContent>
             )}
 
             {/* Series Tab */}
             {profile?.visibleSections?.series !== false && (
               <TabsContent value="series" className="mt-6">
-                <ProfileSeriesSection />
+                <ProfileSeriesSection
+                  userId={user?.uid}
+                  readOnly={false}
+                  publicCollections={getPublicSeriesCollections()}
+                  publicCollectionItems={publicCollectionItems}
+                  loadingPublicCollections={loadingPublicCollections}
+                />
               </TabsContent>
             )}
 
             {/* Books Tab */}
             {profile?.visibleSections?.books !== false && (
               <TabsContent value="books" className="mt-6">
-                <ProfileBooksSection />
+                <ProfileBooksSection
+                  userId={user?.uid}
+                  readOnly={false}
+                  publicCollections={getPublicBookCollections()}
+                  publicCollectionItems={publicCollectionItems}
+                  loadingPublicCollections={loadingPublicCollections}
+                />
               </TabsContent>
             )}
           </Tabs>

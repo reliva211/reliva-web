@@ -1,5 +1,14 @@
 import { useState, useEffect } from "react";
-import { doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
+import {
+  doc,
+  getDoc,
+  setDoc,
+  updateDoc,
+  collection,
+  getDocs,
+  query,
+  where,
+} from "firebase/firestore";
 import { getAuth } from "firebase/auth";
 import { db } from "@/lib/firebase";
 import { searchService, GoogleBook } from "@/lib/search-service";
@@ -24,7 +33,7 @@ export interface BooksProfile {
   favoriteBooks: GoogleBookItem[];
   readingList: GoogleBookItem[];
   recommendations: GoogleBookItem[];
-  ratings: { [bookId: string]: number };
+  ratings: Array<{ book: GoogleBookItem; rating: number }>;
   favoriteAuthors: string[];
 }
 
@@ -34,39 +43,147 @@ export const useBooksProfile = (userId: string) => {
   const [error, setError] = useState<string | null>(null);
 
   const fetchBooksProfile = async () => {
-    if (!userId) return;
-
-    try {
-      // Check if user is authenticated
-      const auth = getAuth();
-      if (!auth.currentUser) {
-        setError("User not authenticated");
+    if (!userId) {
         setLoading(false);
         return;
       }
-
       setLoading(true);
-      const docRef = doc(db, "users", userId, "profiles", "books");
-      const docSnap = await getDoc(docRef);
+    setError(null);
+    try {
+      const booksRef = collection(db, "users", userId, "books");
+      const booksSnapshot = await getDocs(booksRef);
+      const booksData = booksSnapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      })) as any[]; // Cast to any[] for dynamic properties
 
-      if (docSnap.exists()) {
-        setBooksProfile(docSnap.data() as BooksProfile);
-      } else {
-        // Create default books profile
-        const defaultProfile: BooksProfile = {
-          recentlyRead: [],
-          favoriteBooks: [],
-          readingList: [],
-          recommendations: [],
-          ratings: {},
+      const collectionsRef = collection(db, "users", userId, "bookCollections");
+      const collectionsSnapshot = await getDocs(collectionsRef);
+      const collectionsData = collectionsSnapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      })) as any[]; // Cast to any[] for dynamic properties
+
+      // Organize books by collection names
+      const readBooks = booksData.filter((book) =>
+        book.collections?.some((collectionId: string) => {
+          const collection = collectionsData.find(
+            (col) => col.id === collectionId
+          );
+          return collection?.name === "Read";
+        })
+      );
+
+      const readingBooks = booksData.filter((book) =>
+        book.collections?.some((collectionId: string) => {
+          const collection = collectionsData.find(
+            (col) => col.id === collectionId
+          );
+          return collection?.name === "Reading";
+        })
+      );
+
+      const toReadBooks = booksData.filter((book) =>
+        book.collections?.some((collectionId: string) => {
+          const collection = collectionsData.find(
+            (col) => col.id === collectionId
+          );
+          return collection?.name === "To Read";
+        })
+      );
+
+      const recommendationsBooks = booksData.filter((book) =>
+        book.collections?.some((collectionId: string) => {
+          const collection = collectionsData.find(
+            (col) => col.id === collectionId
+          );
+          return collection?.name === "Recommendations";
+        })
+      );
+
+      // Convert book data to GoogleBookItem format
+      const convertToGoogleBookItem = (book: any): GoogleBookItem => ({
+        id: book.id,
+        title: book.title,
+        authors: book.author ? [book.author] : [],
+        publishedDate: book.publishedDate || "",
+        cover: book.cover || "",
+        rating: book.rating || 0,
+        description: book.overview || "",
+        pageCount: book.pageCount || 0,
+        categories: [],
+        language: "",
+        publisher: "",
+        isbn: "",
+      });
+
+      // Create books profile from the fetched data
+      const profile: BooksProfile = {
+        recentlyRead: readingBooks.slice(0, 10).map(convertToGoogleBookItem), // Use reading for currently reading
+        favoriteBooks: readBooks.slice(0, 5).map(convertToGoogleBookItem),
+        readingList: toReadBooks.map(convertToGoogleBookItem),
+        recommendations: recommendationsBooks.map(convertToGoogleBookItem),
+        ratings: readBooks
+          .filter((book) => book.rating && book.rating > 0)
+          .map((book) => ({
+            book: convertToGoogleBookItem(book),
+            rating: book.rating,
+          })),
           favoriteAuthors: [],
         };
-        await setDoc(docRef, defaultProfile);
-        setBooksProfile(defaultProfile);
+
+      // Also fetch book reviews to get ratings
+      try {
+        const reviewsRef = collection(db, "reviews");
+        const reviewsSnapshot = await getDocs(
+          query(
+            reviewsRef,
+            where("userId", "==", userId),
+            where("mediaType", "==", "book")
+          )
+        );
+
+        const bookReviews = reviewsSnapshot.docs.map((reviewDoc) => {
+          const reviewData = reviewDoc.data() as any;
+          return {
+            book: {
+              id: reviewData.mediaId || reviewDoc.id,
+              title: reviewData.mediaTitle || "",
+              authors: reviewData.mediaAuthor ? [reviewData.mediaAuthor] : [],
+              publishedDate: reviewData.mediaYear
+                ? reviewData.mediaYear.toString()
+                : "",
+              cover: reviewData.mediaCover || "",
+              rating: reviewData.rating || 0,
+              description: reviewData.reviewText || "",
+              pageCount: 0,
+              categories: [],
+              language: "",
+              publisher: "",
+              isbn: "",
+            },
+            rating: reviewData.rating || 0,
+          };
+        });
+
+        // Merge with existing ratings and deduplicate by book ID
+        const allRatings = [...profile.ratings, ...bookReviews];
+        const seenBookIds = new Set();
+        profile.ratings = allRatings.filter((rating) => {
+          if (seenBookIds.has(rating.book.id)) {
+            return false;
+          }
+          seenBookIds.add(rating.book.id);
+          return true;
+        });
+      } catch (reviewError) {
+        console.log("Could not fetch book reviews:", reviewError);
       }
+
+      setBooksProfile(profile);
     } catch (err) {
-      setError("Failed to fetch books profile");
       console.error("Error fetching books profile:", err);
+      setError("Failed to load books profile");
     } finally {
       setLoading(false);
     }
@@ -77,238 +194,423 @@ export const useBooksProfile = (userId: string) => {
   }, [userId]);
 
   const updateRecentlyRead = async (book: GoogleBookItem) => {
-    if (!booksProfile || !userId) return;
-
-    const updatedList = [
-      book,
-      ...booksProfile.recentlyRead.filter((item) => item.id !== book.id),
-    ].slice(0, 10);
-
-    const updatedProfile = {
-      ...booksProfile,
-      recentlyRead: updatedList,
-    };
+    if (!userId) return;
 
     try {
-      const docRef = doc(db, "users", userId, "profiles", "books");
-      await updateDoc(docRef, { recentlyRead: updatedList });
-      setBooksProfile(updatedProfile);
+      // Find the "Reading" collection (for currently reading)
+      const collectionsRef = collection(db, "users", userId, "bookCollections");
+      const collectionsSnapshot = await getDocs(collectionsRef);
+      const readingCollection = collectionsSnapshot.docs.find(
+        (doc) => doc.data().name === "Reading"
+      );
+
+      if (!readingCollection) {
+        throw new Error("Reading collection not found");
+      }
+
+      // Check if book already exists
+      const bookRef = doc(db, "users", userId, "books", book.id);
+      const bookDoc = await getDoc(bookRef);
+
+      if (bookDoc.exists()) {
+        // Update existing book with Reading collection
+        const existingData = bookDoc.data();
+        const updatedCollections = existingData.collections?.includes(
+          readingCollection.id
+        )
+          ? existingData.collections
+          : [...(existingData.collections || []), readingCollection.id];
+
+        await updateDoc(bookRef, {
+          collections: updatedCollections,
+        });
+      } else {
+        // Create new book with Reading collection
+        const bookData = {
+          id: book.id,
+          title: book.title,
+          author: book.authors?.join(", ") || "Unknown Author",
+          year: book.publishedDate
+            ? new Date(book.publishedDate).getFullYear()
+            : new Date().getFullYear(),
+          cover: book.cover || "",
+          rating: book.rating || 0,
+          notes: "",
+          status: "Reading",
+          collections: [readingCollection.id],
+          overview: book.description || "",
+          publishedDate: book.publishedDate || "",
+          pageCount: book.pageCount || 0,
+        };
+
+        await setDoc(bookRef, bookData);
+      }
+
+      // Refresh the profile data
+      await fetchBooksProfile();
     } catch (err) {
-      setError("Failed to update recently read");
       console.error("Error updating recently read:", err);
+      throw err;
     }
   };
 
   const addFavoriteBook = async (book: GoogleBookItem) => {
-    if (!booksProfile || !userId) return;
-
-    const updatedList = [
-      ...booksProfile.favoriteBooks.filter((item) => item.id !== book.id),
-      book,
-    ];
-
-    const updatedProfile = {
-      ...booksProfile,
-      favoriteBooks: updatedList,
-    };
+    if (!userId) return;
 
     try {
-      const docRef = doc(db, "users", userId, "profiles", "books");
-      await updateDoc(docRef, { favoriteBooks: updatedList });
-      setBooksProfile(updatedProfile);
+      // Find the "Read" collection
+      const collectionsRef = collection(db, "users", userId, "bookCollections");
+      const collectionsSnapshot = await getDocs(collectionsRef);
+      const readCollection = collectionsSnapshot.docs.find(
+        (doc) => doc.data().name === "Read"
+      );
+
+      if (!readCollection) {
+        throw new Error("Read collection not found");
+      }
+
+      // Check if book already exists
+      const bookRef = doc(db, "users", userId, "books", book.id);
+      const bookDoc = await getDoc(bookRef);
+
+      if (bookDoc.exists()) {
+        // Update existing book with Read collection
+        const existingData = bookDoc.data();
+        const updatedCollections = existingData.collections?.includes(
+          readCollection.id
+        )
+          ? existingData.collections
+          : [...(existingData.collections || []), readCollection.id];
+
+        await updateDoc(bookRef, {
+          collections: updatedCollections,
+        });
+      } else {
+        // Create new book with Read collection
+        const bookData = {
+          id: book.id,
+          title: book.title,
+          author: book.authors?.join(", ") || "Unknown Author",
+          year: book.publishedDate
+            ? new Date(book.publishedDate).getFullYear()
+            : new Date().getFullYear(),
+          cover: book.cover || "",
+          rating: book.rating || 0,
+          notes: "",
+          status: "Read",
+          collections: [readCollection.id],
+          overview: book.description || "",
+          publishedDate: book.publishedDate || "",
+          pageCount: book.pageCount || 0,
+        };
+
+        await setDoc(bookRef, bookData);
+      }
+
+      // Refresh the profile data
+      await fetchBooksProfile();
     } catch (err) {
-      setError("Failed to add favorite book");
       console.error("Error adding favorite book:", err);
+      throw err;
     }
   };
 
   const removeFavoriteBook = async (bookId: string) => {
-    if (!booksProfile || !userId) return;
-
-    const updatedList = booksProfile.favoriteBooks.filter(
-      (item) => item.id !== bookId
-    );
-
-    const updatedProfile = {
-      ...booksProfile,
-      favoriteBooks: updatedList,
-    };
+    if (!userId) return;
 
     try {
-      const docRef = doc(db, "users", userId, "profiles", "books");
-      await updateDoc(docRef, { favoriteBooks: updatedList });
-      setBooksProfile(updatedProfile);
+      // Find the "Read" collection
+      const collectionsRef = collection(db, "users", userId, "bookCollections");
+      const collectionsSnapshot = await getDocs(collectionsRef);
+      const readCollection = collectionsSnapshot.docs.find(
+        (doc) => doc.data().name === "Read"
+      );
+
+      if (!readCollection) {
+        throw new Error("Read collection not found");
+      }
+
+      // Remove book from Read collection
+      const bookRef = doc(db, "users", userId, "books", bookId);
+      const bookDoc = await getDoc(bookRef);
+
+      if (bookDoc.exists()) {
+        const existingData = bookDoc.data();
+        const updatedCollections =
+          existingData.collections?.filter(
+            (collectionId: string) => collectionId !== readCollection.id
+          ) || [];
+
+        await updateDoc(bookRef, {
+          collections: updatedCollections,
+        });
+      }
+
+      // Refresh the profile data
+      await fetchBooksProfile();
     } catch (err) {
-      setError("Failed to remove favorite book");
       console.error("Error removing favorite book:", err);
+      throw err;
     }
   };
 
   const addToReadingList = async (book: GoogleBookItem) => {
-    if (!booksProfile || !userId) return;
-
-    const updatedList = [
-      ...booksProfile.readingList.filter((item) => item.id !== book.id),
-      book,
-    ];
-
-    const updatedProfile = {
-      ...booksProfile,
-      readingList: updatedList,
-    };
+    if (!userId) return;
 
     try {
-      const docRef = doc(db, "users", userId, "profiles", "books");
-      await updateDoc(docRef, { readingList: updatedList });
-      setBooksProfile(updatedProfile);
+      // Find the "To Read" collection
+      const collectionsRef = collection(db, "users", userId, "bookCollections");
+      const collectionsSnapshot = await getDocs(collectionsRef);
+      const toReadCollection = collectionsSnapshot.docs.find(
+        (doc) => doc.data().name === "To Read"
+      );
+
+      if (!toReadCollection) {
+        throw new Error("To Read collection not found");
+      }
+
+      // Check if book already exists
+      const bookRef = doc(db, "users", userId, "books", book.id);
+      const bookDoc = await getDoc(bookRef);
+
+      if (bookDoc.exists()) {
+        // Update existing book with To Read collection
+        const existingData = bookDoc.data();
+        const updatedCollections = existingData.collections?.includes(
+          toReadCollection.id
+        )
+          ? existingData.collections
+          : [...(existingData.collections || []), toReadCollection.id];
+
+        await updateDoc(bookRef, {
+          collections: updatedCollections,
+        });
+      } else {
+        // Create new book with To Read collection
+        const bookData = {
+          id: book.id,
+          title: book.title,
+          author: book.authors?.join(", ") || "Unknown Author",
+          year: book.publishedDate
+            ? new Date(book.publishedDate).getFullYear()
+            : new Date().getFullYear(),
+          cover: book.cover || "",
+          rating: book.rating || 0,
+          notes: "",
+          status: "To Read",
+          collections: [toReadCollection.id],
+          overview: book.description || "",
+          publishedDate: book.publishedDate || "",
+          pageCount: book.pageCount || 0,
+        };
+
+        await setDoc(bookRef, bookData);
+      }
+
+      // Refresh the profile data
+      await fetchBooksProfile();
     } catch (err) {
-      setError("Failed to add to reading list");
       console.error("Error adding to reading list:", err);
+      throw err;
     }
   };
 
   const removeFromReadingList = async (bookId: string) => {
-    if (!booksProfile || !userId) return;
-
-    const updatedList = booksProfile.readingList.filter(
-      (item) => item.id !== bookId
-    );
-
-    const updatedProfile = {
-      ...booksProfile,
-      readingList: updatedList,
-    };
+    if (!userId) return;
 
     try {
-      const docRef = doc(db, "users", userId, "profiles", "books");
-      await updateDoc(docRef, { readingList: updatedList });
-      setBooksProfile(updatedProfile);
+      // Find the "To Read" collection
+      const collectionsRef = collection(db, "users", userId, "bookCollections");
+      const collectionsSnapshot = await getDocs(collectionsRef);
+      const toReadCollection = collectionsSnapshot.docs.find(
+        (doc) => doc.data().name === "To Read"
+      );
+
+      if (!toReadCollection) {
+        throw new Error("To Read collection not found");
+      }
+
+      // Remove book from To Read collection
+      const bookRef = doc(db, "users", userId, "books", bookId);
+      const bookDoc = await getDoc(bookRef);
+
+      if (bookDoc.exists()) {
+        const existingData = bookDoc.data();
+        const updatedCollections =
+          existingData.collections?.filter(
+            (collectionId: string) => collectionId !== toReadCollection.id
+          ) || [];
+
+        await updateDoc(bookRef, {
+          collections: updatedCollections,
+        });
+      }
+
+      // Refresh the profile data
+      await fetchBooksProfile();
     } catch (err) {
-      setError("Failed to remove from reading list");
       console.error("Error removing from reading list:", err);
+      throw err;
     }
   };
 
   const addRecommendation = async (book: GoogleBookItem) => {
-    if (!booksProfile || !userId) return;
-
-    const updatedList = [
-      ...booksProfile.recommendations.filter((item) => item.id !== book.id),
-      book,
-    ];
-
-    const updatedProfile = {
-      ...booksProfile,
-      recommendations: updatedList,
-    };
+    if (!userId) return;
 
     try {
-      const docRef = doc(db, "users", userId, "profiles", "books");
-      await updateDoc(docRef, { recommendations: updatedList });
-      setBooksProfile(updatedProfile);
+      // Find the "Recommendations" collection
+      const collectionsRef = collection(db, "users", userId, "bookCollections");
+      const collectionsSnapshot = await getDocs(collectionsRef);
+      const recommendationsCollection = collectionsSnapshot.docs.find(
+        (doc) => doc.data().name === "Recommendations"
+      );
+
+      if (!recommendationsCollection) {
+        throw new Error("Recommendations collection not found");
+      }
+
+      // Check if book already exists
+      const bookRef = doc(db, "users", userId, "books", book.id);
+      const bookDoc = await getDoc(bookRef);
+
+      if (bookDoc.exists()) {
+        // Update existing book with Recommendations collection
+        const existingData = bookDoc.data();
+        const updatedCollections = existingData.collections?.includes(
+          recommendationsCollection.id
+        )
+          ? existingData.collections
+          : [...(existingData.collections || []), recommendationsCollection.id];
+
+        await updateDoc(bookRef, {
+          collections: updatedCollections,
+        });
+      } else {
+        // Create new book with Recommendations collection
+        const bookData = {
+          id: book.id,
+          title: book.title,
+          author: book.authors?.join(", ") || "Unknown Author",
+          year: book.publishedDate
+            ? new Date(book.publishedDate).getFullYear()
+            : new Date().getFullYear(),
+          cover: book.cover || "",
+          rating: book.rating || 0,
+          notes: "",
+          status: "Recommendations",
+          collections: [recommendationsCollection.id],
+          overview: book.description || "",
+          publishedDate: book.publishedDate || "",
+          pageCount: book.pageCount || 0,
+        };
+
+        await setDoc(bookRef, bookData);
+      }
+
+      // Refresh the profile data
+      await fetchBooksProfile();
     } catch (err) {
-      setError("Failed to add recommendation");
       console.error("Error adding recommendation:", err);
+      throw err;
     }
   };
 
   const removeRecommendation = async (bookId: string) => {
-    if (!booksProfile || !userId) return;
-
-    const updatedList = booksProfile.recommendations.filter(
-      (item) => item.id !== bookId
-    );
-
-    const updatedProfile = {
-      ...booksProfile,
-      recommendations: updatedList,
-    };
+    if (!userId) return;
 
     try {
-      const docRef = doc(db, "users", userId, "profiles", "books");
-      await updateDoc(docRef, { recommendations: updatedList });
-      setBooksProfile(updatedProfile);
+      // Find the "Recommendations" collection
+      const collectionsRef = collection(db, "users", userId, "bookCollections");
+      const collectionsSnapshot = await getDocs(collectionsRef);
+      const recommendationsCollection = collectionsSnapshot.docs.find(
+        (doc) => doc.data().name === "Recommendations"
+      );
+
+      if (!recommendationsCollection) {
+        throw new Error("Recommendations collection not found");
+      }
+
+      // Remove book from Recommendations collection
+      const bookRef = doc(db, "users", userId, "books", bookId);
+      const bookDoc = await getDoc(bookRef);
+
+      if (bookDoc.exists()) {
+        const existingData = bookDoc.data();
+        const updatedCollections =
+          existingData.collections?.filter(
+            (collectionId: string) =>
+              collectionId !== recommendationsCollection.id
+          ) || [];
+
+        await updateDoc(bookRef, {
+          collections: updatedCollections,
+        });
+      }
+
+      // Refresh the profile data
+      await fetchBooksProfile();
     } catch (err) {
-      setError("Failed to remove recommendation");
       console.error("Error removing recommendation:", err);
+      throw err;
     }
   };
 
   const addRating = async (bookId: string, rating: number) => {
-    if (!booksProfile || !userId) return;
-
-    const updatedRatings = {
-      ...booksProfile.ratings,
-      [bookId]: rating,
-    };
-
-    const updatedProfile = {
-      ...booksProfile,
-      ratings: updatedRatings,
-    };
+    if (!userId) return;
 
     try {
-      const docRef = doc(db, "users", userId, "profiles", "books");
-      await updateDoc(docRef, { ratings: updatedRatings });
-      setBooksProfile(updatedProfile);
+      // Update the book's rating in the books collection
+      const bookRef = doc(db, "users", userId, "books", bookId);
+      const bookDoc = await getDoc(bookRef);
+
+      if (bookDoc.exists()) {
+        await updateDoc(bookRef, {
+          rating: rating,
+        });
+      }
+
+      // Refresh the profile data
+      await fetchBooksProfile();
     } catch (err) {
-      setError("Failed to add rating");
       console.error("Error adding rating:", err);
+      throw err;
     }
   };
 
   const addRatingWithBook = async (book: GoogleBookItem, rating: number) => {
-    if (!booksProfile || !userId) return;
-
-    // First ensure the book is in favoriteBooks
-    const updatedFavoriteBooks = [
-      ...booksProfile.favoriteBooks.filter((item) => item.id !== book.id),
-      book,
-    ];
-
-    // Then add the rating
-    const updatedRatings = {
-      ...booksProfile.ratings,
-      [book.id]: rating,
-    };
-
-    const updatedProfile = {
-      ...booksProfile,
-      favoriteBooks: updatedFavoriteBooks,
-      ratings: updatedRatings,
-    };
+    if (!userId) return;
 
     try {
-      const docRef = doc(db, "users", userId, "profiles", "books");
-      await updateDoc(docRef, {
-        favoriteBooks: updatedFavoriteBooks,
-        ratings: updatedRatings,
-      });
-      setBooksProfile(updatedProfile);
+      // First add the book to Read collection (favorite books)
+      await addFavoriteBook(book);
+
+      // Then add the rating
+      await addRating(book.id, rating);
     } catch (err) {
-      setError("Failed to add rating with book");
       console.error("Error adding rating with book:", err);
+      throw err;
     }
   };
 
   const removeRating = async (bookId: string) => {
-    if (!booksProfile || !userId) return;
-
-    const updatedRatings = { ...booksProfile.ratings };
-    delete updatedRatings[bookId];
-
-    const updatedProfile = {
-      ...booksProfile,
-      ratings: updatedRatings,
-    };
+    if (!userId) return;
 
     try {
-      const docRef = doc(db, "users", userId, "profiles", "books");
-      await updateDoc(docRef, { ratings: updatedRatings });
-      setBooksProfile(updatedProfile);
+      // Set the book's rating to 0 in the books collection
+      const bookRef = doc(db, "users", userId, "books", bookId);
+      const bookDoc = await getDoc(bookRef);
+
+      if (bookDoc.exists()) {
+        await updateDoc(bookRef, {
+          rating: 0,
+        });
+      }
+
+      // Refresh the profile data
+      await fetchBooksProfile();
     } catch (err) {
-      setError("Failed to remove rating");
       console.error("Error removing rating:", err);
+      throw err;
     }
   };
 
@@ -317,24 +619,17 @@ export const useBooksProfile = (userId: string) => {
     oldBookId: string,
     newBook: GoogleBookItem
   ) => {
-    if (!booksProfile || !userId) return;
-
-    const updatedFavoriteBooks = booksProfile.favoriteBooks.map((book) =>
-      book.id === oldBookId ? newBook : book
-    );
-
-    const updatedProfile = {
-      ...booksProfile,
-      favoriteBooks: updatedFavoriteBooks,
-    };
+    if (!userId) return;
 
     try {
-      const docRef = doc(db, "users", userId, "profiles", "books");
-      await updateDoc(docRef, { favoriteBooks: updatedFavoriteBooks });
-      setBooksProfile(updatedProfile);
+      // Remove old book from Read collection
+      await removeFavoriteBook(oldBookId);
+
+      // Add new book to Read collection
+      await addFavoriteBook(newBook);
     } catch (err) {
-      setError("Failed to replace favorite book");
       console.error("Error replacing favorite book:", err);
+      throw err;
     }
   };
 
@@ -342,24 +637,17 @@ export const useBooksProfile = (userId: string) => {
     oldBookId: string,
     newBook: GoogleBookItem
   ) => {
-    if (!booksProfile || !userId) return;
-
-    const updatedReadingList = booksProfile.readingList.map((book) =>
-      book.id === oldBookId ? newBook : book
-    );
-
-    const updatedProfile = {
-      ...booksProfile,
-      readingList: updatedReadingList,
-    };
+    if (!userId) return;
 
     try {
-      const docRef = doc(db, "users", userId, "profiles", "books");
-      await updateDoc(docRef, { readingList: updatedReadingList });
-      setBooksProfile(updatedProfile);
+      // Remove old book from To Read collection
+      await removeFromReadingList(oldBookId);
+
+      // Add new book to To Read collection
+      await addToReadingList(newBook);
     } catch (err) {
-      setError("Failed to replace reading list book");
       console.error("Error replacing reading list book:", err);
+      throw err;
     }
   };
 
@@ -367,54 +655,42 @@ export const useBooksProfile = (userId: string) => {
     oldBookId: string,
     newBook: GoogleBookItem
   ) => {
-    if (!booksProfile || !userId) return;
-
-    const updatedRecommendations = booksProfile.recommendations.map((book) =>
-      book.id === oldBookId ? newBook : book
-    );
-
-    const updatedProfile = {
-      ...booksProfile,
-      recommendations: updatedRecommendations,
-    };
+    if (!userId) return;
 
     try {
-      const docRef = doc(db, "users", userId, "profiles", "books");
-      await updateDoc(docRef, { recommendations: updatedRecommendations });
-      setBooksProfile(updatedProfile);
+      // Remove old book from Recommendations collection
+      await removeRecommendation(oldBookId);
+
+      // Add new book to Recommendations collection
+      await addRecommendation(newBook);
     } catch (err) {
-      setError("Failed to replace recommendation");
       console.error("Error replacing recommendation:", err);
+      throw err;
     }
   };
 
   const replaceRating = async (oldBookId: string, newBook: GoogleBookItem) => {
-    if (!booksProfile || !userId) return;
-
-    // Get the rating for the old book
-    const oldRating = booksProfile.ratings[oldBookId];
-
-    // Create new ratings object
-    const updatedRatings = { ...booksProfile.ratings };
-
-    // Remove old book rating and add new book rating
-    delete updatedRatings[oldBookId];
-    if (oldRating) {
-      updatedRatings[newBook.id] = oldRating;
-    }
-
-    const updatedProfile = {
-      ...booksProfile,
-      ratings: updatedRatings,
-    };
+    if (!userId) return;
 
     try {
-      const docRef = doc(db, "users", userId, "profiles", "books");
-      await updateDoc(docRef, { ratings: updatedRatings });
-      setBooksProfile(updatedProfile);
+      // Get the rating for the old book
+      const oldBookRef = doc(db, "users", userId, "books", oldBookId);
+      const oldBookDoc = await getDoc(oldBookRef);
+      const oldRating = oldBookDoc.exists() ? oldBookDoc.data().rating : 0;
+
+      // Remove old book from Read collection
+      await removeFavoriteBook(oldBookId);
+
+      // Add new book to Read collection
+      await addFavoriteBook(newBook);
+
+      // Set the rating for the new book
+      if (oldRating && oldRating > 0) {
+        await addRating(newBook.id, oldRating);
+      }
     } catch (err) {
-      setError("Failed to replace rating");
       console.error("Error replacing rating:", err);
+      throw err;
     }
   };
 
