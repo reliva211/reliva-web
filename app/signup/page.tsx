@@ -70,12 +70,30 @@ export default function SignupPage() {
         displayName: fullName,
       });
 
+      const mongoRes = await fetch("http://localhost:8080/api/users", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          username: user.displayName || user.email?.split("@")[0],
+          email: user.email,
+        }),
+      });
+
+      const mongoData = await mongoRes.json();
+      if (!mongoData.success) {
+        throw new Error(mongoData.error || "MongoDB user creation failed");
+      }
+
+      const authorId = mongoData.user._id;
+
+
       // Create Firestore user doc with complete user data
       await setDoc(
         doc(db, "users", user.uid),
         {
           uid: user.uid,
           email: user.email,
+          authorId: authorId,
           username: fullName || user.email?.split("@")[0],
           fullName: fullName,
           followers: [],
@@ -107,9 +125,9 @@ export default function SignupPage() {
       const provider = new GoogleAuthProvider();
 
       // Try popup first, fallback to redirect for mobile
-      let result;
+      let googleResult;
       try {
-        result = await signInWithPopup(auth, provider);
+        googleResult = await signInWithPopup(auth, provider);
       } catch (popupError: any) {
         // If popup fails (common on mobile), try redirect
         if (
@@ -122,17 +140,35 @@ export default function SignupPage() {
         }
         throw popupError;
       }
+      
 
-      const user = result.user;
+      const googleUser = googleResult.user;
+      
 
+      const mongoRes = await fetch("http://localhost:8080/api/users", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          username: googleUser.displayName || googleUser.email?.split("@")[0],
+          email: googleUser.email,
+        }),
+      });
+
+      const mongoData = await mongoRes.json();
+      if (!mongoData.success) {
+        throw new Error(mongoData.error || "MongoDB user creation failed");
+      }
+
+      const authorId = mongoData.user._id;
       // Create Firestore user doc with complete user data
       await setDoc(
-        doc(db, "users", user.uid),
+        doc(db, "users", googleUser.uid),
         {
-          uid: user.uid,
-          email: user.email,
-          username: user.displayName || user.email?.split("@")[0],
-          fullName: user.displayName || "",
+          uid: googleUser.uid,
+          email: googleUser.email,
+          username: googleUser.displayName || googleUser.email?.split("@")[0],
+          fullName: googleUser.displayName || "",
+          authorId: authorId,
           followers: [],
           following: [],
           createdAt: serverTimestamp(),

@@ -11,6 +11,7 @@ import { db } from "@/lib/firebase"; // update path if needed
 
 interface User extends FirebaseUser {
   id: string;
+  authorId: string | null;
 }
 
 export const useCurrentUser = () => {
@@ -18,41 +19,44 @@ export const useCurrentUser = () => {
   const [loading, setLoading] = useState(true);
   const auth = getAuth();
 
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      if (firebaseUser) {
-        const userWithId = {
-          ...firebaseUser,
-          id: firebaseUser.uid,
-        };
+useEffect(() => {
+  const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+    if (firebaseUser) {
+      const userRef = doc(db, "users", firebaseUser.uid);
+      const userSnap = await getDoc(userRef);
 
-        setUser(userWithId);
-        setLoading(false);
-
-        // Step: Check if user doc exists in Firestore
-        const userRef = doc(db, "users", firebaseUser.uid);
-        const userSnap = await getDoc(userRef);
-
-        if (!userSnap.exists()) {
-          await setDoc(userRef, {
-            uid: firebaseUser.uid,
-            email: firebaseUser.email,
-            username: firebaseUser.displayName || firebaseUser.email?.split("@")[0],
-            fullName: firebaseUser.displayName || "",
-            followers: [],
-            following: [],
-            createdAt: serverTimestamp(),
-            spotify: { connected: false }
-          });
-        }
+      let authorId: string | null = null;
+      if (userSnap.exists()) {
+        const userData = userSnap.data();
+        authorId = userData?.authorId || null;
       } else {
-        setUser(null);
-        setLoading(false);
+        // optional: create Firestore user if not exists
+        await setDoc(userRef, {
+          uid: firebaseUser.uid,
+          email: firebaseUser.email,
+          authorId: null,
+          username: firebaseUser.displayName || firebaseUser.email?.split("@")[0],
+          fullName: firebaseUser.displayName || "",
+          followers: [],
+          following: [],
+          createdAt: serverTimestamp(),
+          spotify: { connected: false }
+        });
       }
-    });
 
-    return () => unsubscribe();
-  }, [auth]);
+      setUser({
+        ...firebaseUser,
+        id: firebaseUser.uid,
+        authorId, // <-- add authorId here
+      });
+    } else {
+      setUser(null);
+    }
+  });
+
+  return () => unsubscribe();
+}, [auth]);
+
 
   return { user, loading };
 };
