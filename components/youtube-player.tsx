@@ -54,16 +54,6 @@ export default function YouTubePlayer() {
   const hasNext = currentIndex < queue.length - 1;
   const hasPrevious = currentIndex > 0;
 
-  // Debug logging
-  console.log("🎵 YouTube Player State:", {
-    isVisible,
-    currentSong: currentSong?.title,
-    queueLength: queue.length,
-    currentIndex,
-    hasNext,
-    hasPrevious,
-  });
-
   // Load YouTube API and initialize player
   useEffect(() => {
     if (!isVisible || !currentSong?.videoId) return;
