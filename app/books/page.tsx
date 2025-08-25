@@ -501,7 +501,7 @@ export default function BooksPage() {
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black w-full overflow-x-hidden">
       {/* Header */}
       <div className="border-b border-gray-800 bg-gradient-to-r from-gray-900/95 to-gray-800/95 backdrop-blur-sm w-full">
-        <div className="container mx-auto px-4 sm:px-6 py-6 sm:py-8 max-w-full">
+        <div className="container mx-auto px-2 sm:px-4 md:px-6 py-4 sm:py-6 md:py-8 max-w-full">
           <div className="flex items-center justify-between">
             <div className="ml-16 lg:ml-0">
               <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold bg-gradient-to-r from-white via-gray-200 to-gray-400 bg-clip-text text-transparent">
@@ -515,10 +515,10 @@ export default function BooksPage() {
         </div>
       </div>
 
-      <div className="container mx-auto px-4 sm:px-6 py-6 sm:py-8 max-w-full overflow-x-hidden">
+      <div className="container mx-auto px-2 sm:px-4 md:px-6 py-4 sm:py-6 md:py-8 max-w-full overflow-x-hidden">
         {/* Search and Filters */}
-        <div className="mb-8 sm:mb-10 w-full">
-          <div className="flex flex-col gap-3 sm:gap-4 mb-6 sm:mb-8 w-full">
+        <div className="mb-6 sm:mb-8 w-full">
+          <div className="flex flex-col gap-2 sm:gap-3 mb-4 sm:mb-6 w-full">
             {/* Search */}
             <div className="flex-1 w-full">
               <form
@@ -555,7 +555,7 @@ export default function BooksPage() {
           </div>
 
           {/* Collections Tabs */}
-          <div className="flex items-center gap-2 sm:gap-3 overflow-x-auto pb-4 scrollbar-hide w-full horizontal-scroll-container px-2 sm:px-0">
+          <div className="flex items-center gap-1 sm:gap-2 overflow-x-auto pb-3 sm:pb-4 scrollbar-hide w-full horizontal-scroll-container px-1 sm:px-0">
             {/* Trending Tab */}
             <button
               onClick={() => {
@@ -717,7 +717,7 @@ export default function BooksPage() {
             <div>
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 sm:gap-0 mb-6">
                 <div>
-                  <h2 className="text-xl sm:text-2xl md:text-3xl font-bold bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
+                  <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-white">
                     Search Results ({searchResults.length})
                   </h2>
                   <p className="text-gray-400 mt-1 sm:mt-2 text-sm sm:text-base">
@@ -735,7 +735,7 @@ export default function BooksPage() {
               <div
                 className={
                   viewMode === "grid"
-                    ? "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-3 sm:gap-4 w-full max-w-full"
+                    ? "grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10 gap-2 sm:gap-3 w-full max-w-full"
                     : "space-y-3 sm:space-y-4"
                 }
               >
@@ -755,7 +755,7 @@ export default function BooksPage() {
             <div>
               <div className="flex items-center justify-between mb-6">
                 <div>
-                  <h2 className="text-xl sm:text-2xl md:text-3xl font-bold bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
+                  <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-white">
                     {getCollectionInfo(selectedCollection)?.name || "Books"} (
                     {filteredAndSortedBooks.length})
                   </h2>
@@ -771,7 +771,7 @@ export default function BooksPage() {
               <div
                 className={
                   viewMode === "grid"
-                    ? "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-3 sm:gap-4 w-full max-w-full"
+                    ? "grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10 gap-2 sm:gap-3 w-full max-w-full"
                     : "space-y-3 sm:space-y-4"
                 }
               >

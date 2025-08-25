@@ -29,26 +29,26 @@
   }
 }
 
-/* Books section specific styling for 3.5 books display */
+/* Books section specific styling for 3 books display on mobile */
 .books-horizontal-container {
-  /* Ensure container shows exactly 3.5 books */
-  width: calc(3.5 * (140px + 16px) - 16px); /* 3.5 books with gap */
+  /* Ensure container shows exactly 3 books on mobile */
+  width: calc(3 * (120px + 8px) - 8px); /* 3 books with gap on mobile */
 }
 
 @media (min-width: 640px) {
   .books-horizontal-container {
-    width: calc(3.5 * (160px + 24px) - 24px); /* sm breakpoint */
+    width: calc(3.5 * (140px + 16px) - 16px); /* 3.5 books with gap on sm */
   }
 }
 
 @media (min-width: 768px) {
   .books-horizontal-container {
-    width: calc(3.5 * (180px + 24px) - 24px); /* md breakpoint */
+    width: calc(3.5 * (160px + 24px) - 24px); /* 3.5 books with gap on md */
   }
 }
 
 @media (min-width: 1024px) {
   .books-horizontal-container {
-    width: calc(3.5 * (200px + 24px) - 24px); /* lg breakpoint */
+    width: calc(3.5 * (180px + 24px) - 24px); /* 3.5 books with gap on lg */
   }
 }

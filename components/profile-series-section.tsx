@@ -585,20 +585,6 @@ export default function ProfileSeriesSection({
     }
   };
 
-  // Handle trailer click
-  const handleTrailerClick = (series: TMDBSeries) => {
-    const seriesTitle = getTextContent(series.name);
-
-    // Try to find trailer on YouTube
-    const searchQuery = `${seriesTitle} official trailer`;
-    const youtubeUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(
-      searchQuery
-    )}`;
-
-    // Open in new tab
-    window.open(youtubeUrl, "_blank");
-  };
-
   // Handle like click
   const handleLikeClick = (series: TMDBSeries) => {
     // Add to favorites if not already there
@@ -896,17 +882,6 @@ export default function ProfileSeriesSection({
                       ))}
                     </div>
                   )}
-
-                  {/* Trailer button */}
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="h-8 px-4"
-                    onClick={() => handleTrailerClick(currentRecentlyWatched)}
-                  >
-                    <Play className="h-3 w-3 mr-1" />
-                    trailer
-                  </Button>
                 </div>
               </div>
 
@@ -949,16 +924,6 @@ export default function ProfileSeriesSection({
                     <div className="w-2 h-2 bg-muted-foreground/30 rounded-full"></div>
                     <div className="w-2 h-2 bg-muted-foreground/30 rounded-full"></div>
                   </div>
-
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="h-8 px-4"
-                    disabled
-                  >
-                    <Play className="h-3 w-3 mr-1" />
-                    trailer
-                  </Button>
                 </div>
               </div>
 

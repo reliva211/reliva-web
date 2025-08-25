@@ -111,8 +111,8 @@ export default function DiscoverSection({
 
   return (
     <div className="w-full discover-section">
-      <div className="mb-4 sm:mb-6 px-2 sm:px-0 discover-header">
-        <h2 className="text-xl sm:text-2xl md:text-3xl font-bold bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent leading-tight discover-title">
+      <div className="mb-3 sm:mb-4 px-1 sm:px-0 discover-header">
+        <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-white leading-tight discover-title">
           {title}
         </h2>
         <p className="text-gray-400 mt-1 sm:mt-2 text-sm sm:text-base discover-subtitle">
@@ -144,7 +144,7 @@ export default function DiscoverSection({
         {/* Items Container */}
         <div
           id={containerId}
-          className={`flex gap-4 sm:gap-6 overflow-x-auto px-4 sm:px-8 py-4 sm:py-6 scrollbar-hide horizontal-scroll-container ${
+          className={`flex gap-2 sm:gap-4 md:gap-6 overflow-x-auto px-2 sm:px-4 md:px-8 py-3 sm:py-4 md:py-6 scrollbar-hide horizontal-scroll-container ${
             itemType === "book" ? "books-horizontal-container" : "w-full"
           }`}
           style={{
@@ -155,7 +155,7 @@ export default function DiscoverSection({
           {items.map((item) => (
             <div
               key={item.id}
-              className="flex-shrink-0 w-[140px] sm:w-[160px] md:w-[180px] lg:w-[200px] discover-card"
+              className="flex-shrink-0 w-[120px] sm:w-[140px] md:w-[160px] lg:w-[180px] discover-card"
             >
               <div className="relative aspect-[2/3] rounded-xl overflow-hidden bg-gradient-to-br from-gray-800 to-gray-900 shadow-2xl">
                 <Link
@@ -176,16 +176,16 @@ export default function DiscoverSection({
                   />
                 </Link>
               </div>
-              <div className="mt-3 sm:mt-4 space-y-1 sm:space-y-2">
-                <h4 className="font-bold text-sm sm:text-base truncate text-white leading-tight">
+              <div className="mt-2 sm:mt-3 space-y-1 sm:space-y-2">
+                <h4 className="font-bold text-xs sm:text-sm md:text-base truncate text-white leading-tight">
                   {item.title || "Unknown Title"}
                 </h4>
                 {item.author && (
-                  <p className="text-xs sm:text-sm text-gray-400 font-medium truncate">
+                  <p className="text-xs text-gray-400 font-medium truncate">
                     {item.author}
                   </p>
                 )}
-                <p className="text-xs sm:text-sm text-gray-400 font-medium">
+                <p className="text-xs text-gray-400 font-medium">
                   {item.year || "N/A"}
                 </p>
               </div>

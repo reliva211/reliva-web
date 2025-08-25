@@ -87,9 +87,9 @@ export default function BookDetailPage({
   // Helper function to truncate description to 100 words
   const truncateDescription = (text: string, wordLimit: number = 100) => {
     if (!text) return "";
-    const words = text.split(' ');
+    const words = text.split(" ");
     if (words.length <= wordLimit) return text;
-    return words.slice(0, wordLimit).join(' ') + '...';
+    return words.slice(0, wordLimit).join(" ") + "...";
   };
 
   // Default collections for books
@@ -311,7 +311,7 @@ export default function BookDetailPage({
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-start">
               {/* Cover */}
               <div className="lg:col-span-1 lg:sticky lg:top-8">
-                <div className="relative group max-w-xs mx-auto lg:mx-0">
+                <div className="relative group max-w-[200px] sm:max-w-xs mx-auto lg:mx-0">
                   <div className="aspect-[2/3] rounded-2xl overflow-hidden bg-gradient-to-br from-muted to-muted/50 shadow-2xl group-hover:shadow-3xl transition-all duration-300">
                     <Image
                       src={
@@ -382,18 +382,25 @@ export default function BookDetailPage({
                     <div
                       dangerouslySetInnerHTML={{
                         __html: showFullDescription
-                          ? book.description || "No description available for this book."
-                          : truncateDescription(book.description || "No description available for this book."),
+                          ? book.description ||
+                            "No description available for this book."
+                          : truncateDescription(
+                              book.description ||
+                                "No description available for this book."
+                            ),
                       }}
                     />
-                    {book.description && book.description.split(' ').length > 100 && (
-                      <button
-                        onClick={() => setShowFullDescription(!showFullDescription)}
-                        className="mt-3 text-emerald-400 hover:text-emerald-300 font-medium transition-colors duration-200 underline"
-                      >
-                        {showFullDescription ? "Read Less" : "Read More"}
-                      </button>
-                    )}
+                    {book.description &&
+                      book.description.split(" ").length > 100 && (
+                        <button
+                          onClick={() =>
+                            setShowFullDescription(!showFullDescription)
+                          }
+                          className="mt-3 text-emerald-400 hover:text-emerald-300 font-medium transition-colors duration-200 underline"
+                        >
+                          {showFullDescription ? "Read Less" : "Read More"}
+                        </button>
+                      )}
                   </div>
                 </div>
 

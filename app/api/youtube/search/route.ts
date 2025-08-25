@@ -21,18 +21,31 @@ const FALLBACK_VIDEOS = [
   },
 ];
 
+// Popular movie trailers as fallbacks
+const FALLBACK_TRAILERS = [
+  { id: "uYPbbksJxIg", title: "Parasite Official Trailer", type: "movie" },
+  { id: "6aJ-cW1HlB8", title: "Inception Official Trailer", type: "movie" },
+  { id: "YoHD9XEInc0", title: "Interstellar Official Trailer", type: "movie" },
+  {
+    id: "EXeTwQWrcwY",
+    title: "The Dark Knight Official Trailer",
+    type: "movie",
+  },
+  { id: "hA2hKAuBZqU", title: "Breaking Bad Official Trailer", type: "series" },
+];
+
 export async function GET(request: NextRequest) {
+  const { searchParams } = new URL(request.url);
+  const query = searchParams.get("q");
+
+  if (!query) {
+    return NextResponse.json(
+      { error: "Search query is required" },
+      { status: 400 }
+    );
+  }
+
   try {
-    const { searchParams } = new URL(request.url);
-    const query = searchParams.get("q");
-
-    if (!query) {
-      return NextResponse.json(
-        { error: "Search query is required" },
-        { status: 400 }
-      );
-    }
-
     console.log(`🔍 Searching YouTube for: ${query}`);
 
     // Use YouTube Data API v3 to search for videos
@@ -40,18 +53,39 @@ export async function GET(request: NextRequest) {
 
     if (!apiKey) {
       console.log("⚠️ No YouTube API key found, using fallback");
-      // Return a random fallback video
-      const randomFallback =
-        FALLBACK_VIDEOS[Math.floor(Math.random() * FALLBACK_VIDEOS.length)];
-      return NextResponse.json({
-        success: true,
-        data: {
-          videoId: randomFallback.id,
-          title: randomFallback.title,
-          thumbnail: "",
-          isFallback: true,
-        },
-      });
+
+      // Check if this is a trailer search (contains "trailer")
+      const isTrailerSearch = query.toLowerCase().includes("trailer");
+
+      if (isTrailerSearch) {
+        // Use trailer fallbacks
+        const randomTrailer =
+          FALLBACK_TRAILERS[
+            Math.floor(Math.random() * FALLBACK_TRAILERS.length)
+          ];
+        return NextResponse.json({
+          success: true,
+          data: {
+            videoId: randomTrailer.id,
+            title: randomTrailer.title,
+            thumbnail: "",
+            isFallback: true,
+          },
+        });
+      } else {
+        // Use music fallbacks
+        const randomFallback =
+          FALLBACK_VIDEOS[Math.floor(Math.random() * FALLBACK_VIDEOS.length)];
+        return NextResponse.json({
+          success: true,
+          data: {
+            videoId: randomFallback.id,
+            title: randomFallback.title,
+            thumbnail: "",
+            isFallback: true,
+          },
+        });
+      }
     }
 
     // Try multiple search strategies
@@ -124,33 +158,69 @@ export async function GET(request: NextRequest) {
 
     // If all strategies failed, return a fallback
     console.log("❌ All search strategies failed, using fallback");
-    const randomFallback =
-      FALLBACK_VIDEOS[Math.floor(Math.random() * FALLBACK_VIDEOS.length)];
 
-    return NextResponse.json({
-      success: true,
-      data: {
-        videoId: randomFallback.id,
-        title: randomFallback.title,
-        thumbnail: "",
-        isFallback: true,
-      },
-    });
+    // Check if this is a trailer search (contains "trailer")
+    const isTrailerSearch = query.toLowerCase().includes("trailer");
+
+    if (isTrailerSearch) {
+      // Use trailer fallbacks
+      const randomTrailer =
+        FALLBACK_TRAILERS[Math.floor(Math.random() * FALLBACK_TRAILERS.length)];
+      return NextResponse.json({
+        success: true,
+        data: {
+          videoId: randomTrailer.id,
+          title: randomTrailer.title,
+          thumbnail: "",
+          isFallback: true,
+        },
+      });
+    } else {
+      // Use music fallbacks
+      const randomFallback =
+        FALLBACK_VIDEOS[Math.floor(Math.random() * FALLBACK_VIDEOS.length)];
+      return NextResponse.json({
+        success: true,
+        data: {
+          videoId: randomFallback.id,
+          title: randomFallback.title,
+          thumbnail: "",
+          isFallback: true,
+        },
+      });
+    }
   } catch (error) {
     console.error("❌ Error searching YouTube:", error);
 
     // Return a fallback even on complete failure
-    const randomFallback =
-      FALLBACK_VIDEOS[Math.floor(Math.random() * FALLBACK_VIDEOS.length)];
+    const isTrailerSearch = query?.toLowerCase().includes("trailer") || false;
 
-    return NextResponse.json({
-      success: true,
-      data: {
-        videoId: randomFallback.id,
-        title: randomFallback.title,
-        thumbnail: "",
-        isFallback: true,
-      },
-    });
+    if (isTrailerSearch) {
+      // Use trailer fallbacks
+      const randomTrailer =
+        FALLBACK_TRAILERS[Math.floor(Math.random() * FALLBACK_TRAILERS.length)];
+      return NextResponse.json({
+        success: true,
+        data: {
+          videoId: randomTrailer.id,
+          title: randomTrailer.title,
+          thumbnail: "",
+          isFallback: true,
+        },
+      });
+    } else {
+      // Use music fallbacks
+      const randomFallback =
+        FALLBACK_VIDEOS[Math.floor(Math.random() * FALLBACK_VIDEOS.length)];
+      return NextResponse.json({
+        success: true,
+        data: {
+          videoId: randomFallback.id,
+          title: randomFallback.title,
+          thumbnail: "",
+          isFallback: true,
+        },
+      });
+    }
   }
 }

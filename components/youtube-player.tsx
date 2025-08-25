@@ -236,7 +236,7 @@ export default function YouTubePlayer() {
       <div className="relative video-container">
         <div
           ref={playerRef}
-          className="w-full h-[160px] sm:h-[180px] bg-black flex items-center justify-center"
+          className="w-full h-[140px] sm:h-[180px] bg-black flex items-center justify-center"
         >
           {isLoading && !hasError && (
             <div className="text-white text-sm flex items-center gap-2">

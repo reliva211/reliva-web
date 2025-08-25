@@ -437,6 +437,14 @@ export default function AlbumDetailPage({
                     </span>
                   </div>
                 )}
+                {album.explicitContent && (
+                  <Badge
+                    variant="destructive"
+                    className="rounded-lg px-3 py-1.5 text-xs font-medium shadow-md"
+                  >
+                    Explicit
+                  </Badge>
+                )}
                 {album.language && (
                   <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-muted/50 backdrop-blur-sm border border-border/30">
                     <span className="text-xs font-medium text-foreground capitalize">
@@ -542,16 +550,6 @@ export default function AlbumDetailPage({
                 <Star className="w-4 h-4 mr-2 group-hover:scale-110 transition-transform" />
                 Write Review
               </Button>
-              {album.explicitContent && (
-                <div className="col-span-2 flex justify-center lg:justify-start">
-                  <Badge
-                    variant="destructive"
-                    className="rounded-lg px-3 py-1 text-xs font-medium shadow-md"
-                  >
-                    Explicit
-                  </Badge>
-                </div>
-              )}
             </div>
           </div>
         </div>

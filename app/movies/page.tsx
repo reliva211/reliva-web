@@ -552,7 +552,7 @@ export default function MoviesPage() {
       <div className="border-b border-gray-800 bg-gradient-to-r from-gray-900/95 to-gray-800/95 backdrop-blur-sm w-full">
         <div className="container mx-auto px-4 sm:px-6 py-6 sm:py-8 max-w-full">
           <div className="flex items-center justify-between">
-            <div>
+            <div className="ml-16 lg:ml-0">
               <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold bg-gradient-to-r from-white via-gray-200 to-gray-400 bg-clip-text text-transparent">
                 Movies
               </h1>
@@ -747,7 +747,7 @@ export default function MoviesPage() {
             <div>
               <div className="flex items-center justify-between mb-6">
                 <div>
-                  <h2 className="text-3xl font-bold bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
+                  <h2 className="text-3xl font-bold text-white">
                     Search Results ({searchResults.length})
                   </h2>
                   <p className="text-gray-400 mt-2">
@@ -765,7 +765,7 @@ export default function MoviesPage() {
               <div
                 className={
                   viewMode === "grid"
-                    ? "grid grid-cols-5 gap-4 w-full max-w-full"
+                    ? "grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10 gap-2 sm:gap-3 w-full max-w-full"
                     : "space-y-4"
                 }
               >
@@ -777,6 +777,7 @@ export default function MoviesPage() {
                     isInCollections={savedMovies.some((m) => m.id === movie.id)}
                     onAddToCollection={addMovieToCollection}
                     viewMode={viewMode}
+                    allMovies={searchResults}
                   />
                 ))}
               </div>
@@ -785,7 +786,7 @@ export default function MoviesPage() {
             <div>
               <div className="flex items-center justify-between mb-6">
                 <div>
-                  <h2 className="text-3xl font-bold bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
+                  <h2 className="text-3xl font-bold text-white">
                     {getCollectionInfo(selectedCollection)?.name || "Movies"} (
                     {filteredAndSortedMovies.length})
                   </h2>
@@ -801,7 +802,7 @@ export default function MoviesPage() {
               <div
                 className={
                   viewMode === "grid"
-                    ? "grid grid-cols-5 gap-4 w-full max-w-full"
+                    ? "grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10 gap-2 sm:gap-3 w-full max-w-full"
                     : "space-y-4"
                 }
               >
@@ -812,6 +813,7 @@ export default function MoviesPage() {
                     collections={collections}
                     onRemoveFromCollection={removeMovieFromCollection}
                     viewMode={viewMode}
+                    allMovies={filteredAndSortedMovies}
                   />
                 ))}
               </div>
@@ -830,12 +832,14 @@ function MovieCard({
   isInCollections,
   onAddToCollection,
   viewMode,
+  allMovies,
 }: {
   movie: SearchResult;
   collections: Collection[];
   isInCollections: boolean;
   onAddToCollection: (movie: SearchResult, collectionId: string) => void;
   viewMode: "grid" | "list";
+  allMovies: SearchResult[];
 }) {
   const [showDropdown, setShowDropdown] = useState(false);
 
@@ -909,7 +913,7 @@ function MovieCard({
   }
 
   return (
-    <div className="group">
+    <div>
       <div className="relative aspect-[2/3] rounded-xl overflow-hidden bg-gradient-to-br from-gray-800 to-gray-900 shadow-2xl">
         <Link href={`/movies/${validatedMovie.id}`}>
           <Image
@@ -957,11 +961,13 @@ function SavedMovieCard({
   collections,
   onRemoveFromCollection,
   viewMode,
+  allMovies,
 }: {
   movie: Movie;
   collections: Collection[];
   onRemoveFromCollection: (movieId: number, collectionId: string) => void;
   viewMode: "grid" | "list";
+  allMovies: Movie[];
 }) {
   const [showDropdown, setShowDropdown] = useState(false);
 
@@ -1033,7 +1039,7 @@ function SavedMovieCard({
   }
 
   return (
-    <div className="group">
+    <div>
       <div className="relative aspect-[2/3] rounded-xl overflow-hidden bg-gradient-to-br from-gray-800 to-gray-900 shadow-2xl">
         <Link href={`/movies/${validatedMovie.id}`}>
           <Image

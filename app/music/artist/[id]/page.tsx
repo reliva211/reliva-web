@@ -25,6 +25,7 @@ import {
 } from "lucide-react";
 import { useMusicCollections } from "@/hooks/use-music-collections";
 import { useToast } from "@/hooks/use-toast";
+import { useYouTubePlayer } from "@/hooks/use-youtube-player";
 
 // Utility functions
 const getImageUrl = (images: Array<{ quality: string; url: string }>) => {
@@ -230,6 +231,7 @@ export default function ArtistDetailPage({
   const { isArtistFollowed, followArtist, unfollowArtist } =
     useMusicCollections();
   const { toast } = useToast();
+  const { showPlayer } = useYouTubePlayer();
 
   const getImageUrl = (images: any[]) => {
     return (
@@ -797,8 +799,60 @@ export default function ArtistDetailPage({
                           {song.album?.name}
                         </p>
                       </div>
-                      <div className="text-sm text-muted-foreground">
-                        {formatDuration(song.duration)}
+                      <div className="flex items-center gap-2">
+                        <div className="text-sm text-muted-foreground">
+                          {formatDuration(song.duration)}
+                        </div>
+                        <button
+                          onClick={async (e) => {
+                            e.stopPropagation();
+                            // Create song object for YouTube player
+                            const songForPlayer = {
+                              id: song.id,
+                              title: song.name,
+                              artist:
+                                song.artists?.primary
+                                  ?.map((artist) => artist.name)
+                                  .join(", ") || "Unknown Artist",
+                            };
+
+                            // Create queue from all artist songs
+                            const queue = songs.map((s) => ({
+                              id: s.id,
+                              title: s.name,
+                              artist:
+                                s.artists?.primary
+                                  ?.map((artist) => artist.name)
+                                  .join(", ") || "Unknown Artist",
+                            }));
+
+                            // Find the current song index
+                            const songIndex = songs.findIndex(
+                              (s) => s.id === song.id
+                            );
+
+                            console.log(
+                              "🎵 Artist Page Song Play Button - Queue created:",
+                              {
+                                queueLength: queue.length,
+                                clickedSong: queue[songIndex],
+                                songIndex,
+                                allSongs: queue.map((s) => s.title),
+                              }
+                            );
+
+                            // Start with the clicked song
+                            await showPlayer(
+                              queue[songIndex],
+                              queue,
+                              songIndex
+                            );
+                          }}
+                          className="w-8 h-8 bg-green-500/80 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-green-600/80 transition-all duration-200 hover:scale-110 opacity-0 group-hover:opacity-100"
+                          title="Play Song"
+                        >
+                          <Play className="w-3 h-3 text-white fill-white" />
+                        </button>
                       </div>
                     </div>
                   ))}

@@ -6,6 +6,7 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { AuthProvider } from "@/components/auth-provider";
 import LayoutWrapper from "@/components/layout-wrapper";
 import YouTubePlayer from "@/components/youtube-player";
+import VideoPlayer from "@/components/video-player";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -41,6 +42,7 @@ export default function RootLayout({
             <LayoutWrapper>
               {children}
               <YouTubePlayer />
+              <VideoPlayer />
             </LayoutWrapper>
           </ThemeProvider>
         </AuthProvider>

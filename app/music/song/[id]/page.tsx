@@ -6,8 +6,18 @@ import { use } from "react";
 import { Button } from "@/components/ui/button";
 import { useMusicCollections } from "@/hooks/use-music-collections";
 import { useToast } from "@/hooks/use-toast";
+import { useYouTubePlayer } from "@/hooks/use-youtube-player";
 
-import { Music, Play, Heart, Clock, Users, Disc, Plus, Check } from "lucide-react";
+import {
+  Music,
+  Play,
+  Heart,
+  Clock,
+  Users,
+  Disc,
+  Plus,
+  Check,
+} from "lucide-react";
 
 interface Song {
   id: string;
@@ -85,8 +95,16 @@ export default function SongDetailPage({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const { isSongLiked, likeSong, unlikeSong, addAlbumToRecommendations, removeAlbumFromRecommendations, isAlbumInRecommendations } = useMusicCollections();
+  const {
+    isSongLiked,
+    likeSong,
+    unlikeSong,
+    addAlbumToRecommendations,
+    removeAlbumFromRecommendations,
+    isAlbumInRecommendations,
+  } = useMusicCollections();
   const { toast } = useToast();
+  const { showPlayer } = useYouTubePlayer();
 
   const getImageUrl = (images: any[]) => {
     return (
@@ -155,12 +173,14 @@ export default function SongDetailPage({
             language: song.language || "Unknown",
             songCount: 1,
             playCount: song.playCount || 0,
-            songs: [{
-              ...song,
-              addedAt: new Date().toISOString(),
-            }],
+            songs: [
+              {
+                ...song,
+                addedAt: new Date().toISOString(),
+              },
+            ],
           };
-          
+
           await addAlbumToRecommendations(albumData);
           toast({
             title: "Added to recommendations",
@@ -170,7 +190,8 @@ export default function SongDetailPage({
       } else {
         toast({
           title: "No album information",
-          description: "This song doesn't have album information to add to recommendations.",
+          description:
+            "This song doesn't have album information to add to recommendations.",
           variant: "destructive",
         });
       }
@@ -207,7 +228,7 @@ export default function SongDetailPage({
           playCount: song.playCount || 0,
           downloadUrl: song.downloadUrl || [],
         };
-        
+
         await likeSong(musicSong);
         toast({
           title: "Song added to liked songs",
@@ -320,7 +341,38 @@ export default function SongDetailPage({
               </div>
 
               <div className="flex items-center gap-3">
-                <Button 
+                <Button
+                  onClick={async () => {
+                    // Create song object for YouTube player
+                    const songForPlayer = {
+                      id: song.id,
+                      title: song.name,
+                      artist:
+                        song.artists?.primary
+                          ?.map((artist) => artist.name)
+                          .join(", ") || "Unknown Artist",
+                    };
+
+                    // Create a single-song queue
+                    const queue = [songForPlayer];
+
+                    console.log(
+                      "🎵 Song Detail Page Play Button - Queue created:",
+                      {
+                        queueLength: queue.length,
+                        song: songForPlayer,
+                      }
+                    );
+
+                    // Start playing the song
+                    await showPlayer(songForPlayer, queue, 0);
+                  }}
+                  className="bg-green-600 hover:bg-green-700 text-white"
+                >
+                  <Play className="w-4 h-4 mr-2" />
+                  Play
+                </Button>
+                <Button
                   onClick={handleLikeSong}
                   className={`${
                     isSongLiked(song.id)
@@ -328,7 +380,11 @@ export default function SongDetailPage({
                       : "bg-gray-700 text-white hover:bg-gray-600 border border-gray-600"
                   }`}
                 >
-                  <Heart className={`w-4 h-4 mr-2 ${isSongLiked(song.id) ? "fill-current" : ""}`} />
+                  <Heart
+                    className={`w-4 h-4 mr-2 ${
+                      isSongLiked(song.id) ? "fill-current" : ""
+                    }`}
+                  />
                   {isSongLiked(song.id) ? "Liked" : "Like"}
                 </Button>
                 {song.album?.id && (

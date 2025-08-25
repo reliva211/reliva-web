@@ -31,7 +31,6 @@ import {
   UserCheck,
   ArrowRight,
   Sparkles,
-
   Heart,
   MessageCircle,
   MoreHorizontal,
@@ -71,7 +70,6 @@ export default function UsersPage() {
   const [hasSearched, setHasSearched] = useState(false);
   const [activeTab, setActiveTab] = useState("discover");
 
-
   // Debounced search function
   useEffect(() => {
     const timeoutId = setTimeout(() => {
@@ -90,22 +88,22 @@ export default function UsersPage() {
   useEffect(() => {
     if (followers.length > 0 || following.length > 0) {
       const followingStatesMap: Record<string, boolean> = {};
-      
+
       // Initialize states for followers
       followers.forEach((user) => {
-        followingStatesMap[user.uid] = following.some(followingUser => followingUser.uid === user.uid);
+        followingStatesMap[user.uid] = following.some(
+          (followingUser) => followingUser.uid === user.uid
+        );
       });
-      
+
       // Initialize states for following (these should all be true)
       following.forEach((user) => {
         followingStatesMap[user.uid] = true;
       });
-      
+
       setFollowingStates((prev) => ({ ...prev, ...followingStatesMap }));
     }
   }, [followers, following]);
-
-
 
   // Perform fuzzy search
   const performSearch = async (query: string) => {
@@ -189,9 +187,10 @@ export default function UsersPage() {
 
     try {
       const isFollowing = followingStates[targetUserId];
-      const targetUser = searchResults.find((user) => user.uid === targetUserId) || 
-                        followers.find((user) => user.uid === targetUserId) ||
-                        following.find((user) => user.uid === targetUserId);
+      const targetUser =
+        searchResults.find((user) => user.uid === targetUserId) ||
+        followers.find((user) => user.uid === targetUserId) ||
+        following.find((user) => user.uid === targetUserId);
 
       if (!targetUser) return;
 
@@ -236,8 +235,6 @@ export default function UsersPage() {
           return user;
         })
       );
-
-
     } catch (error) {
       console.error("Error updating follow status:", error);
     }
@@ -269,8 +266,8 @@ export default function UsersPage() {
               People
             </h1>
             <p className="text-muted-foreground text-sm">
-          Discover, connect, and manage your network on Reliva
-        </p>
+              Discover, connect, and manage your network on Reliva
+            </p>
           </div>
         </div>
       </div>
@@ -328,17 +325,17 @@ export default function UsersPage() {
           {/* Search Results */}
           {searchResults.length === 0 ? (
             <div className="text-center py-16">
-                             <div className="relative">
-                 <Search className="h-20 w-20 text-muted-foreground/30 mx-auto mb-6" />
-               </div>
-                             <h3 className="text-xl font-semibold mb-3">
-                 {searching ? "Searching..." : ""}
-               </h3>
-                             <p className="text-muted-foreground mb-6 max-w-md mx-auto">
-                 {searching
-                   ? "Looking for users that match your search..."
-                   : "Find friends to see their favorites and get their recommendations"}
-               </p>
+              <div className="relative">
+                <Search className="h-20 w-20 text-muted-foreground/30 mx-auto mb-6" />
+              </div>
+              <h3 className="text-xl font-semibold mb-3">
+                {searching ? "Searching..." : ""}
+              </h3>
+              <p className="text-muted-foreground mb-6 max-w-md mx-auto">
+                {searching
+                  ? "Looking for users that match your search..."
+                  : "Find friends to see their favorites and get their recommendations"}
+              </p>
             </div>
           ) : (
             <div className="space-y-4">
@@ -346,47 +343,46 @@ export default function UsersPage() {
                 <h3 className="text-lg font-semibold">
                   Search Results ({searchResults.length})
                 </h3>
-                
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {searchResults.map((user) => (
-                <Card
-                  key={user.uid}
+                {searchResults.map((user) => (
+                  <Card
+                    key={user.uid}
                     className="border-0 bg-gradient-to-br from-card to-card/50 backdrop-blur-sm"
-                >
+                  >
                     <CardContent className="p-6">
                       <div className="flex items-start gap-4">
-                      <Avatar
+                        <Avatar
                           className="h-16 w-16 cursor-pointer ring-2 ring-primary/20"
-                        onClick={() => router.push(`/users/${user.uid}`)}
-                      >
-                        <AvatarImage
+                          onClick={() => router.push(`/users/${user.uid}`)}
+                        >
+                          <AvatarImage
                             src={user.avatarUrl || ""}
-                          alt={user.fullName || user.username}
-                        />
+                            alt={user.fullName || user.username}
+                          />
                           <AvatarFallback className="bg-gradient-to-br from-primary/20 to-primary/10 text-primary font-semibold">
                             {(user.fullName || user.username)
                               .charAt(0)
                               .toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
+                          </AvatarFallback>
+                        </Avatar>
 
                         <div className="flex-1 min-w-0">
                           <div className="flex items-start justify-between mb-2">
-                      <div className="flex-1 min-w-0">
-                        <h3
+                            <div className="flex-1 min-w-0">
+                              <h3
                                 className="font-semibold text-base truncate cursor-pointer"
                                 onClick={() =>
                                   router.push(`/users/${user.uid}`)
                                 }
-                        >
-                          {user.fullName || "No name"}
-                        </h3>
+                              >
+                                {user.fullName || "No name"}
+                              </h3>
                               <p className="text-sm text-muted-foreground truncate">
-                          @{user.username}
-                        </p>
-                      </div>
+                                @{user.username}
+                              </p>
+                            </div>
                             <Button
                               variant="ghost"
                               size="sm"
@@ -394,7 +390,7 @@ export default function UsersPage() {
                             >
                               <MoreHorizontal className="h-4 w-4" />
                             </Button>
-                    </div>
+                          </div>
 
                           {user.tagline && (
                             <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
@@ -411,15 +407,15 @@ export default function UsersPage() {
                               <User className="h-3 w-3" />
                               {(user.following || []).length} following
                             </span>
-                    </div>
+                          </div>
 
-                    <Button
-                      variant={
-                        followingStates[user.uid] ? "outline" : "default"
-                      }
-                      size="sm"
-                      onClick={() => handleFollowToggle(user.uid)}
-                      disabled={!currentUser}
+                          <Button
+                            variant={
+                              followingStates[user.uid] ? "outline" : "default"
+                            }
+                            size="sm"
+                            onClick={() => handleFollowToggle(user.uid)}
+                            disabled={!currentUser}
                             className="w-full h-9 rounded-lg transition-all duration-200"
                           >
                             {followingStates[user.uid] ? (
@@ -433,12 +429,12 @@ export default function UsersPage() {
                                 Follow
                               </>
                             )}
-                    </Button>
+                          </Button>
                         </div>
                       </div>
-                  </CardContent>
-                </Card>
-              ))}
+                    </CardContent>
+                  </Card>
+                ))}
               </div>
             </div>
           )}
@@ -504,37 +500,36 @@ export default function UsersPage() {
                         <div className="flex items-start justify-between mb-2">
                           <div className="flex-1 min-w-0">
                             <h3 className="font-semibold text-base truncate">
-                          {user.fullName || "No name"}
-                        </h3>
+                              {user.fullName || "No name"}
+                            </h3>
                             <p className="text-sm text-muted-foreground truncate">
-                          @{user.username}
-                        </p>
-                      </div>
-
-                    </div>
+                              @{user.username}
+                            </p>
+                          </div>
+                        </div>
 
                         <div className="flex gap-2 mt-4">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                            className="flex-1 h-9 rounded-lg"
-                        asChild
-                      >
-                        <Link href={`/users/${user.uid}`}>
-                          <UserCheck className="h-4 w-4 mr-2" />
-                          View Profile
-                        </Link>
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleFollowToggle(user.uid)}
-                        disabled={!currentUser}
-                        className="flex-1 h-9 rounded-lg transition-all duration-200"
-                      >
-                        <UserCheck className="h-4 w-4 mr-2" />
-                        Following
-                      </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="flex-1 h-9 rounded-lg transition-all duration-200"
+                            asChild
+                          >
+                            <Link href={`/users/${user.uid}`}>
+                              <UserCheck className="h-4 w-4 mr-2" />
+                              View Profile
+                            </Link>
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleFollowToggle(user.uid)}
+                            disabled={!currentUser}
+                            className="flex-1 h-9 rounded-lg transition-all duration-200"
+                          >
+                            <UserCheck className="h-4 w-4 mr-2" />
+                            Following
+                          </Button>
                         </div>
                       </div>
                     </div>
@@ -602,20 +597,19 @@ export default function UsersPage() {
                         <div className="flex items-start justify-between mb-2">
                           <div className="flex-1 min-w-0">
                             <h3 className="font-semibold text-base truncate">
-                          {user.fullName || "No name"}
-                        </h3>
+                              {user.fullName || "No name"}
+                            </h3>
                             <p className="text-sm text-muted-foreground truncate">
-                          @{user.username}
-                        </p>
-                      </div>
-
+                              @{user.username}
+                            </p>
+                          </div>
                         </div>
 
                         <div className="flex gap-2 mt-4">
                           <Button
                             variant="outline"
                             size="sm"
-                            className="flex-1 h-9 rounded-lg"
+                            className="flex-1 h-9 rounded-lg transition-all duration-200"
                             asChild
                           >
                             <Link href={`/users/${user.uid}`}>
@@ -624,7 +618,9 @@ export default function UsersPage() {
                             </Link>
                           </Button>
                           <Button
-                            variant={followingStates[user.uid] ? "outline" : "default"}
+                            variant={
+                              followingStates[user.uid] ? "outline" : "default"
+                            }
                             size="sm"
                             onClick={() => handleFollowToggle(user.uid)}
                             disabled={!currentUser}

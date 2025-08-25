@@ -168,9 +168,7 @@ export default function MusicApp() {
   const [artists, setArtists] = useState<Artist[]>([]);
   const [loading, setLoading] = useState(false);
   const [ratings, setRatings] = useState<Record<string, number>>({});
-  const [selectedSong, setSelectedSong] = useState<Song | null>(null);
   const [selectedAlbum, setSelectedAlbum] = useState<Album | null>(null);
-  const [showSongDetails, setShowSongDetails] = useState(false);
   const [showAlbumDetails, setShowAlbumDetails] = useState(false);
   const [currentSong, setCurrentSong] = useState<Song | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
@@ -588,11 +586,6 @@ export default function MusicApp() {
     }
   };
 
-  const openSongDetails = (song: Song) => {
-    setSelectedSong(song);
-    setShowSongDetails(true);
-  };
-
   const playSong = (song: Song) => {
     setCurrentSong(song);
   };
@@ -741,7 +734,7 @@ export default function MusicApp() {
       case "artist":
         return <Users className="w-4 h-4" />;
       default:
-        return <Search className="w-4 h-4" />;
+        return <Filter className="w-4 h-4" />;
     }
   };
 
@@ -832,25 +825,39 @@ export default function MusicApp() {
                 onSubmit={handleSearch}
                 className="flex flex-col sm:flex-row gap-2 sm:gap-3 w-full"
               >
-                <div className="relative flex-1">
-                  <Search className="absolute left-3 sm:left-4 top-1/2 transform -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 text-gray-400" />
-                  <Input
-                    type="text"
-                    placeholder="Search for songs, albums, or artists..."
-                    value={searchQuery}
-                    onChange={handleSearchQueryChange}
-                    onKeyPress={handleKeyPress}
-                    className="pl-10 sm:pl-12 h-11 sm:h-12 bg-gray-800/50 border-gray-700 text-white placeholder:text-gray-400 focus:border-gray-500 focus:ring-gray-500 rounded-xl text-sm sm:text-base w-full"
-                  />
-                  {searchQuery && (
-                    <button
-                      type="button"
-                      onClick={clearSearch}
-                      className="absolute right-3 sm:right-4 top-1/2 transform -translate-y-1/2"
-                    >
-                      <X className="h-4 w-4 sm:h-5 sm:w-5 text-gray-400 hover:text-white transition-colors" />
-                    </button>
-                  )}
+                <div className="flex items-center gap-2 max-w-md">
+                  <div className="relative flex-1">
+                    <Search className="absolute left-3 sm:left-4 top-1/2 transform -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 text-gray-400" />
+                    <Input
+                      type="text"
+                      placeholder="Search for songs, albums, or artists..."
+                      value={searchQuery}
+                      onChange={handleSearchQueryChange}
+                      onKeyPress={handleKeyPress}
+                      className="pl-10 sm:pl-12 h-11 sm:h-12 bg-gray-800/50 border-gray-700 text-white placeholder:text-gray-400 focus:border-gray-500 focus:ring-gray-500 rounded-xl text-sm sm:text-base w-full"
+                    />
+                    {searchQuery && (
+                      <button
+                        type="button"
+                        onClick={clearSearch}
+                        className="absolute right-3 sm:right-4 top-1/2 transform -translate-y-1/2"
+                      >
+                        <X className="h-4 w-4 sm:h-5 sm:w-5 text-gray-400 hover:text-white transition-colors" />
+                      </button>
+                    )}
+                  </div>
+
+                  <Button
+                    onClick={handleSearch}
+                    disabled={loading}
+                    className="h-11 sm:h-12 w-11 sm:w-12 bg-gradient-to-r from-gray-800 to-gray-700 hover:from-gray-700 hover:to-gray-600 text-white rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl border border-gray-600 flex-shrink-0 flex items-center justify-center"
+                  >
+                    {loading ? (
+                      <RefreshCw className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Search className="w-4 h-4" />
+                    )}
+                  </Button>
                 </div>
 
                 {/* Search Type Dropdown - Now inline with search bar on mobile */}
@@ -936,14 +943,6 @@ export default function MusicApp() {
                     </div>
                   )}
                 </div>
-
-                <Button
-                  onClick={handleSearch}
-                  disabled={loading}
-                  className="h-11 sm:h-12 px-4 sm:px-6 md:px-8 bg-gradient-to-r from-gray-800 to-gray-700 hover:from-gray-700 hover:to-gray-600 text-white font-semibold rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl border border-gray-600 text-sm sm:text-base flex-shrink-0"
-                >
-                  {loading ? "Searching..." : "Search"}
-                </Button>
               </form>
             </div>
           </div>
@@ -1052,7 +1051,7 @@ export default function MusicApp() {
             <div>
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 sm:gap-0 mb-6">
                 <div>
-                  <h2 className="text-xl sm:text-2xl md:text-3xl font-bold bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
+                  <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-white">
                     Search Results
                   </h2>
                   <p className="text-gray-400 mt-1 sm:mt-2 text-sm sm:text-base">
@@ -1224,13 +1223,13 @@ export default function MusicApp() {
                                     className="w-full aspect-square rounded-lg object-cover"
                                   />
                                   {/* Hover overlay with action buttons */}
-                                  <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-lg flex items-center justify-center gap-4">
+                                  <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-lg flex items-center justify-center gap-2 sm:gap-4">
                                     <button
                                       onClick={(e) => {
                                         e.stopPropagation();
                                         handleLikeAlbum(album);
                                       }}
-                                      className={`w-12 h-12 backdrop-blur-sm rounded-full flex items-center justify-center transition-all duration-200 hover:scale-110 ${
+                                      className={`w-8 h-8 sm:w-10 sm:h-10 backdrop-blur-sm rounded-full flex items-center justify-center transition-all duration-200 hover:scale-110 ${
                                         isAlbumLiked(album.id)
                                           ? "bg-red-500/80 hover:bg-red-600/80"
                                           : "bg-white/20 hover:bg-white/30"
@@ -1242,7 +1241,7 @@ export default function MusicApp() {
                                       }
                                     >
                                       <Heart
-                                        className={`w-5 h-5 text-white ${
+                                        className={`w-3 h-3 sm:w-4 sm:h-4 text-white ${
                                           isAlbumLiked(album.id)
                                             ? "fill-red-400"
                                             : "fill-white"
@@ -1256,7 +1255,7 @@ export default function MusicApp() {
                                           e
                                         )
                                       }
-                                      className={`w-12 h-12 backdrop-blur-sm rounded-full flex items-center justify-center transition-all duration-200 hover:scale-110 ${
+                                      className={`w-8 h-8 sm:w-10 sm:h-10 backdrop-blur-sm rounded-full flex items-center justify-center transition-all duration-200 hover:scale-110 ${
                                         isAlbumInRecommendations(album.id)
                                           ? "bg-green-500/80 hover:bg-green-600/80"
                                           : "bg-white/20 hover:bg-white/30"
@@ -1268,9 +1267,9 @@ export default function MusicApp() {
                                       }
                                     >
                                       {isAlbumInRecommendations(album.id) ? (
-                                        <Check className="w-5 h-5 text-white fill-white" />
+                                        <Check className="w-3 h-3 sm:w-4 sm:h-4 text-white fill-white" />
                                       ) : (
-                                        <Plus className="w-5 h-5 text-white fill-white" />
+                                        <Plus className="w-3 h-3 sm:w-4 sm:h-4 text-white fill-white" />
                                       )}
                                     </button>
                                   </div>
@@ -1345,7 +1344,57 @@ export default function MusicApp() {
                                     className="w-full aspect-square rounded-lg object-cover"
                                   />
                                   {/* Hover overlay with action buttons */}
-                                  <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-lg flex items-center justify-center gap-4">
+                                  <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-lg flex items-center justify-center gap-2 sm:gap-4">
+                                    <button
+                                      onClick={async (e) => {
+                                        e.stopPropagation();
+                                        // Create song object for YouTube player
+                                        const songForPlayer = {
+                                          id: song.id,
+                                          title: decodeHtmlEntities(song.name),
+                                          artist:
+                                            song.artists?.primary
+                                              ?.map((artist) => artist.name)
+                                              .join(", ") || "Unknown Artist",
+                                        };
+
+                                        // Create queue from all songs in search results
+                                        const queue = songs.map((s) => ({
+                                          id: s.id,
+                                          title: decodeHtmlEntities(s.name),
+                                          artist:
+                                            s.artists?.primary
+                                              ?.map((artist) => artist.name)
+                                              .join(", ") || "Unknown Artist",
+                                        }));
+
+                                        // Find the current song index
+                                        const songIndex = songs.findIndex(
+                                          (s) => s.id === song.id
+                                        );
+
+                                        console.log(
+                                          "🎵 Search Results Song Play Button - Queue created:",
+                                          {
+                                            queueLength: queue.length,
+                                            clickedSong: queue[songIndex],
+                                            songIndex,
+                                            allSongs: queue.map((s) => s.title),
+                                          }
+                                        );
+
+                                        // Start with the clicked song
+                                        await showPlayer(
+                                          queue[songIndex],
+                                          queue,
+                                          songIndex
+                                        );
+                                      }}
+                                      className="w-8 h-8 sm:w-10 sm:h-10 bg-green-500/80 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-green-600/80 transition-all duration-200 hover:scale-110"
+                                      title="Play Song"
+                                    >
+                                      <Play className="w-3 h-3 sm:w-4 sm:h-4 text-white fill-white" />
+                                    </button>
                                     <button
                                       onClick={(e) => {
                                         e.stopPropagation();
@@ -1363,17 +1412,17 @@ export default function MusicApp() {
                                           `/reviews?${params.toString()}`
                                         );
                                       }}
-                                      className="w-12 h-12 bg-yellow-500/80 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-yellow-600/80 transition-all duration-200 hover:scale-110"
+                                      className="w-8 h-8 sm:w-10 sm:h-10 bg-yellow-500/80 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-yellow-600/80 transition-all duration-200 hover:scale-110"
                                       title="Write Review"
                                     >
-                                      <Star className="w-5 h-5 text-white fill-white" />
+                                      <Star className="w-3 h-3 sm:w-4 sm:h-4 text-white fill-white" />
                                     </button>
                                     <button
                                       onClick={(e) => {
                                         e.stopPropagation();
                                         handleLikeSong(song);
                                       }}
-                                      className={`w-12 h-12 backdrop-blur-sm rounded-full flex items-center justify-center transition-all duration-200 hover:scale-110 ${
+                                      className={`w-8 h-8 sm:w-10 sm:h-10 backdrop-blur-sm rounded-full flex items-center justify-center transition-all duration-200 hover:scale-110 ${
                                         isSongLiked(song.id)
                                           ? "bg-red-500/80 hover:bg-red-600/80"
                                           : "bg-white/20 hover:bg-white/30"
@@ -1385,7 +1434,7 @@ export default function MusicApp() {
                                       }
                                     >
                                       <Heart
-                                        className={`w-5 h-5 text-white ${
+                                        className={`w-3 h-3 sm:w-4 sm:h-4 text-white ${
                                           isSongLiked(song.id)
                                             ? "fill-red-400"
                                             : "fill-white"
@@ -1716,12 +1765,52 @@ export default function MusicApp() {
                             {/* Hover overlay with action buttons */}
                             <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-lg flex items-center justify-center gap-2">
                               <button
-                                onClick={(e) => {
+                                onClick={async (e) => {
                                   e.stopPropagation();
-                                  // Placeholder for play functionality
-                                  console.log("Play song:", song.name);
+                                  // Create song object for YouTube player
+                                  const songForPlayer = {
+                                    id: song.id,
+                                    title: decodeHtmlEntities(song.name),
+                                    artist:
+                                      song.artists?.primary
+                                        ?.map((artist) => artist.name)
+                                        .join(", ") || "Unknown Artist",
+                                  };
+
+                                  // Create queue from all liked songs
+                                  const queue = likedSongs.map((s) => ({
+                                    id: s.id,
+                                    title: decodeHtmlEntities(s.name),
+                                    artist:
+                                      s.artists?.primary
+                                        ?.map((artist) => artist.name)
+                                        .join(", ") || "Unknown Artist",
+                                  }));
+
+                                  // Find the current song index
+                                  const songIndex = likedSongs.findIndex(
+                                    (s) => s.id === song.id
+                                  );
+
+                                  console.log(
+                                    "🎵 Liked Songs Play Button - Queue created:",
+                                    {
+                                      queueLength: queue.length,
+                                      clickedSong: queue[songIndex],
+                                      songIndex,
+                                      allSongs: queue.map((s) => s.title),
+                                    }
+                                  );
+
+                                  // Start with the clicked song
+                                  await showPlayer(
+                                    queue[songIndex],
+                                    queue,
+                                    songIndex
+                                  );
                                 }}
-                                className="w-8 h-8 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-white/30 transition-all duration-200 hover:scale-110"
+                                className="w-8 h-8 bg-green-500/80 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-green-600/80 transition-all duration-200 hover:scale-110"
+                                title="Play Song"
                               >
                                 <Play className="w-3 h-3 text-white fill-white" />
                               </button>
@@ -1920,89 +2009,6 @@ export default function MusicApp() {
         </div>
       </div>
 
-      {/* Song Details Dialog */}
-      <Dialog open={showSongDetails} onOpenChange={setShowSongDetails}>
-        <DialogContent className="bg-gray-800 border-gray-700 max-w-2xl">
-          <DialogHeader>
-            <DialogTitle className="text-white">Song Details</DialogTitle>
-          </DialogHeader>
-          {selectedSong && (
-            <div className="space-y-6">
-              <div className="flex items-center gap-6">
-                <img
-                  src={getImageUrl(selectedSong.image)}
-                  alt={decodeHtmlEntities(selectedSong.name)}
-                  className="w-32 h-32 rounded-lg object-cover"
-                />
-                <div className="flex-1">
-                  <h3 className="text-2xl font-bold text-white mb-2">
-                    {decodeHtmlEntities(selectedSong.name)}
-                  </h3>
-                  <p className="text-lg text-gray-300 mb-1">
-                    {selectedSong.artists?.primary
-                      ?.map((artist) => artist.name)
-                      .join(", ") || "Unknown Artist"}
-                  </p>
-                  <p className="text-gray-400 mb-2">
-                    {selectedSong.album?.name}
-                  </p>
-                  <div className="flex items-center gap-4 text-sm text-gray-400">
-                    <span>{selectedSong.year}</span>
-                    <span>•</span>
-                    <span>{selectedSong.language}</span>
-                    <span>•</span>
-                    <span>{formatDuration(selectedSong.duration)}</span>
-                  </div>
-                </div>
-              </div>
-              <div className="flex items-center justify-between">
-                <StarRating
-                  songId={selectedSong.id}
-                  currentRating={ratings[selectedSong.id] || 0}
-                />
-                <div className="flex items-center gap-3">
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      const params = new URLSearchParams({
-                        type: "music",
-                        id: selectedSong.id,
-                        title: decodeHtmlEntities(selectedSong.name),
-                        cover: getImageUrl(selectedSong.image),
-                        artist:
-                          selectedSong.artists?.primary
-                            ?.map((artist) => artist.name)
-                            .join(", ") || "Unknown Artist",
-                      });
-                      router.push(`/reviews?${params.toString()}`);
-                    }}
-                    className="border-gray-600 hover:bg-gray-700 hover:border-gray-500 text-white"
-                  >
-                    <Star className="w-4 h-4 mr-2" />
-                    Write Review
-                  </Button>
-                  <Button
-                    onClick={() => handleLikeSong(selectedSong)}
-                    className={`${
-                      isSongLiked(selectedSong.id)
-                        ? "bg-red-600 hover:bg-red-700 text-white"
-                        : "bg-gray-700 text-white hover:bg-gray-600 border border-gray-600"
-                    }`}
-                  >
-                    <Heart
-                      className={`w-4 h-4 mr-2 ${
-                        isSongLiked(selectedSong.id) ? "fill-current" : ""
-                      }`}
-                    />
-                    {isSongLiked(selectedSong.id) ? "Liked" : "Like"}
-                  </Button>
-                </div>
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
-
       {/* Album Details Dialog */}
       <Dialog open={showAlbumDetails} onOpenChange={setShowAlbumDetails}>
         <DialogContent className="bg-gray-800 border-gray-700 max-w-4xl max-h-[80vh] overflow-y-auto">
@@ -2087,8 +2093,7 @@ export default function MusicApp() {
                     {selectedAlbum.songs.map((song, index) => (
                       <div
                         key={song.id}
-                        className="flex items-center gap-4 p-3 bg-gray-700/50 rounded-lg hover:bg-gray-700 transition-colors cursor-pointer"
-                        onClick={() => openSongDetails(song)}
+                        className="flex items-center gap-4 p-3 bg-gray-700/50 rounded-lg hover:bg-gray-700 transition-colors group"
                       >
                         <span className="text-sm text-gray-400 w-8">
                           {index + 1}
@@ -2103,8 +2108,60 @@ export default function MusicApp() {
                               .join(", ") || "Unknown Artist"}
                           </p>
                         </div>
-                        <div className="text-sm text-gray-400">
-                          {formatDuration(song.duration)}
+                        <div className="flex items-center gap-2">
+                          <div className="text-sm text-gray-400">
+                            {formatDuration(song.duration)}
+                          </div>
+                          <button
+                            onClick={async (e) => {
+                              e.stopPropagation();
+                              // Create song object for YouTube player
+                              const songForPlayer = {
+                                id: song.id,
+                                title: decodeHtmlEntities(song.name),
+                                artist:
+                                  song.artists?.primary
+                                    ?.map((artist) => artist.name)
+                                    .join(", ") || "Unknown Artist",
+                              };
+
+                              // Create queue from all album songs
+                              const queue = selectedAlbum.songs!.map((s) => ({
+                                id: s.id,
+                                title: decodeHtmlEntities(s.name),
+                                artist:
+                                  s.artists?.primary
+                                    ?.map((artist) => artist.name)
+                                    .join(", ") || "Unknown Artist",
+                              }));
+
+                              // Find the current song index
+                              const songIndex = selectedAlbum.songs!.findIndex(
+                                (s) => s.id === song.id
+                              );
+
+                              console.log(
+                                "🎵 Album Dialog Song Play Button - Queue created:",
+                                {
+                                  queueLength: queue.length,
+                                  clickedSong: queue[songIndex],
+                                  songIndex,
+                                  allSongs: queue.map((s) => s.title),
+                                }
+                              );
+
+                              // Start with the clicked song
+                              await showPlayer(
+                                queue[songIndex],
+                                queue,
+                                songIndex
+                              );
+                            }}
+                            className="w-8 h-8 bg-green-500/80 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-green-600/80 transition-all duration-200 hover:scale-110 opacity-0 group-hover:opacity-100"
+                            title="Play Song"
+                          >
+                            <Play className="w-3 h-3 text-white fill-white" />
+                          </button>
                         </div>
                       </div>
                     ))}

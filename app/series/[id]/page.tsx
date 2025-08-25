@@ -141,19 +141,30 @@ export default function SeriesDetailPage({
       try {
         setLoading(true);
         const apiKey = process.env.NEXT_PUBLIC_TMDB_API_KEY;
+
+        if (!apiKey) {
+          throw new Error("TMDB API key is not configured");
+        }
+
+        console.log("Fetching series details for ID:", resolvedParams.id);
         const response = await fetch(
           `https://api.themoviedb.org/3/tv/${resolvedParams.id}?api_key=${apiKey}&append_to_response=videos,credits`
         );
 
         if (!response.ok) {
-          throw new Error("Failed to fetch series details");
+          const errorText = await response.text();
+          console.error("TMDB API error:", response.status, errorText);
+          throw new Error(`Failed to fetch series details: ${response.status}`);
         }
 
         const data = await response.json();
+        console.log("Series data received:", data);
         setSeries(data);
       } catch (err) {
-        setError("Failed to load series details");
-        console.error(err);
+        console.error("Error fetching series details:", err);
+        setError(
+          err instanceof Error ? err.message : "Failed to load series details"
+        );
       } finally {
         setLoading(false);
       }
@@ -163,12 +174,19 @@ export default function SeriesDetailPage({
       try {
         setLoadingSimilar(true);
         const apiKey = process.env.NEXT_PUBLIC_TMDB_API_KEY;
+
+        if (!apiKey) {
+          console.warn("TMDB API key not configured, skipping similar series");
+          return;
+        }
+
         const response = await fetch(
           `https://api.themoviedb.org/3/tv/${resolvedParams.id}/similar?api_key=${apiKey}`
         );
 
         if (!response.ok) {
-          throw new Error("Failed to fetch similar series");
+          console.error("Failed to fetch similar series:", response.status);
+          return;
         }
 
         const data = await response.json();
@@ -386,7 +404,7 @@ export default function SeriesDetailPage({
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-end">
               {/* Poster */}
               <div className="lg:col-span-1">
-                <div className="relative group max-w-xs mx-auto lg:mx-0">
+                <div className="relative group max-w-[200px] sm:max-w-xs mx-auto lg:mx-0">
                   <div className="aspect-[2/3] rounded-2xl overflow-hidden bg-gradient-to-br from-muted to-muted/50 shadow-2xl group-hover:shadow-3xl transition-all duration-300">
                     <Image
                       src={
@@ -628,7 +646,7 @@ export default function SeriesDetailPage({
                         View More
                       </button>
                     </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4">
                       {series.credits.cast.slice(0, 10).map((actor, index) => (
                         <div
                           key={`overview-cast-${actor.id}-${index}`}
@@ -682,7 +700,7 @@ export default function SeriesDetailPage({
                         View More
                       </button>
                     </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4">
                       {series.credits.crew.slice(0, 10).map((person, index) => (
                         <div
                           key={`overview-crew-${person.id}-${index}`}
@@ -729,11 +747,22 @@ export default function SeriesDetailPage({
                   </h3>
                   <div className="p-6 rounded-xl bg-muted/30 backdrop-blur-sm border border-border/20">
                     <p className="text-muted-foreground">
-                      No reviews available for this series yet. Be the first to write a review!
+                      No reviews available for this series yet. Be the first to
+                      write a review!
                     </p>
-                    <Button 
+                    <Button
                       className="mt-4"
-                      onClick={() => router.push(`/reviews?type=series&id=${series.id}&title=${encodeURIComponent(series.name)}&cover=${encodeURIComponent(series.poster_path || '')}`)}
+                      onClick={() =>
+                        router.push(
+                          `/reviews?type=series&id=${
+                            series.id
+                          }&title=${encodeURIComponent(
+                            series.name
+                          )}&cover=${encodeURIComponent(
+                            series.poster_path || ""
+                          )}`
+                        )
+                      }
                     >
                       Write a Review
                     </Button>
@@ -754,12 +783,14 @@ export default function SeriesDetailPage({
                         View More
                       </button>
                     </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-                      {similarSeries.slice(0, 5).map((similarShow) => (
+                    <div className="grid grid-cols-3 gap-3 sm:gap-4">
+                      {similarSeries.slice(0, 6).map((similarShow) => (
                         <div
                           key={similarShow.id}
-                          className="group cursor-pointer transition-all duration-200 hover:scale-105"
-                          onClick={() => router.push(`/series/${similarShow.id}`)}
+                          className="group cursor-pointer transition-all duration-200 hover:scale-105 max-w-[120px] sm:max-w-none"
+                          onClick={() =>
+                            router.push(`/series/${similarShow.id}`)
+                          }
                         >
                           <div className="relative aspect-[2/3] rounded-xl overflow-hidden bg-muted/30 border border-border/20">
                             {similarShow.poster_path ? (
@@ -775,19 +806,23 @@ export default function SeriesDetailPage({
                               />
                             ) : (
                               <div className="w-full h-full flex items-center justify-center bg-muted/50">
-                                <span className="text-muted-foreground text-sm">No Image</span>
+                                <span className="text-muted-foreground text-sm">
+                                  No Image
+                                </span>
                               </div>
                             )}
-                            
-
                           </div>
-                          
+
                           <div className="mt-3 space-y-1">
                             <h4 className="font-medium text-sm text-foreground line-clamp-2 group-hover:text-primary transition-colors duration-200">
                               {similarShow.name}
                             </h4>
                             <p className="text-xs text-muted-foreground">
-                              {similarShow.first_air_date ? new Date(similarShow.first_air_date).getFullYear() : 'Unknown'}
+                              {similarShow.first_air_date
+                                ? new Date(
+                                    similarShow.first_air_date
+                                  ).getFullYear()
+                                : "Unknown"}
                             </p>
                           </div>
                         </div>
@@ -921,7 +956,7 @@ export default function SeriesDetailPage({
                 <h3 className="text-2xl font-semibold bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent">
                   Similar Series
                 </h3>
-                
+
                 {loadingSimilar ? (
                   <div className="text-center text-muted-foreground py-12">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
@@ -949,19 +984,23 @@ export default function SeriesDetailPage({
                             />
                           ) : (
                             <div className="w-full h-full flex items-center justify-center bg-muted/50">
-                              <span className="text-muted-foreground text-sm">No Image</span>
+                              <span className="text-muted-foreground text-sm">
+                                No Image
+                              </span>
                             </div>
                           )}
-                          
-
                         </div>
-                        
+
                         <div className="mt-3 space-y-1">
                           <h4 className="font-medium text-sm text-foreground line-clamp-2 group-hover:text-primary transition-colors duration-200">
                             {similarShow.name}
                           </h4>
                           <p className="text-xs text-muted-foreground">
-                            {similarShow.first_air_date ? new Date(similarShow.first_air_date).getFullYear() : 'Unknown'}
+                            {similarShow.first_air_date
+                              ? new Date(
+                                  similarShow.first_air_date
+                                ).getFullYear()
+                              : "Unknown"}
                           </p>
                         </div>
                       </div>
