@@ -98,18 +98,37 @@
 
   /* Optimize search forms */
   .search-form {
-    flex-direction: column;
-    gap: 0.75rem;
+    flex-direction: row;
+    gap: 0.5rem;
+    align-items: center;
   }
 
   .search-input {
     height: 2.75rem;
     padding-left: 2.5rem;
+    flex: 1;
   }
 
   .search-button {
     height: 2.75rem;
-    padding: 0 1.5rem;
+    padding: 0 1rem;
+    flex-shrink: 0;
+  }
+
+  /* Music page specific mobile optimizations */
+  .search-container form {
+    flex-direction: row !important;
+    gap: 0.5rem !important;
+    align-items: center !important;
+  }
+
+  .search-type-dropdown {
+    flex-shrink: 0 !important;
+  }
+
+  .search-type-dropdown button {
+    min-width: 44px !important;
+    height: 44px !important;
   }
 
   /* Improve collection cards */
@@ -288,11 +307,33 @@
     gap: 0.125rem !important;
   }
 
+  /* Recommendations section mobile optimization */
+  .space-y-6 {
+    gap: 1.5rem !important;
+  }
+
+  /* Music cards mobile optimization */
+  .flex-shrink-0.w-\[200px\] {
+    width: 160px !important;
+  }
+
+  .flex-shrink-0.w-\[200px\] .card {
+    padding: 0.75rem !important;
+  }
+
+  /* Ensure proper spacing for music cards */
+  .horizontal-scroll-container .flex-shrink-0 {
+    margin-right: 0.75rem !important;
+  }
+
   /* Music navigation tabs mobile optimization */
   .horizontal-scroll-container {
-    gap: 0.75rem !important;
+    gap: 0.5rem !important;
     padding-left: 1rem !important;
     padding-right: 1rem !important;
+    /* Show glimpse of next items */
+    scroll-padding-right: 1rem !important;
+    scroll-padding-left: 1rem !important;
   }
 
   /* Ensure navigation buttons don't overlap */
@@ -300,10 +341,40 @@
     flex-shrink: 0 !important;
     min-width: fit-content !important;
     margin-right: 0.5rem !important;
+    padding: 0.5rem 0.75rem !important;
+    font-size: 0.875rem !important;
   }
 
   .horizontal-scroll-container button:last-child {
-    margin-right: 0 !important;
+    margin-right: 1rem !important;
+  }
+
+  /* Music page navigation tabs specific styling */
+  .horizontal-scroll-container button svg {
+    width: 1rem !important;
+    height: 1rem !important;
+  }
+
+  /* Ensure proper horizontal scrolling with visible overflow */
+  .horizontal-scroll-container {
+    -webkit-overflow-scrolling: touch !important;
+    scroll-behavior: smooth !important;
+    overscroll-behavior-x: contain !important;
+    /* Add fade effect to indicate more content */
+    mask-image: linear-gradient(
+      to right,
+      transparent 0%,
+      black 5%,
+      black 95%,
+      transparent 100%
+    ) !important;
+    -webkit-mask-image: linear-gradient(
+      to right,
+      transparent 0%,
+      black 5%,
+      black 95%,
+      transparent 100%
+    ) !important;
   }
 
   /* ===== PAGE-SPECIFIC MOBILE OPTIMIZATIONS ===== */
@@ -445,6 +516,187 @@
 
   .header-nav {
     gap: 0.5rem !important;
+  }
+
+  /* Music page header mobile optimization */
+  .container .ml-16 {
+    margin-left: 4rem !important;
+  }
+
+  /* Ensure proper spacing for hamburger menu */
+  @media (max-width: 640px) {
+    .container .ml-16 {
+      margin-left: 4.5rem !important;
+    }
+
+    /* Ensure header content doesn't get cut off */
+    .container .ml-16 h1 {
+      font-size: 1.5rem !important;
+      line-height: 2rem !important;
+    }
+
+    .container .ml-16 p {
+      font-size: 0.875rem !important;
+      line-height: 1.25rem !important;
+    }
+
+    /* Mobile grid optimizations for artists and albums */
+    .grid.grid-cols-2 {
+      gap: 0.75rem !important;
+    }
+
+    .grid.grid-cols-2 > div {
+      min-width: 0 !important;
+    }
+
+    /* Ensure artist images are properly sized on mobile */
+    .grid.grid-cols-2 img {
+      width: 100% !important;
+      height: auto !important;
+    }
+  }
+
+  /* Mobile sidebar optimizations */
+  @media (max-width: 1024px) {
+    /* Mobile menu button improvements */
+    .lg\\:hidden.fixed.top-4.left-4 {
+      top: 1rem !important;
+      left: 1rem !important;
+      z-index: 50 !important;
+    }
+
+    .lg\\:hidden.fixed.top-4.left-4 button {
+      background: linear-gradient(135deg, #2d2d2d 0%, #404040 100%) !important;
+      border: 1px solid #505050 !important;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+      backdrop-filter: blur(10px) !important;
+      width: 2.5rem !important;
+      height: 2.5rem !important;
+    }
+
+    .lg\\:hidden.fixed.top-4.left-4 button:hover {
+      background: linear-gradient(135deg, #404040 0%, #505050 100%) !important;
+      transform: scale(1.05) !important;
+    }
+
+    /* Mobile sidebar styling improvements */
+    aside {
+      background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%) !important;
+      border-right: 1px solid #404040 !important;
+      box-shadow: 2px 0 10px rgba(0, 0, 0, 0.3) !important;
+    }
+
+    /* Improve sidebar header */
+    aside .flex.h-16 {
+      background: linear-gradient(135deg, #2d2d2d 0%, #404040 100%) !important;
+      border-bottom: 1px solid #505050 !important;
+      padding-right: 1rem !important;
+    }
+
+    /* Ensure proper spacing for header content */
+    aside .flex.h-16 > *:first-child {
+      flex: 1 !important;
+      min-width: 0 !important;
+      margin-right: 0.5rem !important;
+    }
+
+    aside .flex.h-16 > *:last-child {
+      flex-shrink: 0 !important;
+    }
+
+    /* Ensure mobile close button doesn't overlap with text */
+    aside .flex.h-16 .flex-shrink-0 {
+      margin-left: auto !important;
+      padding-left: 0.5rem !important;
+    }
+
+    /* Style mobile close button */
+    aside .flex.h-16 .lg\\:hidden button {
+      background: rgba(255, 255, 255, 0.1) !important;
+      border: 1px solid rgba(255, 255, 255, 0.2) !important;
+      border-radius: 6px !important;
+      transition: all 0.2s ease !important;
+    }
+
+    aside .flex.h-16 .lg\\:hidden button:hover {
+      background: rgba(255, 255, 255, 0.2) !important;
+      transform: scale(1.05) !important;
+    }
+
+    /* Ensure reliva text is properly visible */
+    aside .flex.h-16 a {
+      max-width: calc(100% - 3rem) !important;
+      overflow: hidden !important;
+    }
+
+    aside .flex.h-16 a span {
+      white-space: nowrap !important;
+      overflow: hidden !important;
+      text-overflow: ellipsis !important;
+    }
+
+    /* Improve navigation items */
+    aside nav a,
+    aside nav button {
+      border-radius: 8px !important;
+      margin: 2px 8px !important;
+      transition: all 0.2s ease !important;
+    }
+
+    aside nav a:hover,
+    aside nav button:hover {
+      background: linear-gradient(135deg, #404040 0%, #505050 100%) !important;
+      transform: translateX(4px) !important;
+    }
+
+    /* Active state improvements */
+    aside nav a[data-active="true"],
+    aside nav button[data-active="true"],
+    aside nav a.bg-accent,
+    aside nav button.bg-accent {
+      background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%) !important;
+      box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3) !important;
+      color: white !important;
+    }
+  }
+
+  /* Desktop sidebar improvements */
+  @media (min-width: 1025px) {
+    aside {
+      background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%) !important;
+      border-right: 1px solid #404040 !important;
+      box-shadow: 2px 0 10px rgba(0, 0, 0, 0.3) !important;
+    }
+
+    /* Improve sidebar header */
+    aside .flex.h-16 {
+      background: linear-gradient(135deg, #2d2d2d 0%, #404040 100%) !important;
+      border-bottom: 1px solid #505050 !important;
+    }
+
+    /* Improve navigation items */
+    aside nav a,
+    aside nav button {
+      border-radius: 8px !important;
+      margin: 2px 8px !important;
+      transition: all 0.2s ease !important;
+    }
+
+    aside nav a:hover,
+    aside nav button:hover {
+      background: linear-gradient(135deg, #404040 0%, #505050 100%) !important;
+      transform: translateX(4px) !important;
+    }
+
+    /* Active state improvements */
+    aside nav a[data-active="true"],
+    aside nav button[data-active="true"],
+    aside nav a.bg-accent,
+    aside nav button.bg-accent {
+      background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%) !important;
+      box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3) !important;
+      color: white !important;
+    }
   }
 
   /* Footer component */
@@ -859,5 +1111,189 @@
 @media (min-width: 641px) and (max-width: 1024px) {
   .horizontal-scroll-container {
     -webkit-overflow-scrolling: touch;
+  }
+}
+
+/* Mobile Responsive Styles */
+
+/* Search Form and Dropdown */
+@media (max-width: 768px) {
+  .search-form {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .search-dropdown {
+    height: auto;
+    padding: 0.5rem;
+  }
+}
+
+/* Navigation Tabs */
+@media (max-width: 768px) {
+  .nav-tabs {
+    gap: 0.25rem;
+    padding: 0.5rem;
+    scroll-padding: 0.5rem;
+    mask-image: linear-gradient(
+      to right,
+      transparent,
+      black 10%,
+      black 90%,
+      transparent
+    );
+  }
+}
+
+/* Sidebar */
+@media (max-width: 768px) {
+  .sidebar {
+    transform: translateX(-100%);
+    transition: transform 0.3s ease-in-out;
+  }
+
+  .sidebar.open {
+    transform: translateX(0);
+  }
+
+  .sidebar-overlay {
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+  }
+
+  .sidebar-header {
+    background: linear-gradient(135deg, #1f2937 0%, #374151 100%);
+    border-bottom: 1px solid #4b5563;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  }
+
+  .sidebar-close {
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    color: #ef4444;
+  }
+
+  .sidebar-close:hover {
+    background: rgba(239, 68, 68, 0.2);
+    border-color: rgba(239, 68, 68, 0.5);
+  }
+}
+
+/* Container adjustments */
+@media (max-width: 768px) {
+  .container .ml-16 {
+    margin-left: 0;
+  }
+
+  .lg\:hidden.fixed.top-4.left-4 {
+    margin-left: 0.5rem;
+  }
+}
+
+/* Grid adjustments */
+@media (max-width: 768px) {
+  .grid-cols-2 {
+    gap: 0.5rem;
+    min-width: 0;
+  }
+}
+
+/* YouTube Player Mobile Styles */
+@media (max-width: 768px) {
+  /* Ensure player doesn't interfere with mobile navigation */
+  .youtube-player {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 9999;
+    width: 100%;
+    max-width: 100vw;
+    border-radius: 12px 12px 0 0;
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.3);
+  }
+
+  /* Compact header for mobile */
+  .youtube-player .player-header {
+    padding: 0.5rem;
+    min-height: 48px;
+  }
+
+  /* Responsive video container */
+  .youtube-player .video-container {
+    aspect-ratio: 16/9;
+    max-height: 200px;
+    min-height: 120px;
+  }
+
+  /* Compact controls */
+  .youtube-player .player-controls {
+    padding: 0.5rem;
+    min-height: 56px;
+  }
+
+  /* Touch-friendly buttons */
+  .youtube-player .control-button {
+    min-width: 44px;
+    min-height: 44px;
+    touch-action: manipulation;
+  }
+
+  /* Prevent text overflow */
+  .youtube-player .song-title {
+    font-size: 0.75rem;
+    line-height: 1.2;
+    max-width: 200px;
+  }
+
+  .youtube-player .artist-name {
+    font-size: 0.625rem;
+    line-height: 1.2;
+    max-width: 200px;
+  }
+
+  /* Safe area for devices with notches */
+  .youtube-player {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
+/* Landscape orientation adjustments */
+@media (max-width: 768px) and (orientation: landscape) {
+  .youtube-player {
+    position: fixed;
+    bottom: 0;
+    right: 0;
+    left: auto;
+    width: 300px;
+    height: 180px;
+    border-radius: 8px 0 0 8px;
+  }
+
+  .youtube-player .video-container {
+    height: 120px;
+  }
+}
+
+/* High DPI displays */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+  .youtube-player .control-button {
+    border-width: 0.5px;
+  }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .youtube-player {
+    background: #111827;
+    border-color: #374151;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .youtube-player * {
+    transition: none !important;
+    animation: none !important;
   }
 }

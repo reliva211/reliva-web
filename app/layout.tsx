@@ -5,6 +5,7 @@ import "@/styles/mobile-responsive.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { AuthProvider } from "@/components/auth-provider";
 import LayoutWrapper from "@/components/layout-wrapper";
+import YouTubePlayer from "@/components/youtube-player";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -19,9 +20,7 @@ export const viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
-  themeColor: [
-    { media: "(prefers-color-scheme: dark)", color: "black" },
-  ],
+  themeColor: [{ media: "(prefers-color-scheme: dark)", color: "black" }],
 };
 
 export default function RootLayout({
@@ -39,7 +38,10 @@ export default function RootLayout({
             enableSystem={false}
             disableTransitionOnChange
           >
-            <LayoutWrapper>{children}</LayoutWrapper>
+            <LayoutWrapper>
+              {children}
+              <YouTubePlayer />
+            </LayoutWrapper>
           </ThemeProvider>
         </AuthProvider>
       </body>

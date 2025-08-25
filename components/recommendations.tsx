@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { useYouTubePlayer } from "@/hooks/use-youtube-player";
 import {
   Play,
   Heart,
@@ -40,19 +41,20 @@ interface RecommendationsProps {
   currentSong: Song | null;
   ratings: Record<string, number>;
   myList: Set<string>;
-  onPlaySong: (song: Song) => void;
-  onToggleMyList: (songId: string) => void;
-  onRateSong: (songId: string, rating: number) => void;
+  onPlaySongAction: (song: Song) => void;
+  onToggleMyListAction: (songId: string) => void;
+  onRateSongAction: (songId: string, rating: number) => void;
 }
 
 export function Recommendations({
   currentSong,
   ratings,
   myList,
-  onPlaySong,
-  onToggleMyList,
-  onRateSong,
+  onPlaySongAction,
+  onToggleMyListAction,
+  onRateSongAction,
 }: RecommendationsProps) {
+  const { showPlayer } = useYouTubePlayer();
   const [recommendations, setRecommendations] = useState<Song[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -104,7 +106,7 @@ export function Recommendations({
             }`}
             onClick={(e) => {
               e.stopPropagation();
-              onRateSong(songId, star);
+              onRateSongAction(songId, star);
             }}
           />
         ))}
@@ -197,12 +199,7 @@ export function Recommendations({
             ? `Based on "${currentSong.name}"`
             : "Popular tracks you might like"}
         </p>
-        <Badge
-          variant="secondary"
-          className="bg-blue-500/20 text-blue-400 border-blue-500/30"
-        >
-          {recommendations.length} songs
-        </Badge>
+        {/* Removed the "8 songs" badge for cleaner look */}
       </div>
 
       {/* Horizontal Scroll Container */}
@@ -236,7 +233,7 @@ export function Recommendations({
               key={song.id}
               className="flex-shrink-0 w-[200px] sm:w-[220px] md:w-[240px]"
             >
-              <Card className="bg-gray-800/50 border border-gray-700 hover:shadow-lg hover:border-gray-600 transition-all cursor-pointer group h-full">
+              <Card className="bg-gray-800/50 border border-gray-700 hover:shadow-lg hover:border-gray-600 transition-all group h-full">
                 <CardContent className="p-4">
                   <div className="relative mb-4">
                     <img
@@ -248,9 +245,40 @@ export function Recommendations({
                       <Button
                         size="sm"
                         className="bg-white text-black hover:bg-gray-100"
-                        onClick={(e) => {
+                        onClick={async (e) => {
                           e.stopPropagation();
-                          onPlaySong(song);
+                          const artistName =
+                            song.artists?.primary
+                              ?.map((artist) => artist.name)
+                              .join(", ") || "Unknown Artist";
+
+                          // Create song object
+                          const songObj = {
+                            id: song.id,
+                            title: song.name,
+                            artist: artistName,
+                          };
+
+                          // Create queue from all recommendations for navigation
+                          const queue = recommendations.map((s) => ({
+                            id: s.id,
+                            title: s.name,
+                            artist:
+                              s.artists?.primary
+                                ?.map((artist) => artist.name)
+                                .join(", ") || "Unknown Artist",
+                          }));
+
+                          console.log(
+                            "🎵 Recommendations Play Button - Queue created:",
+                            {
+                              queueLength: queue.length,
+                              firstSong: queue[0],
+                              allSongs: queue.map((s) => s.title),
+                            }
+                          );
+
+                          await showPlayer(songObj, queue);
                         }}
                       >
                         <Play className="w-4 h-4" />
@@ -265,7 +293,7 @@ export function Recommendations({
                         }`}
                         onClick={(e) => {
                           e.stopPropagation();
-                          onToggleMyList(song.id);
+                          onToggleMyListAction(song.id);
                         }}
                       >
                         <Heart
@@ -299,10 +327,7 @@ export function Recommendations({
                       <span className="text-xs text-gray-400">
                         {formatDuration(song.duration)}
                       </span>
-                      <StarRating
-                        songId={song.id}
-                        currentRating={ratings[song.id] || 0}
-                      />
+                      {/* Removed rating stars for cleaner look */}
                     </div>
                   </div>
                 </CardContent>

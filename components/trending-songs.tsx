@@ -1,11 +1,11 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { Card, CardContent } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Play, Heart, TrendingUp, Music } from "lucide-react"
-import { useRouter } from "next/navigation"
+import { useState, useEffect } from "react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Play, Heart, TrendingUp, Music } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 interface Song {
   id: string;
@@ -64,58 +64,68 @@ interface Artist {
 }
 
 interface TrendingSongsProps {
-  onPlaySong: (song: Song) => void
-  onToggleLike: (song: Song) => void
-  likedSongs: Set<string>
+  onPlaySong: (song: Song) => void;
+  onToggleLike: (song: Song) => void;
+  likedSongs: Set<string>;
 }
 
-export default function TrendingSongs({ onPlaySong, onToggleLike, likedSongs }: TrendingSongsProps) {
-  const router = useRouter()
-  const [trendingSongs, setTrendingSongs] = useState<Song[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+export default function TrendingSongs({
+  onPlaySong,
+  onToggleLike,
+  likedSongs,
+}: TrendingSongsProps) {
+  const router = useRouter();
+  const [trendingSongs, setTrendingSongs] = useState<Song[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const getImageUrl = (image: Array<{ quality: string; url: string }> | string) => {
-    if (typeof image === "string") return image
+  const getImageUrl = (
+    image: Array<{ quality: string; url: string }> | string
+  ) => {
+    if (typeof image === "string") return image;
     if (Array.isArray(image) && image.length > 0) {
-      const highQuality = image.find((img) => img.quality === "500x500") || image[image.length - 1]
-      return highQuality.url
+      const highQuality =
+        image.find((img) => img.quality === "500x500") ||
+        image[image.length - 1];
+      return highQuality.url;
     }
-    return "/diverse-group-making-music.png"
-  }
+    return "/diverse-group-making-music.png";
+  };
 
   const formatDuration = (seconds: number) => {
-    const mins = Math.floor(seconds / 60)
-    const secs = seconds % 60
-    return `${mins}:${secs.toString().padStart(2, "0")}`
-  }
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, "0")}`;
+  };
 
   useEffect(() => {
     const fetchTrendingSongs = async () => {
       try {
-        setLoading(true)
-        setError(null)
+        setLoading(true);
+        setError(null);
 
-        const response = await fetch("/api/trending?limit=12")
+        const response = await fetch("/api/trending?limit=12");
 
         if (!response.ok) {
-          throw new Error("Failed to fetch trending songs")
+          throw new Error("Failed to fetch trending songs");
         }
 
-        const data = await response.json()
-        const songs = data.data?.results || []
+        const data = await response.json();
+        const songs = data.data?.results || [];
 
-        setTrendingSongs(songs)
+        setTrendingSongs(songs);
       } catch (err) {
-        console.error("Error fetching trending songs:", err)
-        setError(err instanceof Error ? err.message : "Failed to load trending songs")
+        console.error("Error fetching trending songs:", err);
+        setError(
+          err instanceof Error ? err.message : "Failed to load trending songs"
+        );
       } finally {
-        setLoading(false)
+        setLoading(false);
       }
-    }
+    };
 
-    fetchTrendingSongs()
-  }, [])
+    fetchTrendingSongs();
+  }, []);
 
   if (loading) {
     return (
@@ -123,7 +133,10 @@ export default function TrendingSongs({ onPlaySong, onToggleLike, likedSongs }: 
         <div className="flex items-center gap-3">
           <TrendingUp className="w-6 h-6 text-blue-500" />
           <h3 className="text-xl font-bold text-white">Trending Now</h3>
-          <Badge variant="secondary" className="bg-blue-500/20 text-blue-400 border-blue-500/30">
+          <Badge
+            variant="secondary"
+            className="bg-blue-500/20 text-blue-400 border-blue-500/30"
+          >
             Hot
           </Badge>
         </div>
@@ -132,7 +145,7 @@ export default function TrendingSongs({ onPlaySong, onToggleLike, likedSongs }: 
           <p className="text-gray-400">Loading trending songs...</p>
         </div>
       </div>
-    )
+    );
   }
 
   if (error) {
@@ -148,7 +161,7 @@ export default function TrendingSongs({ onPlaySong, onToggleLike, likedSongs }: 
           <p className="text-sm text-gray-500">{error}</p>
         </div>
       </div>
-    )
+    );
   }
 
   if (trendingSongs.length === 0) {
@@ -163,7 +176,7 @@ export default function TrendingSongs({ onPlaySong, onToggleLike, likedSongs }: 
           <p className="text-gray-400">No trending songs available</p>
         </div>
       </div>
-    )
+    );
   }
 
   return (
@@ -171,7 +184,10 @@ export default function TrendingSongs({ onPlaySong, onToggleLike, likedSongs }: 
       <div className="flex items-center gap-3">
         <TrendingUp className="w-6 h-6 text-blue-500" />
         <h3 className="text-xl font-bold text-white">Trending Now</h3>
-        <Badge variant="secondary" className="bg-blue-500/20 text-blue-400 border-blue-500/30">
+        <Badge
+          variant="secondary"
+          className="bg-blue-500/20 text-blue-400 border-blue-500/30"
+        >
           Hot
         </Badge>
       </div>
@@ -180,7 +196,7 @@ export default function TrendingSongs({ onPlaySong, onToggleLike, likedSongs }: 
         {trendingSongs.map((song, index) => (
           <Card
             key={song.id}
-            className="bg-gray-800/50 border border-gray-700 hover:shadow-lg hover:border-gray-600 transition-all cursor-pointer group"
+            className="bg-gray-800/50 border border-gray-700 hover:shadow-lg hover:border-gray-600 transition-all group"
           >
             <CardContent className="p-4">
               <div className="relative mb-4">
@@ -194,8 +210,8 @@ export default function TrendingSongs({ onPlaySong, onToggleLike, likedSongs }: 
                     size="sm"
                     className="bg-white text-black hover:bg-gray-100"
                     onClick={(e) => {
-                      e.stopPropagation()
-                      onPlaySong(song)
+                      e.stopPropagation();
+                      onPlaySong(song);
                     }}
                   >
                     <Play className="w-4 h-4" />
@@ -204,47 +220,72 @@ export default function TrendingSongs({ onPlaySong, onToggleLike, likedSongs }: 
                     size="sm"
                     variant="ghost"
                     className={`${
-                      likedSongs.has(song.id) ? "text-red-400 hover:text-red-300" : "text-white hover:text-red-400"
+                      likedSongs.has(song.id)
+                        ? "text-red-400 hover:text-red-300"
+                        : "text-white hover:text-red-400"
                     }`}
                     onClick={(e) => {
-                      e.stopPropagation()
-                      onToggleLike(song)
+                      e.stopPropagation();
+                      onToggleLike(song);
                     }}
                   >
-                    <Heart className={`w-4 h-4 ${likedSongs.has(song.id) ? "fill-red-400" : ""}`} />
+                    <Heart
+                      className={`w-4 h-4 ${
+                        likedSongs.has(song.id) ? "fill-red-400" : ""
+                      }`}
+                    />
                   </Button>
                 </div>
                 {/* Trending rank badge */}
                 <div className="absolute top-2 left-2">
-                  <Badge variant="secondary" className="bg-blue-500 text-white text-xs">
+                  <Badge
+                    variant="secondary"
+                    className="bg-blue-500 text-white text-xs"
+                  >
                     #{index + 1}
                   </Badge>
                 </div>
               </div>
 
               <div className="space-y-2">
-                <h4 className="font-semibold text-white truncate" title={song.name}>
+                <h4
+                  className="font-semibold text-white truncate"
+                  title={song.name}
+                >
                   {song.name}
                 </h4>
-                <p 
+                <p
                   className="text-sm text-gray-400 truncate cursor-pointer hover:text-blue-400 transition-colors"
                   onClick={(e) => {
-                    e.stopPropagation()
+                    e.stopPropagation();
                     // Extract artist name and navigate to artist page
-                    const artistName = song.artists?.primary?.[0]?.name || song.primaryArtists
+                    const artistName =
+                      song.artists?.primary?.[0]?.name || song.primaryArtists;
                     if (artistName && artistName !== "Unknown Artist") {
                       // For now, we'll search for the artist since we don't have direct artist IDs
-                      router.push(`/music?search=${encodeURIComponent(artistName)}&type=artist`)
+                      router.push(
+                        `/music?search=${encodeURIComponent(
+                          artistName
+                        )}&type=artist`
+                      );
                     }
                   }}
                 >
-                  {song.artists?.primary?.map((artist) => artist.name).join(", ") ||
+                  {song.artists?.primary
+                    ?.map((artist) => artist.name)
+                    .join(", ") ||
                     song.primaryArtists ||
                     "Unknown Artist"}
                 </p>
-                {song.album?.name && <p className="text-xs text-gray-500 truncate">{song.album.name}</p>}
+                {song.album?.name && (
+                  <p className="text-xs text-gray-500 truncate">
+                    {song.album.name}
+                  </p>
+                )}
                 <div className="flex items-center justify-between">
-                  <span className="text-xs text-gray-400">{formatDuration(song.duration)}</span>
+                  <span className="text-xs text-gray-400">
+                    {formatDuration(song.duration)}
+                  </span>
                   <TrendingUp className="w-3 h-3 text-blue-400" />
                 </div>
               </div>
@@ -253,5 +294,5 @@ export default function TrendingSongs({ onPlaySong, onToggleLike, likedSongs }: 
         ))}
       </div>
     </div>
-  )
+  );
 }

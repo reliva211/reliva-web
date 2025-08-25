@@ -43,6 +43,7 @@ import { cn } from "@/lib/utils";
 import { useMusicCollections } from "@/hooks/use-music-collections";
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
+import { useYouTubePlayer } from "@/hooks/use-youtube-player";
 
 interface Song {
   id: string;
@@ -109,6 +110,13 @@ interface SearchResponse {
 interface AlbumDetailsResponse {
   data: Album;
 }
+
+// Utility function to decode HTML entities
+const decodeHtmlEntities = (text: string): string => {
+  const textarea = document.createElement("textarea");
+  textarea.innerHTML = text;
+  return textarea.value;
+};
 
 export default function MusicApp() {
   const router = useRouter();
@@ -201,6 +209,7 @@ export default function MusicApp() {
   } = useMusicCollections();
 
   const { toast } = useToast();
+  const { showPlayer } = useYouTubePlayer();
 
   // Load ratings from localStorage on component mount
   useEffect(() => {
@@ -653,9 +662,9 @@ export default function MusicApp() {
       currentSong,
       ratings,
       myList,
-      onPlaySong: () => {},
-      onToggleMyList,
-      onRateSong: rateSong,
+      onPlaySongAction: () => {},
+      onToggleMyListAction: onToggleMyList,
+      onRateSongAction: rateSong,
     }),
     [currentSong, ratings, myList, onToggleMyList, rateSong]
   );
@@ -801,7 +810,7 @@ export default function MusicApp() {
       <div className="border-b border-gray-800 bg-gradient-to-r from-gray-900/95 to-gray-800/95 backdrop-blur-sm w-full">
         <div className="container mx-auto px-4 sm:px-6 py-6 sm:py-8 max-w-full">
           <div className="flex items-center justify-between">
-            <div>
+            <div className="ml-16 lg:ml-0">
               <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold bg-gradient-to-r from-white via-gray-200 to-gray-400 bg-clip-text text-transparent">
                 Music
               </h1>
@@ -816,12 +825,12 @@ export default function MusicApp() {
       <div className="container mx-auto px-4 sm:px-6 py-6 sm:py-8 max-w-full overflow-x-hidden">
         {/* Search and Filters */}
         <div className="mb-8 sm:mb-10 w-full">
-          <div className="flex flex-col gap-4 sm:gap-6 mb-6 sm:mb-8 w-full">
+          <div className="flex flex-col gap-3 sm:gap-4 mb-6 sm:mb-8 w-full">
             {/* Search */}
             <div className="flex-1 w-full search-container">
               <form
                 onSubmit={handleSearch}
-                className="flex flex-col sm:flex-row gap-3 w-full"
+                className="flex flex-col sm:flex-row gap-2 sm:gap-3 w-full"
               >
                 <div className="relative flex-1">
                   <Search className="absolute left-3 sm:left-4 top-1/2 transform -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 text-gray-400" />
@@ -844,17 +853,17 @@ export default function MusicApp() {
                   )}
                 </div>
 
-                {/* Search Type Dropdown */}
-                <div className="relative search-type-dropdown">
+                {/* Search Type Dropdown - Now inline with search bar on mobile */}
+                <div className="relative search-type-dropdown flex-shrink-0">
                   <button
                     type="button"
                     onClick={() =>
                       setShowSearchTypeDropdown(!showSearchTypeDropdown)
                     }
-                    className="flex items-center gap-2 px-4 py-3 bg-gray-800/50 border border-gray-700 text-white rounded-xl hover:bg-gray-700/50 transition-colors"
+                    className="flex items-center gap-2 px-3 sm:px-4 py-3 bg-gray-800/50 border border-gray-700 text-white rounded-xl hover:bg-gray-700/50 transition-colors h-11 sm:h-12"
                   >
                     {getSearchTypeIcon()}
-                    <span className="text-sm font-medium">
+                    <span className="text-sm font-medium hidden sm:block">
                       {getSearchTypeLabel()}
                     </span>
                     <ChevronDown className="w-4 h-4" />
@@ -931,7 +940,7 @@ export default function MusicApp() {
                 <Button
                   onClick={handleSearch}
                   disabled={loading}
-                  className="h-11 sm:h-12 px-6 sm:px-8 bg-gradient-to-r from-gray-800 to-gray-700 hover:from-gray-700 hover:to-gray-600 text-white font-semibold rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl border border-gray-600 text-sm sm:text-base"
+                  className="h-11 sm:h-12 px-4 sm:px-6 md:px-8 bg-gradient-to-r from-gray-800 to-gray-700 hover:from-gray-700 hover:to-gray-600 text-white font-semibold rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl border border-gray-600 text-sm sm:text-base flex-shrink-0"
                 >
                   {loading ? "Searching..." : "Search"}
                 </Button>
@@ -940,7 +949,7 @@ export default function MusicApp() {
           </div>
 
           {/* Navigation Tabs */}
-          <div className="flex items-center gap-3 sm:gap-4 overflow-x-auto pb-4 scrollbar-hide w-full horizontal-scroll-container px-2 sm:px-0">
+          <div className="flex items-center gap-3 sm:gap-4 overflow-x-auto pb-4 scrollbar-hide w-full horizontal-scroll-container px-0">
             <button
               onClick={() => handleTabChange("explore")}
               className={cn(
@@ -1007,6 +1016,7 @@ export default function MusicApp() {
                   : "hover:bg-gray-800/50 text-gray-300 hover:text-white"
               )}
             >
+              <Music className="w-4 h-4" />
               <span>Songs</span>
               {likedSongs.length > 0 && (
                 <Badge
@@ -1121,19 +1131,6 @@ export default function MusicApp() {
                                     <button
                                       onClick={(e) => {
                                         e.stopPropagation();
-                                        // Placeholder for play functionality
-                                        console.log(
-                                          "Play artist:",
-                                          artist.name
-                                        );
-                                      }}
-                                      className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-white/30 transition-all duration-200 hover:scale-110"
-                                    >
-                                      <Play className="w-5 h-5 text-white fill-white" />
-                                    </button>
-                                    <button
-                                      onClick={(e) => {
-                                        e.stopPropagation();
                                         handleFollowArtist(artist);
                                       }}
                                       className={`w-12 h-12 backdrop-blur-sm rounded-full flex items-center justify-center transition-all duration-200 hover:scale-110 ${
@@ -1141,9 +1138,19 @@ export default function MusicApp() {
                                           ? "bg-red-500/80 hover:bg-red-600/80"
                                           : "bg-white/20 hover:bg-white/30"
                                       }`}
-                                      title={isArtistFollowed(artist.id) ? "Unfollow artist" : "Follow artist"}
+                                      title={
+                                        isArtistFollowed(artist.id)
+                                          ? "Unfollow artist"
+                                          : "Follow artist"
+                                      }
                                     >
-                                      <Heart className={`w-5 h-5 text-white ${isArtistFollowed(artist.id) ? "fill-red-400" : "fill-white"}`} />
+                                      <Heart
+                                        className={`w-5 h-5 text-white ${
+                                          isArtistFollowed(artist.id)
+                                            ? "fill-red-400"
+                                            : "fill-white"
+                                        }`}
+                                      />
                                     </button>
                                   </div>
                                 </div>
@@ -1221,16 +1228,6 @@ export default function MusicApp() {
                                     <button
                                       onClick={(e) => {
                                         e.stopPropagation();
-                                        // Placeholder for play functionality
-                                        console.log("Play album:", album.name);
-                                      }}
-                                      className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-white/30 transition-all duration-200 hover:scale-110"
-                                    >
-                                      <Play className="w-5 h-5 text-white fill-white" />
-                                    </button>
-                                    <button
-                                      onClick={(e) => {
-                                        e.stopPropagation();
                                         handleLikeAlbum(album);
                                       }}
                                       className={`w-12 h-12 backdrop-blur-sm rounded-full flex items-center justify-center transition-all duration-200 hover:scale-110 ${
@@ -1238,9 +1235,19 @@ export default function MusicApp() {
                                           ? "bg-red-500/80 hover:bg-red-600/80"
                                           : "bg-white/20 hover:bg-white/30"
                                       }`}
-                                      title={isAlbumLiked(album.id) ? "Remove from liked albums" : "Add to liked albums"}
+                                      title={
+                                        isAlbumLiked(album.id)
+                                          ? "Remove from liked albums"
+                                          : "Add to liked albums"
+                                      }
                                     >
-                                      <Heart className={`w-5 h-5 text-white ${isAlbumLiked(album.id) ? "fill-red-400" : "fill-white"}`} />
+                                      <Heart
+                                        className={`w-5 h-5 text-white ${
+                                          isAlbumLiked(album.id)
+                                            ? "fill-red-400"
+                                            : "fill-white"
+                                        }`}
+                                      />
                                     </button>
                                     <button
                                       onClick={(e) =>
@@ -1342,12 +1349,24 @@ export default function MusicApp() {
                                     <button
                                       onClick={(e) => {
                                         e.stopPropagation();
-                                        // Placeholder for play functionality
-                                        console.log("Play song:", song.name);
+                                        const params = new URLSearchParams({
+                                          type: "music",
+                                          id: song.id,
+                                          title: decodeHtmlEntities(song.name),
+                                          cover: getImageUrl(song.image),
+                                          artist:
+                                            song.artists?.primary
+                                              ?.map((artist) => artist.name)
+                                              .join(", ") || "Unknown Artist",
+                                        });
+                                        router.push(
+                                          `/reviews?${params.toString()}`
+                                        );
                                       }}
-                                      className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-white/30 transition-all duration-200 hover:scale-110"
+                                      className="w-12 h-12 bg-yellow-500/80 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-yellow-600/80 transition-all duration-200 hover:scale-110"
+                                      title="Write Review"
                                     >
-                                      <Play className="w-5 h-5 text-white fill-white" />
+                                      <Star className="w-5 h-5 text-white fill-white" />
                                     </button>
                                     <button
                                       onClick={(e) => {
@@ -1359,9 +1378,19 @@ export default function MusicApp() {
                                           ? "bg-red-500/80 hover:bg-red-600/80"
                                           : "bg-white/20 hover:bg-white/30"
                                       }`}
-                                      title={isSongLiked(song.id) ? "Remove from liked songs" : "Add to liked songs"}
+                                      title={
+                                        isSongLiked(song.id)
+                                          ? "Remove from liked songs"
+                                          : "Add to liked songs"
+                                      }
                                     >
-                                      <Heart className={`w-5 h-5 text-white ${isSongLiked(song.id) ? "fill-red-400" : "fill-white"}`} />
+                                      <Heart
+                                        className={`w-5 h-5 text-white ${
+                                          isSongLiked(song.id)
+                                            ? "fill-red-400"
+                                            : "fill-white"
+                                        }`}
+                                      />
                                     </button>
                                   </div>
                                 </div>
@@ -1435,9 +1464,14 @@ export default function MusicApp() {
           {activeTab === "artists" && !showSearchResults && (
             <div className="space-y-6 w-full">
               <div className="flex items-center justify-between">
-                <h2 className="text-2xl font-bold text-white">
-                  Followed Artists
-                </h2>
+                <div>
+                  <h2 className="text-2xl font-bold text-white">
+                    Followed Artists
+                  </h2>
+                  <p className="text-gray-400 mt-1 text-sm sm:text-base">
+                    Stay updated with your favorite musicians
+                  </p>
+                </div>
                 {followedArtists.length > 0 && (
                   <Badge
                     variant="outline"
@@ -1465,7 +1499,7 @@ export default function MusicApp() {
                   </Button>
                 </div>
               ) : (
-                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                <div className="grid gap-4 sm:gap-6 grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                   {followedArtists.map((artist) => (
                     <div
                       key={artist.id}
@@ -1501,7 +1535,14 @@ export default function MusicApp() {
           {activeTab === "albums" && !showSearchResults && (
             <div className="space-y-6 w-full">
               <div className="flex items-center justify-between">
-                <h2 className="text-2xl font-bold text-white">Liked Albums</h2>
+                <div>
+                  <h2 className="text-2xl font-bold text-white">
+                    Liked Albums
+                  </h2>
+                  <p className="text-gray-400 mt-1 text-sm sm:text-base">
+                    Your curated collection of favorite albums
+                  </p>
+                </div>
                 {likedAlbums.length > 0 && (
                   <Badge
                     variant="outline"
@@ -1529,7 +1570,7 @@ export default function MusicApp() {
                   </Button>
                 </div>
               ) : (
-                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                <div className="grid gap-4 sm:gap-6 grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                   {likedAlbums.map((album) => (
                     <div key={album.id} className="cursor-pointer group">
                       <div className="relative">
@@ -1560,9 +1601,19 @@ export default function MusicApp() {
                                 ? "bg-red-500/80 hover:bg-red-600/80"
                                 : "bg-white/20 hover:bg-white/30"
                             }`}
-                            title={isAlbumLiked(album.id) ? "Remove from liked albums" : "Add to liked albums"}
+                            title={
+                              isAlbumLiked(album.id)
+                                ? "Remove from liked albums"
+                                : "Add to liked albums"
+                            }
                           >
-                            <Heart className={`w-5 h-5 text-white ${isAlbumLiked(album.id) ? "fill-red-400" : "fill-white"}`} />
+                            <Heart
+                              className={`w-5 h-5 text-white ${
+                                isAlbumLiked(album.id)
+                                  ? "fill-red-400"
+                                  : "fill-white"
+                              }`}
+                            />
                           </button>
                           <button
                             onClick={(e) => {
@@ -1615,7 +1666,12 @@ export default function MusicApp() {
           {activeTab === "songs" && !showSearchResults && (
             <div className="space-y-6 w-full">
               <div className="flex items-center justify-between">
-                <h2 className="text-2xl font-bold text-white">Liked Songs</h2>
+                <div>
+                  <h2 className="text-2xl font-bold text-white">Liked Songs</h2>
+                  <p className="text-gray-400 mt-1 text-sm sm:text-base">
+                    Your personal collection of favorite tracks
+                  </p>
+                </div>
                 {likedSongs.length > 0 && (
                   <Badge
                     variant="outline"
@@ -1647,8 +1703,7 @@ export default function MusicApp() {
                   {likedSongs.map((song) => (
                     <Card
                       key={song.id}
-                      className="bg-gray-800/50 border border-gray-700 hover:shadow-md transition-all cursor-pointer group"
-                      onClick={() => openSongDetails(song)}
+                      className="bg-gray-800/50 border border-gray-700 hover:shadow-md transition-all group"
                     >
                       <CardContent className="p-4">
                         <div className="flex items-center gap-4">
@@ -1680,15 +1735,25 @@ export default function MusicApp() {
                                     ? "bg-red-500/80 hover:bg-red-600/80"
                                     : "bg-white/20 hover:bg-white/30"
                                 }`}
-                                title={isSongLiked(song.id) ? "Remove from liked songs" : "Add to liked songs"}
+                                title={
+                                  isSongLiked(song.id)
+                                    ? "Remove from liked songs"
+                                    : "Add to liked songs"
+                                }
                               >
-                                <Heart className={`w-3 h-3 text-white ${isSongLiked(song.id) ? "fill-red-400" : "fill-white"}`} />
+                                <Heart
+                                  className={`w-3 h-3 text-white ${
+                                    isSongLiked(song.id)
+                                      ? "fill-red-400"
+                                      : "fill-white"
+                                  }`}
+                                />
                               </button>
                             </div>
                           </div>
                           <div className="flex-1 min-w-0">
                             <h4 className="font-semibold text-white truncate">
-                              {song.name}
+                              {decodeHtmlEntities(song.name)}
                             </h4>
                             <p className="text-sm text-gray-400 truncate">
                               {song.artists?.primary
@@ -1703,10 +1768,29 @@ export default function MusicApp() {
                             <div className="text-sm text-gray-400 whitespace-nowrap">
                               {formatDuration(song.duration)}
                             </div>
-                            <StarRating
-                              songId={song.id}
-                              currentRating={ratings[song.id] || 0}
-                            />
+                            {/* Rating button */}
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="text-yellow-400 hover:text-yellow-300 flex-shrink-0"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                const params = new URLSearchParams({
+                                  type: "music",
+                                  id: song.id,
+                                  title: decodeHtmlEntities(song.name),
+                                  cover: getImageUrl(song.image),
+                                  artist:
+                                    song.artists?.primary
+                                      ?.map((artist) => artist.name)
+                                      .join(", ") || "Unknown Artist",
+                                });
+                                router.push(`/reviews?${params.toString()}`);
+                              }}
+                            >
+                              <Star className="w-4 h-4" />
+                            </Button>
+                            {/* Like button */}
                             <Button
                               size="sm"
                               variant="ghost"
@@ -1736,9 +1820,9 @@ export default function MusicApp() {
 
           {/* Recommended Tab */}
           {activeTab === "recommended" && !showSearchResults && (
-            <div className="space-y-8 w-full">
-              <div className="bg-gray-800/50 rounded-2xl p-6 shadow-lg border border-gray-700 w-full">
-                <h2 className="text-2xl font-bold text-white mb-6">
+            <div className="space-y-6 w-full">
+              <div className="w-full">
+                <h2 className="text-2xl font-bold text-white mb-4">
                   Your Music Recommendations
                 </h2>
                 {musicRecommendations.length === 0 ? (
@@ -1759,7 +1843,7 @@ export default function MusicApp() {
                     </Button>
                   </div>
                 ) : (
-                  <div className="space-y-4">
+                  <div className="space-y-3">
                     <div className="flex items-center justify-between">
                       <h3 className="text-lg font-semibold text-white">
                         Albums in Your Recommendations
@@ -1847,12 +1931,12 @@ export default function MusicApp() {
               <div className="flex items-center gap-6">
                 <img
                   src={getImageUrl(selectedSong.image)}
-                  alt={selectedSong.name}
+                  alt={decodeHtmlEntities(selectedSong.name)}
                   className="w-32 h-32 rounded-lg object-cover"
                 />
                 <div className="flex-1">
                   <h3 className="text-2xl font-bold text-white mb-2">
-                    {selectedSong.name}
+                    {decodeHtmlEntities(selectedSong.name)}
                   </h3>
                   <p className="text-lg text-gray-300 mb-1">
                     {selectedSong.artists?.primary
@@ -1876,21 +1960,43 @@ export default function MusicApp() {
                   songId={selectedSong.id}
                   currentRating={ratings[selectedSong.id] || 0}
                 />
-                <Button
-                  onClick={() => handleLikeSong(selectedSong)}
-                  className={`${
-                    isSongLiked(selectedSong.id)
-                      ? "bg-red-600 hover:bg-red-700 text-white"
-                      : "bg-gray-700 text-white hover:bg-gray-600 border border-gray-600"
-                  }`}
-                >
-                  <Heart
-                    className={`w-4 h-4 mr-2 ${
-                      isSongLiked(selectedSong.id) ? "fill-current" : ""
+                <div className="flex items-center gap-3">
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      const params = new URLSearchParams({
+                        type: "music",
+                        id: selectedSong.id,
+                        title: decodeHtmlEntities(selectedSong.name),
+                        cover: getImageUrl(selectedSong.image),
+                        artist:
+                          selectedSong.artists?.primary
+                            ?.map((artist) => artist.name)
+                            .join(", ") || "Unknown Artist",
+                      });
+                      router.push(`/reviews?${params.toString()}`);
+                    }}
+                    className="border-gray-600 hover:bg-gray-700 hover:border-gray-500 text-white"
+                  >
+                    <Star className="w-4 h-4 mr-2" />
+                    Write Review
+                  </Button>
+                  <Button
+                    onClick={() => handleLikeSong(selectedSong)}
+                    className={`${
+                      isSongLiked(selectedSong.id)
+                        ? "bg-red-600 hover:bg-red-700 text-white"
+                        : "bg-gray-700 text-white hover:bg-gray-600 border border-gray-600"
                     }`}
-                  />
-                  {isSongLiked(selectedSong.id) ? "Liked" : "Like"}
-                </Button>
+                  >
+                    <Heart
+                      className={`w-4 h-4 mr-2 ${
+                        isSongLiked(selectedSong.id) ? "fill-current" : ""
+                      }`}
+                    />
+                    {isSongLiked(selectedSong.id) ? "Liked" : "Like"}
+                  </Button>
+                </div>
               </div>
             </div>
           )}
@@ -1913,7 +2019,7 @@ export default function MusicApp() {
                 />
                 <div className="flex-1">
                   <h3 className="text-2xl font-bold text-white mb-2">
-                    {selectedAlbum.name}
+                    {decodeHtmlEntities(selectedAlbum.name)}
                   </h3>
                   <p className="text-lg text-gray-300 mb-1">
                     {selectedAlbum.artists?.primary
@@ -1988,7 +2094,9 @@ export default function MusicApp() {
                           {index + 1}
                         </span>
                         <div className="flex-1">
-                          <p className="text-white font-medium">{song.name}</p>
+                          <p className="text-white font-medium">
+                            {decodeHtmlEntities(song.name)}
+                          </p>
                           <p className="text-sm text-gray-400">
                             {song.artists?.primary
                               ?.map((artist) => artist.name)

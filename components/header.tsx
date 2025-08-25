@@ -135,21 +135,19 @@ export default function Sidebar({ isLandingPage = false }: SidebarProps) {
   return (
     <TooltipProvider>
       <>
-        {/* Mobile Menu Button */}
-        <div className="lg:hidden fixed top-4 left-4 z-50">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setIsMobileOpen(!isMobileOpen)}
-            className="bg-background/80 backdrop-blur-sm border shadow-lg h-12 w-12"
-          >
-            {isMobileOpen ? (
-              <X className="h-6 w-6" />
-            ) : (
+        {/* Mobile Menu Button - Only show when sidebar is closed */}
+        {!isMobileOpen && (
+          <div className="lg:hidden fixed top-4 left-4 z-50">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setIsMobileOpen(!isMobileOpen)}
+              className="bg-background/80 backdrop-blur-sm border shadow-lg h-12 w-12"
+            >
               <Menu className="h-6 w-6" />
-            )}
-          </Button>
-        </div>
+            </Button>
+          </div>
+        )}
 
         {/* Mobile Sidebar Overlay */}
         {isMobileOpen && (
@@ -163,7 +161,9 @@ export default function Sidebar({ isLandingPage = false }: SidebarProps) {
         <aside
           className={cn(
             "fixed left-0 top-0 z-40 h-full bg-zinc-900/95 backdrop-blur supports-[backdrop-filter]:bg-zinc-900/90 border-r border-zinc-800 transition-all duration-300 ease-in-out",
-            isCollapsed ? "w-16" : "w-64",
+            // Desktop: collapsible, Mobile: full width when open
+            isCollapsed ? "lg:w-16 w-64" : "w-64",
+            // Mobile: slide in/out, Desktop: always visible
             isMobileOpen
               ? "translate-x-0"
               : "-translate-x-full lg:translate-x-0"
@@ -177,10 +177,13 @@ export default function Sidebar({ isLandingPage = false }: SidebarProps) {
                 isCollapsed ? "px-2" : "px-4 lg:px-6"
               )}
             >
-              <Link href="/" className="flex items-center space-x-2">
+              <Link
+                href="/"
+                className="flex items-center space-x-2 flex-1 min-w-0"
+              >
                 <span
                   className={cn(
-                    "font-bold transition-all duration-300",
+                    "font-bold transition-all duration-300 truncate",
                     isCollapsed ? "text-lg mx-auto" : "text-lg lg:text-xl"
                   )}
                 >
@@ -198,10 +201,21 @@ export default function Sidebar({ isLandingPage = false }: SidebarProps) {
               </Link>
               <div
                 className={cn(
-                  "flex items-center gap-2 transition-all duration-300",
+                  "flex items-center gap-2 transition-all duration-300 flex-shrink-0",
                   isCollapsed ? "hidden" : "flex"
                 )}
               >
+                {/* Mobile close button - only show when sidebar is open on mobile */}
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setIsMobileOpen(false)}
+                  className="lg:hidden"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+
+                {/* Desktop collapse button */}
                 <Button
                   variant="ghost"
                   size="icon"

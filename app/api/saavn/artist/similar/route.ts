@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
 
     console.log(`Fetching similar artists for ID: ${id}`);
 
-    // Try primary Saavn API first
+    // Try primary Saavn API first with comprehensive data
     try {
       const response = await fetch(`https://saavn.dev/api/artists?id=${id}`, {
         headers: {
