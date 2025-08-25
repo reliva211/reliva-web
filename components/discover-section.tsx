@@ -144,7 +144,9 @@ export default function DiscoverSection({
         {/* Items Container */}
         <div
           id={containerId}
-          className="flex gap-4 sm:gap-6 overflow-x-auto px-4 sm:px-8 py-4 sm:py-6 scrollbar-hide w-full horizontal-scroll-container"
+          className={`flex gap-4 sm:gap-6 overflow-x-auto px-4 sm:px-8 py-4 sm:py-6 scrollbar-hide horizontal-scroll-container ${
+            itemType === "book" ? "books-horizontal-container" : "w-full"
+          }`}
           style={{
             WebkitOverflowScrolling: "touch",
             overscrollBehaviorX: "contain",
@@ -153,7 +155,7 @@ export default function DiscoverSection({
           {items.map((item) => (
             <div
               key={item.id}
-              className="flex-shrink-0 w-[160px] sm:w-[180px] md:w-[220px] discover-card"
+              className="flex-shrink-0 w-[140px] sm:w-[160px] md:w-[180px] lg:w-[200px] discover-card"
             >
               <div className="relative aspect-[2/3] rounded-xl overflow-hidden bg-gradient-to-br from-gray-800 to-gray-900 shadow-2xl">
                 <Link

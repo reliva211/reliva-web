@@ -28,3 +28,27 @@
     -webkit-overflow-scrolling: touch;
   }
 }
+
+/* Books section specific styling for 3.5 books display */
+.books-horizontal-container {
+  /* Ensure container shows exactly 3.5 books */
+  width: calc(3.5 * (140px + 16px) - 16px); /* 3.5 books with gap */
+}
+
+@media (min-width: 640px) {
+  .books-horizontal-container {
+    width: calc(3.5 * (160px + 24px) - 24px); /* sm breakpoint */
+  }
+}
+
+@media (min-width: 768px) {
+  .books-horizontal-container {
+    width: calc(3.5 * (180px + 24px) - 24px); /* md breakpoint */
+  }
+}
+
+@media (min-width: 1024px) {
+  .books-horizontal-container {
+    width: calc(3.5 * (200px + 24px) - 24px); /* lg breakpoint */
+  }
+}
