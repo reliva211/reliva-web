@@ -26,6 +26,7 @@ interface Reply {
   comments: Reply[]
   timestamp: string
   likeCount: number
+  isLiked: boolean
   createdAt: string
   updatedAt: string
 }
@@ -55,6 +56,7 @@ interface Post {
   updatedAt: string
   timestamp: string
   likeCount: number
+  isLiked: boolean
   replyCount: number
   comments: Reply[]
   __v: number
@@ -123,7 +125,7 @@ function ReviewsPageContent() {
     const author = searchParams.get("author");
     const cover = searchParams.get("cover");
     const artist = searchParams.get("artist");
-
+const POSTS_PER_PAGE = 50
 
     console.log("URL Parameters:", { type, id, title, author, cover, artist });
 
@@ -162,7 +164,7 @@ function ReviewsPageContent() {
         const res = await fetch(`${API_BASE}/posts`)
         const data = await res.json()
         if (data.success) {
-          console.log(data);
+          console.log(data.posts);
           setPosts(data.posts)
         }
       } catch (error) {
@@ -171,20 +173,43 @@ function ReviewsPageContent() {
     }
     fetchPosts()
 
+
     // WebSocket for real-time updates
     wsRef.current = new WebSocket("ws://localhost:8080")
+
+      wsRef.current.onopen = () => {
+      wsRef.current?.send(
+        JSON.stringify({
+          type: "auth",
+          userId: user?.authorId,
+          page: 0,
+          limit: POSTS_PER_PAGE,
+        }),
+      )
+    }
     wsRef.current.onmessage = (event) => {
       const msg = JSON.parse(event.data)
-      if (msg.type === "comment") {
-        setPosts(prev =>
-          prev.map(post =>
-            post._id === msg.postId
-              ? { ...post, comments: [...(post.comments || []), msg.comment] }
-              : post
-          )
+
+      if (msg.type === "init") {
+        console.log(msg.posts)
+        // setPosts(msg.posts)
+        // setHasMorePosts(msg.posts.length === POSTS_PER_PAGE)
+        // setCurrentPage(0)
+      } else if (msg.type === "comment") {
+        setPosts((prev) =>
+          prev.map((post) =>
+            post._id === msg.postId ? { ...post, comments: [...(post.comments || []), msg.comment] } : post,
+          ),
         )
       } else if (msg.type === "post") {
         setPosts((prev) => [msg.post, ...prev])
+      } else if (msg.type === "initLikes") {
+        setLikedPosts(new Set(msg.likedPosts))
+        setLikedReplies(new Set(msg.likedReplies))
+      } else if (msg.type === "likeUpdate") {
+        setPosts((prev) =>
+          prev.map((post) => (post._id === msg.targetId ? { ...post, likeCount: msg.likeCount } : post)),
+        )
       }
     }
 
@@ -429,38 +454,33 @@ function ReviewsPageContent() {
 
     try {
       if (isLiked) {
-        await fetch(`${API_BASE}/likes`, {
-          method: "DELETE",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            userId: "user", // You might want to get this from auth context
-            targetId: postId,
-            targetType: "post",
+        console.log("unCliking the post")
+        wsRef.current?.send(
+          JSON.stringify({
+            type: "unlikePost",
+            userId: user?.authorId,
+            postId,
+            targetType: "Post",
           }),
-        })
+        )
         setLikedPosts((prev) => {
           const newSet = new Set(prev)
           newSet.delete(postId)
           return newSet
         })
       } else {
-        await fetch(`${API_BASE}/likes`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            userId: "user", // You might want to get this from auth context
-            targetId: postId,
-            targetType: "post",
+        console.log("liking the post")
+        wsRef.current?.send(
+          JSON.stringify({
+            type: "likePost",
+            userId: user?.authorId,
+            postId,
+            targetType: "Post",
           }),
-        })
+        )
         setLikedPosts((prev) => new Set([...prev, postId]))
       }
 
-      // Update post like count locally
       setPosts((prev) =>
         prev.map((post) =>
           post._id === postId ? { ...post, likeCount: isLiked ? post.likeCount - 1 : post.likeCount + 1 } : post,
@@ -471,39 +491,34 @@ function ReviewsPageContent() {
     }
   }
 
-   const toggleReplyLike = async (postId: string, replyId: string) => {
+  const toggleReplyLike = async (postId: string, replyId: string) => {
     const isLiked = likedReplies.has(replyId)
 
     try {
       if (isLiked) {
-        await fetch(`${API_BASE}/likes`, {
-          method: "DELETE",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            userId: "user",
-            targetId: replyId,
-            targetType: "comment",
+        wsRef.current?.send(
+          JSON.stringify({
+            type: "unlikeReply",
+            userId: user?.authorId,
+            postId,
+            replyId,
+            targetType: "Comment",
           }),
-        })
+        )
         setLikedReplies((prev) => {
           const newSet = new Set(prev)
           newSet.delete(replyId)
           return newSet
         })
       } else {
-        await fetch(`${API_BASE}/likes`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            userId: "user",
-            targetId: replyId,
-            targetType: "comment",
+        wsRef.current?.send(
+          JSON.stringify({
+            type: "likeReply",
+            userId: user?.authorId,
+            replyId,
+            targetType: "Comment",
           }),
-        })
+        )
         setLikedReplies((prev) => new Set([...prev, replyId]))
       }
 
@@ -705,10 +720,10 @@ const getIndent = (depth: number) => {
             <button
               onClick={() => toggleReplyLike(postId, reply._id)}
               className={`flex items-center gap-1 transition-colors ${
-                likedReplies.has(reply._id) ? "text-red-500" : "hover:text-red-500"
+                reply.isLiked ? "text-red-500" : "hover:text-red-500"
               }`}
             >
-              <Heart className={`w-3 h-3 ${likedReplies.has(reply._id) ? "fill-current" : ""}`} />
+              <Heart className={`w-3 h-3 ${reply.isLiked ? "fill-current" : ""}`} />
               <span className="text-xs">{reply.likeCount}</span>
             </button>
 
@@ -765,20 +780,20 @@ const getIndent = (depth: number) => {
 
 
 
-  if (!user) {
-    return (
-      <div className="min-h-screen bg-gray-100 dark:bg-gray-900 flex items-center justify-center p-4">
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 max-w-md w-full">
-          <h2 className="text-xl font-semibold mb-2 text-gray-900 dark:text-white">
-            Login Required
-          </h2>
-          <p className="text-gray-600 dark:text-gray-300">
-            Please log in to write reviews.
-          </p>
-        </div>
-      </div>
-    );
-  }
+  // if (!user) {
+  //   return (
+  //     <div className="min-h-screen bg-gray-100 dark:bg-gray-900 flex items-center justify-center p-4">
+  //       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 max-w-md w-full">
+  //         <h2 className="text-xl font-semibold mb-2 text-gray-900 dark:text-white">
+  //           Login Required
+  //         </h2>
+  //         <p className="text-gray-600 dark:text-gray-300">
+  //           Please log in to write reviews.
+  //         </p>
+  //       </div>
+  //     </div>
+  //   );
+  // }
 
   // // Show success state
   // if (showSuccess) {
@@ -1167,10 +1182,10 @@ const getIndent = (depth: number) => {
                   <button
                     onClick={() => toggleLike(post._id)}
                     className={`flex items-center gap-2 transition-colors ${
-                      likedPosts.has(post._id) ? "text-red-500" : "hover:text-red-500"
+                      post.isLiked ? "text-red-500" : "hover:text-red-500"
                     }`}
                   >
-                    <Heart className={`w-4 h-4 ${likedPosts.has(post._id) ? "fill-current" : ""}`} />
+                    <Heart className={`w-4 h-4 ${post.isLiked ? "fill-current" : ""}`} />
                     <span className="text-sm">{post.likeCount}</span>
                   </button>
 
