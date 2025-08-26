@@ -730,7 +730,7 @@ export default function MoviesPage() {
                 overview: movie.overview,
               }))}
               isLoading={isLoadingTrending}
-              onRetry={fetchTrendingMovies}
+                              onRetryAction={fetchTrendingMovies}
               itemType="movie"
               containerId="trending-movies-container"
             />

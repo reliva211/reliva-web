@@ -64,14 +64,14 @@ interface Artist {
 }
 
 interface TrendingSongsProps {
-  onPlaySong: (song: Song) => void;
-  onToggleLike: (song: Song) => void;
+  onPlaySongAction: (song: Song) => void;
+  onToggleLikeAction: (song: Song) => void;
   likedSongs: Set<string>;
 }
 
 export default function TrendingSongs({
-  onPlaySong,
-  onToggleLike,
+  onPlaySongAction,
+  onToggleLikeAction,
   likedSongs,
 }: TrendingSongsProps) {
   const router = useRouter();
@@ -210,7 +210,7 @@ export default function TrendingSongs({
                   className="bg-white text-black hover:bg-gray-100 shadow-lg"
                   onClick={(e) => {
                     e.stopPropagation();
-                    onPlaySong(song);
+                    onPlaySongAction(song);
                   }}
                 >
                   <Play className="w-4 h-4" />
@@ -225,7 +225,7 @@ export default function TrendingSongs({
                   } shadow-lg`}
                   onClick={(e) => {
                     e.stopPropagation();
-                    onToggleLike(song);
+                    onToggleLikeAction(song);
                   }}
                 >
                   <Heart

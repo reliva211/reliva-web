@@ -696,7 +696,7 @@ export default function BooksPage() {
                   overview: book.overview,
                 }))}
                 isLoading={isLoadingTrending}
-                onRetry={() => {
+                onRetryAction={() => {
                   clearTrendingCache();
                   fetchTrendingBooks(true);
                 }}

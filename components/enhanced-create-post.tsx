@@ -1,85 +1,100 @@
-"use client"
+"use client";
 
-import type React from "react"
+import type React from "react";
 
-import { useState, useRef } from "react"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Button } from "@/components/ui/button"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { Textarea } from "@/components/ui/textarea"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Badge } from "@/components/ui/badge"
-import { ImageIcon, Book, Music, Film, Loader2 } from "lucide-react"
-import { ImageUploadPreview } from "@/components/image-upload-preview"
-import { PostSuccessToast } from "@/components/post-success-toast"
+import { useState, useRef } from "react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { ImageIcon, Book, Music, Film, Loader2 } from "lucide-react";
+import { ImageUploadPreview } from "@/components/image-upload-preview";
+import { PostSuccessToast } from "@/components/post-success-toast";
 
 interface EnhancedCreatePostProps {
-  children: React.ReactNode
-  onAddPost: (post: {
-    user: { name: string; username: string; avatar: string }
-    content: string
-    category: "book" | "music" | "movie"
-    images?: string[]
-  }) => void
+  children: React.ReactNode;
+  onAddPostAction: (post: {
+    user: { name: string; username: string; avatar: string };
+    content: string;
+    category: "book" | "music" | "movie";
+    images?: string[];
+  }) => void;
 }
 
 const categoryIcons = {
   book: Book,
   music: Music,
   movie: Film,
-}
+};
 
 const categoryPlaceholders = {
   book: "What book are you reading or recommending?",
   music: "What music are you listening to lately?",
   movie: "What movie or show would you recommend?",
-}
+};
 
-export function EnhancedCreatePost({ children, onAddPost }: EnhancedCreatePostProps) {
-  const [open, setOpen] = useState(false)
-  const [content, setContent] = useState("")
-  const [category, setCategory] = useState<"book" | "music" | "movie">("book")
-  const [images, setImages] = useState<string[]>([])
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [showSuccessToast, setShowSuccessToast] = useState(false)
+export function EnhancedCreatePost({
+  children,
+  onAddPostAction,
+}: EnhancedCreatePostProps) {
+  const [open, setOpen] = useState(false);
+  const [content, setContent] = useState("");
+  const [category, setCategory] = useState<"book" | "music" | "movie">("book");
+  const [images, setImages] = useState<string[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showSuccessToast, setShowSuccessToast] = useState(false);
 
-  const fileInputRef = useRef<HTMLInputElement>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = event.target.files
+    const files = event.target.files;
     if (files) {
       // Create a copy of current images to avoid exceeding 4 images
-      const currentImages = [...images]
+      const currentImages = [...images];
 
       // Process each file
       Array.from(files).forEach((file) => {
         // Only add if we have less than 4 images
         if (currentImages.length < 4) {
-          const imageUrl = URL.createObjectURL(file)
-          currentImages.push(imageUrl)
+          const imageUrl = URL.createObjectURL(file);
+          currentImages.push(imageUrl);
         }
-      })
+      });
 
-      setImages(currentImages)
+      setImages(currentImages);
 
       // Reset the input value to allow selecting the same file again
-      event.target.value = ""
+      event.target.value = "";
     }
-  }
+  };
 
   const removeImage = (index: number) => {
-    setImages((prev) => prev.filter((_, i) => i !== index))
-  }
+    setImages((prev) => prev.filter((_, i) => i !== index));
+  };
 
   const handlePost = async () => {
     if (content.trim()) {
-      setIsSubmitting(true)
+      setIsSubmitting(true);
 
       try {
         // Simulate network delay
-        await new Promise((resolve) => setTimeout(resolve, 1000))
+        await new Promise((resolve) => setTimeout(resolve, 1000));
 
-        onAddPost({
+        onAddPostAction({
           user: {
             name: "You",
             username: "you",
@@ -88,31 +103,31 @@ export function EnhancedCreatePost({ children, onAddPost }: EnhancedCreatePostPr
           content: content.trim(),
           category,
           images: images.length > 0 ? images : undefined,
-        })
+        });
 
         // Reset form
-        setContent("")
-        setImages([])
-        setOpen(false)
+        setContent("");
+        setImages([]);
+        setOpen(false);
 
         // Show success toast
-        setShowSuccessToast(true)
+        setShowSuccessToast(true);
       } catch (error) {
-        console.error("Error posting:", error)
+        console.error("Error posting:", error);
       } finally {
-        setIsSubmitting(false)
+        setIsSubmitting(false);
       }
     }
-  }
+  };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     // Submit on Ctrl+Enter or Cmd+Enter
     if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
-      handlePost()
+      handlePost();
     }
-  }
+  };
 
-  const CategoryIcon = categoryIcons[category]
+  const CategoryIcon = categoryIcons[category];
 
   return (
     <>
@@ -125,7 +140,10 @@ export function EnhancedCreatePost({ children, onAddPost }: EnhancedCreatePostPr
 
           <div className="flex space-x-3">
             <Avatar className="h-10 w-10">
-              <AvatarImage src="/placeholder.svg?height=40&width=40" alt="You" />
+              <AvatarImage
+                src="/placeholder.svg?height=40&width=40"
+                alt="You"
+              />
               <AvatarFallback>You</AvatarFallback>
             </Avatar>
 
@@ -133,7 +151,12 @@ export function EnhancedCreatePost({ children, onAddPost }: EnhancedCreatePostPr
               {/* Category Selection */}
               <div className="flex items-center space-x-2">
                 <span className="text-sm font-medium">Category:</span>
-                <Select value={category} onValueChange={(value: "book" | "music" | "movie") => setCategory(value)}>
+                <Select
+                  value={category}
+                  onValueChange={(value: "book" | "music" | "movie") =>
+                    setCategory(value)
+                  }
+                >
                   <SelectTrigger className="w-32">
                     <SelectValue />
                   </SelectTrigger>
@@ -177,7 +200,13 @@ export function EnhancedCreatePost({ children, onAddPost }: EnhancedCreatePostPr
 
               {/* Character Count */}
               <div className="text-right">
-                <span className={`text-sm ${content.length > 250 ? "text-red-500" : "text-muted-foreground"}`}>
+                <span
+                  className={`text-sm ${
+                    content.length > 250
+                      ? "text-red-500"
+                      : "text-muted-foreground"
+                  }`}
+                >
                   {content.length}/280
                 </span>
               </div>
@@ -206,12 +235,18 @@ export function EnhancedCreatePost({ children, onAddPost }: EnhancedCreatePostPr
                   >
                     <ImageIcon className="h-4 w-4" />
                   </Button>
-                  {images.length >= 4 && <span className="text-xs text-muted-foreground">Max 4 images</span>}
+                  {images.length >= 4 && (
+                    <span className="text-xs text-muted-foreground">
+                      Max 4 images
+                    </span>
+                  )}
                 </div>
 
                 <Button
                   onClick={handlePost}
-                  disabled={!content.trim() || content.length > 280 || isSubmitting}
+                  disabled={
+                    !content.trim() || content.length > 280 || isSubmitting
+                  }
                   className="px-6"
                 >
                   {isSubmitting ? (
@@ -229,7 +264,10 @@ export function EnhancedCreatePost({ children, onAddPost }: EnhancedCreatePostPr
         </DialogContent>
       </Dialog>
 
-      <PostSuccessToast show={showSuccessToast} onClose={() => setShowSuccessToast(false)} />
+      <PostSuccessToast
+        show={showSuccessToast}
+        onClose={() => setShowSuccessToast(false)}
+      />
     </>
-  )
+  );
 }

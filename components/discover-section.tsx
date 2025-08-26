@@ -20,7 +20,7 @@ interface DiscoverSectionProps {
   subtitle: string;
   items: DiscoverItem[];
   isLoading: boolean;
-  onRetry: () => void;
+  onRetryAction: () => void;
   itemType: "movie" | "book" | "series" | "music";
   containerId: string;
 }
@@ -30,7 +30,7 @@ export default function DiscoverSection({
   subtitle,
   items,
   isLoading,
-  onRetry,
+  onRetryAction,
   itemType,
   containerId,
 }: DiscoverSectionProps) {
@@ -104,7 +104,7 @@ export default function DiscoverSection({
             </p>
           </div>
           <Button
-            onClick={onRetry}
+            onClick={onRetryAction}
             className="bg-gradient-to-r from-green-600 to-green-500 hover:from-green-500 hover:to-green-400 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-xl font-semibold transition-all duration-200 text-sm sm:text-base"
           >
             <RefreshCw className="h-4 w-4 mr-2" />

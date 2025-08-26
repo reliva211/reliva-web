@@ -14,7 +14,7 @@ interface CollectionSectionProps {
   title: string;
   icon: React.ReactNode;
   items: CollectionItem[];
-  onAddItem: () => void;
+  onAddItemAction: () => void;
   emptyMessage: string;
   emptyIcon: React.ReactNode;
   gridCols?: number;
@@ -27,7 +27,7 @@ export function CollectionSection({
   title,
   icon,
   items,
-  onAddItem,
+  onAddItemAction,
   emptyMessage,
   emptyIcon,
   gridCols = 5,
@@ -43,7 +43,7 @@ export function CollectionSection({
             {icon}
             {title}
           </div>
-          <Button size="sm" variant="outline" onClick={onAddItem}>
+          <Button size="sm" variant="outline" onClick={onAddItemAction}>
             <Plus className="h-4 w-4" />
           </Button>
         </CardTitle>

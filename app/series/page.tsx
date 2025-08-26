@@ -729,7 +729,7 @@ export default function SeriesPage() {
                 overview: series.overview,
               }))}
               isLoading={isLoadingTrending}
-              onRetry={fetchTrendingSeries}
+              onRetryAction={fetchTrendingSeries}
               itemType="series"
               containerId="trending-series-container"
             />
