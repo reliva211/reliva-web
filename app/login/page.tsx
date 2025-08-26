@@ -33,7 +33,7 @@ export default function LoginPage() {
     try {
       const userCred = await signInWithEmailAndPassword(auth, email, password);
       console.log("Firebase login success:", userCred.user);
-      window.location.href = "/";
+      window.location.href = "/reviews";
     } catch (err) {
       console.error("Firebase login failed:", err);
       // Handle errors like "auth/user-not-found", etc.
@@ -49,7 +49,7 @@ export default function LoginPage() {
       const provider = new GoogleAuthProvider();
       const result = await signInWithPopup(auth, provider);
       console.log("Google login success:", result.user);
-      window.location.href = "/";
+      window.location.href = "/reviews";
     } catch (err) {
       console.error("Google login failed:", err);
     } finally {

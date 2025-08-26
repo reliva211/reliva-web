@@ -126,7 +126,7 @@ export default function PublicProfilePage() {
             <h1 className="text-xl font-semibold mb-2">Profile Unavailable</h1>
             <p className="text-muted-foreground mb-6">{error}</p>
           </div>
-          <Link href="/">
+          <Link href="/reviews">
             <Button variant="outline" className="w-full">
               <ArrowLeft className="h-4 w-4 mr-2" />
               Back to Home
@@ -149,42 +149,38 @@ export default function PublicProfilePage() {
 
   return (
     <ErrorBoundary>
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black">
         {/* Top Profile Section */}
-        <div className="max-w-4xl mx-auto px-2 sm:px-3 py-4 sm:py-6">
-          <div className="flex flex-col items-center text-center gap-4 mb-6">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 pt-16 sm:pt-20 pb-6 sm:pb-8">
+          <div className="flex flex-col items-center text-center gap-6 mb-8">
             {/* Profile Picture */}
-            <Avatar className="w-16 h-16 sm:w-20 sm:h-20 border-2 border-border">
+            <Avatar className="w-20 h-20 sm:w-24 sm:h-24 ring-4 ring-emerald-500/20 hover:ring-emerald-500/40 transition-all duration-300 group-hover:scale-105">
               <AvatarImage
                 src={profile.avatarUrl || "/placeholder.svg"}
                 alt={profile.displayName}
               />
-              <AvatarFallback className="text-sm sm:text-lg">
-                <User className="h-6 w-6 sm:h-8 sm:w-8" />
+              <AvatarFallback className="bg-gradient-to-br from-emerald-500 to-blue-500 text-white text-lg sm:text-xl font-semibold">
+                <User className="h-8 w-8 sm:h-10 sm:w-10" />
               </AvatarFallback>
             </Avatar>
 
             {/* User Info */}
             <div className="w-full max-w-md">
-              <h1 className="text-xl sm:text-2xl font-bold mb-1">
+              <h1 className="text-2xl sm:text-3xl font-bold mb-2 bg-gradient-to-r from-emerald-400 to-blue-500 bg-clip-text text-transparent">
                 {profile.displayName}
               </h1>
-              <p className="text-sm text-muted-foreground mb-1">
-                @{profile.username}
-              </p>
+              <p className="text-sm text-gray-400 mb-2">@{profile.username}</p>
               {profile.tagline && (
-                <p className="text-sm text-muted-foreground mb-3">
-                  {profile.tagline}
-                </p>
+                <p className="text-sm text-gray-300 mb-3">{profile.tagline}</p>
               )}
-              <p className="text-sm text-muted-foreground mb-3">
+              <p className="text-sm text-gray-300 mb-4">
                 {profile.bio || "No bio available"}
               </p>
-              <div className="flex justify-center gap-2">
+              <div className="flex justify-center">
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="text-xs sm:text-sm h-9 text-muted-foreground"
+                  className="text-xs sm:text-sm h-9 text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10 rounded-xl"
                 >
                   <Eye className="h-4 w-4 mr-1" />
                   Public Profile

@@ -80,7 +80,7 @@ export default function Sidebar({ isLandingPage = false }: SidebarProps) {
     try {
       await signOut(auth);
       // Use router.push instead of window.location.href for smoother navigation
-      router.push("/");
+      router.push("/reviews");
     } catch (error) {
       console.error("Error signing out:", error);
     }
@@ -98,10 +98,9 @@ export default function Sidebar({ isLandingPage = false }: SidebarProps) {
   ];
 
   const navigationItems = [
-    { href: "/", label: "Home", icon: Home },
+    { href: "/reviews", label: "Home", icon: Home },
     { href: "/recommendations", label: "Recommendations", icon: TrendingUp },
     { href: "/users", label: "Friends", icon: Users },
-    { href: "/reviews", label: "Post", icon: Edit },
     {
       href: "/notifications",
       label: "Notifications",
@@ -178,7 +177,7 @@ export default function Sidebar({ isLandingPage = false }: SidebarProps) {
               )}
             >
               <Link
-                href="/"
+                href="/reviews"
                 className="flex items-center space-x-2 flex-1 min-w-0"
               >
                 <span

@@ -92,7 +92,7 @@ export default function SignupPage() {
             authorId
           );
 
-          window.location.href = "/";
+          window.location.href = "/reviews";
         }
       } catch (error: any) {
         console.error("Redirect result error:", error);
@@ -173,7 +173,7 @@ export default function SignupPage() {
         authorId
       );
 
-      window.location.href = "/";
+      window.location.href = "/reviews";
     } catch (error: any) {
       console.error("Signup failed:", error.message);
       alert(error.message);
@@ -267,7 +267,7 @@ export default function SignupPage() {
         authorId
       );
 
-      window.location.href = "/";
+      window.location.href = "/reviews";
     } catch (error: any) {
       console.error("Google signup failed:", error.message);
 

@@ -15,7 +15,7 @@ export default function SignIn() {
     // Check if user is already signed in
     getSession().then((session) => {
       if (session) {
-        router.push("/home");
+        router.push("/reviews");
       }
     });
   }, [router]);
@@ -23,7 +23,7 @@ export default function SignIn() {
   const handleSpotifySignIn = async () => {
     setIsLoading(true);
     try {
-      await signIn("spotify", { callbackUrl: "/home" });
+      await signIn("spotify", { callbackUrl: "/reviews" });
     } catch (error) {
       console.error("Sign in error:", error);
       setIsLoading(false);

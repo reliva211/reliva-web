@@ -75,7 +75,7 @@ interface MusicAlbum {
   playCount: number;
   songs?: any[];
   addedAt: string;
-  type: 'album' | 'song' | 'artist';
+  type: "album" | "song" | "artist";
 }
 
 interface UserRecommendation {
@@ -93,6 +93,7 @@ export function useRecommendations() {
   );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [initialLoad, setInitialLoad] = useState(true);
 
   const fetchRecommendations = async () => {
     if (!currentUser?.uid) return;
@@ -127,7 +128,10 @@ export function useRecommendations() {
       let followingUsers = followingUsersSnapshot.docs
         .map((doc) => ({ uid: doc.id, ...doc.data() } as User))
         // Only include followed users and explicitly exclude current user if accidentally present
-        .filter((user) => followingList.includes(user.uid) && user.uid !== currentUser.uid);
+        .filter(
+          (user) =>
+            followingList.includes(user.uid) && user.uid !== currentUser.uid
+        );
 
       console.log(
         `Found ${followingUsers.length} following users for ${currentUser.uid}`
@@ -157,39 +161,80 @@ export function useRecommendations() {
       for (const user of validFollowingUsers) {
         try {
           // Fetch user's movie recommendations (only from Recommendations collection)
-          const movieRecommendationsRef = collection(db, "users", user.uid, "movieRecommendations");
-          const movieRecommendationsSnapshot = await getDocs(movieRecommendationsRef);
-          const movieRecommendations = movieRecommendationsSnapshot.docs.map((doc) => ({
-            id: parseInt(doc.id),
-            ...doc.data(),
-          })) as Movie[];
+          const movieRecommendationsRef = collection(
+            db,
+            "users",
+            user.uid,
+            "movieRecommendations"
+          );
+          const movieRecommendationsSnapshot = await getDocs(
+            movieRecommendationsRef
+          );
+          const movieRecommendations = movieRecommendationsSnapshot.docs.map(
+            (doc) => ({
+              id: parseInt(doc.id),
+              ...doc.data(),
+            })
+          ) as Movie[];
 
           // Fetch user's book recommendations (only from Recommendations collection)
-          const bookRecommendationsRef = collection(db, "users", user.uid, "bookRecommendations");
-          const bookRecommendationsSnapshot = await getDocs(bookRecommendationsRef);
-          const bookRecommendations = bookRecommendationsSnapshot.docs.map((doc) => ({
-            id: doc.id,
-            ...doc.data(),
-          })) as Book[];
+          const bookRecommendationsRef = collection(
+            db,
+            "users",
+            user.uid,
+            "bookRecommendations"
+          );
+          const bookRecommendationsSnapshot = await getDocs(
+            bookRecommendationsRef
+          );
+          const bookRecommendations = bookRecommendationsSnapshot.docs.map(
+            (doc) => ({
+              id: doc.id,
+              ...doc.data(),
+            })
+          ) as Book[];
 
           // Fetch user's series recommendations (only from Recommendations collection)
-          const seriesRecommendationsRef = collection(db, "users", user.uid, "seriesRecommendations");
-          const seriesRecommendationsSnapshot = await getDocs(seriesRecommendationsRef);
-          const seriesRecommendations = seriesRecommendationsSnapshot.docs.map((doc) => ({
-            id: parseInt(doc.id),
-            ...doc.data(),
-          })) as Series[];
+          const seriesRecommendationsRef = collection(
+            db,
+            "users",
+            user.uid,
+            "seriesRecommendations"
+          );
+          const seriesRecommendationsSnapshot = await getDocs(
+            seriesRecommendationsRef
+          );
+          const seriesRecommendations = seriesRecommendationsSnapshot.docs.map(
+            (doc) => ({
+              id: parseInt(doc.id),
+              ...doc.data(),
+            })
+          ) as Series[];
 
           // Fetch user's music recommendations (only from musicRecommendations collection)
-          const musicRecommendationsRef = collection(db, "users", user.uid, "musicRecommendations");
-          const musicRecommendationsSnapshot = await getDocs(musicRecommendationsRef);
-          const musicRecommendations = musicRecommendationsSnapshot.docs.map((doc) => ({
-            id: doc.id,
-            ...doc.data(),
-          })) as MusicAlbum[];
+          const musicRecommendationsRef = collection(
+            db,
+            "users",
+            user.uid,
+            "musicRecommendations"
+          );
+          const musicRecommendationsSnapshot = await getDocs(
+            musicRecommendationsRef
+          );
+          const musicRecommendations = musicRecommendationsSnapshot.docs.map(
+            (doc) => ({
+              id: doc.id,
+              ...doc.data(),
+            })
+          ) as MusicAlbum[];
 
           // Only add users who have recommendations in their Recommendations collections
-          if (movieRecommendations.length > 0 || bookRecommendations.length > 0 || seriesRecommendations.length > 0 || musicRecommendations.length > 0) {
+          if (
+            movieRecommendations.length > 0 ||
+            bookRecommendations.length > 0 ||
+            seriesRecommendations.length > 0 ||
+            musicRecommendations.length > 0
+          ) {
             // Try to get user name from various possible fields
             let displayName =
               user.displayName ||
@@ -211,16 +256,29 @@ export function useRecommendations() {
             });
           }
         } catch (error) {
-          console.error(`Error fetching recommendations for user ${user.uid}:`, error);
+          console.error(
+            `Error fetching recommendations for user ${user.uid}:`,
+            error
+          );
         }
       }
 
       setRecommendations(userRecommendations);
+
+      // Add a minimum loading time to prevent flickering
+      if (initialLoad) {
+        setTimeout(() => {
+          setLoading(false);
+          setInitialLoad(false);
+        }, 800);
+      } else {
+        setLoading(false);
+      }
     } catch (error) {
       console.error("Error fetching recommendations:", error);
       setError("Failed to load recommendations");
-    } finally {
       setLoading(false);
+      setInitialLoad(false);
     }
   };
 

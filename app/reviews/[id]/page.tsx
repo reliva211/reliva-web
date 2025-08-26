@@ -5,9 +5,24 @@ import { useParams, useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Star, Heart, ArrowLeft, Share2, Calendar, User, Clock } from "lucide-react";
+import {
+  Star,
+  Heart,
+  ArrowLeft,
+  Share2,
+  Calendar,
+  User,
+  Clock,
+} from "lucide-react";
 import { useCurrentUser } from "@/hooks/use-current-user";
-import { doc, getDoc, updateDoc, arrayUnion, arrayRemove, deleteDoc } from "firebase/firestore";
+import {
+  doc,
+  getDoc,
+  updateDoc,
+  arrayUnion,
+  arrayRemove,
+  deleteDoc,
+} from "firebase/firestore";
 import { db } from "@/lib/firebase";
 
 interface Review {
@@ -89,24 +104,22 @@ export default function ReviewDetailPage() {
     if (!user || !review || isLiking) return;
 
     setIsLiking(true);
-    
+
     // Optimistic update
-    const newLikes = isLiked 
-      ? localLikes.filter(id => id !== user.uid)
+    const newLikes = isLiked
+      ? localLikes.filter((id) => id !== user.uid)
       : [...localLikes, user.uid];
-    
+
     setLocalLikes(newLikes);
 
     try {
       const reviewRef = doc(db, "reviews", review.id);
       await updateDoc(reviewRef, {
-        likes: isLiked 
-          ? arrayRemove(user.uid)
-          : arrayUnion(user.uid)
+        likes: isLiked ? arrayRemove(user.uid) : arrayUnion(user.uid),
       });
-      
+
       // Update local review state
-      setReview(prev => prev ? { ...prev, likes: newLikes } : null);
+      setReview((prev) => (prev ? { ...prev, likes: newLikes } : null));
     } catch (error) {
       console.error("Error toggling like:", error);
       setLocalLikes(review.likes || []);
@@ -121,7 +134,7 @@ export default function ReviewDetailPage() {
     setIsDeleting(true);
     try {
       await deleteDoc(doc(db, "reviews", review.id));
-      router.push("/");
+      router.push("/reviews");
     } catch (error) {
       console.error("Error deleting review:", error);
     } finally {
@@ -132,11 +145,13 @@ export default function ReviewDetailPage() {
 
   const formatTimestamp = (timestamp: any) => {
     if (!timestamp) return "Just now";
-    
+
     const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
     const now = new Date();
-    const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
-    
+    const diffInHours = Math.floor(
+      (now.getTime() - date.getTime()) / (1000 * 60 * 60)
+    );
+
     if (diffInHours < 1) return "Just now";
     if (diffInHours < 24) return `${diffInHours}h ago`;
     if (diffInHours < 168) return `${Math.floor(diffInHours / 24)}d ago`;
@@ -145,21 +160,31 @@ export default function ReviewDetailPage() {
 
   const getMediaTypeIcon = (type: string) => {
     switch (type.toLowerCase()) {
-      case "movie": return "🎬";
-      case "series": return "📺";
-      case "book": return "📚";
-      case "music": return "🎵";
-      default: return "📖";
+      case "movie":
+        return "🎬";
+      case "series":
+        return "📺";
+      case "book":
+        return "📚";
+      case "music":
+        return "🎵";
+      default:
+        return "📖";
     }
   };
 
   const getMediaTypeColor = (type: string) => {
     switch (type.toLowerCase()) {
-      case "movie": return "from-blue-500 to-blue-600";
-      case "series": return "from-purple-500 to-purple-600";
-      case "book": return "from-emerald-500 to-emerald-600";
-      case "music": return "from-pink-500 to-pink-600";
-      default: return "from-gray-500 to-gray-600";
+      case "movie":
+        return "from-blue-500 to-blue-600";
+      case "series":
+        return "from-purple-500 to-purple-600";
+      case "book":
+        return "from-emerald-500 to-emerald-600";
+      case "music":
+        return "from-pink-500 to-pink-600";
+      default:
+        return "from-gray-500 to-gray-600";
     }
   };
 
@@ -184,7 +209,7 @@ export default function ReviewDetailPage() {
             <p className="text-gray-600 dark:text-gray-400 mb-8">
               The review you're looking for doesn't exist or has been removed.
             </p>
-            <Link href="/">
+            <Link href="/reviews">
               <Button className="bg-gradient-to-r from-emerald-600 to-blue-600 hover:from-emerald-700 hover:to-blue-700 text-white">
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 Back to Home
@@ -202,23 +227,30 @@ export default function ReviewDetailPage() {
       <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border-b border-gray-200 dark:border-gray-700 sticky top-0 z-40">
         <div className="max-w-6xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
-            <Link href="/">
-              <Button variant="ghost" className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">
+            <Link href="/reviews">
+              <Button
+                variant="ghost"
+                className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+              >
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 Back to Home
               </Button>
             </Link>
-            
+
             <div className="flex items-center space-x-3">
-              <Button variant="ghost" size="sm" className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+              >
                 <Share2 className="h-4 w-4 mr-2" />
                 Share
               </Button>
-              
+
               {isOwnReview && (
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
+                <Button
+                  variant="ghost"
+                  size="sm"
                   className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-red-900/20"
                   onClick={() => setShowDeleteConfirm(true)}
                 >
@@ -245,8 +277,13 @@ export default function ReviewDetailPage() {
                   className="object-cover"
                 />
                 <div className="absolute top-4 right-4">
-                  <div className={`px-3 py-1 rounded-full text-white text-sm font-semibold bg-gradient-to-r ${getMediaTypeColor(review.mediaType)}`}>
-                    {getMediaTypeIcon(review.mediaType)} {review.mediaType.toUpperCase()}
+                  <div
+                    className={`px-3 py-1 rounded-full text-white text-sm font-semibold bg-gradient-to-r ${getMediaTypeColor(
+                      review.mediaType
+                    )}`}
+                  >
+                    {getMediaTypeIcon(review.mediaType)}{" "}
+                    {review.mediaType.toUpperCase()}
                   </div>
                 </div>
               </div>
@@ -284,56 +321,56 @@ export default function ReviewDetailPage() {
                       <span>{review.mediaYear}</span>
                     </div>
                   )}
-                  
+
                   {review.mediaAuthor && (
                     <div className="flex items-center space-x-2">
                       <User className="h-4 w-4" />
                       <span>{review.mediaAuthor}</span>
                     </div>
                   )}
-                  
+
                   {review.mediaDirector && (
                     <div className="flex items-center space-x-2">
                       <User className="h-4 w-4" />
                       <span>Director: {review.mediaDirector}</span>
                     </div>
                   )}
-                  
+
                   {review.mediaArtist && (
                     <div className="flex items-center space-x-2">
                       <User className="h-4 w-4" />
                       <span>Artist: {review.mediaArtist}</span>
                     </div>
                   )}
-                  
+
                   {review.mediaAlbum && (
                     <div className="flex items-center space-x-2">
                       <span className="text-lg">💿</span>
                       <span>{review.mediaAlbum}</span>
                     </div>
                   )}
-                  
+
                   {review.mediaGenre && (
                     <div className="flex items-center space-x-2">
                       <span className="text-lg">🏷️</span>
                       <span>{review.mediaGenre}</span>
                     </div>
                   )}
-                  
+
                   {review.mediaDuration && (
                     <div className="flex items-center space-x-2">
                       <Clock className="h-4 w-4" />
                       <span>{review.mediaDuration}</span>
                     </div>
                   )}
-                  
+
                   {review.mediaPages && (
                     <div className="flex items-center space-x-2">
                       <span className="text-lg">📄</span>
                       <span>{review.mediaPages} pages</span>
                     </div>
                   )}
-                  
+
                   {review.mediaPublisher && (
                     <div className="flex items-center space-x-2">
                       <span className="text-lg">🏢</span>
@@ -345,7 +382,9 @@ export default function ReviewDetailPage() {
                 {/* Tags */}
                 {review.tags && review.tags.length > 0 && (
                   <div className="mt-6">
-                    <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">Tags</h4>
+                    <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
+                      Tags
+                    </h4>
                     <div className="flex flex-wrap gap-2">
                       {review.tags.map((tag, index) => (
                         <span
@@ -388,7 +427,9 @@ export default function ReviewDetailPage() {
                         : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700"
                     } ${isLiking ? "opacity-50 cursor-not-allowed" : ""}`}
                   >
-                    <Heart className={`h-5 w-5 ${isLiked ? "fill-current" : ""}`} />
+                    <Heart
+                      className={`h-5 w-5 ${isLiked ? "fill-current" : ""}`}
+                    />
                     <span className="font-medium">{likeCount}</span>
                     {isLiking && (
                       <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
@@ -432,7 +473,8 @@ export default function ReviewDetailPage() {
               Delete Review
             </h3>
             <p className="text-gray-600 dark:text-gray-300 mb-6">
-              Are you sure you want to delete your review for "{review.mediaTitle}"? This action cannot be undone.
+              Are you sure you want to delete your review for "
+              {review.mediaTitle}"? This action cannot be undone.
             </p>
             <div className="flex gap-3">
               <Button

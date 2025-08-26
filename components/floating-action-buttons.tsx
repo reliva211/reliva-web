@@ -98,7 +98,7 @@ export default function FloatingActionButtons({
           </button>
         </Link>
 
-        <Link href="/">
+        <Link href="/reviews">
           <button
             style={writeReviewStyle}
             onMouseEnter={handleMouseEnter}
@@ -129,7 +129,7 @@ export default function FloatingActionButtons({
             </button>
           </Link>
 
-          <Link href="/">
+          <Link href="/reviews">
             <button
               style={writeReviewStyle}
               onMouseEnter={handleMouseEnter}

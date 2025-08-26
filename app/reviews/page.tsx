@@ -12,7 +12,6 @@ import {
   MessageCircle,
   Repeat2,
   Share,
-  Bot,
   User,
   Sparkles,
 } from "lucide-react";
@@ -66,7 +65,8 @@ interface Post {
   __v: number;
 }
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE; // Adjust as needed
+const API_BASE =
+  process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080/api";
 // Force dynamic rendering to prevent prerender issues
 export const dynamic = "force-dynamic";
 
@@ -183,7 +183,8 @@ function ReviewsPageContent() {
 
     // WebSocket for real-time updates
     if (user?.authorId) {
-      wsRef.current = new WebSocket(process.env.NEXT_PUBLIC_WS_BASE||"");
+      const WS_BASE = process.env.NEXT_PUBLIC_WS_BASE || "ws://localhost:8080";
+      wsRef.current = new WebSocket(WS_BASE);
       wsRef.current.onopen = () => {
         console.log("author id", user.authorId);
         wsRef.current?.send(
@@ -752,71 +753,81 @@ function ReviewsPageContent() {
     return sortedReplies.map((reply) => (
       <div
         key={reply._id}
-        className="flex gap-2 border-l-2 border-muted"
+        className="flex gap-3 border-l border-gray-200 dark:border-gray-700 ml-4 p-3 bg-gray-50/30 dark:bg-gray-800/30 rounded-r-lg"
         style={{ paddingLeft: `${getIndent(depth)}px` }}
       >
-        <Avatar className="w-6 h-6">
-          <AvatarFallback
-            className={
-              reply.authorId?.username === "gemini" ? "bg-blue-100" : ""
-            }
-          >
-            {reply.authorId?.username === "gemini" ? (
-              <Bot className="w-3 h-3 text-blue-600" />
-            ) : (
-              <User className="w-3 h-3" />
-            )}
+        <Avatar className="w-8 h-8 ring-1 ring-blue-500/20 flex-shrink-0">
+          <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white font-semibold text-sm">
+            {reply.authorId?.username?.charAt(0)?.toUpperCase() || "U"}
           </AvatarFallback>
         </Avatar>
 
-        <div className="flex-1">
-          <div className="flex items-center gap-2 mb-1">
-            <span className="font-medium text-sm">
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-2">
+            <span className="font-semibold text-sm text-gray-900 dark:text-white">
               {reply.authorId?.username}
             </span>
-            <span className="text-muted-foreground text-xs">
+            <span className="text-muted-foreground text-xs bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded-full">
               {formatTime(reply.timestamp)}
             </span>
           </div>
-          <p className="text-sm text-foreground whitespace-pre-wrap mb-2">
+          <p className="text-sm text-gray-900 dark:text-white whitespace-pre-wrap mb-3 leading-relaxed">
             {reply.content}
           </p>
 
-          <div className="flex items-center gap-4 text-muted-foreground mb-2">
+          <div className="flex items-center gap-4 text-muted-foreground">
             <button
               onClick={() => toggleReplyInput(`${postId}-${reply._id}`)}
-              className="flex items-center gap-1 hover:text-blue-500 transition-colors"
+              className="flex items-center gap-1.5 hover:text-blue-500 transition-all duration-200 group"
             >
-              <MessageCircle className="w-3 h-3" />
-              <span className="text-xs">{reply.comments?.length || 0}</span>
+              <div className="p-1.5 rounded-full group-hover:bg-blue-50 dark:group-hover:bg-blue-900/20 transition-colors">
+                <MessageCircle className="w-4 h-4" />
+              </div>
+              <span className="text-xs font-medium">
+                {reply.comments?.length || 0}
+              </span>
             </button>
 
-            <button className="flex items-center gap-1 hover:text-green-500 transition-colors">
-              <Repeat2 className="w-3 h-3" />
+            <button className="flex items-center gap-1.5 hover:text-green-500 transition-all duration-200 group">
+              <div className="p-1.5 rounded-full group-hover:bg-green-50 dark:group-hover:bg-green-900/20 transition-colors">
+                <Repeat2 className="w-4 h-4" />
+              </div>
             </button>
 
             <button
               onClick={() => toggleReplyLike(postId, reply._id)}
-              className={`flex items-center gap-1 transition-colors ${
+              className={`flex items-center gap-1.5 transition-all duration-200 group ${
                 reply.isLiked ? "text-red-500" : "hover:text-red-500"
               }`}
             >
-              <Heart
-                className={`w-3 h-3 ${reply.isLiked ? "fill-current" : ""}`}
-              />
-              <span className="text-xs">{reply.likeCount}</span>
+              <div
+                className={`p-1.5 rounded-full transition-colors ${
+                  reply.isLiked
+                    ? "bg-red-50 dark:bg-red-900/20"
+                    : "group-hover:bg-red-50 dark:group-hover:bg-red-900/20"
+                }`}
+              >
+                <Heart
+                  className={`w-4 h-4 ${reply.isLiked ? "fill-current" : ""}`}
+                />
+              </div>
+              <span className="text-xs font-medium">{reply.likeCount}</span>
             </button>
 
-            <button className="flex items-center gap-1 hover:text-blue-500 transition-colors">
-              <Share className="w-3 h-3" />
+            <button className="flex items-center gap-1.5 hover:text-blue-500 transition-all duration-200 group">
+              <div className="p-1.5 rounded-full group-hover:bg-blue-50 dark:group-hover:bg-blue-900/20 transition-colors">
+                <Share className="w-4 h-4" />
+              </div>
             </button>
           </div>
 
           {showReplyInput[`${postId}-${reply._id}`] && (
-            <div className="mt-2 flex gap-2">
-              <Avatar className="w-5 h-5">
-                <AvatarFallback>
-                  <User className="w-2 h-2" />
+            <div className="mt-3 flex gap-3 bg-white dark:bg-gray-800 rounded-lg p-3 border border-gray-200 dark:border-gray-700 shadow-sm">
+              <Avatar className="w-6 h-6 ring-1 ring-blue-500/20 flex-shrink-0">
+                <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white font-semibold text-xs">
+                  {user?.displayName?.charAt(0) ||
+                    user?.email?.charAt(0) ||
+                    "U"}
                 </AvatarFallback>
               </Avatar>
               <div className="flex-1">
@@ -828,17 +839,17 @@ function ReviewsPageContent() {
                       [`${postId}-${reply._id}`]: e.target.value,
                     }))
                   }
-                  placeholder="Write a reply... (Use @gemini for AI response)"
-                  className="min-h-[50px] text-xs border-none resize-none focus-visible:ring-0"
+                  placeholder="Write a reply..."
+                  className="min-h-[50px] text-sm border-none resize-none focus-visible:ring-0 bg-transparent"
                   disabled={isReplying[`${postId}-${reply._id}`]}
                 />
-                <div className="flex justify-end gap-2 mt-1">
+                <div className="flex justify-end gap-2 mt-2">
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={() => toggleReplyInput(`${postId}-${reply._id}`)}
                     disabled={isReplying[`${postId}-${reply._id}`]}
-                    className="h-6 px-2 text-xs"
+                    className="text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 text-xs"
                   >
                     Cancel
                   </Button>
@@ -849,11 +860,16 @@ function ReviewsPageContent() {
                       !replyInputs[`${postId}-${reply._id}`]?.trim() ||
                       isReplying[`${postId}-${reply._id}`]
                     }
-                    className="rounded-full px-3 h-6 text-xs"
+                    className="bg-blue-600 hover:bg-blue-700 text-white rounded-full px-3 py-1 text-xs font-medium shadow-sm hover:shadow-md transition-all duration-200"
                   >
-                    {isReplying[`${postId}-${reply._id}`]
-                      ? "Replying..."
-                      : "Reply"}
+                    {isReplying[`${postId}-${reply._id}`] ? (
+                      <div className="flex items-center gap-1">
+                        <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                        <span>Replying...</span>
+                      </div>
+                    ) : (
+                      "Reply"
+                    )}
                   </Button>
                 </div>
               </div>
@@ -936,12 +952,12 @@ function ReviewsPageContent() {
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg mb-6">
             <div className="p-6 border-b border-gray-200 dark:border-gray-700">
               <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-                Search Media
+                Quick log
               </h2>
             </div>
             <div className="p-6 space-y-4">
               {/* Type Selector */}
-              <div className="flex gap-2 mb-4">
+              <div className="flex gap-2">
                 {[
                   { value: "movie", label: "Movies", icon: Film },
                   { value: "series", label: "Series", icon: Tv },
@@ -951,10 +967,10 @@ function ReviewsPageContent() {
                   <button
                     key={type.value}
                     onClick={() => setSearchType(type.value)}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                    className={`flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
                       searchType === type.value
-                        ? "bg-blue-600 text-white shadow-md"
-                        : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 hover:shadow-sm"
+                        ? "bg-blue-600 text-white"
+                        : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
                     }`}
                   >
                     <type.icon className="h-4 w-4" />
@@ -964,7 +980,7 @@ function ReviewsPageContent() {
               </div>
 
               {/* Search Input */}
-              <div className="flex gap-3">
+              <div className="flex gap-2">
                 <input
                   type="text"
                   placeholder={`Search for ${
@@ -973,12 +989,12 @@ function ReviewsPageContent() {
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && searchMedia()}
-                  className="flex-1 px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                  className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
                 <button
                   onClick={searchMedia}
                   disabled={isSearching}
-                  className="px-6 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white rounded-lg transition-all duration-200 hover:shadow-md disabled:hover:shadow-none"
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white rounded-lg transition-colors"
                 >
                   <Search className="h-4 w-4" />
                 </button>
@@ -986,73 +1002,38 @@ function ReviewsPageContent() {
 
               {/* Search Results */}
               {searchResults.length > 0 && (
-                <div className="space-y-3 max-h-80 overflow-y-auto">
+                <div className="space-y-2 max-h-60 overflow-y-auto">
                   {searchResults.map((result) => (
                     <div
                       key={`${result.type}-${result.id}`}
-                      className="flex items-center gap-4 p-4 border border-gray-200 dark:border-gray-700 rounded-xl cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-all duration-200 hover:shadow-md"
+                      className="flex items-center gap-3 p-3 border border-gray-200 dark:border-gray-700 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
                       onClick={() => selectMedia(result)}
                     >
-                      {/* Image */}
-                      <div className="flex-shrink-0">
-                        <Image
-                          src={result.cover}
-                          alt={result.title}
-                          width={60}
-                          height={90}
-                          className="rounded-lg object-cover shadow-sm"
-                        />
-                      </div>
-
-                      {/* Content */}
-                      <div className="flex-1 min-w-0">
-                        {/* Title */}
-                        <h3 className="font-semibold text-base sm:text-sm md:text-lg text-gray-900 dark:text-white line-clamp-2 min-h-[2rem] sm:min-h-[1.5rem] leading-tight mb-2">
+                      <Image
+                        src={result.cover}
+                        alt={result.title}
+                        width={40}
+                        height={60}
+                        className="rounded object-cover"
+                      />
+                      <div className="flex-1">
+                        <h3 className="font-medium text-gray-900 dark:text-white">
                           {result.title}
                         </h3>
-
-                        {/* Metadata */}
-                        <div className="flex flex-wrap items-center gap-2 mb-3">
-                          {result.year && (
-                            <span className="text-sm sm:text-xs md:text-sm text-gray-600 dark:text-gray-400 font-medium">
-                              {result.year}
-                            </span>
-                          )}
-                          {result.author && (
-                            <span className="text-sm sm:text-xs md:text-sm text-gray-600 dark:text-gray-400">
-                              • {result.author}
-                            </span>
-                          )}
-                          {result.artist && (
-                            <span className="text-sm sm:text-xs md:text-sm text-gray-600 dark:text-gray-400">
-                              • {result.artist}
-                            </span>
-                          )}
-                          {result.album && (
-                            <span className="text-sm sm:text-xs md:text-sm text-gray-600 dark:text-gray-400">
-                              • {result.album}
-                            </span>
-                          )}
-                        </div>
-
-                        {/* Type Badge */}
-                        <div className="flex items-center gap-2">
-                          <span className="inline-flex items-center px-3 py-1 text-xs font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 rounded-full">
-                            {result.type.toUpperCase()}
-                          </span>
+                        <div className="text-sm text-gray-500 dark:text-gray-400">
+                          {result.year && <span>{result.year}</span>}
+                          {result.author && <span> • {result.author}</span>}
+                          {result.artist && <span> • {result.artist}</span>}
                           {result.mediaSubType && (
-                            <span className="inline-flex items-center px-2 py-1 text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full">
-                              {result.mediaSubType.toUpperCase()}
-                            </span>
+                            <span> • {result.mediaSubType.toUpperCase()}</span>
                           )}
                         </div>
-                      </div>
-
-                      {/* Selection Indicator */}
-                      <div className="flex-shrink-0">
-                        <div className="w-6 h-6 rounded-full border-2 border-gray-300 dark:border-gray-600 flex items-center justify-center">
-                          <div className="w-2 h-2 rounded-full bg-gray-400 dark:bg-gray-500"></div>
-                        </div>
+                        <span className="inline-block px-2 py-1 text-xs bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded mt-1">
+                          {result.type.toUpperCase()}
+                          {result.mediaSubType
+                            ? ` - ${result.mediaSubType.toUpperCase()}`
+                            : ""}
+                        </span>
                       </div>
                     </div>
                   ))}
@@ -1072,65 +1053,40 @@ function ReviewsPageContent() {
             </div>
             <div className="p-6 space-y-6">
               {/* Selected Media Display */}
-              <div className="flex items-center gap-6 p-6 bg-gray-50 dark:bg-gray-700 rounded-xl border border-gray-200 dark:border-gray-600">
-                {/* Image */}
-                <div className="flex-shrink-0">
-                  <Image
-                    src={selectedMedia.cover}
-                    alt={selectedMedia.title}
-                    width={80}
-                    height={120}
-                    className="rounded-lg object-cover shadow-md"
-                  />
-                </div>
-
-                {/* Content */}
-                <div className="flex-1 min-w-0">
-                  <h3 className="font-bold text-lg sm:text-base md:text-xl text-gray-900 dark:text-white line-clamp-2 min-h-[2.5rem] sm:min-h-[2rem] leading-tight mb-3">
+              <div className="flex items-center gap-4 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                <Image
+                  src={selectedMedia.cover}
+                  alt={selectedMedia.title}
+                  width={60}
+                  height={90}
+                  className="rounded object-cover"
+                />
+                <div>
+                  <h3 className="font-semibold text-gray-900 dark:text-white">
                     {selectedMedia.title}
                   </h3>
-
-                  {/* Metadata */}
-                  <div className="flex flex-wrap items-center gap-3 mb-4">
-                    {selectedMedia.year && (
-                      <span className="text-base sm:text-sm md:text-base text-gray-600 dark:text-gray-400 font-medium">
-                        {selectedMedia.year}
-                      </span>
-                    )}
+                  <div className="text-sm text-gray-500 dark:text-gray-400">
+                    {selectedMedia.year && <span>{selectedMedia.year}</span>}
                     {selectedMedia.author && (
-                      <span className="text-base sm:text-sm md:text-base text-gray-600 dark:text-gray-400">
-                        • {selectedMedia.author}
-                      </span>
+                      <span> • {selectedMedia.author}</span>
                     )}
                     {selectedMedia.artist && (
-                      <span className="text-base sm:text-sm md:text-base text-gray-600 dark:text-gray-400">
-                        • {selectedMedia.artist}
-                      </span>
+                      <span> • {selectedMedia.artist}</span>
                     )}
-                    {selectedMedia.album && (
-                      <span className="text-base sm:text-sm md:text-base text-gray-600 dark:text-gray-400">
-                        • {selectedMedia.album}
-                      </span>
-                    )}
-                  </div>
-
-                  {/* Type Badges */}
-                  <div className="flex items-center gap-3">
-                    <span className="inline-flex items-center px-4 py-2 text-sm font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 rounded-full">
-                      {selectedMedia.type.toUpperCase()}
-                    </span>
                     {selectedMedia.mediaSubType && (
-                      <span className="inline-flex items-center px-3 py-2 text-sm font-medium bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full">
-                        {selectedMedia.mediaSubType.toUpperCase()}
-                      </span>
+                      <span> • {selectedMedia.mediaSubType.toUpperCase()}</span>
                     )}
                   </div>
+                  <span className="inline-block px-2 py-1 text-xs bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300 rounded mt-1">
+                    {selectedMedia.type.toUpperCase()}
+                    {selectedMedia.mediaSubType
+                      ? ` - ${selectedMedia.mediaSubType.toUpperCase()}`
+                      : ""}
+                  </span>
                 </div>
-
-                {/* Change Button */}
                 <button
                   onClick={() => setSelectedMedia(null)}
-                  className="flex-shrink-0 px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-all duration-200 hover:shadow-sm"
+                  className="ml-auto px-3 py-1 text-sm text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
                 >
                   Change
                 </button>
@@ -1211,38 +1167,67 @@ function ReviewsPageContent() {
 
         <div className="min-h-screen bg-background">
           <div className="max-w-2xl mx-auto border-x border-border min-h-screen">
-            {/* Header */}
-            <div className="sticky top-0 bg-background/80 backdrop-blur border-b border-border p-4">
-              <h1 className="text-xl font-bold">Home</h1>
+            {/* Enhanced Header */}
+            <div className="sticky top-0 bg-background/95 backdrop-blur-xl border-b border-border z-10">
+              <div className="px-4 py-3">
+                <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                  Home
+                </h1>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Latest updates from your network
+                </p>
+              </div>
             </div>
 
-            {/* Post Creation */}
-            <div className="border-b border-border p-4">
-              <div className="flex gap-3">
-                <Avatar>
-                  <AvatarFallback>
-                    <User className="w-4 h-4" />
-                  </AvatarFallback>
-                </Avatar>
-                <div className="flex-1">
-                  <Textarea
-                    value={newPost}
-                    onChange={(e) => setNewPost(e.target.value)}
-                    placeholder="What's happening? (Use @gemini to get AI responses)"
-                    className="min-h-[100px] border-none resize-none text-lg placeholder:text-muted-foreground focus-visible:ring-0"
-                    disabled={isPosting}
-                  />
-                  <div className="flex justify-between items-center mt-3">
-                    <p className="text-sm text-muted-foreground">
-                      Tip: Use @gemini, #ai, or #help to get AI responses
-                    </p>
-                    <Button
-                      onClick={handlePost}
-                      disabled={!newPost.trim() || isPosting}
-                      className="rounded-full px-6"
-                    >
-                      {isPosting ? "Posting..." : "Post"}
-                    </Button>
+            {/* Enhanced Post Creation */}
+            <div className="border-b border-border bg-gradient-to-r from-gray-50/50 to-gray-100/50 dark:from-gray-900/50 dark:to-gray-800/50">
+              <div className="p-4">
+                <div className="flex gap-4">
+                  <Avatar className="w-12 h-12 ring-2 ring-blue-500/20">
+                    <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white font-semibold">
+                      {user?.displayName?.charAt(0) ||
+                        user?.email?.charAt(0) ||
+                        "U"}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1">
+                    <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-all duration-200">
+                      <Textarea
+                        value={newPost}
+                        onChange={(e) => setNewPost(e.target.value)}
+                        placeholder="What's happening?"
+                        className="min-h-[120px] border-none resize-none text-lg placeholder:text-muted-foreground focus-visible:ring-0 bg-transparent p-4 rounded-2xl"
+                        disabled={isPosting}
+                      />
+                    </div>
+
+                    {/* Enhanced Action Bar */}
+                    <div className="flex justify-between items-center mt-4">
+                      <div className="flex items-center gap-4 text-muted-foreground">
+                        <div className="flex items-center gap-2 text-sm">
+                          <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                          <span>Ready to post</span>
+                        </div>
+                      </div>
+
+                      <Button
+                        onClick={handlePost}
+                        disabled={!newPost.trim() || isPosting}
+                        className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold rounded-full px-8 py-2.5 shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200"
+                      >
+                        {isPosting ? (
+                          <div className="flex items-center gap-2">
+                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                            <span>Posting...</span>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-2">
+                            <span>Post</span>
+                            <div className="w-1.5 h-1.5 bg-white rounded-full"></div>
+                          </div>
+                        )}
+                      </Button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -1251,9 +1236,18 @@ function ReviewsPageContent() {
             {/* Feed */}
             <ScrollArea className="flex-1">
               {(!posts || posts.length === 0) && (
-                <div className="text-center py-12 text-muted-foreground">
-                  <Sparkles className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                  <p>Your feed is empty. Create your first post!</p>
+                <div className="text-center py-16 px-4">
+                  <div className="w-20 h-20 bg-gradient-to-br from-blue-100 to-purple-100 dark:from-blue-900/20 dark:to-purple-900/20 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <Sparkles className="w-10 h-10 text-blue-600 dark:text-blue-400" />
+                  </div>
+                  <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-3">
+                    Your feed is empty
+                  </h3>
+                  <p className="text-gray-600 dark:text-gray-400 mb-6 max-w-md mx-auto">
+                    Start sharing your thoughts and discover what others are
+                    watching, reading, and listening to.
+                  </p>
+                  <div className="w-16 h-1 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full mx-auto"></div>
                 </div>
               )}
 
@@ -1262,166 +1256,192 @@ function ReviewsPageContent() {
                 posts.map((post) => (
                   <div
                     key={post._id}
-                    className="border-b border-border p-4 hover:bg-muted/50 transition-colors"
+                    className="border-b border-border p-4 hover:bg-gray-50/50 dark:hover:bg-gray-900/50 transition-all duration-200 group"
                   >
                     <div className="flex gap-3">
-                      <Avatar>
-                        <AvatarFallback className="bg-gray-100">
-                          <User className="w-4 h-4" />
+                      <Avatar className="w-10 h-10 ring-1 ring-blue-500/20 group-hover:ring-blue-500/30 transition-all duration-200">
+                        <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white font-semibold text-sm">
+                          {post.authorId?.username?.charAt(0)?.toUpperCase() ||
+                            "U"}
                         </AvatarFallback>
                       </Avatar>
 
                       <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="font-semibold">
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="font-semibold text-sm text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
                             {post.authorId?.username}
                           </span>
-                          {post.authorId?.username === "gemini" && (
-                            <div className="w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center">
-                              <Bot className="w-2 h-2 text-white" />
-                            </div>
-                          )}
-                          <span className="text-muted-foreground text-sm">
+                          <span className="text-muted-foreground text-xs bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded-full">
                             {formatTime(post.timestamp)}
                           </span>
                         </div>
 
-                        <p className="text-foreground mb-3 whitespace-pre-wrap leading-relaxed">
+                        <p className="text-foreground mb-3 whitespace-pre-wrap leading-relaxed text-sm">
                           {post.content}
                         </p>
 
-                        {/* Media Display Section */}
+                        {/* Compact Media Display Section */}
                         {post.mediaId && (
-                          <Card className="mb-3 overflow-hidden">
-                            <div className="flex gap-4 p-4">
-                              {/* Image */}
-                              <div className="flex-shrink-0">
+                          <Card className="mb-3 overflow-hidden border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-all duration-200 bg-white dark:bg-gray-800">
+                            <div className="flex">
+                              <div className="w-20 h-28 flex-shrink-0 relative">
                                 <img
                                   src={post.mediaCover || "/placeholder.svg"}
                                   alt={post.mediaTitle}
-                                  className="w-20 h-28 rounded-lg object-cover shadow-sm"
+                                  className="w-full h-full object-cover"
                                 />
-                              </div>
-
-                              {/* Content */}
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-start gap-3 mb-3">
+                                <div className="absolute top-1 right-1">
                                   {getMediaIcon(post.mediaType)}
+                                </div>
+                              </div>
+                              <div className="flex-1 p-3">
+                                <div className="flex items-start gap-2 mb-2">
                                   <div className="flex-1">
-                                    <h3 className="font-semibold text-base sm:text-sm md:text-lg line-clamp-2 min-h-[2rem] sm:min-h-[1.5rem] leading-tight mb-2">
+                                    <h3 className="font-semibold text-sm text-gray-900 dark:text-white line-clamp-2 mb-1">
                                       {post.mediaTitle}
                                     </h3>
-                                    <div className="flex items-center gap-2">
+                                    <div className="flex items-center gap-2 mb-2">
                                       <Badge
                                         variant="secondary"
-                                        className="text-sm sm:text-xs md:text-sm"
+                                        className="px-2 py-0.5 text-xs font-medium bg-blue-100 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 border-0"
                                       >
                                         {post.mediaType}
                                       </Badge>
                                       {post.mediaSubType && (
                                         <Badge
                                           variant="outline"
-                                          className="text-sm sm:text-xs md:text-sm"
+                                          className="px-2 py-0.5 text-xs font-medium border-gray-300 dark:border-gray-600"
                                         >
-                                          {post.mediaSubType}
+                                          {post.mediaSubType.toUpperCase()}
                                         </Badge>
                                       )}
                                     </div>
                                   </div>
                                 </div>
 
-                                {/* Metadata */}
-                                <div className="flex flex-wrap items-center gap-3 mb-3">
-                                  {post.mediaYear && (
-                                    <span className="text-sm sm:text-xs md:text-sm text-muted-foreground font-medium">
-                                      {post.mediaYear}
-                                    </span>
-                                  )}
+                                <div className="space-y-2 text-sm text-gray-600 dark:text-gray-400 mb-4">
                                   {post.mediaAuthor && (
-                                    <span className="text-sm sm:text-xs md:text-sm text-muted-foreground">
-                                      • {post.mediaAuthor}
-                                    </span>
+                                    <div className="flex items-center gap-2">
+                                      <span className="font-semibold text-gray-700 dark:text-gray-300">
+                                        Director:
+                                      </span>
+                                      <span>{post.mediaAuthor}</span>
+                                    </div>
                                   )}
                                   {post.mediaArtist && (
-                                    <span className="text-sm sm:text-xs md:text-sm text-muted-foreground">
-                                      • {post.mediaArtist}
-                                    </span>
+                                    <div className="flex items-center gap-2">
+                                      <span className="font-semibold text-gray-700 dark:text-gray-300">
+                                        Artist:
+                                      </span>
+                                      <span>{post.mediaArtist}</span>
+                                    </div>
                                   )}
+                                  <div className="flex items-center gap-2">
+                                    <span className="font-semibold text-gray-700 dark:text-gray-300">
+                                      Year:
+                                    </span>
+                                    <span>{post.mediaYear}</span>
+                                  </div>
                                 </div>
 
-                                {/* Rating */}
-                                <div className="flex items-center gap-2">
-                                  {renderStarRating(post.rating)}
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center gap-2">
+                                    {renderStarRating(post.rating)}
+                                  </div>
+                                  <div className="text-xs text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded-full">
+                                    {post.rating}/5
+                                  </div>
                                 </div>
                               </div>
                             </div>
                           </Card>
                         )}
 
-                        {/* Post Actions */}
-                        <div className="flex items-center gap-6 text-muted-foreground">
+                        {/* Compact Post Actions */}
+                        <div className="flex items-center gap-6 text-muted-foreground pt-2 border-t border-gray-100 dark:border-gray-800">
                           <button
                             onClick={() => toggleReplyInput(post._id)}
-                            className="flex items-center gap-2 hover:text-blue-500 transition-colors"
+                            className="flex items-center gap-1.5 hover:text-blue-500 transition-all duration-200 group"
                           >
-                            <MessageCircle className="w-4 h-4" />
-                            <span className="text-sm">
+                            <div className="p-1.5 rounded-full group-hover:bg-blue-50 dark:group-hover:bg-blue-900/20 transition-colors">
+                              <MessageCircle className="w-4 h-4" />
+                            </div>
+                            <span className="text-xs font-medium">
                               {post.comments?.length || 0}
                             </span>
                           </button>
 
-                          <button className="flex items-center gap-2 hover:text-green-500 transition-colors">
-                            <Repeat2 className="w-4 h-4" />
+                          <button className="flex items-center gap-1.5 hover:text-green-500 transition-all duration-200 group">
+                            <div className="p-1.5 rounded-full group-hover:bg-green-50 dark:group-hover:bg-green-900/20 transition-colors">
+                              <Repeat2 className="w-4 h-4" />
+                            </div>
                           </button>
 
                           <button
                             onClick={() => toggleLike(post._id)}
-                            className={`flex items-center gap-2 transition-colors ${
+                            className={`flex items-center gap-1.5 transition-all duration-200 group ${
                               post.isLiked
                                 ? "text-red-500"
                                 : "hover:text-red-500"
                             }`}
                           >
-                            <Heart
-                              className={`w-4 h-4 ${
-                                post.isLiked ? "fill-current" : ""
+                            <div
+                              className={`p-1.5 rounded-full transition-colors ${
+                                post.isLiked
+                                  ? "bg-red-50 dark:bg-red-900/20"
+                                  : "group-hover:bg-red-50 dark:group-hover:bg-red-900/20"
                               }`}
-                            />
-                            <span className="text-sm">{post.likeCount}</span>
+                            >
+                              <Heart
+                                className={`w-4 h-4 ${
+                                  post.isLiked ? "fill-current" : ""
+                                }`}
+                              />
+                            </div>
+                            <span className="text-xs font-medium">
+                              {post.likeCount}
+                            </span>
                           </button>
 
-                          <button className="flex items-center gap-2 hover:text-blue-500 transition-colors">
-                            <Share className="w-4 h-4" />
+                          <button className="flex items-center gap-1.5 hover:text-blue-500 transition-all duration-200 group">
+                            <div className="p-1.5 rounded-full group-hover:bg-blue-50 dark:group-hover:bg-blue-900/20 transition-colors">
+                              <Share className="w-4 h-4" />
+                            </div>
                           </button>
                         </div>
 
-                        {/* Reply Input Section */}
+                        {/* Compact Reply Input Section */}
                         {showReplyInput[post._id] && (
-                          <div className="mt-4 flex gap-3">
-                            <Avatar className="w-6 h-6">
-                              <AvatarFallback>
-                                <User className="w-3 h-3" />
+                          <div className="mt-3 flex gap-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg p-3 border border-gray-200 dark:border-gray-700">
+                            <Avatar className="w-8 h-8 ring-1 ring-blue-500/20">
+                              <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white font-semibold text-sm">
+                                {user?.displayName?.charAt(0) ||
+                                  user?.email?.charAt(0) ||
+                                  "U"}
                               </AvatarFallback>
                             </Avatar>
                             <div className="flex-1">
-                              <Textarea
-                                value={replyInputs[post._id] || ""}
-                                onChange={(e) =>
-                                  setReplyInputs((prev) => ({
-                                    ...prev,
-                                    [post._id]: e.target.value,
-                                  }))
-                                }
-                                placeholder="Write a reply... (Use @gemini for AI response)"
-                                className="min-h-[60px] text-sm border-none resize-none focus-visible:ring-0"
-                                disabled={isReplying[post._id]}
-                              />
+                              <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+                                <Textarea
+                                  value={replyInputs[post._id] || ""}
+                                  onChange={(e) =>
+                                    setReplyInputs((prev) => ({
+                                      ...prev,
+                                      [post._id]: e.target.value,
+                                    }))
+                                  }
+                                  placeholder="Write a reply..."
+                                  className="min-h-[50px] text-sm border-none resize-none focus-visible:ring-0 bg-transparent p-2 rounded-lg"
+                                  disabled={isReplying[post._id]}
+                                />
+                              </div>
                               <div className="flex justify-end gap-2 mt-2">
                                 <Button
                                   variant="ghost"
                                   size="sm"
                                   onClick={() => toggleReplyInput(post._id)}
                                   disabled={isReplying[post._id]}
+                                  className="text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 text-xs"
                                 >
                                   Cancel
                                 </Button>
@@ -1432,11 +1452,16 @@ function ReviewsPageContent() {
                                     !replyInputs[post._id]?.trim() ||
                                     isReplying[post._id]
                                   }
-                                  className="rounded-full px-4"
+                                  className="bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-full px-3 py-1 text-xs shadow-sm hover:shadow-md transition-all duration-200"
                                 >
-                                  {isReplying[post._id]
-                                    ? "Replying..."
-                                    : "Reply"}
+                                  {isReplying[post._id] ? (
+                                    <div className="flex items-center gap-1">
+                                      <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                      <span>Replying...</span>
+                                    </div>
+                                  ) : (
+                                    "Reply"
+                                  )}
                                 </Button>
                               </div>
                             </div>
@@ -1444,7 +1469,7 @@ function ReviewsPageContent() {
                         )}
 
                         {post.comments && post.comments.length > 0 && (
-                          <div className="mt-4 space-y-3">
+                          <div className="mt-3 space-y-2">
                             {renderReplies(
                               buildCommentTree(post.comments),
                               post._id

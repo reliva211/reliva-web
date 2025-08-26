@@ -56,6 +56,7 @@ export function Recommendations({
   const [recommendations, setRecommendations] = useState<Song[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [initialLoad, setInitialLoad] = useState(true);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   const scrollLeft = () => {
@@ -119,7 +120,7 @@ export function Recommendations({
         setError(null);
 
         // Generate recommendations based on current song or popular tracks
-        let query = "popular songs 2024";
+        let query = "popular songs 2025";
         if (currentSong) {
           // Use current song's artist or genre for better recommendations
           const artist = currentSong.artists?.primary?.[0]?.name;
@@ -145,13 +146,23 @@ export function Recommendations({
         });
 
         setRecommendations(filteredSongs.slice(0, 8));
+
+        // Add a minimum loading time to prevent flickering
+        if (initialLoad) {
+          setTimeout(() => {
+            setLoading(false);
+            setInitialLoad(false);
+          }, 600);
+        } else {
+          setLoading(false);
+        }
       } catch (err) {
         console.error("Error fetching recommendations:", err);
         setError(
           err instanceof Error ? err.message : "Failed to load recommendations"
         );
-      } finally {
         setLoading(false);
+        setInitialLoad(false);
       }
     };
 
@@ -160,9 +171,29 @@ export function Recommendations({
 
   if (loading) {
     return (
-      <div className="text-center py-8">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-4"></div>
-        <p className="text-gray-400">Finding recommendations for you...</p>
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div className="h-5 bg-gray-700 rounded w-48 animate-pulse"></div>
+        </div>
+
+        {/* Loading Skeleton for Songs */}
+        <div className="flex gap-4 overflow-x-auto pb-4">
+          {[1, 2, 3, 4, 5, 6].map((item) => (
+            <div
+              key={item}
+              className="flex-shrink-0 w-[160px] sm:w-[180px] md:w-[200px] relative"
+            >
+              <div className="aspect-square w-full rounded-xl bg-gray-700 animate-pulse relative overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent animate-pulse"></div>
+              </div>
+              <div className="mt-3 space-y-2 px-2">
+                <div className="h-4 bg-gray-700 rounded animate-pulse"></div>
+                <div className="h-3 bg-gray-700 rounded w-3/4 animate-pulse"></div>
+                <div className="h-3 bg-gray-700 rounded w-1/2 animate-pulse"></div>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     );
   }
@@ -170,8 +201,12 @@ export function Recommendations({
   if (error) {
     return (
       <div className="text-center py-8">
-        <Music className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-        <p className="text-gray-400 mb-2">Failed to load recommendations</p>
+        <div className="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+          <Music className="w-8 h-8 text-red-400" />
+        </div>
+        <p className="text-gray-300 mb-2 font-medium">
+          Failed to load recommendations
+        </p>
         <p className="text-sm text-gray-500">{error}</p>
       </div>
     );
@@ -180,8 +215,12 @@ export function Recommendations({
   if (recommendations.length === 0) {
     return (
       <div className="text-center py-8">
-        <Shuffle className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-        <p className="text-gray-400">No recommendations available</p>
+        <div className="w-16 h-16 bg-blue-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+          <Shuffle className="w-8 h-8 text-blue-400" />
+        </div>
+        <p className="text-gray-300 font-medium">
+          No recommendations available
+        </p>
         <p className="text-sm text-gray-500">
           Try playing a song to get personalized recommendations
         </p>
