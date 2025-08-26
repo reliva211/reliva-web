@@ -66,8 +66,7 @@ interface Post {
   __v: number;
 }
 
-const API_BASE =
-  process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080/api";
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE; // Adjust as needed
 // Force dynamic rendering to prevent prerender issues
 export const dynamic = "force-dynamic";
 
@@ -184,8 +183,7 @@ function ReviewsPageContent() {
 
     // WebSocket for real-time updates
     if (user?.authorId) {
-      const WS_BASE = process.env.NEXT_PUBLIC_WS_BASE || "ws://localhost:8080";
-      wsRef.current = new WebSocket(WS_BASE);
+      wsRef.current = new WebSocket(process.env.NEXT_PUBLIC_WS_BASE||"");
       wsRef.current.onopen = () => {
         console.log("author id", user.authorId);
         wsRef.current?.send(
