@@ -32,22 +32,29 @@ export async function GET(request: NextRequest) {
 
   try {
     let apiUrl: string;
+    const page = searchParams.get("page") || "1";
+    const limit = searchParams.get("limit") || "20";
 
     switch (type) {
       case "movie":
         apiUrl = `https://api.themoviedb.org/3/search/movie?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(
           query
-        )}&language=en-US&page=1&include_adult=false`;
+        )}&language=en-US&page=${page}&include_adult=false&sort_by=popularity.desc`;
         break;
       case "person":
         apiUrl = `https://api.themoviedb.org/3/search/person?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(
           query
-        )}&language=en-US&page=1&include_adult=false`;
+        )}&language=en-US&page=${page}&include_adult=false&sort_by=popularity.desc`;
+        break;
+      case "tv":
+        apiUrl = `https://api.themoviedb.org/3/search/tv?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(
+          query
+        )}&language=en-US&page=${page}&include_adult=false&sort_by=popularity.desc`;
         break;
       default:
         apiUrl = `https://api.themoviedb.org/3/search/movie?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(
           query
-        )}&language=en-US&page=1&include_adult=false`;
+        )}&language=en-US&page=${page}&include_adult=false&sort_by=popularity.desc`;
     }
 
     console.log("Making request to TMDB API:", apiUrl);

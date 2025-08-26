@@ -43,7 +43,11 @@ class SearchService {
     this.tmdbApiKey = process.env.NEXT_PUBLIC_TMDB_API_KEY || "";
   }
 
-  async searchMovies(query: string): Promise<TMDBMovie[]> {
+  async searchMovies(
+    query: string,
+    page: number = 1,
+    limit: number = 20
+  ): Promise<TMDBMovie[]> {
     if (!this.tmdbApiKey) {
       throw new Error("TMDB API key not configured");
     }
@@ -51,7 +55,9 @@ class SearchService {
     const response = await fetch(
       `https://api.themoviedb.org/3/search/movie?api_key=${
         this.tmdbApiKey
-      }&query=${encodeURIComponent(query)}&page=1`
+      }&query=${encodeURIComponent(
+        query
+      )}&page=${page}&sort_by=popularity.desc&include_adult=false`
     );
 
     if (!response.ok) {
@@ -62,7 +68,11 @@ class SearchService {
     return data.results || [];
   }
 
-  async searchSeries(query: string): Promise<TMDBSeries[]> {
+  async searchSeries(
+    query: string,
+    page: number = 1,
+    limit: number = 20
+  ): Promise<TMDBSeries[]> {
     if (!this.tmdbApiKey) {
       throw new Error("TMDB API key not configured");
     }
@@ -70,7 +80,9 @@ class SearchService {
     const response = await fetch(
       `https://api.themoviedb.org/3/search/tv?api_key=${
         this.tmdbApiKey
-      }&query=${encodeURIComponent(query)}&page=1`
+      }&query=${encodeURIComponent(
+        query
+      )}&page=${page}&sort_by=popularity.desc&include_adult=false`
     );
 
     if (!response.ok) {

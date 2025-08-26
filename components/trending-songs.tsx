@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Card, CardContent } from "@/components/ui/card";
+
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Play, Heart, TrendingUp, Music } from "lucide-react";
@@ -194,103 +194,107 @@ export default function TrendingSongs({
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {trendingSongs.map((song, index) => (
-          <Card
-            key={song.id}
-            className="bg-gray-800/50 border border-gray-700 hover:shadow-lg hover:border-gray-600 transition-all group"
-          >
-            <CardContent className="p-4">
-              <div className="relative mb-4">
-                <img
-                  src={getImageUrl(song.image) || "/placeholder.svg"}
-                  alt={song.name}
-                  className="w-full aspect-square rounded-lg object-cover"
-                />
-                <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center gap-2">
-                  <Button
-                    size="sm"
-                    className="bg-white text-black hover:bg-gray-100"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onPlaySong(song);
-                    }}
-                  >
-                    <Play className="w-4 h-4" />
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className={`${
-                      likedSongs.has(song.id)
-                        ? "text-red-400 hover:text-red-300"
-                        : "text-white hover:text-red-400"
-                    }`}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onToggleLike(song);
-                    }}
-                  >
-                    <Heart
-                      className={`w-4 h-4 ${
-                        likedSongs.has(song.id) ? "fill-red-400" : ""
-                      }`}
-                    />
-                  </Button>
-                </div>
-                {/* Trending rank badge */}
-                <div className="absolute top-2 left-2">
-                  <Badge
-                    variant="secondary"
-                    className="bg-blue-500 text-white text-xs"
-                  >
-                    #{index + 1}
-                  </Badge>
-                </div>
-              </div>
+          <div key={song.id} className="group">
+            {/* Image Container - Square aspect ratio */}
+            <div className="relative aspect-square w-full rounded-xl overflow-hidden bg-gradient-to-br from-gray-800 to-gray-900 shadow-2xl transition-all duration-300 group-hover:shadow-3xl">
+              <img
+                src={getImageUrl(song.image) || "/placeholder.svg"}
+                alt={song.name}
+                className="w-full h-full object-cover cursor-pointer transition-transform duration-300 group-hover:scale-105"
+              />
 
-              <div className="space-y-2">
-                <h4
-                  className="font-semibold text-white truncate"
-                  title={song.name}
-                >
-                  {song.name}
-                </h4>
-                <p
-                  className="text-sm text-gray-400 truncate cursor-pointer hover:text-blue-400 transition-colors"
+              {/* Hover Overlay with Controls */}
+              <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-xl flex items-center justify-center gap-2">
+                <Button
+                  size="sm"
+                  className="bg-white text-black hover:bg-gray-100 shadow-lg"
                   onClick={(e) => {
                     e.stopPropagation();
-                    // Extract artist name and navigate to artist page
-                    const artistName =
-                      song.artists?.primary?.[0]?.name || song.primaryArtists;
-                    if (artistName && artistName !== "Unknown Artist") {
-                      // For now, we'll search for the artist since we don't have direct artist IDs
-                      router.push(
-                        `/music?search=${encodeURIComponent(
-                          artistName
-                        )}&type=artist`
-                      );
-                    }
+                    onPlaySong(song);
                   }}
                 >
-                  {song.artists?.primary
-                    ?.map((artist) => artist.name)
-                    .join(", ") ||
-                    song.primaryArtists ||
-                    "Unknown Artist"}
-                </p>
-                {song.album?.name && (
-                  <p className="text-xs text-gray-500 truncate">
-                    {song.album.name}
-                  </p>
-                )}
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-gray-400">
-                    {formatDuration(song.duration)}
-                  </span>
-                  <TrendingUp className="w-3 h-3 text-blue-400" />
-                </div>
+                  <Play className="w-4 h-4" />
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className={`${
+                    likedSongs.has(song.id)
+                      ? "text-red-400 hover:text-red-300"
+                      : "text-white hover:text-red-400"
+                  } shadow-lg`}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onToggleLike(song);
+                  }}
+                >
+                  <Heart
+                    className={`w-4 h-4 ${
+                      likedSongs.has(song.id) ? "fill-red-400" : ""
+                    }`}
+                  />
+                </Button>
               </div>
-            </CardContent>
-          </Card>
+
+              {/* Trending rank badge */}
+              <div className="absolute top-2 left-2">
+                <Badge
+                  variant="secondary"
+                  className="bg-blue-500 text-white text-xs"
+                >
+                  #{index + 1}
+                </Badge>
+              </div>
+            </div>
+
+            {/* Text Content - Compact and centered */}
+            <div className="mt-3 space-y-1 px-2">
+              {/* Title */}
+              <h4
+                className="font-semibold text-white text-center text-sm sm:text-xs md:text-sm truncate leading-tight line-clamp-2 min-h-[2rem] sm:min-h-[1.5rem] group-hover:text-blue-300 transition-colors duration-200"
+                title={song.name}
+              >
+                {song.name}
+              </h4>
+
+              {/* Artist */}
+              <p
+                className="text-sm sm:text-xs md:text-sm text-gray-400 text-center truncate line-clamp-1 cursor-pointer hover:text-blue-400 transition-colors group-hover:text-gray-300"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  // Extract artist name and navigate to artist page
+                  const artistName = song.artists?.primary?.[0]?.name;
+                  if (artistName && artistName !== "Unknown Artist") {
+                    // For now, we'll search for the artist since we don't have direct artist IDs
+                    router.push(
+                      `/music?search=${encodeURIComponent(
+                        artistName
+                      )}&type=artist`
+                    );
+                  }
+                }}
+              >
+                {song.artists?.primary
+                  ?.map((artist) => artist.name)
+                  .join(", ") || "Unknown Artist"}
+              </p>
+
+              {/* Album */}
+              {song.album?.name && (
+                <p className="text-xs text-gray-500 text-center truncate line-clamp-1 group-hover:text-gray-400 transition-colors duration-200">
+                  {song.album.name}
+                </p>
+              )}
+
+              {/* Duration and Trending Icon */}
+              <div className="flex items-center justify-center gap-2">
+                <span className="text-xs text-gray-400 group-hover:text-gray-300 transition-colors duration-200">
+                  {formatDuration(song.duration)}
+                </span>
+                <TrendingUp className="w-3 h-3 text-blue-400" />
+              </div>
+            </div>
+          </div>
         ))}
       </div>
     </div>

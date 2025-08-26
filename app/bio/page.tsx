@@ -278,30 +278,35 @@ export default function BioPage() {
                   </Badge>
                 </div>
               </div>
-              <div className="p-4">
-                <h3 className="font-semibold text-sm truncate">{item.title}</h3>
+              <div className="p-3 sm:p-4">
+                <h3 className="font-semibold text-base sm:text-sm md:text-lg truncate line-clamp-2 min-h-[2rem] sm:min-h-[1.5rem] leading-tight">
+                  {item.title}
+                </h3>
                 {item.artist && (
-                  <p className="text-xs text-gray-500 truncate">
+                  <p className="text-sm sm:text-xs md:text-sm text-gray-500 truncate line-clamp-1 mt-1 sm:mt-1.5">
                     {item.artist}
                   </p>
                 )}
                 {item.author && (
-                  <p className="text-xs text-gray-500 truncate">
+                  <p className="text-sm sm:text-xs md:text-sm text-gray-500 truncate line-clamp-1 mt-1 sm:mt-1.5">
                     {item.author}
                   </p>
                 )}
                 {item.rating && (
-                  <div className="flex items-center gap-1 mt-2">
+                  <div className="flex items-center gap-1 mt-2 sm:mt-2.5">
                     {[...Array(item.rating)].map((_, i) => (
                       <Star
                         key={i}
-                        className="w-3 h-3 fill-yellow-400 text-yellow-400"
+                        className="w-3 h-3 sm:w-3 sm:h-3 fill-yellow-400 text-yellow-400"
                       />
                     ))}
                   </div>
                 )}
                 {item.status && (
-                  <Badge variant="secondary" className="mt-2 text-xs">
+                  <Badge
+                    variant="secondary"
+                    className="mt-2 sm:mt-2.5 text-sm sm:text-xs md:text-sm"
+                  >
                     {item.status}
                   </Badge>
                 )}

@@ -943,7 +943,7 @@ function ReviewsPageContent() {
             </div>
             <div className="p-6 space-y-4">
               {/* Type Selector */}
-              <div className="flex gap-2">
+              <div className="flex gap-2 mb-4">
                 {[
                   { value: "movie", label: "Movies", icon: Film },
                   { value: "series", label: "Series", icon: Tv },
@@ -953,10 +953,10 @@ function ReviewsPageContent() {
                   <button
                     key={type.value}
                     onClick={() => setSearchType(type.value)}
-                    className={`flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
                       searchType === type.value
-                        ? "bg-blue-600 text-white"
-                        : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
+                        ? "bg-blue-600 text-white shadow-md"
+                        : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 hover:shadow-sm"
                     }`}
                   >
                     <type.icon className="h-4 w-4" />
@@ -966,7 +966,7 @@ function ReviewsPageContent() {
               </div>
 
               {/* Search Input */}
-              <div className="flex gap-2">
+              <div className="flex gap-3">
                 <input
                   type="text"
                   placeholder={`Search for ${
@@ -975,12 +975,12 @@ function ReviewsPageContent() {
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && searchMedia()}
-                  className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="flex-1 px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                 />
                 <button
                   onClick={searchMedia}
                   disabled={isSearching}
-                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white rounded-lg transition-colors"
+                  className="px-6 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white rounded-lg transition-all duration-200 hover:shadow-md disabled:hover:shadow-none"
                 >
                   <Search className="h-4 w-4" />
                 </button>
@@ -988,38 +988,73 @@ function ReviewsPageContent() {
 
               {/* Search Results */}
               {searchResults.length > 0 && (
-                <div className="space-y-2 max-h-60 overflow-y-auto">
+                <div className="space-y-3 max-h-80 overflow-y-auto">
                   {searchResults.map((result) => (
                     <div
                       key={`${result.type}-${result.id}`}
-                      className="flex items-center gap-3 p-3 border border-gray-200 dark:border-gray-700 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                      className="flex items-center gap-4 p-4 border border-gray-200 dark:border-gray-700 rounded-xl cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-all duration-200 hover:shadow-md"
                       onClick={() => selectMedia(result)}
                     >
-                      <Image
-                        src={result.cover}
-                        alt={result.title}
-                        width={40}
-                        height={60}
-                        className="rounded object-cover"
-                      />
-                      <div className="flex-1">
-                        <h3 className="font-medium text-gray-900 dark:text-white">
+                      {/* Image */}
+                      <div className="flex-shrink-0">
+                        <Image
+                          src={result.cover}
+                          alt={result.title}
+                          width={60}
+                          height={90}
+                          className="rounded-lg object-cover shadow-sm"
+                        />
+                      </div>
+
+                      {/* Content */}
+                      <div className="flex-1 min-w-0">
+                        {/* Title */}
+                        <h3 className="font-semibold text-base sm:text-sm md:text-lg text-gray-900 dark:text-white line-clamp-2 min-h-[2rem] sm:min-h-[1.5rem] leading-tight mb-2">
                           {result.title}
                         </h3>
-                        <div className="text-sm text-gray-500 dark:text-gray-400">
-                          {result.year && <span>{result.year}</span>}
-                          {result.author && <span> • {result.author}</span>}
-                          {result.artist && <span> • {result.artist}</span>}
-                          {result.mediaSubType && (
-                            <span> • {result.mediaSubType.toUpperCase()}</span>
+
+                        {/* Metadata */}
+                        <div className="flex flex-wrap items-center gap-2 mb-3">
+                          {result.year && (
+                            <span className="text-sm sm:text-xs md:text-sm text-gray-600 dark:text-gray-400 font-medium">
+                              {result.year}
+                            </span>
+                          )}
+                          {result.author && (
+                            <span className="text-sm sm:text-xs md:text-sm text-gray-600 dark:text-gray-400">
+                              • {result.author}
+                            </span>
+                          )}
+                          {result.artist && (
+                            <span className="text-sm sm:text-xs md:text-sm text-gray-600 dark:text-gray-400">
+                              • {result.artist}
+                            </span>
+                          )}
+                          {result.album && (
+                            <span className="text-sm sm:text-xs md:text-sm text-gray-600 dark:text-gray-400">
+                              • {result.album}
+                            </span>
                           )}
                         </div>
-                        <span className="inline-block px-2 py-1 text-xs bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded mt-1">
-                          {result.type.toUpperCase()}
-                          {result.mediaSubType
-                            ? ` - ${result.mediaSubType.toUpperCase()}`
-                            : ""}
-                        </span>
+
+                        {/* Type Badge */}
+                        <div className="flex items-center gap-2">
+                          <span className="inline-flex items-center px-3 py-1 text-xs font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 rounded-full">
+                            {result.type.toUpperCase()}
+                          </span>
+                          {result.mediaSubType && (
+                            <span className="inline-flex items-center px-2 py-1 text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full">
+                              {result.mediaSubType.toUpperCase()}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Selection Indicator */}
+                      <div className="flex-shrink-0">
+                        <div className="w-6 h-6 rounded-full border-2 border-gray-300 dark:border-gray-600 flex items-center justify-center">
+                          <div className="w-2 h-2 rounded-full bg-gray-400 dark:bg-gray-500"></div>
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -1039,40 +1074,65 @@ function ReviewsPageContent() {
             </div>
             <div className="p-6 space-y-6">
               {/* Selected Media Display */}
-              <div className="flex items-center gap-4 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                <Image
-                  src={selectedMedia.cover}
-                  alt={selectedMedia.title}
-                  width={60}
-                  height={90}
-                  className="rounded object-cover"
-                />
-                <div>
-                  <h3 className="font-semibold text-gray-900 dark:text-white">
+              <div className="flex items-center gap-6 p-6 bg-gray-50 dark:bg-gray-700 rounded-xl border border-gray-200 dark:border-gray-600">
+                {/* Image */}
+                <div className="flex-shrink-0">
+                  <Image
+                    src={selectedMedia.cover}
+                    alt={selectedMedia.title}
+                    width={80}
+                    height={120}
+                    className="rounded-lg object-cover shadow-md"
+                  />
+                </div>
+
+                {/* Content */}
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-bold text-lg sm:text-base md:text-xl text-gray-900 dark:text-white line-clamp-2 min-h-[2.5rem] sm:min-h-[2rem] leading-tight mb-3">
                     {selectedMedia.title}
                   </h3>
-                  <div className="text-sm text-gray-500 dark:text-gray-400">
-                    {selectedMedia.year && <span>{selectedMedia.year}</span>}
+
+                  {/* Metadata */}
+                  <div className="flex flex-wrap items-center gap-3 mb-4">
+                    {selectedMedia.year && (
+                      <span className="text-base sm:text-sm md:text-base text-gray-600 dark:text-gray-400 font-medium">
+                        {selectedMedia.year}
+                      </span>
+                    )}
                     {selectedMedia.author && (
-                      <span> • {selectedMedia.author}</span>
+                      <span className="text-base sm:text-sm md:text-base text-gray-600 dark:text-gray-400">
+                        • {selectedMedia.author}
+                      </span>
                     )}
                     {selectedMedia.artist && (
-                      <span> • {selectedMedia.artist}</span>
+                      <span className="text-base sm:text-sm md:text-base text-gray-600 dark:text-gray-400">
+                        • {selectedMedia.artist}
+                      </span>
                     )}
-                    {selectedMedia.mediaSubType && (
-                      <span> • {selectedMedia.mediaSubType.toUpperCase()}</span>
+                    {selectedMedia.album && (
+                      <span className="text-base sm:text-sm md:text-base text-gray-600 dark:text-gray-400">
+                        • {selectedMedia.album}
+                      </span>
                     )}
                   </div>
-                  <span className="inline-block px-2 py-1 text-xs bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300 rounded mt-1">
-                    {selectedMedia.type.toUpperCase()}
-                    {selectedMedia.mediaSubType
-                      ? ` - ${selectedMedia.mediaSubType.toUpperCase()}`
-                      : ""}
-                  </span>
+
+                  {/* Type Badges */}
+                  <div className="flex items-center gap-3">
+                    <span className="inline-flex items-center px-4 py-2 text-sm font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 rounded-full">
+                      {selectedMedia.type.toUpperCase()}
+                    </span>
+                    {selectedMedia.mediaSubType && (
+                      <span className="inline-flex items-center px-3 py-2 text-sm font-medium bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full">
+                        {selectedMedia.mediaSubType.toUpperCase()}
+                      </span>
+                    )}
+                  </div>
                 </div>
+
+                {/* Change Button */}
                 <button
                   onClick={() => setSelectedMedia(null)}
-                  className="ml-auto px-3 py-1 text-sm text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
+                  className="flex-shrink-0 px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-all duration-200 hover:shadow-sm"
                 >
                   Change
                 </button>
@@ -1235,32 +1295,35 @@ function ReviewsPageContent() {
                         {/* Media Display Section */}
                         {post.mediaId && (
                           <Card className="mb-3 overflow-hidden">
-                            <div className="flex">
-                              <div className="w-24 h-32 flex-shrink-0">
+                            <div className="flex gap-4 p-4">
+                              {/* Image */}
+                              <div className="flex-shrink-0">
                                 <img
                                   src={post.mediaCover || "/placeholder.svg"}
                                   alt={post.mediaTitle}
-                                  className="w-full h-full object-cover"
+                                  className="w-20 h-28 rounded-lg object-cover shadow-sm"
                                 />
                               </div>
-                              <div className="flex-1 p-3">
-                                <div className="flex items-start gap-2 mb-2">
+
+                              {/* Content */}
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-start gap-3 mb-3">
                                   {getMediaIcon(post.mediaType)}
                                   <div className="flex-1">
-                                    <h3 className="font-semibold text-sm line-clamp-2">
+                                    <h3 className="font-semibold text-base sm:text-sm md:text-lg line-clamp-2 min-h-[2rem] sm:min-h-[1.5rem] leading-tight mb-2">
                                       {post.mediaTitle}
                                     </h3>
-                                    <div className="flex items-center gap-2 mt-1">
+                                    <div className="flex items-center gap-2">
                                       <Badge
                                         variant="secondary"
-                                        className="text-xs"
+                                        className="text-sm sm:text-xs md:text-sm"
                                       >
                                         {post.mediaType}
                                       </Badge>
                                       {post.mediaSubType && (
                                         <Badge
                                           variant="outline"
-                                          className="text-xs"
+                                          className="text-sm sm:text-xs md:text-sm"
                                         >
                                           {post.mediaSubType}
                                         </Badge>
@@ -1269,30 +1332,27 @@ function ReviewsPageContent() {
                                   </div>
                                 </div>
 
-                                <div className="space-y-1 text-xs text-muted-foreground">
+                                {/* Metadata */}
+                                <div className="flex flex-wrap items-center gap-3 mb-3">
+                                  {post.mediaYear && (
+                                    <span className="text-sm sm:text-xs md:text-sm text-muted-foreground font-medium">
+                                      {post.mediaYear}
+                                    </span>
+                                  )}
                                   {post.mediaAuthor && (
-                                    <p>
-                                      <span className="font-medium">
-                                        Director:
-                                      </span>{" "}
-                                      {post.mediaAuthor}
-                                    </p>
+                                    <span className="text-sm sm:text-xs md:text-sm text-muted-foreground">
+                                      • {post.mediaAuthor}
+                                    </span>
                                   )}
                                   {post.mediaArtist && (
-                                    <p>
-                                      <span className="font-medium">
-                                        Artist:
-                                      </span>{" "}
-                                      {post.mediaArtist}
-                                    </p>
+                                    <span className="text-sm sm:text-xs md:text-sm text-muted-foreground">
+                                      • {post.mediaArtist}
+                                    </span>
                                   )}
-                                  <p>
-                                    <span className="font-medium">Year:</span>{" "}
-                                    {post.mediaYear}
-                                  </p>
                                 </div>
 
-                                <div className="mt-2">
+                                {/* Rating */}
+                                <div className="flex items-center gap-2">
                                   {renderStarRating(post.rating)}
                                 </div>
                               </div>

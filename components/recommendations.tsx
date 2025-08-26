@@ -1,9 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { useYouTubePlayer } from "@/hooks/use-youtube-player";
 import {
   Play,
@@ -231,107 +229,109 @@ export function Recommendations({
           {recommendations.map((song) => (
             <div
               key={song.id}
-              className="flex-shrink-0 w-[200px] sm:w-[220px] md:w-[240px]"
+              className="flex-shrink-0 w-[160px] sm:w-[180px] md:w-[200px] group"
             >
-              <Card className="bg-gray-800/50 border border-gray-700 hover:shadow-lg hover:border-gray-600 transition-all group h-full">
-                <CardContent className="p-4">
-                  <div className="relative mb-4">
-                    <img
-                      src={getImageUrl(song.image) || "/placeholder.svg"}
-                      alt={song.name}
-                      className="w-full aspect-square rounded-lg object-cover"
+              {/* Image Container - Square aspect ratio */}
+              <div className="relative aspect-square w-full rounded-xl overflow-hidden bg-gradient-to-br from-gray-800 to-gray-900 shadow-2xl transition-all duration-300 group-hover:shadow-3xl">
+                <img
+                  src={getImageUrl(song.image) || "/placeholder.svg"}
+                  alt={song.name}
+                  className="w-full h-full object-cover cursor-pointer transition-transform duration-300 group-hover:scale-105"
+                />
+
+                {/* Hover Overlay with Controls */}
+                <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-xl flex items-center justify-center gap-2">
+                  <Button
+                    size="sm"
+                    className="bg-white text-black hover:bg-gray-100 shadow-lg"
+                    onClick={async (e) => {
+                      e.stopPropagation();
+                      const artistName =
+                        song.artists?.primary
+                          ?.map((artist) => artist.name)
+                          .join(", ") || "Unknown Artist";
+
+                      // Create song object
+                      const songObj = {
+                        id: song.id,
+                        title: song.name,
+                        artist: artistName,
+                      };
+
+                      // Create queue from all recommendations for navigation
+                      const queue = recommendations.map((s) => ({
+                        id: s.id,
+                        title: s.name,
+                        artist:
+                          s.artists?.primary
+                            ?.map((artist) => artist.name)
+                            .join(", ") || "Unknown Artist",
+                      }));
+
+                      console.log(
+                        "🎵 Recommendations Play Button - Queue created:",
+                        {
+                          queueLength: queue.length,
+                          firstSong: queue[0],
+                          allSongs: queue.map((s) => s.title),
+                        }
+                      );
+
+                      await showPlayer(songObj, queue);
+                    }}
+                  >
+                    <Play className="w-4 h-4" />
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className={`${
+                      myList.has(song.id)
+                        ? "text-red-400 hover:text-red-300"
+                        : "text-white hover:text-red-400"
+                    } shadow-lg`}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onToggleMyListAction(song.id);
+                    }}
+                  >
+                    <Heart
+                      className={`w-4 h-4 ${
+                        myList.has(song.id) ? "fill-red-400" : ""
+                      }`}
                     />
-                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center gap-2">
-                      <Button
-                        size="sm"
-                        className="bg-white text-black hover:bg-gray-100"
-                        onClick={async (e) => {
-                          e.stopPropagation();
-                          const artistName =
-                            song.artists?.primary
-                              ?.map((artist) => artist.name)
-                              .join(", ") || "Unknown Artist";
+                  </Button>
+                </div>
+              </div>
 
-                          // Create song object
-                          const songObj = {
-                            id: song.id,
-                            title: song.name,
-                            artist: artistName,
-                          };
+              {/* Text Content - Compact and centered */}
+              <div className="mt-3 space-y-1 px-2">
+                {/* Title */}
+                <h4 className="font-semibold text-white text-center text-sm sm:text-xs md:text-sm truncate leading-tight line-clamp-2 min-h-[2rem] sm:min-h-[1.5rem] group-hover:text-blue-300 transition-colors duration-200">
+                  {song.name}
+                </h4>
 
-                          // Create queue from all recommendations for navigation
-                          const queue = recommendations.map((s) => ({
-                            id: s.id,
-                            title: s.name,
-                            artist:
-                              s.artists?.primary
-                                ?.map((artist) => artist.name)
-                                .join(", ") || "Unknown Artist",
-                          }));
+                {/* Artist */}
+                <p className="text-sm sm:text-xs md:text-sm text-gray-400 text-center truncate line-clamp-1 group-hover:text-gray-300 transition-colors duration-200">
+                  {song.artists?.primary
+                    ?.map((artist) => artist.name)
+                    .join(", ") || "Unknown Artist"}
+                </p>
 
-                          console.log(
-                            "🎵 Recommendations Play Button - Queue created:",
-                            {
-                              queueLength: queue.length,
-                              firstSong: queue[0],
-                              allSongs: queue.map((s) => s.title),
-                            }
-                          );
+                {/* Album */}
+                {song.album?.name && (
+                  <p className="text-xs text-gray-500 text-center truncate line-clamp-1 group-hover:text-gray-400 transition-colors duration-200">
+                    {song.album.name}
+                  </p>
+                )}
 
-                          await showPlayer(songObj, queue);
-                        }}
-                      >
-                        <Play className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className={`${
-                          myList.has(song.id)
-                            ? "text-red-400 hover:text-red-300"
-                            : "text-white hover:text-red-400"
-                        }`}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onToggleMyListAction(song.id);
-                        }}
-                      >
-                        <Heart
-                          className={`w-4 h-4 ${
-                            myList.has(song.id) ? "fill-red-400" : ""
-                          }`}
-                        />
-                      </Button>
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <h4
-                      className="font-semibold text-white truncate"
-                      title={song.name}
-                    >
-                      {song.name}
-                    </h4>
-                    <p className="text-sm text-gray-400 truncate">
-                      {song.artists?.primary
-                        ?.map((artist) => artist.name)
-                        .join(", ") || "Unknown Artist"}
-                    </p>
-                    {song.album?.name && (
-                      <p className="text-xs text-gray-500 truncate">
-                        {song.album.name}
-                      </p>
-                    )}
-
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs text-gray-400">
-                        {formatDuration(song.duration)}
-                      </span>
-                      {/* Removed rating stars for cleaner look */}
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+                {/* Duration */}
+                <div className="text-center">
+                  <span className="text-xs text-gray-400 group-hover:text-gray-300 transition-colors duration-200">
+                    {formatDuration(song.duration)}
+                  </span>
+                </div>
+              </div>
             </div>
           ))}
         </div>

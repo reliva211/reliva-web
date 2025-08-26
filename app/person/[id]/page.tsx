@@ -359,11 +359,11 @@ export default function PersonDetailPage({
                       {/* Hover overlay */}
                       <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                     </div>
-                    <div className="p-2">
-                      <h3 className="font-medium text-xs truncate mb-1 group-hover:text-primary transition-colors">
+                    <div className="p-2 sm:p-3">
+                      <h3 className="font-medium text-sm sm:text-xs md:text-sm truncate mb-1 sm:mb-1.5 group-hover:text-primary transition-colors line-clamp-2 min-h-[2rem] sm:min-h-[1.5rem] leading-tight">
                         {credit.title || credit.name}
                       </h3>
-                      <p className="text-xs text-muted-foreground truncate">
+                      <p className="text-sm sm:text-xs md:text-sm text-muted-foreground truncate line-clamp-1">
                         {"character" in credit ? credit.character : credit.job}
                       </p>
                     </div>
@@ -406,11 +406,11 @@ export default function PersonDetailPage({
                       {/* Hover overlay */}
                       <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                     </div>
-                    <div className="p-2">
-                      <h3 className="font-medium text-xs truncate mb-1 group-hover:text-primary transition-colors">
+                    <div className="p-2 sm:p-3">
+                      <h3 className="font-medium text-sm sm:text-xs md:text-sm truncate mb-1 sm:mb-1.5 group-hover:text-primary transition-colors line-clamp-2 min-h-[2rem] sm:min-h-[1.5rem] leading-tight">
                         {credit.title || credit.name}
                       </h3>
-                      <p className="text-xs text-muted-foreground truncate">
+                      <p className="text-sm sm:text-xs md:text-sm text-muted-foreground truncate line-clamp-1">
                         as {credit.character}
                       </p>
                     </div>
@@ -453,11 +453,11 @@ export default function PersonDetailPage({
                       {/* Hover overlay */}
                       <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                     </div>
-                    <div className="p-2">
-                      <h3 className="font-medium text-xs truncate mb-1 group-hover:text-primary transition-colors">
+                    <div className="p-2 sm:p-3">
+                      <h3 className="font-medium text-sm sm:text-xs md:text-sm truncate mb-1 sm:mb-1.5 group-hover:text-primary transition-colors line-clamp-2 min-h-[2rem] sm:min-h-[1.5rem] leading-tight">
                         {credit.title || credit.name}
                       </h3>
-                      <p className="text-xs text-muted-foreground truncate">
+                      <p className="text-sm sm:text-xs md:text-sm text-muted-foreground truncate line-clamp-1">
                         {credit.job}
                       </p>
                     </div>

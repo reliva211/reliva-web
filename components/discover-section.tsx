@@ -21,7 +21,7 @@ interface DiscoverSectionProps {
   items: DiscoverItem[];
   isLoading: boolean;
   onRetry: () => void;
-  itemType: "movie" | "book" | "series";
+  itemType: "movie" | "book" | "series" | "music";
   containerId: string;
 }
 
@@ -87,7 +87,13 @@ export default function DiscoverSection({
       <div className="text-center py-12 sm:py-20">
         <div className="space-y-4 sm:space-y-6">
           <div className="h-16 w-16 sm:h-20 sm:w-20 text-gray-400 mx-auto">
-            {itemType === "movie" ? "🎬" : itemType === "book" ? "📚" : "📺"}
+            {itemType === "movie"
+              ? "🎬"
+              : itemType === "book"
+              ? "📚"
+              : itemType === "music"
+              ? "🎵"
+              : "📺"}
           </div>
           <div>
             <h3 className="text-lg sm:text-xl font-bold mb-2 text-white">
@@ -155,9 +161,14 @@ export default function DiscoverSection({
           {items.map((item) => (
             <div
               key={item.id}
-              className="flex-shrink-0 w-[120px] sm:w-[140px] md:w-[160px] lg:w-[180px] discover-card"
+              className="flex-shrink-0 w-[140px] sm:w-[160px] md:w-[180px] lg:w-[200px] discover-card group"
             >
-              <div className="relative aspect-[2/3] rounded-xl overflow-hidden bg-gradient-to-br from-gray-800 to-gray-900 shadow-2xl">
+              {/* Image Container - Square aspect ratio for music */}
+              <div
+                className={`relative ${
+                  itemType === "music" ? "aspect-square" : "aspect-[2/3]"
+                } rounded-xl overflow-hidden bg-gradient-to-br from-gray-800 to-gray-900 shadow-2xl transition-all duration-300 group-hover:shadow-3xl`}
+              >
                 <Link
                   href={`/${
                     itemType === "series" ? "series" : itemType + "s"
@@ -168,26 +179,37 @@ export default function DiscoverSection({
                     src={item.cover || "/placeholder.svg"}
                     alt={item.title || "Unknown"}
                     fill
-                    className="object-cover cursor-pointer transition-transform duration-300 hover:scale-105"
+                    className="object-cover cursor-pointer transition-transform duration-300 group-hover:scale-105"
                     onError={(e) => {
                       const target = e.target as HTMLImageElement;
                       target.src = "/placeholder.svg";
                     }}
                   />
+                  {/* Subtle overlay on hover */}
+                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-300" />
                 </Link>
               </div>
-              <div className="mt-2 sm:mt-3 space-y-1 sm:space-y-2">
-                <h4 className="font-bold text-xs sm:text-sm md:text-base truncate text-white leading-tight">
+
+              {/* Text Content */}
+              <div className="mt-3 sm:mt-4 space-y-2 px-2">
+                {/* Title */}
+                <h4 className="font-bold text-sm sm:text-xs md:text-base text-white leading-tight line-clamp-2 min-h-[2rem] sm:min-h-[1.5rem] text-center group-hover:text-blue-300 transition-colors duration-200">
                   {item.title || "Unknown Title"}
                 </h4>
+
+                {/* Author/Artist */}
                 {item.author && (
-                  <p className="text-xs text-gray-400 font-medium truncate">
+                  <p className="text-sm sm:text-xs md:text-sm text-gray-400 font-medium truncate line-clamp-1 text-center group-hover:text-gray-300 transition-colors duration-200">
                     {item.author}
                   </p>
                 )}
-                <p className="text-xs text-gray-400 font-medium">
-                  {item.year || "N/A"}
-                </p>
+
+                {/* Year */}
+                {item.year && (
+                  <p className="text-sm sm:text-xs md:text-sm text-gray-400 font-medium text-center group-hover:text-gray-300 transition-colors duration-200">
+                    {item.year}
+                  </p>
+                )}
               </div>
             </div>
           ))}

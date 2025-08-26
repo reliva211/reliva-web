@@ -201,14 +201,14 @@ export default function RecommendationsPage() {
       let success = false;
 
       if (category === "music") {
-          // For music, we'll show a toast since it's already in recommendations
-          toast({
-            title: "Music in recommendations",
-            description: `${
-              (item as MusicAlbum).name
-            } is already in your music recommendations.`,
-          });
-          success = true;
+        // For music, we'll show a toast since it's already in recommendations
+        toast({
+          title: "Music in recommendations",
+          description: `${
+            (item as MusicAlbum).name
+          } is already in your music recommendations.`,
+        });
+        success = true;
       } else {
         // Handle other categories (movies, books, series)
         // This would need to be implemented based on your collection hooks
@@ -216,12 +216,12 @@ export default function RecommendationsPage() {
       }
 
       if (success) {
-          toast({
+        toast({
           title: "Success",
-            description: `${
-              (item as any).title || (item as MusicAlbum).name
-            } has been added to your ${category} collection.`,
-          });
+          description: `${
+            (item as any).title || (item as MusicAlbum).name
+          } has been added to your ${category} collection.`,
+        });
       } else {
         toast({
           title: "Error",
@@ -313,7 +313,7 @@ export default function RecommendationsPage() {
     category: string;
   }) => (
     <div className="group relative">
-      <div className="relative w-[120px] sm:w-[140px] md:w-[160px] lg:w-[180px] h-[180px] sm:h-[200px] md:h-[220px] lg:h-[240px] rounded-xl overflow-hidden bg-gradient-to-br from-slate-800 to-slate-900 border border-slate-700/50 hover:border-blue-500/50 transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-blue-500/20">
+      <div className="relative w-[120px] sm:w-[140px] md:w-[160px] lg:w-[180px] h-[180px] sm:h-[200px] md:h-[220px] lg:h-[240px] rounded-xl overflow-hidden bg-gradient-to-br from-gray-800 to-gray-900 border border-gray-700/50 hover:border-emerald-500/50 transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-emerald-500/20">
         <Link href={`/${category}/${item.id}`}>
           <Image
             src={
@@ -344,12 +344,12 @@ export default function RecommendationsPage() {
       </div>
 
       <div className="mt-3 space-y-1">
-        <h4 className="font-semibold text-sm text-white leading-tight line-clamp-2 group-hover:text-blue-300 transition-colors">
+        <h4 className="font-semibold text-sm text-white leading-tight line-clamp-2 group-hover:text-emerald-300 transition-colors">
           {(item as Movie | Book | Series).title ||
             (item as MusicAlbum).name ||
             "Unknown Title"}
         </h4>
-        <p className="text-xs text-slate-400 leading-tight">
+        <p className="text-xs text-gray-400 leading-tight">
           {category === "books"
             ? (item as Book).author
             : category === "music"
@@ -359,56 +359,50 @@ export default function RecommendationsPage() {
             : (item as Movie | Series).year || "N/A"}
         </p>
         {category === "music" && (
-          <p className="text-xs text-slate-400">{(item as MusicAlbum).year}</p>
+          <p className="text-xs text-gray-400">{(item as MusicAlbum).year}</p>
         )}
       </div>
     </div>
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900">
-      {/* Background decoration */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-blue-500/10 rounded-full blur-3xl"></div>
-        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-indigo-500/10 rounded-full blur-3xl"></div>
-      </div>
-
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black w-full overflow-x-hidden">
       <div className="relative max-w-7xl mx-auto px-6 pt-20 pb-8">
         {/* Header */}
         <div className="mb-12 text-center">
           <div className="inline-flex items-center gap-3 mb-4">
-            <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-2xl flex items-center justify-center">
+            <div className="w-12 h-12 bg-gradient-to-r from-emerald-500 to-blue-500 rounded-2xl flex items-center justify-center">
               <Sparkles className="w-6 h-6 text-white" />
             </div>
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-white to-blue-200 bg-clip-text text-transparent">
-            Recommendations
-          </h1>
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-emerald-400 to-blue-500 bg-clip-text text-transparent">
+              Recommendations
+            </h1>
           </div>
-          <p className="text-lg text-slate-300 max-w-2xl mx-auto">
+          <p className="text-lg text-gray-300 max-w-2xl mx-auto">
             Discover amazing content curated by people you follow
           </p>
         </div>
 
         {/* Category Tabs */}
         <div className="flex justify-center mb-12">
-          <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl p-2 border border-slate-700/50">
+          <div className="bg-gray-800/50 backdrop-blur-sm rounded-2xl p-2 border border-gray-600 shadow-lg">
             {CATEGORIES.map(({ key, label, icon: Icon, color }) => (
-            <button
-              key={key}
+              <button
+                key={key}
                 onClick={() => setActiveCategory(key)}
                 className={`relative flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-medium transition-all duration-300 ${
-                activeCategory === key
-                    ? `bg-gradient-to-r ${color} text-white shadow-lg`
-                    : "text-slate-300 hover:text-white hover:bg-slate-700/50"
-              }`}
-            >
+                  activeCategory === key
+                    ? "bg-gradient-to-r from-emerald-600 to-blue-600 text-white shadow-lg"
+                    : "text-gray-300 hover:text-white hover:bg-gray-700/50"
+                }`}
+              >
                 <Icon className="w-4 h-4" />
-              {label}
+                {label}
                 {activeCategory === key && (
                   <div className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent rounded-xl"></div>
                 )}
-            </button>
-          ))}
+              </button>
+            ))}
           </div>
         </div>
 
@@ -418,10 +412,10 @@ export default function RecommendationsPage() {
             <div className="flex items-center justify-center py-16">
               <div className="text-center">
                 <div className="relative mb-6">
-                  <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-500/20 mx-auto"></div>
-                  <div className="absolute inset-0 animate-spin rounded-full h-12 w-12 border-4 border-transparent border-t-blue-500 mx-auto"></div>
+                  <div className="animate-spin rounded-full h-12 w-12 border-4 border-emerald-500/20 mx-auto"></div>
+                  <div className="absolute inset-0 animate-spin rounded-full h-12 w-12 border-4 border-transparent border-t-emerald-500 mx-auto"></div>
                 </div>
-                <p className="text-slate-300 font-medium">
+                <p className="text-gray-300 font-medium">
                   Loading recommendations...
                 </p>
               </div>
@@ -478,14 +472,14 @@ export default function RecommendationsPage() {
                       {/* Items Grid */}
                       <div className="relative">
                         <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide px-1">
-                        {items.slice(0, 12).map((item) => (
+                          {items.slice(0, 12).map((item) => (
                             <ItemCard
                               key={item.id}
                               item={item}
                               category={activeCategory}
                             />
                           ))}
-                            </div>
+                        </div>
 
                         {/* Gradient fade to tease more content */}
                         <div className="absolute right-0 top-0 bottom-4 w-8 bg-gradient-to-l from-slate-800/80 to-transparent pointer-events-none"></div>
