@@ -36,11 +36,60 @@ export default function SignupPage() {
         if (result) {
           const user = result.user;
 
-          // Create Firestore user doc with empty spotify field
-          await setDoc(
-            doc(db, "users", user.uid),
-            { spotify: { connected: false } },
-            { merge: true }
+          console.log("Handling redirect result for user:", user.email);
+
+          // Create MongoDB user first
+          // Generate a unique username to avoid conflicts
+          const baseUsername = user.displayName || user.email?.split("@")[0];
+          const timestamp = Date.now();
+          const uniqueUsername = `${baseUsername}_${timestamp}`;
+
+          const API_BASE =
+            process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080/api";
+          const mongoRes = await fetch(`${API_BASE}/users`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              username: uniqueUsername,
+              email: user.email,
+            }),
+          });
+
+          const mongoData = await mongoRes.json();
+          console.log("Redirect result MongoDB response:", mongoData);
+          if (!mongoData.success) {
+            console.error(
+              "Redirect result MongoDB API error:",
+              mongoData.error
+            );
+            throw new Error(mongoData.error || "MongoDB user creation failed");
+          }
+
+          const authorId = mongoData.user._id;
+          console.log("Redirect result author id", authorId);
+
+          // Create Firestore user doc with complete user data
+          const firestoreUserData = {
+            uid: user.uid,
+            email: user.email,
+            authorId: authorId,
+            username: uniqueUsername,
+            fullName: user.displayName || "",
+            followers: [],
+            following: [],
+            createdAt: serverTimestamp(),
+            spotify: { connected: false },
+          };
+
+          console.log("Saving redirect user to Firestore:", firestoreUserData);
+
+          await setDoc(doc(db, "users", user.uid), firestoreUserData, {
+            merge: true,
+          });
+
+          console.log(
+            "Successfully saved redirect user to Firestore with authorId:",
+            authorId
           );
 
           window.location.href = "/";
@@ -70,38 +119,58 @@ export default function SignupPage() {
         displayName: fullName,
       });
 
-      const mongoRes = await fetch("http://localhost:8080/api/users", {
+      console.log("Making MongoDB API call...");
+
+      // Generate a unique username to avoid conflicts
+      const baseUsername = user.displayName || user.email?.split("@")[0];
+      const timestamp = Date.now();
+      const uniqueUsername = `${baseUsername}_${timestamp}`;
+
+      const API_BASE =
+        process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080/api";
+      const mongoRes = await fetch(`${API_BASE}/users`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          username: user.displayName || user.email?.split("@")[0],
+          username: uniqueUsername,
           email: user.email,
         }),
       });
 
+      console.log("MongoDB response status:", mongoRes.status);
       const mongoData = await mongoRes.json();
+      console.log("MongoDB response data:", mongoData);
+
       if (!mongoData.success) {
+        console.error("MongoDB API error:", mongoData.error);
         throw new Error(mongoData.error || "MongoDB user creation failed");
       }
 
       const authorId = mongoData.user._id;
-
+      console.log("author id", authorId);
 
       // Create Firestore user doc with complete user data
-      await setDoc(
-        doc(db, "users", user.uid),
-        {
-          uid: user.uid,
-          email: user.email,
-          authorId: authorId,
-          username: fullName || user.email?.split("@")[0],
-          fullName: fullName,
-          followers: [],
-          following: [],
-          createdAt: serverTimestamp(),
-          spotify: { connected: false }
-        },
-        { merge: true }
+      const firestoreUserData = {
+        uid: user.uid,
+        email: user.email,
+        authorId: authorId,
+        username: uniqueUsername,
+        fullName: fullName,
+        followers: [],
+        following: [],
+        createdAt: serverTimestamp(),
+        spotify: { connected: false },
+      };
+
+      console.log("Saving to Firestore:", firestoreUserData);
+
+      await setDoc(doc(db, "users", user.uid), firestoreUserData, {
+        merge: true,
+      });
+
+      console.log(
+        "Successfully saved user to Firestore with authorId:",
+        authorId
       );
 
       window.location.href = "/";
@@ -140,41 +209,62 @@ export default function SignupPage() {
         }
         throw popupError;
       }
-      
 
       const googleUser = googleResult.user;
-      
 
-      const mongoRes = await fetch("http://localhost:8080/api/users", {
+      console.log("Making MongoDB API call for Google user...");
+
+      // Generate a unique username to avoid conflicts
+      const baseUsername =
+        googleUser.displayName || googleUser.email?.split("@")[0];
+      const timestamp = Date.now();
+      const uniqueUsername = `${baseUsername}_${timestamp}`;
+
+      const API_BASE =
+        process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080/api";
+      const mongoRes = await fetch(`${API_BASE}/users`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          username: googleUser.displayName || googleUser.email?.split("@")[0],
+          username: uniqueUsername,
           email: googleUser.email,
         }),
       });
 
+      console.log("MongoDB response status:", mongoRes.status);
       const mongoData = await mongoRes.json();
+      console.log("MongoDB response data:", mongoData);
+
       if (!mongoData.success) {
+        console.error("MongoDB API error:", mongoData.error);
         throw new Error(mongoData.error || "MongoDB user creation failed");
       }
 
       const authorId = mongoData.user._id;
+      console.log("Google user author id", authorId);
+
       // Create Firestore user doc with complete user data
-      await setDoc(
-        doc(db, "users", googleUser.uid),
-        {
-          uid: googleUser.uid,
-          email: googleUser.email,
-          username: googleUser.displayName || googleUser.email?.split("@")[0],
-          fullName: googleUser.displayName || "",
-          authorId: authorId,
-          followers: [],
-          following: [],
-          createdAt: serverTimestamp(),
-          spotify: { connected: false }
-        },
-        { merge: true }
+      const firestoreUserData = {
+        uid: googleUser.uid,
+        email: googleUser.email,
+        username: uniqueUsername,
+        fullName: googleUser.displayName || "",
+        authorId: authorId,
+        followers: [],
+        following: [],
+        createdAt: serverTimestamp(),
+        spotify: { connected: false },
+      };
+
+      console.log("Saving Google user to Firestore:", firestoreUserData);
+
+      await setDoc(doc(db, "users", googleUser.uid), firestoreUserData, {
+        merge: true,
+      });
+
+      console.log(
+        "Successfully saved Google user to Firestore with authorId:",
+        authorId
       );
 
       window.location.href = "/";

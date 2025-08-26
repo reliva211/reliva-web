@@ -66,7 +66,8 @@ interface Post {
   __v: number;
 }
 
-const API_BASE = "http://localhost:8080/api";
+const API_BASE =
+  process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080/api";
 // Force dynamic rendering to prevent prerender issues
 export const dynamic = "force-dynamic";
 
@@ -166,7 +167,10 @@ function ReviewsPageContent() {
 
     const fetchPosts = async () => {
       try {
-        const res = await fetch(`${API_BASE}/posts`);
+        if (!user?.authorId) {
+          return;
+        }
+        const res = await fetch(`${API_BASE}/posts?userId=${user.authorId}`);
         const data = await res.json();
         if (data.success) {
           console.log(data.posts);
@@ -179,52 +183,57 @@ function ReviewsPageContent() {
     fetchPosts();
 
     // WebSocket for real-time updates
-    wsRef.current = new WebSocket("ws://localhost:8080");
-
-    wsRef.current.onopen = () => {
-      wsRef.current?.send(
-        JSON.stringify({
-          type: "auth",
-          userId: user?.authorId,
-          page: 0,
-          limit: POSTS_PER_PAGE,
-        })
-      );
-    };
-    wsRef.current.onmessage = (event) => {
-      const msg = JSON.parse(event.data);
-
-      if (msg.type === "init") {
-        console.log(msg.posts);
-        // setPosts(msg.posts)
-        // setHasMorePosts(msg.posts.length === POSTS_PER_PAGE)
-        // setCurrentPage(0)
-      } else if (msg.type === "comment") {
-        setPosts((prev) =>
-          prev.map((post) =>
-            post._id === msg.postId
-              ? { ...post, comments: [...(post.comments || []), msg.comment] }
-              : post
-          )
+    if (user?.authorId) {
+      const WS_BASE = process.env.NEXT_PUBLIC_WS_BASE || "ws://localhost:8080";
+      wsRef.current = new WebSocket(WS_BASE);
+      wsRef.current.onopen = () => {
+        console.log("author id", user.authorId);
+        wsRef.current?.send(
+          JSON.stringify({
+            type: "auth",
+            userId: user.authorId,
+            page: 0,
+            limit: POSTS_PER_PAGE,
+          })
         );
-      } else if (msg.type === "post") {
-        setPosts((prev) => [msg.post, ...prev]);
-      } else if (msg.type === "initLikes") {
-        setLikedPosts(new Set(msg.likedPosts));
-        setLikedReplies(new Set(msg.likedReplies));
-      } else if (msg.type === "likeUpdate") {
-        setPosts((prev) =>
-          prev.map((post) =>
-            post._id === msg.targetId
-              ? { ...post, likeCount: msg.likeCount }
-              : post
-          )
-        );
-      }
-    };
+      };
+    }
+    if (wsRef.current) {
+      wsRef.current.onmessage = (event) => {
+        const msg = JSON.parse(event.data);
+
+        if (msg.type === "init") {
+          console.log(msg.posts);
+          setPosts(msg.posts);
+          //setHasMorePosts(msg.posts.length === POSTS_PER_PAGE);
+          //setCurrentPage(0);
+        } else if (msg.type === "comment") {
+          setPosts((prev) =>
+            prev.map((post) =>
+              post._id === msg.postId
+                ? { ...post, comments: [...(post.comments || []), msg.comment] }
+                : post
+            )
+          );
+        } else if (msg.type === "post") {
+          setPosts((prev) => [msg.post, ...prev]);
+        } else if (msg.type === "initLikes") {
+          setLikedPosts(new Set(msg.likedPosts));
+          setLikedReplies(new Set(msg.likedReplies));
+        } else if (msg.type === "likeUpdate") {
+          setPosts((prev) =>
+            prev.map((post) =>
+              post._id === msg.targetId
+                ? { ...post, likeCount: msg.likeCount }
+                : post
+            )
+          );
+        }
+      };
+    }
 
     return () => wsRef.current?.close();
-  }, [searchParams]);
+  }, [searchParams, user?.authorId]);
 
   // Auto-search when search query is set manually (not from URL parameters)
   useEffect(() => {
@@ -618,7 +627,11 @@ function ReviewsPageContent() {
     }));
   };
 
-  function buildCommentTree(comments: Reply[]): Reply[] {
+  function buildCommentTree(comments: Reply[] | undefined): Reply[] {
+    if (!comments || !Array.isArray(comments)) {
+      return [];
+    }
+
     const map: Record<string, Reply & { comments: Reply[] }> = {};
     const roots: (Reply & { comments: Reply[] })[] = [];
 
@@ -681,7 +694,11 @@ function ReviewsPageContent() {
     return d.toLocaleDateString();
   };
 
-  const sortReplies = (comments: Reply[]): Reply[] => {
+  const sortReplies = (comments: Reply[] | undefined): Reply[] => {
+    if (!comments || !Array.isArray(comments)) {
+      return [];
+    }
+
     return [...comments]
       .sort((a, b) => {
         const getTime = (timestamp: string | Date) => {
@@ -723,7 +740,15 @@ function ReviewsPageContent() {
       </div>
     );
   };
-  const renderReplies = (comments: Reply[], postId: string, depth = 0) => {
+  const renderReplies = (
+    comments: Reply[] | undefined,
+    postId: string,
+    depth = 0
+  ) => {
+    if (!comments || !Array.isArray(comments)) {
+      return null;
+    }
+
     const sortedReplies = sortReplies(comments);
 
     return sortedReplies.map((reply) => (
@@ -1167,203 +1192,211 @@ function ReviewsPageContent() {
 
             {/* Feed */}
             <ScrollArea className="flex-1">
-              {posts.length === 0 && (
+              {(!posts || posts.length === 0) && (
                 <div className="text-center py-12 text-muted-foreground">
                   <Sparkles className="w-12 h-12 mx-auto mb-4 opacity-50" />
                   <p>Your feed is empty. Create your first post!</p>
                 </div>
               )}
 
-              {posts.map((post) => (
-                <div
-                  key={post._id}
-                  className="border-b border-border p-4 hover:bg-muted/50 transition-colors"
-                >
-                  <div className="flex gap-3">
-                    <Avatar>
-                      <AvatarFallback className="bg-gray-100">
-                        <User className="w-4 h-4" />
-                      </AvatarFallback>
-                    </Avatar>
+              {posts &&
+                posts.length > 0 &&
+                posts.map((post) => (
+                  <div
+                    key={post._id}
+                    className="border-b border-border p-4 hover:bg-muted/50 transition-colors"
+                  >
+                    <div className="flex gap-3">
+                      <Avatar>
+                        <AvatarFallback className="bg-gray-100">
+                          <User className="w-4 h-4" />
+                        </AvatarFallback>
+                      </Avatar>
 
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="font-semibold">
-                          {post.authorId?.username}
-                        </span>
-                        {post.authorId?.username === "gemini" && (
-                          <div className="w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center">
-                            <Bot className="w-2 h-2 text-white" />
-                          </div>
-                        )}
-                        <span className="text-muted-foreground text-sm">
-                          {formatTime(post.timestamp)}
-                        </span>
-                      </div>
-
-                      <p className="text-foreground mb-3 whitespace-pre-wrap leading-relaxed">
-                        {post.content}
-                      </p>
-
-                      {/* Media Display Section */}
-                      {post.mediaId && (
-                        <Card className="mb-3 overflow-hidden">
-                          <div className="flex">
-                            <div className="w-24 h-32 flex-shrink-0">
-                              <img
-                                src={post.mediaCover || "/placeholder.svg"}
-                                alt={post.mediaTitle}
-                                className="w-full h-full object-cover"
-                              />
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="font-semibold">
+                            {post.authorId?.username}
+                          </span>
+                          {post.authorId?.username === "gemini" && (
+                            <div className="w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center">
+                              <Bot className="w-2 h-2 text-white" />
                             </div>
-                            <div className="flex-1 p-3">
-                              <div className="flex items-start gap-2 mb-2">
-                                {getMediaIcon(post.mediaType)}
-                                <div className="flex-1">
-                                  <h3 className="font-semibold text-sm line-clamp-2">
-                                    {post.mediaTitle}
-                                  </h3>
-                                  <div className="flex items-center gap-2 mt-1">
-                                    <Badge
-                                      variant="secondary"
-                                      className="text-xs"
-                                    >
-                                      {post.mediaType}
-                                    </Badge>
-                                    {post.mediaSubType && (
+                          )}
+                          <span className="text-muted-foreground text-sm">
+                            {formatTime(post.timestamp)}
+                          </span>
+                        </div>
+
+                        <p className="text-foreground mb-3 whitespace-pre-wrap leading-relaxed">
+                          {post.content}
+                        </p>
+
+                        {/* Media Display Section */}
+                        {post.mediaId && (
+                          <Card className="mb-3 overflow-hidden">
+                            <div className="flex">
+                              <div className="w-24 h-32 flex-shrink-0">
+                                <img
+                                  src={post.mediaCover || "/placeholder.svg"}
+                                  alt={post.mediaTitle}
+                                  className="w-full h-full object-cover"
+                                />
+                              </div>
+                              <div className="flex-1 p-3">
+                                <div className="flex items-start gap-2 mb-2">
+                                  {getMediaIcon(post.mediaType)}
+                                  <div className="flex-1">
+                                    <h3 className="font-semibold text-sm line-clamp-2">
+                                      {post.mediaTitle}
+                                    </h3>
+                                    <div className="flex items-center gap-2 mt-1">
                                       <Badge
-                                        variant="outline"
+                                        variant="secondary"
                                         className="text-xs"
                                       >
-                                        {post.mediaSubType}
+                                        {post.mediaType}
                                       </Badge>
-                                    )}
+                                      {post.mediaSubType && (
+                                        <Badge
+                                          variant="outline"
+                                          className="text-xs"
+                                        >
+                                          {post.mediaSubType}
+                                        </Badge>
+                                      )}
+                                    </div>
                                   </div>
                                 </div>
-                              </div>
 
-                              <div className="space-y-1 text-xs text-muted-foreground">
-                                {post.mediaAuthor && (
+                                <div className="space-y-1 text-xs text-muted-foreground">
+                                  {post.mediaAuthor && (
+                                    <p>
+                                      <span className="font-medium">
+                                        Director:
+                                      </span>{" "}
+                                      {post.mediaAuthor}
+                                    </p>
+                                  )}
+                                  {post.mediaArtist && (
+                                    <p>
+                                      <span className="font-medium">
+                                        Artist:
+                                      </span>{" "}
+                                      {post.mediaArtist}
+                                    </p>
+                                  )}
                                   <p>
-                                    <span className="font-medium">
-                                      Director:
-                                    </span>{" "}
-                                    {post.mediaAuthor}
+                                    <span className="font-medium">Year:</span>{" "}
+                                    {post.mediaYear}
                                   </p>
-                                )}
-                                {post.mediaArtist && (
-                                  <p>
-                                    <span className="font-medium">Artist:</span>{" "}
-                                    {post.mediaArtist}
-                                  </p>
-                                )}
-                                <p>
-                                  <span className="font-medium">Year:</span>{" "}
-                                  {post.mediaYear}
-                                </p>
-                              </div>
+                                </div>
 
-                              <div className="mt-2">
-                                {renderStarRating(post.rating)}
+                                <div className="mt-2">
+                                  {renderStarRating(post.rating)}
+                                </div>
                               </div>
                             </div>
-                          </div>
-                        </Card>
-                      )}
+                          </Card>
+                        )}
 
-                      {/* Post Actions */}
-                      <div className="flex items-center gap-6 text-muted-foreground">
-                        <button
-                          onClick={() => toggleReplyInput(post._id)}
-                          className="flex items-center gap-2 hover:text-blue-500 transition-colors"
-                        >
-                          <MessageCircle className="w-4 h-4" />
-                          <span className="text-sm">
-                            {post.comments?.length}
-                          </span>
-                        </button>
+                        {/* Post Actions */}
+                        <div className="flex items-center gap-6 text-muted-foreground">
+                          <button
+                            onClick={() => toggleReplyInput(post._id)}
+                            className="flex items-center gap-2 hover:text-blue-500 transition-colors"
+                          >
+                            <MessageCircle className="w-4 h-4" />
+                            <span className="text-sm">
+                              {post.comments?.length || 0}
+                            </span>
+                          </button>
 
-                        <button className="flex items-center gap-2 hover:text-green-500 transition-colors">
-                          <Repeat2 className="w-4 h-4" />
-                        </button>
+                          <button className="flex items-center gap-2 hover:text-green-500 transition-colors">
+                            <Repeat2 className="w-4 h-4" />
+                          </button>
 
-                        <button
-                          onClick={() => toggleLike(post._id)}
-                          className={`flex items-center gap-2 transition-colors ${
-                            post.isLiked ? "text-red-500" : "hover:text-red-500"
-                          }`}
-                        >
-                          <Heart
-                            className={`w-4 h-4 ${
-                              post.isLiked ? "fill-current" : ""
+                          <button
+                            onClick={() => toggleLike(post._id)}
+                            className={`flex items-center gap-2 transition-colors ${
+                              post.isLiked
+                                ? "text-red-500"
+                                : "hover:text-red-500"
                             }`}
-                          />
-                          <span className="text-sm">{post.likeCount}</span>
-                        </button>
-
-                        <button className="flex items-center gap-2 hover:text-blue-500 transition-colors">
-                          <Share className="w-4 h-4" />
-                        </button>
-                      </div>
-
-                      {/* Reply Input Section */}
-                      {showReplyInput[post._id] && (
-                        <div className="mt-4 flex gap-3">
-                          <Avatar className="w-6 h-6">
-                            <AvatarFallback>
-                              <User className="w-3 h-3" />
-                            </AvatarFallback>
-                          </Avatar>
-                          <div className="flex-1">
-                            <Textarea
-                              value={replyInputs[post._id] || ""}
-                              onChange={(e) =>
-                                setReplyInputs((prev) => ({
-                                  ...prev,
-                                  [post._id]: e.target.value,
-                                }))
-                              }
-                              placeholder="Write a reply... (Use @gemini for AI response)"
-                              className="min-h-[60px] text-sm border-none resize-none focus-visible:ring-0"
-                              disabled={isReplying[post._id]}
+                          >
+                            <Heart
+                              className={`w-4 h-4 ${
+                                post.isLiked ? "fill-current" : ""
+                              }`}
                             />
-                            <div className="flex justify-end gap-2 mt-2">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => toggleReplyInput(post._id)}
-                                disabled={isReplying[post._id]}
-                              >
-                                Cancel
-                              </Button>
-                              <Button
-                                size="sm"
-                                onClick={() => handleReply(post._id)}
-                                disabled={
-                                  !replyInputs[post._id]?.trim() ||
-                                  isReplying[post._id]
+                            <span className="text-sm">{post.likeCount}</span>
+                          </button>
+
+                          <button className="flex items-center gap-2 hover:text-blue-500 transition-colors">
+                            <Share className="w-4 h-4" />
+                          </button>
+                        </div>
+
+                        {/* Reply Input Section */}
+                        {showReplyInput[post._id] && (
+                          <div className="mt-4 flex gap-3">
+                            <Avatar className="w-6 h-6">
+                              <AvatarFallback>
+                                <User className="w-3 h-3" />
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className="flex-1">
+                              <Textarea
+                                value={replyInputs[post._id] || ""}
+                                onChange={(e) =>
+                                  setReplyInputs((prev) => ({
+                                    ...prev,
+                                    [post._id]: e.target.value,
+                                  }))
                                 }
-                                className="rounded-full px-4"
-                              >
-                                {isReplying[post._id] ? "Replying..." : "Reply"}
-                              </Button>
+                                placeholder="Write a reply... (Use @gemini for AI response)"
+                                className="min-h-[60px] text-sm border-none resize-none focus-visible:ring-0"
+                                disabled={isReplying[post._id]}
+                              />
+                              <div className="flex justify-end gap-2 mt-2">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => toggleReplyInput(post._id)}
+                                  disabled={isReplying[post._id]}
+                                >
+                                  Cancel
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  onClick={() => handleReply(post._id)}
+                                  disabled={
+                                    !replyInputs[post._id]?.trim() ||
+                                    isReplying[post._id]
+                                  }
+                                  className="rounded-full px-4"
+                                >
+                                  {isReplying[post._id]
+                                    ? "Replying..."
+                                    : "Reply"}
+                                </Button>
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      )}
+                        )}
 
-                      {post.comments?.length > 0 && (
-                        <div className="mt-4 space-y-3">
-                          {renderReplies(
-                            buildCommentTree(post.comments),
-                            post._id
-                          )}
-                        </div>
-                      )}
+                        {post.comments && post.comments.length > 0 && (
+                          <div className="mt-4 space-y-3">
+                            {renderReplies(
+                              buildCommentTree(post.comments),
+                              post._id
+                            )}
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                ))}
             </ScrollArea>
           </div>
         </div>
