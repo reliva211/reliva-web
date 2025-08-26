@@ -311,7 +311,7 @@ export default function BookDetailPage({
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-start">
               {/* Cover */}
               <div className="lg:col-span-1 lg:sticky lg:top-8">
-                <div className="relative group max-w-[200px] sm:max-w-xs mx-auto lg:mx-0">
+                <div className="relative group max-w-xs mx-auto lg:mx-0">
                   <div className="aspect-[2/3] rounded-2xl overflow-hidden bg-gradient-to-br from-muted to-muted/50 shadow-2xl group-hover:shadow-3xl transition-all duration-300">
                     <Image
                       src={
