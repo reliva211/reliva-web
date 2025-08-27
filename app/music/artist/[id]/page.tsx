@@ -9,7 +9,6 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
-  Star,
   Play,
   Plus,
   Heart,
@@ -528,13 +527,6 @@ export default function ArtistDetailPage({
               <div className="flex items-center gap-2 sm:gap-3">
                 <Button
                   size="sm"
-                  className="rounded-lg sm:rounded-xl hover:scale-105 transition-all duration-200 bg-green-600 hover:bg-green-700 text-xs sm:text-sm px-3 sm:px-4 py-1.5 sm:py-2"
-                >
-                  <Star className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
-                  Rate
-                </Button>
-                <Button
-                  size="sm"
                   onClick={handleFollowArtist}
                   className={`rounded-lg sm:rounded-xl hover:scale-105 transition-all duration-200 text-xs sm:text-sm px-3 sm:px-4 py-1.5 sm:py-2 ${
                     isArtistFollowed(artist.id)
@@ -903,7 +895,7 @@ export default function ArtistDetailPage({
             {/* Reviews Tab */}
             <TabsContent value="reviews" className="space-y-6">
               <div className="text-center py-12">
-                <Star className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
+                <Music className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
                 <p className="text-muted-foreground">Reviews coming soon...</p>
               </div>
             </TabsContent>

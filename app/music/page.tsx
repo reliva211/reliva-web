@@ -638,15 +638,20 @@ export default function MusicApp() {
     [likedSongs]
   );
 
-  // Memoize the onToggleMyList callback
+  // Memoize the onToggleMyList callback for recommendations
   const onToggleMyList = useCallback(
-    (songId: string) => {
-      const song = likedSongs.find((s) => s.id === songId);
-      if (song) {
+    (song: Song) => {
+      // Check if the song is already in liked songs
+      const existingSong = likedSongs.find((s) => s.id === song.id);
+      if (existingSong) {
+        // If it exists, remove it (unlike)
+        handleLikeSong(existingSong);
+      } else {
+        // If it doesn't exist, add it to liked songs
         handleLikeSong(song);
       }
     },
-    [likedSongs, handleLikeSong]
+    [handleLikeSong]
   );
 
   // Memoize Recommendations props to prevent unnecessary re-renders
@@ -659,7 +664,7 @@ export default function MusicApp() {
       onToggleMyListAction: onToggleMyList,
       onRateSongAction: rateSong,
     }),
-    [currentSong, ratings, myList, onToggleMyList, rateSong]
+    [currentSong, ratings, onToggleMyList, rateSong]
   );
 
   const handleSearch = (e?: React.FormEvent) => {
@@ -1422,11 +1427,7 @@ export default function MusicApp() {
                                         e.stopPropagation();
                                         handleLikeSong(song);
                                       }}
-                                      className={`w-8 h-8 sm:w-10 sm:h-10 backdrop-blur-sm rounded-full flex items-center justify-center transition-all duration-200 hover:scale-110 ${
-                                        isSongLiked(song.id)
-                                          ? "bg-red-500/80 hover:bg-red-600/80"
-                                          : "bg-white/20 hover:bg-white/30"
-                                      }`}
+                                      className="w-8 h-8 sm:w-10 sm:h-10 bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-full flex items-center justify-center transition-all duration-200 hover:scale-110"
                                       title={
                                         isSongLiked(song.id)
                                           ? "Remove from liked songs"
@@ -1434,10 +1435,10 @@ export default function MusicApp() {
                                       }
                                     >
                                       <Heart
-                                        className={`w-3 h-3 sm:w-4 sm:h-4 text-white ${
+                                        className={`w-3 h-3 sm:w-4 sm:h-4 ${
                                           isSongLiked(song.id)
-                                            ? "fill-red-400"
-                                            : "fill-white"
+                                            ? "fill-red-400 text-red-400"
+                                            : "fill-white text-white"
                                         }`}
                                       />
                                     </button>
