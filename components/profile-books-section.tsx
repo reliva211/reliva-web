@@ -808,13 +808,6 @@ export default function ProfileBooksSection({
                   {getTextContent(currentRecentlyRead.title) || "Unknown Book"}
                 </h3>
 
-                {/* Author information */}
-                <p className="text-sm text-muted-foreground mb-2">
-                  by{" "}
-                  {truncateAuthorsAggressive(currentRecentlyRead.authors) ||
-                    "Unknown Author"}
-                </p>
-
                 {/* Publication year if available */}
                 {currentRecentlyRead.publishedDate && (
                   <p className="text-xs text-muted-foreground/70 mb-3">

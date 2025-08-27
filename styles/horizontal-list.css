@@ -97,3 +97,99 @@
     width: calc(3.5 * (180px + 24px) - 24px); /* 3.5 books with gap on lg */
   }
 }
+
+/* Remove any potential background from discover text elements */
+.discover-card[data-item-type="book"] .space-y-1 * {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  text-shadow: none !important;
+}
+
+/* Add rounded corners to book posters in collections and search results */
+.book-card .aspect-\[2\/3\],
+.saved-book-card .aspect-\[2\/3\] {
+  border-radius: 0.75rem;
+  overflow: hidden;
+}
+
+/* Book-specific styling for discover section watchlist appearance */
+.discover-card[data-item-type="book"] .mt-3 {
+  margin-top: 0.75rem;
+}
+
+.discover-card[data-item-type="book"] .space-y-1 > * + * {
+  margin-top: 0.25rem;
+}
+
+/* Ensure discover book cards have clean, minimal appearance */
+.discover-card[data-item-type="book"] h4 {
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.discover-card[data-item-type="book"] p {
+  color: #9ca3af;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+}
+
+/* Discover book cards should have minimal spacing and clean typography */
+.discover-card[data-item-type="book"] {
+  text-align: center;
+}
+
+.discover-card[data-item-type="book"] .space-y-1 {
+  margin-top: 0.75rem;
+}
+
+.discover-card[data-item-type="book"] .space-y-1 > * + * {
+  margin-top: 0.25rem;
+}
+
+/* Remove any background from discover book captions - ensure floating text appearance */
+.discover-card[data-item-type="book"] .mt-3,
+.discover-card[data-item-type="book"] .space-y-1 {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.discover-card[data-item-type="book"] h4,
+.discover-card[data-item-type="book"] p {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  text-shadow: none !important;
+}
+
+/* Ensure discover text content container has no background */
+.discover-card[data-item-type="book"] .space-y-1 {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+/* Additional styling for all book cards to ensure floating text appearance */
+.book-card,
+.saved-book-card {
+  text-align: center;
+}
+
+.book-card .mt-3,
+.saved-book-card .mt-3 {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.book-card h3,
+.book-card p,
+.saved-book-card h3,
+.saved-book-card p {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  text-shadow: none !important;
+}

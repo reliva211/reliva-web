@@ -196,9 +196,7 @@ export function NYTimesBestsellers({
                       <h3 className="font-medium text-sm line-clamp-2">
                         {book.title}
                       </h3>
-                      <p className="text-sm text-muted-foreground line-clamp-1">
-                        by {book.author}
-                      </p>
+
                       {book.overview && (
                         <p className="text-xs text-muted-foreground line-clamp-2 mt-1">
                           {book.overview}
@@ -243,4 +241,3 @@ export function NYTimesBestsellers({
     </Card>
   );
 }
-

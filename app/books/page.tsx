@@ -822,7 +822,6 @@ function BookCard({
         </div>
         <div className="flex-1 min-w-0">
           <h3 className="font-semibold truncate">{book.title}</h3>
-          <p className="text-sm text-muted-foreground">{book.author}</p>
           <p className="text-sm text-muted-foreground">{book.year || "N/A"}</p>
         </div>
         <DropdownMenu>
@@ -854,7 +853,7 @@ function BookCard({
   }
 
   return (
-    <Card className="relative overflow-hidden">
+    <div className="relative overflow-hidden">
       <div className="relative aspect-[2/3]">
         <Link href={`/books/${book.id}`}>
           <Image
@@ -865,12 +864,13 @@ function BookCard({
           />
         </Link>
       </div>
-      <CardContent className="p-3">
-        <h3 className="font-semibold text-sm truncate">{book.title}</h3>
-        <p className="text-xs text-muted-foreground">{book.author}</p>
-        <p className="text-xs text-muted-foreground">{book.year || "N/A"}</p>
-      </CardContent>
-    </Card>
+      <div className="mt-3 text-center">
+        <h3 className="font-semibold text-sm truncate text-white">
+          {book.title}
+        </h3>
+        <p className="text-xs text-gray-400 mt-1">{book.year || "N/A"}</p>
+      </div>
+    </div>
   );
 }
 
@@ -901,18 +901,7 @@ function SavedBookCard({
         </div>
         <div className="flex-1 min-w-0">
           <h3 className="font-semibold truncate">{book.title}</h3>
-          <p className="text-sm text-muted-foreground">{book.author}</p>
           <p className="text-sm text-muted-foreground">{book.year || "N/A"}</p>
-          <div className="flex flex-wrap gap-1 mt-2">
-            {book.collections?.map((collectionId) => {
-              const collection = collections.find((c) => c.id === collectionId);
-              return collection ? (
-                <Badge key={collectionId} variant="outline" className="text-xs">
-                  {collection.name}
-                </Badge>
-              ) : null;
-            })}
-          </div>
         </div>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -939,7 +928,7 @@ function SavedBookCard({
   }
 
   return (
-    <Card className="relative overflow-hidden">
+    <div className="relative overflow-hidden">
       <div className="relative aspect-[2/3]">
         <Link href={`/books/${book.id}`}>
           <Image
@@ -950,26 +939,12 @@ function SavedBookCard({
           />
         </Link>
       </div>
-      <CardContent className="p-3">
-        <h3 className="font-semibold text-sm truncate">{book.title}</h3>
-        <p className="text-xs text-muted-foreground">{book.author}</p>
-        <p className="text-xs text-muted-foreground">{book.year || "N/A"}</p>
-        <div className="flex flex-wrap gap-1 mt-2">
-          {book.collections?.slice(0, 2).map((collectionId) => {
-            const collection = collections.find((c) => c.id === collectionId);
-            return collection ? (
-              <Badge key={collectionId} variant="outline" className="text-xs">
-                {collection.name}
-              </Badge>
-            ) : null;
-          })}
-          {book.collections && book.collections.length > 2 && (
-            <Badge variant="outline" className="text-xs">
-              +{book.collections.length - 2}
-            </Badge>
-          )}
-        </div>
-      </CardContent>
-    </Card>
+      <div className="mt-3 text-center">
+        <h3 className="font-semibold text-sm truncate text-white">
+          {book.title}
+        </h3>
+        <p className="text-xs text-gray-400 mt-1">{book.year || "N/A"}</p>
+      </div>
+    </div>
   );
 }

@@ -162,6 +162,7 @@ export default function DiscoverSection({
             <div
               key={item.id}
               className="flex-shrink-0 w-[140px] sm:w-[160px] md:w-[180px] lg:w-[200px] discover-card group"
+              data-item-type={itemType}
             >
               {/* Image Container - Square aspect ratio for music */}
               <div
@@ -191,21 +192,28 @@ export default function DiscoverSection({
               </div>
 
               {/* Text Content */}
-              <div className="mt-3 sm:mt-4 space-y-2 px-2">
+              <div className="mt-3 sm:mt-4 space-y-1">
                 {/* Title */}
                 <h4 className="font-bold text-sm sm:text-xs md:text-base text-white leading-tight line-clamp-2 min-h-[2rem] sm:min-h-[1.5rem] text-center group-hover:text-blue-300 transition-colors duration-200">
                   {item.title || "Unknown Title"}
                 </h4>
 
-                {/* Author/Artist */}
-                {item.author && (
+                {/* Year - Only show year for books, no author or other details */}
+                {itemType === "book" && item.year && (
+                  <p className="text-sm sm:text-xs md:text-sm text-gray-400 font-medium text-center group-hover:text-gray-300 transition-colors duration-200">
+                    {item.year}
+                  </p>
+                )}
+
+                {/* Author/Artist - Only show for non-book items */}
+                {itemType !== "book" && item.author && (
                   <p className="text-sm sm:text-xs md:text-sm text-gray-400 font-medium truncate line-clamp-1 text-center group-hover:text-gray-300 transition-colors duration-200">
                     {item.author}
                   </p>
                 )}
 
-                {/* Year */}
-                {item.year && (
+                {/* Year - Only show for non-book items */}
+                {itemType !== "book" && item.year && (
                   <p className="text-sm sm:text-xs md:text-sm text-gray-400 font-medium text-center group-hover:text-gray-300 transition-colors duration-200">
                     {item.year}
                   </p>
