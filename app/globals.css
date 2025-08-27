@@ -25,6 +25,30 @@
     --ring: 160 84% 39%;
     --radius: 0.5rem;
   }
+
+  /* Custom soft dark theme colors */
+  .soft-dark {
+    --background: 0 0% 4%;
+    --foreground: 0 0% 75%;
+    --card: 0 0% 6%;
+    --card-foreground: 0 0% 75%;
+    --popover: 0 0% 6%;
+    --popover-foreground: 0 0% 75%;
+    --primary: 160 84% 39%;
+    --primary-foreground: 0 0% 75%;
+    --secondary: 0 0% 8%;
+    --secondary-foreground: 0 0% 65%;
+    --muted: 0 0% 8%;
+    --muted-foreground: 0 0% 45%;
+    --accent: 0 0% 8%;
+    --accent-foreground: 0 0% 65%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 75%;
+    --border: 0 0% 10%;
+    --input: 0 0% 10%;
+    --ring: 160 84% 39%;
+    --radius: 0.5rem;
+  }
 }
 
 @layer base {
@@ -46,6 +70,8 @@
     overflow-x: hidden;
     width: 100%;
     max-width: 100vw;
+    /* Apply soft dark theme by default */
+    @apply soft-dark;
   }
 
   /* Prevent horizontal overflow on all containers */
@@ -153,6 +179,31 @@
     -webkit-line-clamp: 3;
     -webkit-box-orient: vertical;
     overflow: hidden;
+  }
+
+  /* Soft dark theme utilities */
+  .text-soft-white {
+    color: #c0c0c0;
+  }
+
+  .text-soft-gray {
+    color: #808080;
+  }
+
+  .text-soft-muted {
+    color: #606060;
+  }
+
+  .bg-soft-dark {
+    background-color: #0a0a0a;
+  }
+
+  .bg-soft-card {
+    background-color: #0f0f0f;
+  }
+
+  .border-soft {
+    border-color: #1a1a1a;
   }
 }
 

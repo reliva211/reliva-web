@@ -343,10 +343,25 @@ export default function RecommendationsPage() {
       </div>
 
       <div className="mt-3 space-y-1">
-        <h4 className="font-semibold text-sm text-white leading-tight line-clamp-2 group-hover:text-emerald-300 transition-colors">
-          {(item as Movie | Book | Series).title ||
-            (item as MusicAlbum).name ||
-            "Unknown Title"}
+        <h4 className="font-semibold text-sm text-white leading-tight group-hover:text-emerald-300 transition-colors">
+          {(() => {
+            const title =
+              (item as Movie | Book | Series).title ||
+              (item as MusicAlbum).name ||
+              "Unknown Title";
+
+            // For books, truncate long titles with ellipses
+            if (category === "books" && title.length > 25) {
+              return title.substring(0, 25) + "...";
+            }
+
+            // For other media types, truncate at 30 characters
+            if (title.length > 30) {
+              return title.substring(0, 30) + "...";
+            }
+
+            return title;
+          })()}
         </h4>
         <p className="text-xs text-gray-400 leading-tight">
           {category === "books"

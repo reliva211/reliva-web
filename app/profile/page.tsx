@@ -750,8 +750,16 @@ export default function ProfilePage() {
   ];
 
   const handleAvatarUpload = async (file: File) => {
-    const url = await uploadImage(file, "avatar");
-    await updateProfile({ avatarUrl: url });
+    try {
+      console.log("Starting avatar upload for file:", file.name);
+      const url = await uploadImage(file, "avatar");
+      console.log("Avatar upload successful, URL:", url);
+      // Note: uploadImage already updates the profile, so we don't need to call updateProfile again
+    } catch (error) {
+      console.error("Avatar upload failed:", error);
+      // You could add a toast notification here
+      alert("Failed to upload profile picture. Please try again.");
+    }
   };
 
   const handleAddMovie = async (movie: TMDBMovie) => {
@@ -844,7 +852,7 @@ export default function ProfilePage() {
         <div className="max-w-4xl mx-auto px-2 sm:px-3 py-4 sm:py-6">
           <div className="flex flex-col items-center text-center gap-4 mb-6">
             {/* Profile Picture */}
-            <ImageUpload onUpload={handleAvatarUpload}>
+            <ImageUpload onUploadAction={handleAvatarUpload}>
               <Avatar className="w-16 h-16 sm:w-20 sm:h-20 border-2 border-border cursor-pointer">
                 <AvatarImage
                   src={profile?.avatarUrl || "/placeholder.svg"}

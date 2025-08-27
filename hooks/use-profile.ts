@@ -105,20 +105,38 @@ export function useProfile(userId: string | undefined) {
     type: "avatar" | "cover"
   ): Promise<string> => {
     if (!userId) throw new Error("No user ID");
-    console.log("Uploading image:", file.name, "Type:", type);
+    console.log(
+      "Uploading image:",
+      file.name,
+      "Type:",
+      type,
+      "Size:",
+      file.size
+    );
 
-    const fileExtension = file.name.split(".").pop();
-    const fileName = `${type}_${Date.now()}.${fileExtension}`;
-    const storageRef = ref(storage, `profiles/${userId}/${fileName}`);
+    try {
+      const fileExtension = file.name.split(".").pop();
+      const fileName = `${type}_${Date.now()}.${fileExtension}`;
+      const storageRef = ref(storage, `profiles/${userId}/${fileName}`);
 
-    const snapshot = await uploadBytes(storageRef, file);
-    const downloadURL = await getDownloadURL(snapshot.ref);
+      console.log("Storage reference created:", storageRef.fullPath);
 
-    // Update profile with new image URL
-    const updateField = type === "avatar" ? "avatarUrl" : "coverImageUrl";
-    await updateProfile({ [updateField]: downloadURL });
+      const snapshot = await uploadBytes(storageRef, file);
+      console.log("File uploaded successfully:", snapshot.ref.fullPath);
 
-    return downloadURL;
+      const downloadURL = await getDownloadURL(snapshot.ref);
+      console.log("Download URL obtained:", downloadURL);
+
+      // Update profile with new image URL
+      const updateField = type === "avatar" ? "avatarUrl" : "coverImageUrl";
+      await updateProfile({ [updateField]: downloadURL });
+      console.log("Profile updated with new image URL");
+
+      return downloadURL;
+    } catch (error) {
+      console.error("Error in uploadImage:", error);
+      throw error;
+    }
   };
 
   return {

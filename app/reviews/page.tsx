@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, Suspense } from "react";
 import { useCurrentUser } from "@/hooks/use-current-user";
+import { useProfile } from "@/hooks/use-profile";
 import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -13,7 +14,7 @@ import {
   Repeat2,
   Share,
   User,
-  Sparkles,
+  CheckCircle,
 } from "lucide-react";
 import { useRef } from "react";
 import { Card } from "@/components/ui/card";
@@ -70,16 +71,7 @@ const API_BASE =
 // Force dynamic rendering to prevent prerender issues
 export const dynamic = "force-dynamic";
 
-import {
-  Star,
-  Search,
-  Film,
-  Tv,
-  BookOpen,
-  CheckCircle,
-  XCircle,
-  Music,
-} from "lucide-react";
+import { Star, Search, Film, Tv, BookOpen, XCircle, Music } from "lucide-react";
 import Image from "next/image";
 import { searchService } from "@/lib/search-service";
 import { db } from "@/lib/firebase";
@@ -731,11 +723,11 @@ function ReviewsPageContent() {
           <Star
             key={i}
             className={`w-3 h-3 ${
-              i < rating ? "fill-yellow-400 text-yellow-400" : "text-gray-300"
+              i < rating ? "fill-yellow-400 text-yellow-400" : "text-[#606060]"
             }`}
           />
         ))}
-        <span className="text-xs text-muted-foreground ml-1">{rating}/10</span>
+        <span className="text-xs text-[#808080] ml-1">{rating}/10</span>
       </div>
     );
   };
@@ -753,34 +745,34 @@ function ReviewsPageContent() {
     return sortedReplies.map((reply) => (
       <div
         key={reply._id}
-        className="flex gap-3 border-l border-gray-200 dark:border-gray-700 ml-4 p-3 bg-gray-50/30 dark:bg-gray-800/30 rounded-r-lg"
+        className="flex gap-3 border-l border-[#4a4a4a] ml-4 p-3 bg-[#2a2a2a] rounded-r-lg"
         style={{ paddingLeft: `${getIndent(depth)}px` }}
       >
-        <Avatar className="w-8 h-8 ring-1 ring-blue-500/20 flex-shrink-0">
-          <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white font-semibold text-sm">
+        <Avatar className="w-6 h-6 ring-1 ring-green-500/20 flex-shrink-0">
+          <AvatarFallback className="bg-gradient-to-br from-green-500 to-emerald-600 text-white font-semibold text-xs">
             {reply.authorId?.username?.charAt(0)?.toUpperCase() || "U"}
           </AvatarFallback>
         </Avatar>
 
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-2">
-            <span className="font-semibold text-sm text-gray-900 dark:text-white">
+            <span className="font-medium text-sm text-[#e0e0e0]">
               {reply.authorId?.username}
             </span>
-            <span className="text-muted-foreground text-xs bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded-full">
+            <span className="text-[#a0a0a0] text-xs bg-[#3a3a3a] px-2 py-0.5 rounded-full">
               {formatTime(reply.timestamp)}
             </span>
           </div>
-          <p className="text-sm text-gray-900 dark:text-white whitespace-pre-wrap mb-3 leading-relaxed">
+          <p className="text-sm text-[#d0d0d0] whitespace-pre-wrap mb-3 leading-relaxed">
             {reply.content}
           </p>
 
-          <div className="flex items-center gap-4 text-muted-foreground">
+          <div className="flex items-center gap-4 text-[#a0a0a0]">
             <button
               onClick={() => toggleReplyInput(`${postId}-${reply._id}`)}
-              className="flex items-center gap-1.5 hover:text-blue-500 transition-all duration-200 group"
+              className="flex items-center gap-1.5 hover:text-blue-400 transition-all duration-200 group"
             >
-              <div className="p-1.5 rounded-full group-hover:bg-blue-50 dark:group-hover:bg-blue-900/20 transition-colors">
+              <div className="p-1.5 rounded-full group-hover:bg-blue-600/20 transition-colors">
                 <MessageCircle className="w-4 h-4" />
               </div>
               <span className="text-xs font-medium">
@@ -788,68 +780,54 @@ function ReviewsPageContent() {
               </span>
             </button>
 
-            <button className="flex items-center gap-1.5 hover:text-green-500 transition-all duration-200 group">
-              <div className="p-1.5 rounded-full group-hover:bg-green-50 dark:group-hover:bg-green-900/20 transition-colors">
-                <Repeat2 className="w-4 h-4" />
-              </div>
-            </button>
-
             <button
               onClick={() => toggleReplyLike(postId, reply._id)}
-              className={`flex items-center gap-1.5 transition-all duration-200 group ${
-                reply.isLiked ? "text-red-500" : "hover:text-red-500"
-              }`}
+              className="flex items-center gap-1.5"
             >
-              <div
-                className={`p-1.5 rounded-full transition-colors ${
-                  reply.isLiked
-                    ? "bg-red-50 dark:bg-red-900/20"
-                    : "group-hover:bg-red-50 dark:group-hover:bg-red-900/20"
-                }`}
-              >
+              <div className="p-1.5 rounded-full">
                 <Heart
-                  className={`w-4 h-4 ${reply.isLiked ? "fill-current" : ""}`}
+                  className={`w-4 h-4 ${
+                    reply.isLiked ? "fill-current text-rose-400" : ""
+                  }`}
                 />
               </div>
               <span className="text-xs font-medium">{reply.likeCount}</span>
             </button>
-
-            <button className="flex items-center gap-1.5 hover:text-blue-500 transition-all duration-200 group">
-              <div className="p-1.5 rounded-full group-hover:bg-blue-50 dark:group-hover:bg-blue-900/20 transition-colors">
-                <Share className="w-4 h-4" />
-              </div>
-            </button>
           </div>
 
           {showReplyInput[`${postId}-${reply._id}`] && (
-            <div className="mt-3 flex gap-3 bg-white dark:bg-gray-800 rounded-lg p-3 border border-gray-200 dark:border-gray-700 shadow-sm">
-              <Avatar className="w-6 h-6 ring-1 ring-blue-500/20 flex-shrink-0">
-                <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white font-semibold text-xs">
-                  {user?.displayName?.charAt(0) ||
-                    user?.email?.charAt(0) ||
-                    "U"}
-                </AvatarFallback>
-              </Avatar>
-              <div className="flex-1">
-                <Textarea
-                  value={replyInputs[`${postId}-${reply._id}`] || ""}
-                  onChange={(e) =>
-                    setReplyInputs((prev) => ({
-                      ...prev,
-                      [`${postId}-${reply._id}`]: e.target.value,
-                    }))
-                  }
-                  placeholder="Write a reply..."
-                  className="min-h-[50px] text-sm border-none resize-none focus-visible:ring-0 bg-transparent"
-                  disabled={isReplying[`${postId}-${reply._id}`]}
-                />
-                <div className="flex justify-end gap-2 mt-2">
+            <div className="mt-3 bg-[#3a3a3a] rounded-lg border border-[#4a4a4a] shadow-sm overflow-hidden">
+              <div className="p-3">
+                <div className="flex gap-2 mb-3">
+                  <Avatar className="w-6 h-6 ring-1 ring-green-500/20 flex-shrink-0">
+                    <AvatarFallback className="bg-gradient-to-br from-green-500 to-emerald-600 text-white font-semibold text-xs">
+                      {user?.displayName?.charAt(0) ||
+                        user?.email?.charAt(0) ||
+                        "U"}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1 min-w-0">
+                    <Textarea
+                      value={replyInputs[`${postId}-${reply._id}`] || ""}
+                      onChange={(e) =>
+                        setReplyInputs((prev) => ({
+                          ...prev,
+                          [`${postId}-${reply._id}`]: e.target.value,
+                        }))
+                      }
+                      placeholder="Write a reply..."
+                      className="min-h-[35px] max-h-[80px] text-sm border-none resize-none focus-visible:ring-0 bg-transparent px-2 py-1 rounded-lg text-[#e0e0e0] placeholder-[#808080]"
+                      disabled={isReplying[`${postId}-${reply._id}`]}
+                    />
+                  </div>
+                </div>
+                <div className="flex gap-2 pt-2 border-t border-[#4a4a4a]">
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={() => toggleReplyInput(`${postId}-${reply._id}`)}
                     disabled={isReplying[`${postId}-${reply._id}`]}
-                    className="text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 text-xs"
+                    className="text-[#a0a0a0] hover:text-[#c0c0c0] text-xs px-1.5 py-0.5 h-5 bg-[#2a2a2a] border border-[#3a3a3a]"
                   >
                     Cancel
                   </Button>
@@ -860,11 +838,11 @@ function ReviewsPageContent() {
                       !replyInputs[`${postId}-${reply._id}`]?.trim() ||
                       isReplying[`${postId}-${reply._id}`]
                     }
-                    className="bg-blue-600 hover:bg-blue-700 text-white rounded-full px-3 py-1 text-xs font-medium shadow-sm hover:shadow-md transition-all duration-200"
+                    className="bg-blue-600/80 hover:bg-blue-700/80 text-white font-medium rounded-md px-1.5 py-0.5 text-xs shadow-sm hover:shadow-md transition-all duration-200 h-5"
                   >
                     {isReplying[`${postId}-${reply._id}`] ? (
                       <div className="flex items-center gap-1">
-                        <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                        <div className="w-2 h-2 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                         <span>Replying...</span>
                       </div>
                     ) : (
@@ -941,19 +919,13 @@ function ReviewsPageContent() {
   // }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 dark:from-gray-900 dark:via-black dark:to-gray-900">
+    <div className="min-h-screen bg-[#0a0a0a]">
       <div className="container mx-auto px-4 py-8 max-w-2xl">
-        {/* <h1 className="text-3xl font-bold mb-8 text-gray-900 dark:text-white">
-          Write a Review
-        </h1> */}
-
         {/* Search Section */}
         {!selectedMedia && (
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg mb-6">
-            <div className="p-6 border-b border-gray-200 dark:border-gray-700">
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-                Quick log
-              </h2>
+          <div className="bg-[#0f0f0f] rounded-lg shadow-lg mb-6 border border-[#1a1a1a]">
+            <div className="p-6 border-b border-[#1a1a1a]">
+              <h2 className="text-lg font-medium text-[#d0d0d0]">Quick log</h2>
             </div>
             <div className="p-6 space-y-4">
               {/* Type Selector */}
@@ -969,8 +941,8 @@ function ReviewsPageContent() {
                     onClick={() => setSearchType(type.value)}
                     className={`flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
                       searchType === type.value
-                        ? "bg-blue-600 text-white"
-                        : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
+                        ? "bg-blue-600/80 text-white"
+                        : "bg-[#1a1a1a] text-[#a0a0a0] hover:bg-[#2a2a2a] hover:text-[#c0c0c0]"
                     }`}
                   >
                     <type.icon className="h-4 w-4" />
@@ -989,12 +961,12 @@ function ReviewsPageContent() {
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && searchMedia()}
-                  className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="flex-1 px-3 py-2 border border-[#2a2a2a] rounded-lg bg-[#0a0a0a] text-[#c0c0c0] placeholder-[#606060] focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-[#3a3a3a]"
                 />
                 <button
                   onClick={searchMedia}
                   disabled={isSearching}
-                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white rounded-lg transition-colors"
+                  className="px-4 py-2 bg-blue-600/80 hover:bg-blue-700/80 disabled:bg-[#2a2a2a] text-white rounded-lg transition-colors"
                 >
                   <Search className="h-4 w-4" />
                 </button>
@@ -1006,7 +978,7 @@ function ReviewsPageContent() {
                   {searchResults.map((result) => (
                     <div
                       key={`${result.type}-${result.id}`}
-                      className="flex items-center gap-3 p-3 border border-gray-200 dark:border-gray-700 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                      className="flex items-center gap-3 p-3 border border-[#1a1a1a] rounded-lg cursor-pointer hover:bg-[#0a0a0a] transition-colors"
                       onClick={() => selectMedia(result)}
                     >
                       <Image
@@ -1017,10 +989,10 @@ function ReviewsPageContent() {
                         className="rounded object-cover"
                       />
                       <div className="flex-1">
-                        <h3 className="font-medium text-gray-900 dark:text-white">
+                        <h3 className="font-medium text-[#d0d0d0]">
                           {result.title}
                         </h3>
-                        <div className="text-sm text-gray-500 dark:text-gray-400">
+                        <div className="text-sm text-[#808080]">
                           {result.year && <span>{result.year}</span>}
                           {result.author && <span> • {result.author}</span>}
                           {result.artist && <span> • {result.artist}</span>}
@@ -1028,7 +1000,7 @@ function ReviewsPageContent() {
                             <span> • {result.mediaSubType.toUpperCase()}</span>
                           )}
                         </div>
-                        <span className="inline-block px-2 py-1 text-xs bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded mt-1">
+                        <span className="inline-block px-2 py-1 text-xs bg-[#1a1a1a] text-[#808080] rounded mt-1">
                           {result.type.toUpperCase()}
                           {result.mediaSubType
                             ? ` - ${result.mediaSubType.toUpperCase()}`
@@ -1045,15 +1017,15 @@ function ReviewsPageContent() {
 
         {/* Selected Media & Review Form */}
         {selectedMedia && (
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg">
-            <div className="p-6 border-b border-gray-200 dark:border-gray-700">
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+          <div className="bg-[#0f0f0f] rounded-lg shadow-lg border border-[#1a1a1a]">
+            <div className="p-6 border-b border-[#1a1a1a]">
+              <h2 className="text-lg font-medium text-[#d0d0d0]">
                 Review: {selectedMedia.title}
               </h2>
             </div>
             <div className="p-6 space-y-6">
               {/* Selected Media Display */}
-              <div className="flex items-center gap-4 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+              <div className="flex items-center gap-4 p-4 bg-[#0a0a0a] rounded-lg border border-[#1a1a1a]">
                 <Image
                   src={selectedMedia.cover}
                   alt={selectedMedia.title}
@@ -1062,10 +1034,10 @@ function ReviewsPageContent() {
                   className="rounded object-cover"
                 />
                 <div>
-                  <h3 className="font-semibold text-gray-900 dark:text-white">
+                  <h3 className="font-medium text-[#d0d0d0]">
                     {selectedMedia.title}
                   </h3>
-                  <div className="text-sm text-gray-500 dark:text-gray-400">
+                  <div className="text-sm text-[#808080]">
                     {selectedMedia.year && <span>{selectedMedia.year}</span>}
                     {selectedMedia.author && (
                       <span> • {selectedMedia.author}</span>
@@ -1077,7 +1049,7 @@ function ReviewsPageContent() {
                       <span> • {selectedMedia.mediaSubType.toUpperCase()}</span>
                     )}
                   </div>
-                  <span className="inline-block px-2 py-1 text-xs bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300 rounded mt-1">
+                  <span className="inline-block px-2 py-1 text-xs bg-[#1a1a1a] text-[#808080] rounded mt-1">
                     {selectedMedia.type.toUpperCase()}
                     {selectedMedia.mediaSubType
                       ? ` - ${selectedMedia.mediaSubType.toUpperCase()}`
@@ -1086,7 +1058,7 @@ function ReviewsPageContent() {
                 </div>
                 <button
                   onClick={() => setSelectedMedia(null)}
-                  className="ml-auto px-3 py-1 text-sm text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
+                  className="ml-auto px-3 py-1 text-sm text-[#808080] hover:text-[#c0c0c0] hover:bg-[#1a1a1a] rounded transition-colors"
                 >
                   Change
                 </button>
@@ -1094,7 +1066,7 @@ function ReviewsPageContent() {
 
               {/* Rating */}
               <div>
-                <label className="text-sm font-medium text-gray-900 dark:text-white">
+                <label className="text-sm font-medium text-[#d0d0d0]">
                   Rating (1-5 stars) *
                 </label>
                 <div className="flex items-center gap-1 mt-2">
@@ -1109,13 +1081,13 @@ function ReviewsPageContent() {
                         className={`h-6 w-6 ${
                           star <= rating
                             ? "fill-yellow-400 text-yellow-400"
-                            : "text-gray-300 dark:text-gray-600"
+                            : "text-[#606060]"
                         }`}
                       />
                     </button>
                   ))}
                   {rating > 0 && (
-                    <span className="ml-2 text-sm text-gray-600 dark:text-gray-300">
+                    <span className="ml-2 text-sm text-[#808080]">
                       {rating}/5 stars
                     </span>
                   )}
@@ -1124,7 +1096,7 @@ function ReviewsPageContent() {
 
               {/* Review Text */}
               <div>
-                <label className="text-sm font-medium text-gray-900 dark:text-white">
+                <label className="text-sm font-medium text-[#d0d0d0]">
                   Your Review *
                 </label>
                 <textarea
@@ -1132,7 +1104,7 @@ function ReviewsPageContent() {
                   value={reviewText}
                   onChange={(e) => setReviewText(e.target.value)}
                   rows={5}
-                  className="mt-2 w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                  className="mt-2 w-full px-3 py-2 border border-[#2a2a2a] rounded-lg bg-[#0a0a0a] text-[#c0c0c0] placeholder-[#606060] focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-[#3a3a3a] resize-none"
                 />
               </div>
 
@@ -1146,7 +1118,7 @@ function ReviewsPageContent() {
                     !reviewText.trim() ||
                     isSubmitting
                   }
-                  className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+                  className="flex-1 bg-blue-600/80 hover:bg-blue-700/80 disabled:bg-[#2a2a2a] text-white px-4 py-2 rounded-lg font-medium transition-colors"
                 >
                   {isSubmitting ? "Posting..." : "Post Review"}
                 </button>
@@ -1156,7 +1128,7 @@ function ReviewsPageContent() {
                     setRating(0);
                     setReviewText("");
                   }}
-                  className="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                  className="px-4 py-2 border border-[#2a2a2a] text-[#808080] hover:bg-[#1a1a1a] rounded-lg transition-colors"
                 >
                   Cancel
                 </button>
@@ -1165,45 +1137,43 @@ function ReviewsPageContent() {
           </div>
         )}
 
-        <div className="min-h-screen bg-background">
-          <div className="max-w-2xl mx-auto border-x border-border min-h-screen">
+        <div className="min-h-screen bg-[#0a0a0a]">
+          <div className="max-w-4xl mx-auto border-x border-[#1a1a1a] min-h-screen">
             {/* Enhanced Header */}
-            <div className="sticky top-0 bg-background/95 backdrop-blur-xl border-b border-border z-10">
-              <div className="px-4 py-3">
-                <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                  Home
-                </h1>
-                <p className="text-sm text-muted-foreground mt-1">
+            <div className="sticky top-0 bg-[#0a0a0a]/95 backdrop-blur-xl border-b border-[#1a1a1a] z-10">
+              <div className="px-6 py-3">
+                <h1 className="text-xl font-medium text-[#e0e0e0]">Home</h1>
+                <p className="text-sm text-[#808080] mt-1">
                   Latest updates from your network
                 </p>
               </div>
             </div>
 
             {/* Enhanced Post Creation */}
-            <div className="border-b border-border bg-gradient-to-r from-gray-50/50 to-gray-100/50 dark:from-gray-900/50 dark:to-gray-800/50">
-              <div className="p-4">
-                <div className="flex gap-4">
-                  <Avatar className="w-12 h-12 ring-2 ring-blue-500/20">
-                    <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white font-semibold">
+            <div className="border-b border-[#1a1a1a] bg-[#0f0f0f]/50">
+              <div className="px-6 py-4">
+                <div className="flex gap-4 w-full">
+                  <Avatar className="w-12 h-12 ring-2 ring-green-500/20">
+                    <AvatarFallback className="bg-gradient-to-br from-green-500 to-emerald-600 text-white font-semibold">
                       {user?.displayName?.charAt(0) ||
                         user?.email?.charAt(0) ||
                         "U"}
                     </AvatarFallback>
                   </Avatar>
                   <div className="flex-1">
-                    <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-all duration-200">
+                    <div className="bg-[#0a0a0a] rounded-2xl border border-[#1a1a1a] shadow-sm">
                       <Textarea
                         value={newPost}
                         onChange={(e) => setNewPost(e.target.value)}
                         placeholder="What's happening?"
-                        className="min-h-[120px] border-none resize-none text-lg placeholder:text-muted-foreground focus-visible:ring-0 bg-transparent p-4 rounded-2xl"
+                        className="min-h-[120px] border-none resize-none text-lg placeholder:text-[#606060] focus-visible:ring-0 bg-transparent p-4 rounded-2xl text-[#c0c0c0]"
                         disabled={isPosting}
                       />
                     </div>
 
                     {/* Enhanced Action Bar */}
                     <div className="flex justify-between items-center mt-4">
-                      <div className="flex items-center gap-4 text-muted-foreground">
+                      <div className="flex items-center gap-4 text-[#808080]">
                         <div className="flex items-center gap-2 text-sm">
                           <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
                           <span>Ready to post</span>
@@ -1213,7 +1183,7 @@ function ReviewsPageContent() {
                       <Button
                         onClick={handlePost}
                         disabled={!newPost.trim() || isPosting}
-                        className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold rounded-full px-8 py-2.5 shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200"
+                        className="bg-blue-600/80 hover:bg-blue-700/80 text-white font-medium rounded-full px-8 py-2.5 shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200"
                       >
                         {isPosting ? (
                           <div className="flex items-center gap-2">
@@ -1234,16 +1204,16 @@ function ReviewsPageContent() {
             </div>
 
             {/* Feed */}
-            <ScrollArea className="flex-1">
+            <ScrollArea className="flex-1 w-full">
               {(!posts || posts.length === 0) && (
                 <div className="text-center py-16 px-4">
-                  <div className="w-20 h-20 bg-gradient-to-br from-blue-100 to-purple-100 dark:from-blue-900/20 dark:to-purple-900/20 rounded-full flex items-center justify-center mx-auto mb-6">
-                    <Sparkles className="w-10 h-10 text-blue-600 dark:text-blue-400" />
+                  <div className="w-20 h-20 bg-gradient-to-br from-green-900/20 to-emerald-900/20 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <CheckCircle className="w-10 h-10 text-green-400" />
                   </div>
-                  <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-3">
+                  <h3 className="text-xl font-medium text-[#d0d0d0] mb-3">
                     Your feed is empty
                   </h3>
-                  <p className="text-gray-600 dark:text-gray-400 mb-6 max-w-md mx-auto">
+                  <p className="text-[#808080] mb-6 max-w-md mx-auto">
                     Start sharing your thoughts and discover what others are
                     watching, reading, and listening to.
                   </p>
@@ -1256,33 +1226,33 @@ function ReviewsPageContent() {
                 posts.map((post) => (
                   <div
                     key={post._id}
-                    className="border-b border-border p-4 hover:bg-gray-50/50 dark:hover:bg-gray-900/50 transition-all duration-200 group"
+                    className="border-b border-[#3a3a3a] px-6 py-4 bg-[#2a2a2a]"
                   >
-                    <div className="flex gap-3">
-                      <Avatar className="w-10 h-10 ring-1 ring-blue-500/20 group-hover:ring-blue-500/30 transition-all duration-200">
-                        <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white font-semibold text-sm">
+                    <div className="flex gap-3 w-full">
+                      <Avatar className="w-10 h-10 ring-1 ring-green-500/20 flex-shrink-0">
+                        <AvatarFallback className="bg-gradient-to-br from-green-500 to-emerald-600 text-white font-semibold text-sm">
                           {post.authorId?.username?.charAt(0)?.toUpperCase() ||
                             "U"}
                         </AvatarFallback>
                       </Avatar>
 
-                      <div className="flex-1">
+                      <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-2">
-                          <span className="font-semibold text-sm text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                          <span className="font-medium text-sm text-[#e0e0e0]">
                             {post.authorId?.username}
                           </span>
-                          <span className="text-muted-foreground text-xs bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded-full">
+                          <span className="text-[#a0a0a0] text-xs bg-[#3a3a3a] px-2 py-0.5 rounded-full">
                             {formatTime(post.timestamp)}
                           </span>
                         </div>
 
-                        <p className="text-foreground mb-3 whitespace-pre-wrap leading-relaxed text-sm">
+                        <p className="text-[#d0d0d0] mb-3 whitespace-pre-wrap leading-relaxed text-sm pr-2">
                           {post.content}
                         </p>
 
                         {/* Compact Media Display Section */}
                         {post.mediaId && (
-                          <Card className="mb-3 overflow-hidden border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-all duration-200 bg-white dark:bg-gray-800">
+                          <Card className="mb-3 overflow-hidden border border-[#3a3a3a] shadow-sm bg-[#3a3a3a]">
                             <div className="flex">
                               <div className="w-20 h-28 flex-shrink-0 relative">
                                 <img
@@ -1297,20 +1267,20 @@ function ReviewsPageContent() {
                               <div className="flex-1 p-3">
                                 <div className="flex items-start gap-2 mb-2">
                                   <div className="flex-1">
-                                    <h3 className="font-semibold text-sm text-gray-900 dark:text-white line-clamp-2 mb-1">
+                                    <h3 className="font-medium text-sm text-[#e0e0e0] line-clamp-2 mb-1">
                                       {post.mediaTitle}
                                     </h3>
                                     <div className="flex items-center gap-2 mb-2">
                                       <Badge
                                         variant="secondary"
-                                        className="px-2 py-0.5 text-xs font-medium bg-blue-100 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 border-0"
+                                        className="px-2 py-0.5 text-xs font-medium bg-blue-600/20 text-blue-200 border-0"
                                       >
                                         {post.mediaType}
                                       </Badge>
                                       {post.mediaSubType && (
                                         <Badge
                                           variant="outline"
-                                          className="px-2 py-0.5 text-xs font-medium border-gray-300 dark:border-gray-600"
+                                          className="px-2 py-0.5 text-xs font-medium border-[#4a4a4a] text-[#a0a0a0]"
                                         >
                                           {post.mediaSubType.toUpperCase()}
                                         </Badge>
@@ -1319,10 +1289,10 @@ function ReviewsPageContent() {
                                   </div>
                                 </div>
 
-                                <div className="space-y-2 text-sm text-gray-600 dark:text-gray-400 mb-4">
+                                <div className="space-y-2 text-sm text-[#a0a0a0] mb-4">
                                   {post.mediaAuthor && (
                                     <div className="flex items-center gap-2">
-                                      <span className="font-semibold text-gray-700 dark:text-gray-300">
+                                      <span className="font-medium text-[#c0c0c0]">
                                         Director:
                                       </span>
                                       <span>{post.mediaAuthor}</span>
@@ -1330,14 +1300,14 @@ function ReviewsPageContent() {
                                   )}
                                   {post.mediaArtist && (
                                     <div className="flex items-center gap-2">
-                                      <span className="font-semibold text-gray-700 dark:text-gray-300">
+                                      <span className="font-medium text-[#c0c0c0]">
                                         Artist:
                                       </span>
                                       <span>{post.mediaArtist}</span>
                                     </div>
                                   )}
                                   <div className="flex items-center gap-2">
-                                    <span className="font-semibold text-gray-700 dark:text-gray-300">
+                                    <span className="font-medium text-[#c0c0c0]">
                                       Year:
                                     </span>
                                     <span>{post.mediaYear}</span>
@@ -1348,7 +1318,7 @@ function ReviewsPageContent() {
                                   <div className="flex items-center gap-2">
                                     {renderStarRating(post.rating)}
                                   </div>
-                                  <div className="text-xs text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded-full">
+                                  <div className="text-xs text-[#a0a0a0] bg-[#3a3a3a] px-2 py-1 rounded-full">
                                     {post.rating}/5
                                   </div>
                                 </div>
@@ -1358,12 +1328,12 @@ function ReviewsPageContent() {
                         )}
 
                         {/* Compact Post Actions */}
-                        <div className="flex items-center gap-6 text-muted-foreground pt-2 border-t border-gray-100 dark:border-gray-800">
+                        <div className="flex items-center gap-6 text-[#a0a0a0] pt-2 border-t border-[#3a3a3a] w-full">
                           <button
                             onClick={() => toggleReplyInput(post._id)}
-                            className="flex items-center gap-1.5 hover:text-blue-500 transition-all duration-200 group"
+                            className="flex items-center gap-1.5"
                           >
-                            <div className="p-1.5 rounded-full group-hover:bg-blue-50 dark:group-hover:bg-blue-900/20 transition-colors">
+                            <div className="p-1.5 rounded-full">
                               <MessageCircle className="w-4 h-4" />
                             </div>
                             <span className="text-xs font-medium">
@@ -1371,30 +1341,16 @@ function ReviewsPageContent() {
                             </span>
                           </button>
 
-                          <button className="flex items-center gap-1.5 hover:text-green-500 transition-all duration-200 group">
-                            <div className="p-1.5 rounded-full group-hover:bg-green-50 dark:group-hover:bg-green-900/20 transition-colors">
-                              <Repeat2 className="w-4 h-4" />
-                            </div>
-                          </button>
-
                           <button
                             onClick={() => toggleLike(post._id)}
-                            className={`flex items-center gap-1.5 transition-all duration-200 group ${
-                              post.isLiked
-                                ? "text-red-500"
-                                : "hover:text-red-500"
-                            }`}
+                            className="flex items-center gap-1.5"
                           >
-                            <div
-                              className={`p-1.5 rounded-full transition-colors ${
-                                post.isLiked
-                                  ? "bg-red-50 dark:bg-red-900/20"
-                                  : "group-hover:bg-red-50 dark:group-hover:bg-red-900/20"
-                              }`}
-                            >
+                            <div className="p-1.5 rounded-full">
                               <Heart
                                 className={`w-4 h-4 ${
-                                  post.isLiked ? "fill-current" : ""
+                                  post.isLiked
+                                    ? "fill-current text-rose-400"
+                                    : ""
                                 }`}
                               />
                             </div>
@@ -1402,46 +1358,42 @@ function ReviewsPageContent() {
                               {post.likeCount}
                             </span>
                           </button>
-
-                          <button className="flex items-center gap-1.5 hover:text-blue-500 transition-all duration-200 group">
-                            <div className="p-1.5 rounded-full group-hover:bg-blue-50 dark:group-hover:bg-blue-900/20 transition-colors">
-                              <Share className="w-4 h-4" />
-                            </div>
-                          </button>
                         </div>
 
                         {/* Compact Reply Input Section */}
                         {showReplyInput[post._id] && (
-                          <div className="mt-3 flex gap-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg p-3 border border-gray-200 dark:border-gray-700">
-                            <Avatar className="w-8 h-8 ring-1 ring-blue-500/20">
-                              <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white font-semibold text-sm">
-                                {user?.displayName?.charAt(0) ||
-                                  user?.email?.charAt(0) ||
-                                  "U"}
-                              </AvatarFallback>
-                            </Avatar>
-                            <div className="flex-1">
-                              <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
-                                <Textarea
-                                  value={replyInputs[post._id] || ""}
-                                  onChange={(e) =>
-                                    setReplyInputs((prev) => ({
-                                      ...prev,
-                                      [post._id]: e.target.value,
-                                    }))
-                                  }
-                                  placeholder="Write a reply..."
-                                  className="min-h-[50px] text-sm border-none resize-none focus-visible:ring-0 bg-transparent p-2 rounded-lg"
-                                  disabled={isReplying[post._id]}
-                                />
+                          <div className="mt-3 bg-[#0a0a0a] rounded-lg border border-[#1a1a1a] overflow-hidden">
+                            <div className="p-3">
+                              <div className="flex gap-2 mb-3">
+                                <Avatar className="w-6 h-6 ring-1 ring-green-500/20 flex-shrink-0">
+                                  <AvatarFallback className="bg-gradient-to-br from-green-500 to-emerald-600 text-white font-semibold text-xs">
+                                    {user?.displayName?.charAt(0) ||
+                                      user?.email?.charAt(0) ||
+                                      "U"}
+                                  </AvatarFallback>
+                                </Avatar>
+                                <div className="flex-1 min-w-0">
+                                  <Textarea
+                                    value={replyInputs[post._id] || ""}
+                                    onChange={(e) =>
+                                      setReplyInputs((prev) => ({
+                                        ...prev,
+                                        [post._id]: e.target.value,
+                                      }))
+                                    }
+                                    placeholder="Write a reply..."
+                                    className="min-h-[35px] max-h-[80px] text-sm border-none resize-none focus-visible:ring-0 bg-transparent px-2 py-1 rounded-lg text-[#c0c0c0] placeholder-[#606060]"
+                                    disabled={isReplying[post._id]}
+                                  />
+                                </div>
                               </div>
-                              <div className="flex justify-end gap-2 mt-2">
+                              <div className="flex gap-2 pt-2 border-t border-[#1a1a1a]">
                                 <Button
                                   variant="ghost"
                                   size="sm"
                                   onClick={() => toggleReplyInput(post._id)}
                                   disabled={isReplying[post._id]}
-                                  className="text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 text-xs"
+                                  className="text-[#808080] hover:text-[#a0a0a0] text-xs px-1.5 py-0.5 h-5 bg-[#1a1a1a] border border-[#2a2a2a]"
                                 >
                                   Cancel
                                 </Button>
@@ -1452,11 +1404,11 @@ function ReviewsPageContent() {
                                     !replyInputs[post._id]?.trim() ||
                                     isReplying[post._id]
                                   }
-                                  className="bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-full px-3 py-1 text-xs shadow-sm hover:shadow-md transition-all duration-200"
+                                  className="bg-blue-600/80 hover:bg-blue-700/80 text-white font-medium rounded-md px-1.5 py-0.5 text-xs shadow-sm hover:shadow-md transition-all duration-200 h-5"
                                 >
                                   {isReplying[post._id] ? (
                                     <div className="flex items-center gap-1">
-                                      <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                      <div className="w-2 h-2 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                                       <span>Replying...</span>
                                     </div>
                                   ) : (
@@ -1491,13 +1443,11 @@ function ReviewsPageContent() {
 // Loading component for Suspense fallback
 function ReviewsPageLoading() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 dark:from-gray-900 dark:via-black dark:to-gray-900">
+    <div className="min-h-screen bg-[#0a0a0a]">
       <div className="max-w-4xl mx-auto px-4 py-8">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
-          <p className="text-gray-600 dark:text-gray-400">
-            Loading review form...
-          </p>
+          <p className="text-[#808080]">Loading review form...</p>
         </div>
       </div>
     </div>

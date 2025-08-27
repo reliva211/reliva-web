@@ -137,9 +137,9 @@ const categoryIcons = {
 };
 
 const categoryColors = {
-  book: "text-emerald-500",
-  music: "text-purple-500",
-  movie: "text-blue-500",
+  book: "text-emerald-400/70",
+  music: "text-purple-400/70",
+  movie: "text-blue-400/70",
 };
 
 export default function CommunityFeed() {
@@ -202,11 +202,11 @@ export default function CommunityFeed() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-[#0a0a0a]">
       {/* Header */}
-      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <header className="sticky top-0 z-50 w-full border-b border-[#1a1a1a] bg-[#0a0a0a]/95 backdrop-blur supports-[backdrop-filter]:bg-[#0a0a0a]/60">
         <div className="flex h-16 items-center justify-between px-4 max-w-2xl mx-auto">
-          <h1 className="text-xl font-bold">Community</h1>
+          <h1 className="text-xl font-medium text-[#e0e0e0]">Community</h1>
           <ThemeProvider />
         </div>
       </header>
@@ -214,21 +214,23 @@ export default function CommunityFeed() {
       {/* Main Content */}
       <main className="max-w-2xl mx-auto">
         {/* Compose Tweet Section */}
-        <div className="border-b p-4">
+        <div className="border-b border-[#1a1a1a] p-4">
           <div className="flex space-x-3">
-            <Avatar className="h-10 w-10 flex-shrink-0">
+            <Avatar className="h-9 w-9 flex-shrink-0">
               <AvatarImage
-                src="/placeholder.svg?height=40&width=40"
+                src="/placeholder.svg?height=36&width=36"
                 alt="You"
               />
-              <AvatarFallback>You</AvatarFallback>
+              <AvatarFallback className="bg-[#2a2a2a] text-[#b0b0b0]">
+                You
+              </AvatarFallback>
             </Avatar>
             <div className="flex-1 min-w-0">
               <EnhancedCreatePost onAddPost={addPost}>
                 <Button
                   id="create-post-trigger"
                   variant="ghost"
-                  className="w-full justify-start text-muted-foreground hover:bg-muted/50 h-12 text-base px-4"
+                  className="w-full justify-start text-[#808080] hover:bg-[#1a1a1a]/50 h-11 text-base px-4 border border-[#2a2a2a] rounded-xl"
                 >
                   What's your latest discovery?
                 </Button>
@@ -239,24 +241,24 @@ export default function CommunityFeed() {
 
         {/* Feed */}
         <ScrollArea className="h-[calc(100vh-10rem)]">
-          <div className="divide-y">
+          <div className="divide-y divide-[#1a1a1a]">
             {posts.map((post) => {
               const CategoryIcon = categoryIcons[post.category];
               return (
                 <article
                   key={post.id}
-                  className="p-4 hover:bg-muted/30 transition-colors"
+                  className="p-4 hover:bg-[#0f0f0f] transition-colors duration-200"
                 >
                   <div className="flex space-x-3">
                     <Avatar
-                      className="h-10 w-10 flex-shrink-0 mt-1 cursor-pointer hover:opacity-80 transition-opacity"
+                      className="h-9 w-9 flex-shrink-0 mt-1 cursor-pointer hover:opacity-80 transition-opacity"
                       onClick={() => router.push(`/users/${post.user.uid}`)}
                     >
                       <AvatarImage
                         src={post.user.avatar || "/placeholder.svg"}
                         alt={post.user.name}
                       />
-                      <AvatarFallback>
+                      <AvatarFallback className="bg-[#2a2a2a] text-[#b0b0b0]">
                         {post.user.name
                           .split(" ")
                           .map((n) => n[0])
@@ -266,39 +268,41 @@ export default function CommunityFeed() {
 
                     <div className="flex-1 min-w-0">
                       {/* Header */}
-                      <div className="flex items-start justify-between mb-1">
+                      <div className="flex items-start justify-between mb-2">
                         <div className="flex items-center space-x-2 min-w-0 flex-1">
                           <span
-                            className="font-semibold text-sm truncate max-w-[100px] sm:max-w-[150px] cursor-pointer hover:underline"
+                            className="font-medium text-sm text-[#d0d0d0] truncate max-w-[100px] sm:max-w-[150px] cursor-pointer hover:text-[#e0e0e0] transition-colors"
                             onClick={() =>
                               router.push(`/users/${post.user.uid}`)
                             }
                           >
                             {post.user.name}
                           </span>
-                          <span className="text-muted-foreground text-sm truncate max-w-[80px] sm:max-w-[120px]">
+                          <span className="text-[#707070] text-sm truncate max-w-[80px] sm:max-w-[120px]">
                             @{post.user.username}
                           </span>
-                          <span className="text-muted-foreground text-sm hidden sm:inline">
+                          <span className="text-[#707070] text-sm hidden sm:inline">
                             ·
                           </span>
-                          <span className="text-muted-foreground text-sm">
+                          <span className="text-[#707070] text-sm">
                             {post.timestamp}
                           </span>
                         </div>
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="h-8 w-8 flex-shrink-0"
+                          className="h-7 w-7 flex-shrink-0 text-[#707070] hover:text-[#b0b0b0] hover:bg-[#1a1a1a]"
                         >
-                          <MoreHorizontal className="h-4 w-4" />
+                          <MoreHorizontal className="h-3.5 w-3.5" />
                         </Button>
                       </div>
 
                       {/* Category Badge */}
                       <div className="flex items-center space-x-2 mb-3">
                         <CategoryIcon
-                          className={`w-4 h-4 ${categoryColors[post.category]}`}
+                          className={`w-3.5 h-3.5 ${
+                            categoryColors[post.category]
+                          }`}
                         />
                         <span
                           className={`text-xs font-medium ${
@@ -311,14 +315,14 @@ export default function CommunityFeed() {
 
                       {/* Content */}
                       <div className="mb-3">
-                        <p className="text-sm leading-relaxed break-words">
+                        <p className="text-sm leading-relaxed break-words text-[#c0c0c0]">
                           {post.content}
                         </p>
                       </div>
 
                       {/* Images */}
                       {post.images && post.images.length > 0 && (
-                        <div className="mb-3 rounded-2xl overflow-hidden border">
+                        <div className="mb-3 rounded-xl overflow-hidden border border-[#2a2a2a]">
                           {post.images.length === 1 ? (
                             <img
                               src={post.images[0] || "/placeholder.svg"}
@@ -345,38 +349,38 @@ export default function CommunityFeed() {
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="text-muted-foreground hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-950 px-3 py-2 h-9"
+                          className="text-[#707070] hover:text-[#a0a0a0] hover:bg-[#1a1a1a] px-3 py-2 h-8 rounded-lg transition-colors"
                         >
-                          <MessageCircle className="w-4 h-4 mr-2" />
+                          <MessageCircle className="w-3.5 h-3.5 mr-2" />
                           <span className="text-sm">{post.comments}</span>
                         </Button>
 
                         <Button
                           variant="ghost"
                           size="sm"
-                          className={`hover:bg-green-50 dark:hover:bg-green-950 px-3 py-2 h-9 ${
+                          className={`px-3 py-2 h-8 rounded-lg transition-colors ${
                             post.isRetweeted
-                              ? "text-green-500"
-                              : "text-muted-foreground hover:text-green-500"
+                              ? "text-emerald-400"
+                              : "text-[#707070] hover:text-[#a0a0a0] hover:bg-[#1a1a1a]"
                           }`}
                           onClick={() => handleRetweet(post.id)}
                         >
-                          <Repeat2 className="w-4 h-4 mr-2" />
+                          <Repeat2 className="w-3.5 h-3.5 mr-2" />
                           <span className="text-sm">{post.retweets}</span>
                         </Button>
 
                         <Button
                           variant="ghost"
                           size="sm"
-                          className={`hover:bg-red-50 dark:hover:bg-red-950 px-3 py-2 h-9 ${
+                          className={`px-3 py-2 h-8 rounded-lg transition-colors ${
                             post.isLiked
-                              ? "text-red-500"
-                              : "text-muted-foreground hover:text-red-500"
+                              ? "text-rose-400"
+                              : "text-[#707070] hover:text-[#a0a0a0] hover:bg-[#1a1a1a]"
                           }`}
                           onClick={() => handleLike(post.id)}
                         >
                           <Heart
-                            className={`w-4 h-4 mr-2 ${
+                            className={`w-3.5 h-3.5 mr-2 ${
                               post.isLiked ? "fill-current" : ""
                             }`}
                           />
@@ -386,9 +390,9 @@ export default function CommunityFeed() {
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="text-muted-foreground hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-950 px-3 py-2 h-9"
+                          className="text-[#707070] hover:text-[#a0a0a0] hover:bg-[#1a1a1a] px-3 py-2 h-8 rounded-lg transition-colors"
                         >
-                          <Share className="w-4 h-4" />
+                          <Share className="w-3.5 h-3.5" />
                         </Button>
                       </div>
                     </div>
@@ -402,12 +406,12 @@ export default function CommunityFeed() {
         {/* Floating Action Button for Mobile */}
         <Button
           size="lg"
-          className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg hover:shadow-xl transition-all z-50 sm:hidden"
+          className="fixed bottom-6 right-6 h-12 w-12 rounded-full shadow-lg hover:shadow-xl transition-all z-50 sm:hidden bg-[#2a2a2a] text-[#b0b0b0] hover:bg-[#3a3a3a] border border-[#1a1a1a]"
           onClick={() =>
             document.getElementById("create-post-trigger")?.click()
           }
         >
-          <Plus className="h-6 w-6" />
+          <Plus className="h-5 w-5" />
           <span className="sr-only">Create post</span>
         </Button>
       </main>
