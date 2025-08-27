@@ -1,283 +1,318 @@
-# Reliva Codebase Index
+# 🎧 Reliva Web Application - Codebase Index
 
-## 🎯 Project Overview
-**Reliva** is a comprehensive media tracking and social platform that allows users to discover, review, and share their experiences with music, books, movies, and TV series. The application integrates with multiple external APIs to provide rich media content and offers a social networking experience centered around media consumption.
+## 📋 Project Overview
 
-## 🏗️ Architecture & Technology Stack
+**Reliva** is a comprehensive media tracking and review platform that allows users to track their music, books, movies, and TV series all in one place. The application provides social features for sharing reviews, following other users, and discovering new content across multiple media types.
+
+**Tech Stack**: Next.js 15, React 19, TypeScript, Firebase, Tailwind CSS, Radix UI
+
+## 🏗️ Architecture Overview
 
 ### Frontend Framework
-- **Next.js 15.2.4** - React-based full-stack framework with App Router
-- **React 19** - Modern React with latest features
-- **TypeScript 5** - Type-safe development
-- **Tailwind CSS 3.4.17** - Utility-first CSS framework
+- **Next.js 15** with App Router
+- **React 19** with modern hooks and patterns
+- **TypeScript** for type safety
+- **Tailwind CSS** for styling with custom design system
 
 ### Backend & Database
-- **Firebase** - Authentication, Firestore database, and storage
-- **Next.js API Routes** - Server-side API endpoints
-- **NextAuth.js** - Authentication framework with Spotify integration
+- **Firebase** for authentication and Firestore database
+- **MongoDB** integration for user management
+- **NextAuth.js** for OAuth authentication (Spotify)
 
 ### UI Components
-- **Radix UI** - Accessible, unstyled UI primitives
-- **Shadcn/ui** - High-quality component library built on Radix
-- **Lucide React** - Beautiful icon library
-- **Framer Motion** - Animation library
+- **Radix UI** primitives for accessible components
+- **Custom component library** built on top of Radix UI
+- **Responsive design** with mobile-first approach
 
-### External API Integrations
-- **Spotify API** - Music streaming and playlist management
-- **TMDB API** - Movie and TV series database
-- **NYTimes Books API** - Bestseller lists and book data
-- **JioSaavn API** - Indian music streaming service
-- **Google Books API** - Book search and metadata
+## 📁 Directory Structure
 
-## 📁 Project Structure
-
-### Core Application (`/app`)
 ```
-app/
-├── api/                    # API routes for external services
-│   ├── auth/              # Authentication endpoints
-│   ├── spotify/           # Spotify API integration
-│   ├── tmdb/              # Movie/TV database API
-│   ├── nytimes/           # NYTimes Books API
-│   ├── saavn/             # JioSaavn music API
-│   ├── google-books/      # Google Books API
-│   ├── recommendations/   # Personalized recommendations
-│   └── search/            # Global search functionality
-├── auth/                   # Authentication pages
-├── dashboard/              # User dashboard
-├── music/                  # Music discovery and management
-├── books/                  # Book discovery and management
-├── movies/                 # Movie discovery and management
-├── series/                 # TV series discovery and management
-├── profile/                # User profile management
-├── community/              # Social features
-└── layout.tsx              # Root layout with providers
+reliva-web/
+├── app/                    # Next.js App Router pages
+├── components/            # Reusable UI components
+├── hooks/                # Custom React hooks
+├── lib/                  # Utility libraries and configurations
+├── types/                # TypeScript type definitions
+├── styles/               # Global CSS and styling
+├── public/               # Static assets
+└── scripts/              # Utility scripts and data seeding
 ```
 
-### Components (`/components`)
-```
-components/
-├── ui/                     # Reusable UI components (shadcn/ui)
-├── auth-provider.tsx       # Authentication context provider
-├── theme-provider.tsx      # Dark/light theme provider
-├── header.tsx              # Navigation header
-├── community-feed.tsx      # Social media feed
-├── review-post.tsx         # Individual review display
-├── enhanced-create-post.tsx # Post creation interface
-├── audio-player.tsx        # Music player component
-├── movie-card.tsx          # Movie display card
-├── profile-sections/       # Profile-specific components
-└── layout-wrapper.tsx      # Layout wrapper component
-```
+## 🚀 Core Features
 
-### Hooks (`/hooks`)
-```
-hooks/
-├── use-current-user.ts     # Current user authentication state
-├── use-notifications.ts    # Notification management
-├── use-reviews.ts          # Review data management
-├── use-recommendations.ts  # Recommendation system
-├── use-search.ts           # Search functionality
-├── use-music-api.ts        # Music API integration
-├── use-google-books.ts     # Google Books integration
-├── use-trending-books.ts   # Trending books data
-├── use-user-connections.ts # User following system
-└── use-collections.ts      # User collections management
-```
+### 1. Authentication System
+- **Firebase Authentication** with email/password
+- **Spotify OAuth** integration via NextAuth.js
+- **User profile management** with Firestore
+- **Session management** with automatic token refresh
 
-### Utilities (`/lib`)
-```
-lib/
-├── firebase.ts             # Firebase configuration
-├── firebase-admin.ts       # Server-side Firebase admin
-├── spotify.tsx             # Spotify API utilities
-├── tmdb.ts                 # TMDB API utilities
-├── books-api.ts            # Book API utilities
-├── search-service.ts       # Search functionality
-└── utils.ts                # General utility functions
-```
+### 2. Media Management
+- **Multi-media support**: Movies, TV Series, Books, Music
+- **External API integrations**:
+  - TMDB for movies and TV series
+  - Google Books API
+  - Spotify API for music
+  - Saavn API for Indian music
+  - YouTube API for video content
 
-## 🚀 Key Features
+### 3. Review System
+- **Rich review creation** with ratings, tags, and spoiler warnings
+- **Social interactions**: likes, helpful votes, comments
+- **Review filtering** and search capabilities
+- **Public/private review options**
 
-### 1. Multi-Media Support
-- **Music**: Spotify integration, JioSaavn support, album/artist/song management
-- **Books**: NYTimes bestsellers, Google Books integration, reading lists
-- **Movies**: TMDB integration, movie discovery, ratings and reviews
-- **TV Series**: Series tracking, episode management, binge-watching features
+### 4. Social Features
+- **User following system**
+- **Community feed** with shared reviews
+- **Notifications** for social interactions
+- **User profiles** with activity history
 
-### 2. Social Networking
-- **User Profiles**: Customizable profiles with media collections
-- **Following System**: Follow other users to see their reviews and recommendations
-- **Community Feed**: Social media-style feed of friends' activities
-- **Reviews & Ratings**: 5-star rating system with detailed review capabilities
+### 5. Discovery & Recommendations
+- **Trending content** across media types
+- **Personalized recommendations**
+- **Search functionality** across all media types
+- **Collection management**
 
-### 3. Discovery & Recommendations
-- **Personalized Feed**: Content from followed users
-- **Trending Content**: Popular media across all categories
-- **Search**: Global search across all media types
-- **Recommendations**: AI-powered suggestions based on user preferences
+## 🔧 Key Components
 
-### 4. Authentication & User Management
-- **Firebase Auth**: Email/password and social authentication
-- **Spotify OAuth**: Seamless music service integration
-- **User Profiles**: Customizable user information and preferences
-- **Collections**: Personal media libraries and wishlists
+### Layout & Navigation
+- **`LayoutWrapper`** - Main layout container
+- **`Header`** - Navigation with sidebar and mobile menu
+- **`Footer`** - Site footer information
+- **`ThemeProvider`** - Dark/light theme management
 
-## 🔌 API Integrations
+### Authentication Components
+- **`AuthProvider`** - Firebase auth context
+- **`Login`** - User login page
+- **`Signup`** - User registration page
+- **`Profile`** - User profile management
 
-### Spotify API
-- User authentication and profile data
-- Playlist management and creation
-- Top artists and tracks
-- Recently played music
-- Album and artist information
+### Media Components
+- **`MovieCard`** - Movie display component
+- **`BookCard`** - Book display component
+- **`MusicPlayer`** - Audio playback component
+- **`VideoPlayer`** - Video playback component
+- **`YouTubePlayer`** - YouTube video integration
 
-### TMDB API
-- Movie and TV series search
-- Detailed media information
-- Cast and crew data
-- High-quality poster images
-- Release dates and ratings
+### Review Components
+- **`ReviewPost`** - Review creation form
+- **`ReviewsSection`** - Review display and management
+- **`RatingStars`** - Star rating component
+- **`CommunityFeed`** - Social review feed
 
-### NYTimes Books API
-- Bestseller lists (fiction, non-fiction, etc.)
-- Book recommendations
-- Publishing information
-- Author details
+### UI Components (`components/ui/`)
+- **50+ reusable components** built on Radix UI
+- **Form components** with validation
+- **Modal and dialog components**
+- **Navigation components**
+- **Data display components**
 
-### JioSaavn API
-- Indian music catalog
-- Song, album, and artist search
-- Playlist management
-- Music streaming integration
+## 🪝 Custom Hooks
 
-### Google Books API
-- Comprehensive book search
-- Book metadata and covers
-- Author information
-- Publishing details
+### Authentication & User Management
+- **`useCurrentUser`** - Current user state and data
+- **`useProfile`** - User profile management
+- **`useUserConnections`** - Following/follower management
 
-## 🎨 UI/UX Features
+### Media Management
+- **`useReviews`** - Review CRUD operations
+- **`useCollections`** - User collection management
+- **`useRecommendations`** - Content recommendations
+- **`useSearch`** - Search functionality
 
-### Design System
-- **Responsive Design**: Mobile-first approach with responsive breakpoints
-- **Dark/Light Theme**: Toggle between themes with system preference detection
-- **Modern UI**: Clean, card-based design with smooth animations
-- **Accessibility**: ARIA labels, keyboard navigation, screen reader support
+### External API Hooks
+- **`useTMDB`** - Movie/TV series data
+- **`useGoogleBooks`** - Book data
+- **`useSpotify`** - Music data
+- **`useSaavn`** - Indian music data
 
-### Component Library
-- **Shadcn/ui**: High-quality, accessible components
-- **Custom Components**: Specialized media and social components
-- **Responsive Layouts**: Adaptive designs for all screen sizes
-- **Interactive Elements**: Hover effects, transitions, and micro-interactions
+### Utility Hooks
+- **`useToast`** - Notification system
+- **`useMobile`** - Responsive design detection
+- **`useVideoPlayer`** - Video player state management
 
-## 🔒 Security & Performance
+## 🌐 API Routes
 
-### Security Features
-- **Firebase Security Rules**: Database access control
-- **NextAuth.js**: Secure authentication handling
-- **Environment Variables**: Secure API key management
-- **Input Validation**: Form validation and sanitization
+### Authentication
+- **`/api/auth/[...nextauth]`** - NextAuth.js OAuth endpoints
+- **`/api/auth/spotify`** - Spotify authentication
 
-### Performance Optimizations
-- **Next.js Image Optimization**: Automatic image optimization
-- **Code Splitting**: Dynamic imports and lazy loading
-- **Firebase Caching**: Efficient data fetching and caching
-- **Responsive Images**: Adaptive image loading for different devices
+### Media APIs
+- **`/api/tmdb/*`** - Movie and TV series data
+- **`/api/books/*`** - Book management
+- **`/api/music-api/*`** - Music data
+- **`/api/spotify/*`** - Spotify integration
+- **`/api/saavn/*`** - Saavn music data
 
-## 📱 Mobile Experience
+### User Management
+- **`/api/users/*`** - User CRUD operations
+- **`/api/profile/*`** - Profile management
+- **`/api/notifications/*`** - Notification system
+
+### Social Features
+- **`/api/reviews/*`** - Review management
+- **`/api/recommendations/*`** - Content recommendations
+- **`/api/search/*`** - Search functionality
+
+## 🎨 Styling & Design System
+
+### Tailwind CSS Configuration
+- **Custom color palette** with CSS variables
+- **Component variants** using class-variance-authority
+- **Responsive breakpoints** for mobile-first design
+- **Animation system** with custom keyframes
+
+### Design Tokens
+- **Color system** with semantic naming
+- **Typography scale** with Inter font
+- **Spacing system** with consistent increments
+- **Border radius** and shadow utilities
 
 ### Responsive Design
-- **Mobile-First**: Optimized for mobile devices
-- **Touch-Friendly**: Large touch targets and gestures
-- **Progressive Web App**: Offline capabilities and app-like experience
-- **Mobile Navigation**: Collapsible sidebar and mobile menu
+- **Mobile-first approach** with progressive enhancement
+- **Breakpoint system** for different screen sizes
+- **Touch-friendly interactions** for mobile devices
+
+## 🔐 Security & Authentication
+
+### Firebase Security
+- **Firestore security rules** for data access control
+- **Authentication state management** with real-time updates
+- **User data isolation** and privacy protection
+
+### OAuth Integration
+- **Spotify OAuth** with proper scope management
+- **Token refresh** handling for long-lived sessions
+- **Secure cookie management** for production environments
+
+## 📱 Mobile & Responsive Features
+
+### Mobile Optimization
+- **Touch-friendly UI** components
+- **Responsive navigation** with collapsible sidebar
+- **Mobile-specific layouts** for different screen sizes
+- **Progressive Web App** capabilities
+
+### Performance
+- **Image optimization** with Next.js Image component
+- **Lazy loading** for media content
+- **Code splitting** for optimal bundle sizes
+- **Service worker** for offline capabilities
 
 ## 🧪 Development & Testing
 
 ### Development Tools
-- **ESLint**: Code quality and consistency
-- **TypeScript**: Type safety and developer experience
-- **Hot Reload**: Fast development iteration
-- **Environment Management**: Multiple environment configurations
+- **ESLint** configuration for code quality
+- **TypeScript** strict mode for type safety
+- **Prettier** for code formatting
+- **Husky** for git hooks
 
-### Testing Strategy
-- **Component Testing**: Individual component testing
-- **Integration Testing**: API endpoint testing
-- **E2E Testing**: User workflow testing
-- **Performance Testing**: Load time and optimization testing
+### Testing & Debugging
+- **Error boundaries** for graceful error handling
+- **Debug panels** for development assistance
+- **Console logging** for debugging
+- **Test data scripts** for development
 
-## 🚀 Deployment & Infrastructure
+## 🚀 Deployment & Environment
 
-### Hosting
-- **Vercel**: Next.js optimized hosting platform
-- **Firebase Hosting**: Alternative hosting option
-- **Environment Variables**: Secure configuration management
+### Environment Configuration
+- **Environment variables** for API keys and configuration
+- **Firebase configuration** for different environments
+- **Next.js configuration** for production builds
 
-### Database
-- **Firestore**: NoSQL document database
-- **Real-time Updates**: Live data synchronization
-- **Scalability**: Automatic scaling and performance optimization
+### Build & Deployment
+- **PNPM** package manager for dependencies
+- **Next.js build system** for production optimization
+- **Static asset optimization** for performance
+- **Environment-specific builds** for staging/production
 
 ## 📊 Data Models
 
 ### Core Entities
-- **Users**: Authentication, profiles, preferences
-- **Reviews**: Media reviews with ratings and content
-- **Collections**: User media libraries
-- **Media**: Music, books, movies, series metadata
-- **Social**: Following relationships, likes, comments
+- **User**: Profile, preferences, connections
+- **Review**: Content, ratings, social interactions
+- **Media**: Movies, books, music, series metadata
+- **Collection**: User-curated content groups
+- **Notification**: User activity alerts
 
-### Data Relationships
-- Users can follow other users
-- Users can create reviews for media items
-- Users can maintain collections of media
-- Reviews can be liked and commented on
-- Media items can be rated and reviewed
+### Database Schema
+- **Firestore collections** for real-time data
+- **MongoDB integration** for complex user data
+- **Data relationships** with proper indexing
+- **Caching strategies** for performance
+
+## 🔄 State Management
+
+### React State
+- **Custom hooks** for local state management
+- **Context providers** for global state
+- **Firebase real-time listeners** for live updates
+- **Optimistic updates** for better UX
+
+### Data Fetching
+- **SWR/React Query** patterns for data fetching
+- **Error handling** with fallback states
+- **Loading states** for better user experience
+- **Cache invalidation** strategies
+
+## 🌟 Key Features Implementation
+
+### 1. Multi-Media Support
+- Unified interface for different content types
+- Consistent review system across media types
+- Cross-media recommendations and discovery
+
+### 2. Social Platform
+- User following and follower system
+- Community-driven content discovery
+- Social interactions on reviews and content
+
+### 3. Content Discovery
+- AI-powered recommendations
+- Trending content algorithms
+- Personalized content feeds
+
+### 4. Rich Media Experience
+- Audio and video playback integration
+- Image galleries and media previews
+- Interactive content exploration
+
+## 📈 Performance Optimizations
+
+### Frontend Performance
+- **Code splitting** and lazy loading
+- **Image optimization** and compression
+- **Bundle size optimization** with tree shaking
+- **Service worker** for offline functionality
+
+### Backend Performance
+- **Database indexing** strategies
+- **API response caching** mechanisms
+- **Real-time updates** with Firebase
+- **Efficient data fetching** patterns
 
 ## 🔮 Future Enhancements
 
 ### Planned Features
-- **AI Recommendations**: Machine learning-based suggestions
-- **Social Features**: Comments, sharing, and discussions
-- **Analytics**: User listening/reading/watching statistics
-- **Mobile App**: Native mobile applications
-- **API Expansion**: Additional media service integrations
+- **Advanced recommendation algorithms**
+- **Social media integration**
+- **Mobile app development**
+- **Internationalization support**
+- **Advanced analytics and insights**
 
 ### Technical Improvements
-- **Performance Optimization**: Advanced caching and optimization
-- **Scalability**: Database optimization and CDN integration
-- **Monitoring**: Application performance monitoring
-- **Testing**: Comprehensive test coverage
+- **GraphQL API** implementation
+- **Microservices architecture**
+- **Advanced caching strategies**
+- **Performance monitoring** and analytics
 
-## 📚 Documentation
+## 📚 Additional Documentation
 
-### Additional Resources
-- `FOLLOWING_SYSTEM_README.md` - User following system details
-- `NYTIMES_API_INTEGRATION.md` - NYTimes API integration guide
-- `RECOMMENDATIONS_FEATURE.md` - Recommendation system documentation
-- `SERIES_AND_BOOKS_TODO.md` - Development roadmap and tasks
+- **`FOLLOWING_SYSTEM_README.md`** - Social features documentation
+- **`RECOMMENDATIONS_FEATURE.md`** - Recommendation system details
+- **`NYTIMES_API_INTEGRATION.md`** - Book API integration
+- **`SERIES_AND_BOOKS_TODO.md`** - Development roadmap
 
-## 🛠️ Getting Started
+---
 
-### Prerequisites
-- Node.js 18+ 
-- pnpm package manager
-- Firebase project setup
-- API keys for external services
-
-### Installation
-```bash
-pnpm install
-pnpm dev
-```
-
-### Environment Setup
-Required environment variables:
-- Firebase configuration
-- Spotify API credentials
-- TMDB API key
-- NYTimes API key
-- NextAuth secret
-
-This codebase represents a modern, full-stack media social platform with comprehensive API integrations, responsive design, and scalable architecture built on Next.js and Firebase.
+*This index provides a comprehensive overview of the Reliva web application codebase. For specific implementation details, refer to the individual component files and API route implementations.*

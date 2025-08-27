@@ -981,13 +981,13 @@ function ReviewsPageContent() {
                       className="flex items-center gap-3 p-3 border border-[#1a1a1a] rounded-lg cursor-pointer hover:bg-[#0a0a0a] transition-colors"
                       onClick={() => selectMedia(result)}
                     >
-                      <Image
-                        src={result.cover}
-                        alt={result.title}
-                        width={40}
-                        height={60}
-                        className="rounded object-cover"
-                      />
+                                                                                                                                                                                       <Image
+                           src={result.cover}
+                           alt={result.title}
+                           width={58}
+                           height={87}
+                           className="rounded object-cover"
+                         />
                       <div className="flex-1">
                         <h3 className="font-medium text-[#d0d0d0]">
                           {result.title}
@@ -1026,13 +1026,15 @@ function ReviewsPageContent() {
             <div className="p-6 space-y-6">
               {/* Selected Media Display */}
               <div className="flex items-center gap-4 p-4 bg-[#0a0a0a] rounded-lg border border-[#1a1a1a]">
-                <Image
-                  src={selectedMedia.cover}
-                  alt={selectedMedia.title}
-                  width={60}
-                  height={90}
-                  className="rounded object-cover"
-                />
+                <div className="relative">
+                  <Image
+                    src={selectedMedia.cover}
+                    alt={selectedMedia.title}
+                    width={112}
+                    height={168}
+                    className="rounded-xl object-cover shadow-lg"
+                  />
+                </div>
                 <div>
                   <h3 className="font-medium text-[#d0d0d0]">
                     {selectedMedia.title}
@@ -1049,7 +1051,7 @@ function ReviewsPageContent() {
                       <span> • {selectedMedia.mediaSubType.toUpperCase()}</span>
                     )}
                   </div>
-                  <span className="inline-block px-2 py-1 text-xs bg-[#1a1a1a] text-[#808080] rounded mt-1">
+                  <span className="inline-block px-3 py-1.5 text-xs font-semibold bg-gradient-to-r from-[#2a2a2a] to-[#1a1a1a] text-[#d0d0d0] rounded-full mt-2 border border-[#3a3a3a] shadow-sm">
                     {selectedMedia.type.toUpperCase()}
                     {selectedMedia.mediaSubType
                       ? ` - ${selectedMedia.mediaSubType.toUpperCase()}`
@@ -1086,11 +1088,7 @@ function ReviewsPageContent() {
                       />
                     </button>
                   ))}
-                  {rating > 0 && (
-                    <span className="ml-2 text-sm text-[#808080]">
-                      {rating}/5 stars
-                    </span>
-                  )}
+
                 </div>
               </div>
 
@@ -1252,35 +1250,34 @@ function ReviewsPageContent() {
 
                         {/* Compact Media Display Section */}
                         {post.mediaId && (
-                          <Card className="mb-3 overflow-hidden border border-[#3a3a3a] shadow-sm bg-[#3a3a3a]">
+                          <Card className="mb-4 overflow-hidden border border-[#3a3a3a] shadow-lg bg-gradient-to-r from-[#3a3a3a] to-[#2a2a2a] hover:shadow-xl transition-shadow duration-200">
                             <div className="flex">
-                              <div className="w-20 h-28 flex-shrink-0 relative">
-                                <img
-                                  src={post.mediaCover || "/placeholder.svg"}
-                                  alt={post.mediaTitle}
-                                  className="w-full h-full object-cover"
-                                />
-                                <div className="absolute top-1 right-1">
-                                  {getMediaIcon(post.mediaType)}
+                              <div className="w-36 h-44 flex-shrink-0 relative p-3">
+                                <div className="relative w-full h-full rounded-xl overflow-hidden shadow-lg">
+                                  <img
+                                    src={post.mediaCover || "/placeholder.svg"}
+                                    alt={post.mediaTitle}
+                                    className="w-full h-full object-cover hover:scale-105 transition-transform duration-200"
+                                  />
                                 </div>
                               </div>
-                              <div className="flex-1 p-3">
+                              <div className="flex-1 p-4">
                                 <div className="flex items-start gap-2 mb-2">
                                   <div className="flex-1">
-                                    <h3 className="font-medium text-sm text-[#e0e0e0] line-clamp-2 mb-1">
-                                      {post.mediaTitle}
-                                    </h3>
-                                    <div className="flex items-center gap-2 mb-2">
+                                                                      <h3 className="font-semibold text-base text-[#f0f0f0] line-clamp-2 mb-2 leading-tight">
+                                    {post.mediaTitle}
+                                  </h3>
+                                    <div className="flex items-center gap-2 mb-3">
                                       <Badge
                                         variant="secondary"
-                                        className="px-2 py-0.5 text-xs font-medium bg-blue-600/20 text-blue-200 border-0"
+                                        className="px-3 py-1 text-xs font-semibold bg-blue-600/30 text-blue-100 border-0 rounded-full shadow-sm"
                                       >
                                         {post.mediaType}
                                       </Badge>
                                       {post.mediaSubType && (
                                         <Badge
                                           variant="outline"
-                                          className="px-2 py-0.5 text-xs font-medium border-[#4a4a4a] text-[#a0a0a0]"
+                                          className="px-3 py-1 text-xs font-semibold border-[#4a4a4a] text-[#a0a0a0] rounded-full bg-[#2a2a2a]/50"
                                         >
                                           {post.mediaSubType.toUpperCase()}
                                         </Badge>
@@ -1289,37 +1286,34 @@ function ReviewsPageContent() {
                                   </div>
                                 </div>
 
-                                <div className="space-y-2 text-sm text-[#a0a0a0] mb-4">
+                                <div className="space-y-2.5 text-sm text-[#b0b0b0] mb-4">
                                   {post.mediaAuthor && (
-                                    <div className="flex items-center gap-2">
-                                      <span className="font-medium text-[#c0c0c0]">
+                                    <div className="flex items-center gap-3">
+                                      <span className="font-semibold text-[#d0d0d0] min-w-[60px]">
                                         Director:
                                       </span>
-                                      <span>{post.mediaAuthor}</span>
+                                      <span className="text-[#e0e0e0]">{post.mediaAuthor}</span>
                                     </div>
                                   )}
                                   {post.mediaArtist && (
-                                    <div className="flex items-center gap-2">
-                                      <span className="font-medium text-[#c0c0c0]">
+                                    <div className="flex items-center gap-3">
+                                      <span className="font-semibold text-[#d0d0d0] min-w-[60px]">
                                         Artist:
                                       </span>
-                                      <span>{post.mediaArtist}</span>
+                                      <span className="text-[#e0e0e0]">{post.mediaArtist}</span>
                                     </div>
                                   )}
-                                  <div className="flex items-center gap-2">
-                                    <span className="font-medium text-[#c0c0c0]">
+                                  <div className="flex items-center gap-3">
+                                    <span className="font-semibold text-[#d0d0d0] min-w-[60px]">
                                       Year:
                                     </span>
-                                    <span>{post.mediaYear}</span>
+                                    <span className="text-[#e0e0e0]">{post.mediaYear}</span>
                                   </div>
                                 </div>
 
-                                <div className="flex items-center justify-between">
+                                <div className="flex items-center">
                                   <div className="flex items-center gap-2">
                                     {renderStarRating(post.rating)}
-                                  </div>
-                                  <div className="text-xs text-[#a0a0a0] bg-[#3a3a3a] px-2 py-1 rounded-full">
-                                    {post.rating}/5
                                   </div>
                                 </div>
                               </div>

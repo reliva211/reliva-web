@@ -263,16 +263,16 @@ export default function RecommendationsPage() {
   if (currentUser === null) return null;
 
   // Component for user header
-  const UserHeader = ({
-    user,
-    itemCount,
-    category,
-  }: {
-    user: User;
-    itemCount: number;
-    category: string;
-  }) => (
-    <div className="flex items-center gap-4 mb-6">
+     const UserHeader = ({
+     user,
+     itemCount,
+     category,
+   }: {
+     user: User;
+     itemCount: number;
+     category: string;
+   }) => (
+     <div className="flex items-center gap-4 mb-4">
       <div className="relative">
         <Avatar
           className="h-12 w-12 cursor-pointer hover:scale-105 transition-transform duration-200 ring-4 ring-blue-500/20 hover:ring-blue-500/40"
@@ -333,13 +333,7 @@ export default function RecommendationsPage() {
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
         </Link>
 
-        {/* Add to collection button */}
-        <button
-          onClick={() => handleAddToCollection(item, category)}
-          className="absolute top-2 right-2 w-8 h-8 bg-black/50 hover:bg-blue-500/80 backdrop-blur-sm rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 hover:scale-110"
-        >
-          <Plus className="w-4 h-4 text-white" />
-        </button>
+        
       </div>
 
       <div className="mt-3 space-y-1">
@@ -437,7 +431,7 @@ export default function RecommendationsPage() {
                   {/* Subtle gradient overlay for loading effect */}
                   <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent animate-pulse"></div>
                   {/* User Header Skeleton */}
-                  <div className="flex items-center gap-4 mb-6">
+                  <div className="flex items-center gap-4 mb-4">
                     <div className="relative">
                       <div className="w-12 h-12 bg-gray-700 rounded-full animate-pulse"></div>
                       <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-gray-600 rounded-full animate-pulse"></div>
@@ -502,17 +496,17 @@ export default function RecommendationsPage() {
               </Button>
             </div>
           ) : (
-            <div className="space-y-12 sm:space-y-16">
-              {recommendations
-                .filter((userRec) => getItemCount(userRec) > 0)
-                .map((userRec) => {
-                  const items = getItemsByCategory(userRec);
+                         <div className="space-y-6 sm:space-y-8">
+               {recommendations
+                 .filter((userRec) => getItemCount(userRec) > 0)
+                 .map((userRec) => {
+                   const items = getItemsByCategory(userRec);
 
-                  return (
-                    <div
-                      key={userRec.user.uid}
-                      className="bg-slate-800/30 backdrop-blur-sm rounded-3xl p-4 sm:p-6 md:p-8 border border-slate-700/30 hover:border-blue-500/30 transition-all duration-300"
-                    >
+                   return (
+                     <div
+                       key={userRec.user.uid}
+                       className="space-y-4"
+                     >
                       {/* User Header */}
                       <UserHeader
                         user={userRec.user}
