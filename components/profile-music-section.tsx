@@ -545,9 +545,9 @@ export default function ProfileMusicSection({
       {/* Main Content Grid - Responsive Layout */}
       <div className="space-y-6 sm:space-y-8">
         {/* Top Row - Current Obsession, Favorite Artist, Favorite Song */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+        <div className="flex flex-col sm:flex-row gap-8 sm:gap-16 items-start justify-start">
           {/* Current Obsession */}
-          <div className="flex flex-col">
+          <div className="flex flex-col w-full sm:w-auto sm:flex-1 sm:max-w-[200px]">
             <h3 className="text-base sm:text-lg font-semibold text-white mb-3 flex items-center gap-2">
               current obsession
               {!readOnly && isOwnProfile && (
@@ -565,15 +565,23 @@ export default function ProfileMusicSection({
             <div className="flex-1">
               {safeMusicProfile.currentObsession ? (
                 <div
-                  className="group relative cursor-pointer hover:scale-[1.02] transition-transform duration-200"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    console.log("Current obsession section clicked!");
-                    openSearchDialog("currentObsession");
-                  }}
+                  className={`group relative ${
+                    !readOnly && isOwnProfile
+                      ? "cursor-pointer hover:scale-[1.02] transition-transform duration-200"
+                      : ""
+                  }`}
+                  onClick={
+                    !readOnly && isOwnProfile
+                      ? (e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          console.log("Current obsession section clicked!");
+                          openSearchDialog("currentObsession");
+                        }
+                      : undefined
+                  }
                 >
-                  <div className="aspect-square w-full max-w-[200px] mx-auto bg-muted rounded-lg overflow-hidden shadow-lg">
+                  <div className="aspect-square w-full max-w-[200px] bg-muted rounded-lg overflow-hidden shadow-lg">
                     <Image
                       src={
                         getImageUrl(safeMusicProfile.currentObsession.image) ||
@@ -606,7 +614,7 @@ export default function ProfileMusicSection({
                       </div>
                     )}
                   </div>
-                  <div className="mt-3 text-center">
+                  <div className="mt-3 text-left">
                     <p className="text-base sm:text-lg font-semibold text-white leading-tight line-clamp-2 hover:text-emerald-300 transition-colors">
                       {getTextContent(safeMusicProfile.currentObsession.name)}
                     </p>
@@ -622,7 +630,7 @@ export default function ProfileMusicSection({
                 </div>
               ) : (
                 <div
-                  className={`aspect-square w-full max-w-[200px] mx-auto bg-black/20 rounded-lg border-2 border-gray-600 flex items-center justify-center transition-all duration-200 group ${
+                  className={`aspect-square w-full max-w-[200px] bg-black/20 rounded-lg border-2 border-gray-600 flex items-center justify-center transition-all duration-200 group ${
                     isOwnProfile && !readOnly
                       ? "cursor-pointer hover:bg-black/30 hover:border-gray-500 hover:shadow-lg hover:scale-[1.02]"
                       : "opacity-60"
@@ -656,7 +664,7 @@ export default function ProfileMusicSection({
           </div>
 
           {/* Favorite Artist */}
-          <div className="flex flex-col">
+          <div className="flex flex-col w-full sm:w-auto sm:flex-1 sm:max-w-[200px]">
             <h3 className="text-base sm:text-lg font-semibold text-white mb-3 flex items-center gap-2">
               favorite artist
               {!readOnly && isOwnProfile && (
@@ -674,13 +682,21 @@ export default function ProfileMusicSection({
             <div className="flex-1">
               {safeMusicProfile.favoriteArtist ? (
                 <div
-                  className="group relative cursor-pointer hover:scale-[1.02] transition-transform duration-200"
-                  onClick={() => {
-                    console.log("Favorite artist section clicked!");
-                    openSearchDialog("favoriteArtist");
-                  }}
+                  className={`group relative ${
+                    !readOnly && isOwnProfile
+                      ? "cursor-pointer hover:scale-[1.02] transition-transform duration-200"
+                      : ""
+                  }`}
+                  onClick={
+                    !readOnly && isOwnProfile
+                      ? () => {
+                          console.log("Favorite artist section clicked!");
+                          openSearchDialog("favoriteArtist");
+                        }
+                      : undefined
+                  }
                 >
-                  <div className="aspect-square w-full max-w-[200px] mx-auto rounded-full overflow-hidden border-2 border-gray-600 shadow-lg">
+                  <div className="aspect-square w-full max-w-[200px] rounded-full overflow-hidden border-2 border-gray-600 shadow-lg">
                     <Image
                       src={
                         getImageUrl(safeMusicProfile.favoriteArtist.image) ||
@@ -713,7 +729,7 @@ export default function ProfileMusicSection({
                       </div>
                     )}
                   </div>
-                  <div className="mt-3 text-center">
+                  <div className="mt-3 text-left">
                     <p className="text-base sm:text-lg font-semibold text-white leading-tight line-clamp-2 hover:text-emerald-300 transition-colors">
                       {getTextContent(safeMusicProfile.favoriteArtist?.name)}
                     </p>
@@ -721,7 +737,7 @@ export default function ProfileMusicSection({
                 </div>
               ) : (
                 <div
-                  className={`aspect-square w-full max-w-[200px] mx-auto bg-black/20 rounded-full border-2 border-gray-600 flex items-center justify-center transition-all duration-200 group ${
+                  className={`aspect-square w-full max-w-[200px] bg-black/20 rounded-full border-2 border-gray-600 flex items-center justify-center transition-all duration-200 group ${
                     isOwnProfile && !readOnly
                       ? "cursor-pointer hover:bg-black/30 hover:border-gray-500 hover:shadow-lg hover:scale-[1.02]"
                       : "opacity-60"
@@ -745,7 +761,7 @@ export default function ProfileMusicSection({
           </div>
 
           {/* Favorite Song */}
-          <div className="flex flex-col sm:col-span-2 lg:col-span-1">
+          <div className="flex flex-col w-full sm:w-auto sm:flex-1 sm:max-w-[200px]">
             <h3 className="text-base sm:text-lg font-semibold text-white mb-3 flex items-center gap-2">
               favorite song
               {!readOnly && isOwnProfile && (
@@ -763,13 +779,21 @@ export default function ProfileMusicSection({
             <div className="flex-1">
               {safeMusicProfile.favoriteSong ? (
                 <div
-                  className="group relative cursor-pointer hover:scale-[1.02] transition-transform duration-200"
-                  onClick={() => {
-                    console.log("Favorite song section clicked!");
-                    openSearchDialog("favoriteSong");
-                  }}
+                  className={`group relative ${
+                    !readOnly && isOwnProfile
+                      ? "cursor-pointer hover:scale-[1.02] transition-transform duration-200"
+                      : ""
+                  }`}
+                  onClick={
+                    !readOnly && isOwnProfile
+                      ? () => {
+                          console.log("Favorite song section clicked!");
+                          openSearchDialog("favoriteSong");
+                        }
+                      : undefined
+                  }
                 >
-                  <div className="aspect-square w-full max-w-[200px] mx-auto bg-muted rounded-lg overflow-hidden shadow-lg">
+                  <div className="aspect-square w-full max-w-[200px] bg-muted rounded-lg overflow-hidden shadow-lg">
                     <Image
                       src={
                         getImageUrl(safeMusicProfile.favoriteSong.image) ||
@@ -801,7 +825,7 @@ export default function ProfileMusicSection({
                       </div>
                     )}
                   </div>
-                  <div className="mt-3 text-center">
+                  <div className="mt-3 text-left">
                     <p className="text-base sm:text-lg font-semibold text-white leading-tight line-clamp-2 hover:text-emerald-300 transition-colors">
                       {getTextContent(safeMusicProfile.favoriteSong.name)}
                     </p>
@@ -817,7 +841,7 @@ export default function ProfileMusicSection({
                 </div>
               ) : (
                 <div
-                  className={`aspect-square w-full max-w-[200px] mx-auto bg-black/20 rounded-lg border border-gray-600 flex items-center justify-center transition-all duration-200 group ${
+                  className={`aspect-square w-full max-w-[200px] bg-black/20 rounded-lg border border-gray-600 flex items-center justify-center transition-all duration-200 group ${
                     isOwnProfile && !readOnly
                       ? "cursor-pointer hover:bg-black/30 hover:border-gray-500 hover:shadow-lg hover:scale-[1.02]"
                       : undefined

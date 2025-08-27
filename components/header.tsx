@@ -79,8 +79,8 @@ export default function Sidebar({ isLandingPage = false }: SidebarProps) {
   const handleSignOut = async () => {
     try {
       await signOut(auth);
-      // Use router.push instead of window.location.href for smoother navigation
-      router.push("/reviews");
+      // Redirect to landing page after logout
+      router.push("/");
     } catch (error) {
       console.error("Error signing out:", error);
     }

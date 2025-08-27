@@ -737,7 +737,7 @@ function ReviewsPageContent() {
             }`}
           />
         ))}
-        <span className="text-xs text-[#808080] ml-1">{rating}/10</span>
+        <span className="text-xs text-[#808080] ml-1">{rating}/5</span>
       </div>
     );
   };
@@ -755,7 +755,7 @@ function ReviewsPageContent() {
     return sortedReplies.map((reply) => (
       <div
         key={reply._id}
-        className="flex gap-3 border-l border-[#4a4a4a] ml-2 p-3 bg-[#2a2a2a] rounded-r-lg w-full"
+        className="flex gap-3 border-l border-[#2a2a2a] ml-2 p-3 bg-[#0a0a0a] rounded-r-lg w-full"
         style={{ paddingLeft: `${getIndent(depth)}px` }}
       >
         <Avatar className="w-6 h-6 ring-1 ring-green-500/20 flex-shrink-0">
@@ -766,7 +766,7 @@ function ReviewsPageContent() {
 
         <div className="flex-1 min-w-0 max-w-full overflow-hidden">
           <div className="flex items-center gap-2 mb-2">
-            <span className="font-medium text-sm text-[#e0e0e0]">
+            <span className="font-medium text-sm text-[#f5f5f5]">
               {reply.authorId?.username}
             </span>
             <span className="text-[#a0a0a0] text-xs bg-[#3a3a3a] px-2 py-0.5 rounded-full">
@@ -774,7 +774,7 @@ function ReviewsPageContent() {
             </span>
           </div>
           <p
-            className="text-sm text-[#d0d0d0] whitespace-pre-wrap mb-3 leading-relaxed break-all word-break-break-all overflow-wrap-anywhere hyphens-auto"
+            className="text-sm text-[#f0f0f0] whitespace-pre-wrap mb-3 leading-relaxed break-all word-break-break-all overflow-wrap-anywhere hyphens-auto"
             style={{
               wordWrap: "break-word",
               overflowWrap: "anywhere",
@@ -1172,7 +1172,7 @@ function ReviewsPageContent() {
         )}
 
         <div className="min-h-screen bg-[#0a0a0a]">
-          <div className="max-w-6xl mx-auto border-x border-[#1a1a1a] min-h-screen">
+          <div className="max-w-6xl mx-auto border border-[#2a2a2a] min-h-screen rounded-lg">
             {/* Enhanced Header */}
             <div className="sticky top-0 bg-[#0a0a0a]/95 backdrop-blur-xl border-b border-[#1a1a1a] z-10">
               <div className="px-4 py-3">
@@ -1260,7 +1260,7 @@ function ReviewsPageContent() {
                 posts.map((post) => (
                   <div
                     key={post._id}
-                    className="border-b border-[#3a3a3a] px-4 py-4 bg-[#2a2a2a]"
+                    className="border-b border-[#1a1a1a] px-4 py-4 bg-[#0f0f0f]"
                   >
                     <div className="flex gap-3 w-full">
                       <Avatar className="w-10 h-10 ring-1 ring-green-500/20 flex-shrink-0">
@@ -1272,7 +1272,7 @@ function ReviewsPageContent() {
 
                       <div className="flex-1 min-w-0 max-w-full">
                         <div className="flex items-center gap-2 mb-2">
-                          <span className="font-medium text-sm text-[#e0e0e0]">
+                          <span className="font-medium text-sm text-[#f5f5f5]">
                             {post.authorId?.username}
                           </span>
                           <span className="text-[#a0a0a0] text-xs bg-[#3a3a3a] px-2 py-0.5 rounded-full">
@@ -1281,7 +1281,7 @@ function ReviewsPageContent() {
                         </div>
 
                         <p
-                          className="text-[#d0d0d0] mb-3 whitespace-pre-wrap leading-relaxed text-sm break-all word-break-break-all overflow-wrap-anywhere hyphens-auto"
+                          className="text-[#f0f0f0] mb-3 whitespace-pre-wrap leading-relaxed text-sm break-all word-break-break-all overflow-wrap-anywhere hyphens-auto"
                           style={{
                             wordWrap: "break-word",
                             overflowWrap: "anywhere",
@@ -1295,7 +1295,7 @@ function ReviewsPageContent() {
 
                         {/* Compact Media Display Section */}
                         {post.mediaId && (
-                          <Card className="mb-4 overflow-hidden border border-[#3a3a3a] shadow-lg bg-gradient-to-r from-[#3a3a3a] to-[#2a2a2a] hover:shadow-xl transition-shadow duration-200">
+                          <Card className="mb-4 overflow-hidden border border-[#2a2a2a] bg-[#0f0f0f]">
                             <div className="flex">
                               <div className="w-36 h-44 flex-shrink-0 relative p-3">
                                 <div className="relative w-full h-full rounded-xl overflow-hidden shadow-lg">
@@ -1373,7 +1373,7 @@ function ReviewsPageContent() {
                         )}
 
                         {/* Compact Post Actions */}
-                        <div className="flex items-center gap-6 text-[#a0a0a0] pt-2 border-t border-[#3a3a3a] w-full">
+                        <div className="flex items-center gap-6 text-[#a0a0a0] pt-2 w-full">
                           <button
                             onClick={() => toggleReplyInput(post._id)}
                             className="flex items-center gap-1.5 hover:text-blue-400 transition-all duration-200 group"
