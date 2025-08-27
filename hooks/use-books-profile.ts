@@ -102,6 +102,18 @@ export const useBooksProfile = (userId: string) => {
         })
       );
 
+      const favoriteBooks = booksData.filter((book) =>
+        book.collections?.some((collectionId: string) => {
+          const collection = collectionsData.find(
+            (col) => col.id === collectionId
+          );
+          return (
+            collection?.name === "Favorites" ||
+            collection?.name === "Favourites"
+          );
+        })
+      );
+
       // Convert book data to GoogleBookItem format
       const convertToGoogleBookItem = (book: any): GoogleBookItem => ({
         id: book.id,
@@ -121,7 +133,7 @@ export const useBooksProfile = (userId: string) => {
       // Create books profile from the fetched data
       const profile: BooksProfile = {
         recentlyRead: readingBooks.slice(0, 10).map(convertToGoogleBookItem), // Use reading for currently reading
-        favoriteBooks: [], // Manual addition - not fetched from collections
+        favoriteBooks: favoriteBooks.map(convertToGoogleBookItem), // Load from Favorites collection
         readingList: toReadBooks.map(convertToGoogleBookItem),
         recommendations: recommendationsBooks.map(convertToGoogleBookItem),
         ratings: readBooks
@@ -704,12 +716,66 @@ export const useBooksProfile = (userId: string) => {
     if (!userId || !booksProfile) return;
 
     try {
+      // First, add the book to the books collection
+      const booksRef = collection(db, "users", userId, "books");
+      await addDoc(booksRef, {
+        id: book.id,
+        title: book.title,
+        author: book.authors?.[0] || "",
+        cover: book.cover || "",
+        publishedDate: book.publishedDate || "",
+        description: book.description || "",
+        pageCount: book.pageCount || 0,
+        rating: 0,
+        collections: [], // Will be updated below
+      });
+
+      // Then, find or create the Favorites collection
+      const collectionsRef = collection(db, "users", userId, "bookCollections");
+      const collectionsSnapshot = await getDocs(collectionsRef);
+
+      let favoritesCollectionId = null;
+      for (const doc of collectionsSnapshot.docs) {
+        if (doc.data().name === "Favorites") {
+          favoritesCollectionId = doc.id;
+          break;
+        }
+      }
+
+      // Create Favorites collection if it doesn't exist
+      if (!favoritesCollectionId) {
+        const newCollectionRef = await addDoc(collectionsRef, {
+          name: "Favorites",
+          description: "My favorite books",
+          isPublic: false,
+          createdAt: new Date(),
+        });
+        favoritesCollectionId = newCollectionRef.id;
+      }
+
+      // Add the book to the Favorites collection
+      const bookQuery = query(booksRef, where("id", "==", book.id));
+      const bookSnapshot = await getDocs(bookQuery);
+
+      if (!bookSnapshot.empty) {
+        const bookDoc = bookSnapshot.docs[0];
+        const bookData = bookDoc.data();
+        const currentCollections = bookData.collections || [];
+
+        if (!currentCollections.includes(favoritesCollectionId)) {
+          await setDoc(bookDoc.ref, {
+            ...bookData,
+            collections: [...currentCollections, favoritesCollectionId],
+          });
+        }
+      }
+
+      // Update local state
       const updatedProfile = { ...booksProfile };
       if (!updatedProfile.favoriteBooks.find((b) => b.id === book.id)) {
         updatedProfile.favoriteBooks.push(book);
         // Keep only 5 favorite books
         updatedProfile.favoriteBooks = updatedProfile.favoriteBooks.slice(0, 5);
-        await saveBooksProfile(updatedProfile);
         setBooksProfile(updatedProfile);
       }
     } catch (error) {
@@ -722,11 +788,45 @@ export const useBooksProfile = (userId: string) => {
     if (!userId || !booksProfile) return;
 
     try {
+      // Find the Favorites collection
+      const collectionsRef = collection(db, "users", userId, "bookCollections");
+      const collectionsSnapshot = await getDocs(collectionsRef);
+
+      let favoritesCollectionId = null;
+      for (const doc of collectionsSnapshot.docs) {
+        if (doc.data().name === "Favorites") {
+          favoritesCollectionId = doc.id;
+          break;
+        }
+      }
+
+      if (favoritesCollectionId) {
+        // Remove book from the Favorites collection
+        const booksRef = collection(db, "users", userId, "books");
+        const bookQuery = query(booksRef, where("id", "==", bookId));
+        const bookSnapshot = await getDocs(bookQuery);
+
+        if (!bookSnapshot.empty) {
+          const bookDoc = bookSnapshot.docs[0];
+          const bookData = bookDoc.data();
+          const currentCollections = bookData.collections || [];
+
+          const updatedCollections = currentCollections.filter(
+            (collectionId: string) => collectionId !== favoritesCollectionId
+          );
+
+          await setDoc(bookDoc.ref, {
+            ...bookData,
+            collections: updatedCollections,
+          });
+        }
+      }
+
+      // Update local state
       const updatedProfile = { ...booksProfile };
       updatedProfile.favoriteBooks = updatedProfile.favoriteBooks.filter(
         (b) => b.id !== bookId
       );
-      await saveBooksProfile(updatedProfile);
       setBooksProfile(updatedProfile);
     } catch (error) {
       console.error("Error removing favorite book:", error);
