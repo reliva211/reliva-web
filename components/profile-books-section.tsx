@@ -87,16 +87,6 @@ const PLACEHOLDER = {
   })),
 };
 
-// Helper function to clean up text content
-const cleanTextContent = (text: string): string => {
-  if (!text) return text;
-  return text
-    .replace(/\([^)]*\)/g, "") // Remove parentheses and their content
-    .replace(/\[[^\]]*\]/g, "") // Remove square brackets and their content
-    .replace(/\s+/g, " ") // Replace multiple spaces with single space
-    .trim(); // Remove leading/trailing spaces
-};
-
 // Helper function to strip HTML tags and decode HTML entities
 const stripHtmlTags = (html: string): string => {
   if (!html) return html;
@@ -142,6 +132,97 @@ const truncateTitle = (title: string, maxLength: number = 10): string => {
     : cleanTitle;
 };
 
+// Helper function to clean text content (remove HTML, normalize whitespace)
+const cleanTextContent = (text: string): string => {
+  if (!text) return "";
+  return text
+    .replace(/<[^>]*>/g, "") // Remove HTML tags
+    .replace(/&amp;/g, "&") // Decode HTML entities
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&nbsp;/g, " ") // Replace non-breaking spaces
+    .replace(/\s+/g, " ") // Normalize whitespace
+    .trim();
+};
+
+// Helper function to truncate author names with better text cleaning
+const truncateAuthor = (
+  author: string | undefined,
+  maxLength: number = 18
+): string => {
+  if (!author) return "Unknown Author";
+  const cleanAuthor = cleanTextContent(author);
+  if (cleanAuthor.length <= maxLength) return cleanAuthor;
+  return cleanAuthor.substring(0, maxLength).trim() + "...";
+};
+
+// Helper function to truncate multiple authors more intelligently
+const truncateAuthors = (
+  authors: string[] | undefined,
+  maxTotalLength: number = 35
+): string => {
+  if (!authors || authors.length === 0) return "Unknown Author";
+
+  if (authors.length === 1) {
+    return truncateAuthor(authors[0], maxTotalLength);
+  }
+
+  // For multiple authors, try to fit as many as possible
+  let result = "";
+  let currentLength = 0;
+
+  for (let i = 0; i < authors.length; i++) {
+    const author = authors[i];
+    const cleanAuthor = cleanTextContent(author);
+
+    // If this is the first author, just add it
+    if (i === 0) {
+      result = cleanAuthor;
+      currentLength = cleanAuthor.length;
+    } else {
+      // Check if we can add ", " + author
+      const separatorLength = 2; // ", "
+      const authorLength = cleanAuthor.length;
+
+      if (currentLength + separatorLength + authorLength <= maxTotalLength) {
+        result += ", " + cleanAuthor;
+        currentLength += separatorLength + authorLength;
+      } else {
+        // Can't fit this author, add ellipsis and stop
+        result += "...";
+        break;
+      }
+    }
+  }
+
+  return result;
+};
+
+// Helper function for very aggressive author truncation for small spaces
+const truncateAuthorsAggressive = (
+  authors: string[] | undefined,
+  maxTotalLength: number = 20
+): string => {
+  if (!authors || authors.length === 0) return "Unknown Author";
+
+  if (authors.length === 1) {
+    return truncateAuthor(authors[0], Math.min(maxTotalLength, 18));
+  }
+
+  // For multiple authors, be more aggressive
+  const firstAuthor = cleanTextContent(authors[0]);
+
+  if (firstAuthor.length <= maxTotalLength - 3) {
+    // If first author fits with room for "...", use it
+    return firstAuthor + "...";
+  } else {
+    // Truncate first author more aggressively
+    return truncateAuthor(firstAuthor, maxTotalLength - 3);
+  }
+};
+
 export default function ProfileBooksSection({
   userId,
   readOnly = false,
@@ -169,7 +250,6 @@ export default function ProfileBooksSection({
     replaceFavoriteBook,
     replaceReadingListBook,
     replaceRecommendation,
-    replaceRating,
     searchBooks,
     searchBooksByTitleAndAuthor,
     getBookById,
@@ -276,7 +356,7 @@ export default function ProfileBooksSection({
       return (
         <Star
           key={i}
-          className={`h-4 w-4 transition-colors ${
+          className={`h-3 w-3 sm:h-3.5 sm:w-3.5 transition-colors ${
             isFullStar ? "fill-yellow-400 text-yellow-400" : "text-gray-300"
           } ${!readOnly ? "cursor-pointer" : ""}`}
           onMouseEnter={
@@ -399,7 +479,9 @@ export default function ProfileBooksSection({
             const currentRating =
               safeBooksProfile.ratings.find((r) => r.book.id === editingItem.id)
                 ?.rating || 3;
-            await replaceRating(editingItem.id, formattedItem);
+            // Remove old rating and add new one
+            await removeRating(editingItem.id);
+            await addRatingWithBook(formattedItem, currentRating);
             break;
         }
       } else {
@@ -631,7 +713,7 @@ export default function ProfileBooksSection({
                           {collection.name}
                         </h3>
                       </div>
-                      <div className="flex gap-2 overflow-x-auto pb-2">
+                      <div className="flex gap-2 overflow-x-auto pb-2 horizontal-scroll-container">
                         {items.slice(0, 4).map((item, idx) => (
                           <div
                             key={item.id || idx}
@@ -688,7 +770,7 @@ export default function ProfileBooksSection({
             <div className="flex gap-4 items-start">
               {/* Book cover */}
               <div className="relative group flex-shrink-0">
-                <div className="w-48 h-72 bg-muted rounded-md overflow-hidden">
+                <div className="w-32 h-48 bg-muted rounded-md overflow-hidden">
                   <Link href={`/books/${currentRecentlyRead.id}`}>
                     <Image
                       src={
@@ -696,8 +778,8 @@ export default function ProfileBooksSection({
                         PLACEHOLDER.currentlyReading.cover
                       }
                       alt={getTextContent(currentRecentlyRead.title) || "Book"}
-                      width={192}
-                      height={288}
+                      width={128}
+                      height={192}
                       className="w-full h-full object-cover cursor-pointer"
                       onError={(e) => {
                         const target = e.target as HTMLImageElement;
@@ -729,7 +811,8 @@ export default function ProfileBooksSection({
                 {/* Author information */}
                 <p className="text-sm text-muted-foreground mb-2">
                   by{" "}
-                  {currentRecentlyRead.authors?.join(", ") || "Unknown Author"}
+                  {truncateAuthorsAggressive(currentRecentlyRead.authors) ||
+                    "Unknown Author"}
                 </p>
 
                 {/* Publication year if available */}
@@ -917,7 +1000,8 @@ export default function ProfileBooksSection({
                           {truncateTitleToWords(book.title)}
                         </p>
                         <p className="text-xs text-muted-foreground leading-tight mt-0.5 px-2 truncate">
-                          {book.authors?.join(", ") || "Unknown Author"}
+                          {truncateAuthorsAggressive(book.authors) ||
+                            "Unknown Author"}
                         </p>
                       </div>
                     </div>
@@ -1032,7 +1116,8 @@ export default function ProfileBooksSection({
                         {truncateTitleToWords(book.title)}
                       </p>
                       <p className="text-xs text-muted-foreground leading-tight mt-0.5 px-2 truncate">
-                        {book.authors?.join(", ") || "Unknown Author"}
+                        {truncateAuthorsAggressive(book.authors) ||
+                          "Unknown Author"}
                       </p>
                     </div>
                   </div>
@@ -1169,7 +1254,8 @@ export default function ProfileBooksSection({
                         {truncateTitleToWords(book.title)}
                       </p>
                       <p className="text-xs text-muted-foreground leading-tight mt-0.5 px-2 truncate">
-                        {book.authors?.join(", ") || "Unknown Author"}
+                        {truncateAuthorsAggressive(book.authors) ||
+                          "Unknown Author"}
                       </p>
                     </div>
                   </div>
@@ -1308,7 +1394,8 @@ export default function ProfileBooksSection({
                         {truncateTitleToWords(rating.book.title)}
                       </p>
                       <p className="text-xs text-muted-foreground leading-tight mt-0.5 px-2 truncate">
-                        {rating.book.authors?.join(", ") || "Unknown Author"}
+                        {truncateAuthorsAggressive(rating.book.authors) ||
+                          "Unknown Author"}
                       </p>
                     </div>
                   </div>
@@ -1473,7 +1560,8 @@ export default function ProfileBooksSection({
                         ) || "Unknown"}
                       </p>
                       <p className="text-xs text-muted-foreground truncate leading-tight mt-0.5">
-                        {item.authors?.join(", ") || "Unknown Author"}
+                        {truncateAuthorsAggressive(item.authors) ||
+                          "Unknown Author"}
                       </p>
                     </div>
                   </div>

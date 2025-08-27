@@ -172,6 +172,15 @@ export default function ProfileMusicSection({
     rating: number;
   } | null>(null);
 
+  // Debug dialog state
+  useEffect(() => {
+    console.log("Dialog state changed:", {
+      isSearchDialogOpen,
+      activeSearchType,
+      searchQuery,
+    });
+  }, [isSearchDialogOpen, activeSearchType, searchQuery]);
+
   // Horizontal scroll functionality
   const scrollContainerRefs = {
     favoriteAlbums: useRef<HTMLDivElement>(null),
@@ -289,6 +298,7 @@ export default function ProfileMusicSection({
   ) => {
     if (!query.trim()) return;
 
+    console.log("Starting search for:", query, "Type:", searchType);
     setIsSearching(true);
     setSearchError(null);
     setActiveSearchType(searchType);
@@ -304,7 +314,9 @@ export default function ProfileMusicSection({
         apiType = "song";
       }
 
+      console.log("Searching with API type:", apiType);
       const results = await searchMusic(query, apiType, 10);
+      console.log("Search results:", results);
 
       // Validate and sanitize search results
       const validatedResults = (results || []).map((item: any) => {
@@ -355,10 +367,15 @@ export default function ProfileMusicSection({
         };
       });
 
+      console.log("Validated results:", validatedResults);
       setSearchResults(validatedResults);
     } catch (error) {
       console.error("Search error:", error);
-      setSearchError("Failed to search. Please try again.");
+      setSearchError(
+        `Failed to search: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`
+      );
     } finally {
       setIsSearching(false);
     }
@@ -373,14 +390,20 @@ export default function ProfileMusicSection({
     setSearchError(null);
     setIsSearchDialogOpen(true);
     console.log("Search dialog state set to true");
+    console.log("Dialog should now be open. State:", {
+      isSearchDialogOpen: true,
+      activeSearchType: searchType,
+    });
   };
 
   const handleAddItem = async (item: any) => {
+    console.log("handleAddItem called with:", item, "Type:", activeSearchType);
     try {
       let success = false;
 
       switch (activeSearchType) {
         case "currentObsession":
+          console.log("Updating current obsession with:", item);
           await updateCurrentObsession(item);
           success = true;
           break;
@@ -520,12 +543,12 @@ export default function ProfileMusicSection({
   return (
     <div className="w-full max-w-6xl mx-auto px-4 py-6 sm:py-8">
       {/* Main Content Grid - Responsive Layout */}
-      <div className="space-y-8 sm:space-y-12">
+      <div className="space-y-6 sm:space-y-8">
         {/* Top Row - Current Obsession, Favorite Artist, Favorite Song */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
           {/* Current Obsession */}
           <div className="flex flex-col">
-            <h3 className="text-lg sm:text-xl font-semibold text-white mb-4 flex items-center gap-2">
+            <h3 className="text-base sm:text-lg font-semibold text-white mb-3 flex items-center gap-2">
               current obsession
               {!readOnly && isOwnProfile && (
                 <Button
@@ -543,7 +566,9 @@ export default function ProfileMusicSection({
               {safeMusicProfile.currentObsession ? (
                 <div
                   className="group relative cursor-pointer hover:scale-[1.02] transition-transform duration-200"
-                  onClick={() => {
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
                     console.log("Current obsession section clicked!");
                     openSearchDialog("currentObsession");
                   }}
@@ -581,7 +606,7 @@ export default function ProfileMusicSection({
                       </div>
                     )}
                   </div>
-                  <div className="mt-3 text-center sm:text-left">
+                  <div className="mt-3 text-center">
                     <p className="text-base sm:text-lg font-semibold text-white leading-tight line-clamp-2 hover:text-emerald-300 transition-colors">
                       {getTextContent(safeMusicProfile.currentObsession.name)}
                     </p>
@@ -604,8 +629,16 @@ export default function ProfileMusicSection({
                   }`}
                   onClick={
                     isOwnProfile && !readOnly
-                      ? () => {
+                      ? (e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
                           console.log("Current obsession placeholder clicked!");
+                          console.log("Click conditions:", {
+                            isOwnProfile,
+                            readOnly,
+                            currentUser: currentUser?.uid,
+                            userId,
+                          });
                           openSearchDialog("currentObsession");
                         }
                       : undefined
@@ -624,7 +657,7 @@ export default function ProfileMusicSection({
 
           {/* Favorite Artist */}
           <div className="flex flex-col">
-            <h3 className="text-lg sm:text-xl font-semibold text-white mb-4 flex items-center gap-2">
+            <h3 className="text-base sm:text-lg font-semibold text-white mb-3 flex items-center gap-2">
               favorite artist
               {!readOnly && isOwnProfile && (
                 <Button
@@ -680,7 +713,7 @@ export default function ProfileMusicSection({
                       </div>
                     )}
                   </div>
-                  <div className="mt-3 text-center sm:text-left">
+                  <div className="mt-3 text-center">
                     <p className="text-base sm:text-lg font-semibold text-white leading-tight line-clamp-2 hover:text-emerald-300 transition-colors">
                       {getTextContent(safeMusicProfile.favoriteArtist?.name)}
                     </p>
@@ -713,7 +746,7 @@ export default function ProfileMusicSection({
 
           {/* Favorite Song */}
           <div className="flex flex-col sm:col-span-2 lg:col-span-1">
-            <h3 className="text-lg sm:text-xl font-semibold text-white mb-4 flex items-center gap-2">
+            <h3 className="text-base sm:text-lg font-semibold text-white mb-3 flex items-center gap-2">
               favorite song
               {!readOnly && isOwnProfile && (
                 <Button
@@ -768,7 +801,7 @@ export default function ProfileMusicSection({
                       </div>
                     )}
                   </div>
-                  <div className="mt-3 text-center sm:text-left">
+                  <div className="mt-3 text-center">
                     <p className="text-base sm:text-lg font-semibold text-white leading-tight line-clamp-2 hover:text-emerald-300 transition-colors">
                       {getTextContent(safeMusicProfile.favoriteSong.name)}
                     </p>
@@ -809,14 +842,14 @@ export default function ProfileMusicSection({
         </div>
 
         {/* Favorite Albums Section */}
-        <div className="space-y-4">
-          <h3 className="text-lg sm:text-xl font-semibold text-white">
+        <div className="space-y-3">
+          <h3 className="text-base sm:text-lg font-semibold text-white">
             favorite albums
           </h3>
           <div className="relative">
             <div
               ref={scrollContainerRefs.favoriteAlbums}
-              className="flex gap-4 sm:gap-6 overflow-x-auto scrollbar-hide pb-4"
+              className="flex gap-4 sm:gap-6 overflow-x-auto scrollbar-hide pb-4 horizontal-scroll-container"
             >
               {limitedFavoriteAlbums.length > 0 ? (
                 <>
@@ -925,18 +958,42 @@ export default function ProfileMusicSection({
                 </div>
               )}
             </div>
+
+            {/* Scroll Navigation Buttons */}
+            {limitedFavoriteAlbums.length > 2 && (
+              <div className="flex justify-between items-center mt-3">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => scrollLeft(scrollContainerRefs.favoriteAlbums)}
+                  className="h-8 w-8 p-0 bg-black/20 hover:bg-black/40 text-white rounded-full"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() =>
+                    scrollRight(scrollContainerRefs.favoriteAlbums)
+                  }
+                  className="h-8 w-8 p-0 bg-black/20 hover:bg-black/40 text-white rounded-full"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            )}
           </div>
         </div>
 
         {/* Recommendations Section */}
-        <div className="space-y-4">
-          <h3 className="text-lg sm:text-xl font-semibold text-white">
+        <div className="space-y-3">
+          <h3 className="text-base sm:text-lg font-semibold text-white">
             recommendations
           </h3>
           <div className="relative">
             <div
               ref={scrollContainerRefs.recommendations}
-              className="flex gap-4 sm:gap-6 overflow-x-auto scrollbar-hide pb-4"
+              className="flex gap-4 sm:gap-6 overflow-x-auto scrollbar-hide pb-4 horizontal-scroll-container"
             >
               {limitedRecommendations.length > 0 ? (
                 <>
@@ -1044,18 +1101,44 @@ export default function ProfileMusicSection({
                 </div>
               )}
             </div>
+
+            {/* Scroll Navigation Buttons */}
+            {limitedRecommendations.length > 2 && (
+              <div className="flex justify-between items-center mt-3">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() =>
+                    scrollLeft(scrollContainerRefs.recommendations)
+                  }
+                  className="h-8 w-8 p-0 bg-black/20 hover:bg-black/40 text-white rounded-full"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() =>
+                    scrollRight(scrollContainerRefs.recommendations)
+                  }
+                  className="h-8 w-8 p-0 bg-black/20 hover:bg-black/40 text-white rounded-full"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            )}
           </div>
         </div>
 
         {/* Ratings Section */}
-        <div className="space-y-4">
-          <h3 className="text-lg sm:text-xl font-semibold text-white">
+        <div className="space-y-3">
+          <h3 className="text-base sm:text-lg font-semibold text-white">
             rated songs
           </h3>
           <div className="relative">
             <div
               ref={scrollContainerRefs.ratings}
-              className="flex gap-4 sm:gap-6 overflow-x-auto scrollbar-hide pb-4"
+              className="flex gap-4 sm:gap-6 overflow-x-auto scrollbar-hide pb-4 horizontal-scroll-container"
             >
               {limitedRatings.length > 0 ? (
                 <>
@@ -1169,21 +1252,30 @@ export default function ProfileMusicSection({
                 </div>
               )}
             </div>
+
+            {/* Scroll Navigation Buttons */}
+            {limitedRatings.length > 2 && (
+              <div className="flex justify-between items-center mt-3">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => scrollLeft(scrollContainerRefs.ratings)}
+                  className="h-8 w-8 p-0 bg-black/20 hover:bg-black/40 text-white rounded-full"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => scrollRight(scrollContainerRefs.ratings)}
+                  className="h-8 w-8 p-0 bg-black/20 hover:bg-black/40 text-white rounded-full"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            )}
           </div>
         </div>
-      </div>
-
-      {/* Test Button for Debugging */}
-      <div className="fixed bottom-4 right-4 z-50">
-        <Button
-          onClick={() => {
-            console.log("Test button clicked");
-            openSearchDialog("currentObsession");
-          }}
-          className="bg-red-600 hover:bg-red-700"
-        >
-          Test Search Dialog
-        </Button>
       </div>
 
       {/* Search Dialog */}
@@ -1199,18 +1291,26 @@ export default function ProfileMusicSection({
               <Input
                 placeholder="Search for music..."
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(e) => {
+                  console.log("Search input changed:", e.target.value);
+                  setSearchQuery(e.target.value);
+                }}
                 onKeyDown={(e) => {
                   if (e.key === "Enter") {
+                    console.log(
+                      "Enter key pressed, searching for:",
+                      searchQuery
+                    );
                     handleSearch(searchQuery, activeSearchType as any);
                   }
                 }}
                 className="flex-1"
               />
               <Button
-                onClick={() =>
-                  handleSearch(searchQuery, activeSearchType as any)
-                }
+                onClick={() => {
+                  console.log("Search button clicked for:", searchQuery);
+                  handleSearch(searchQuery, activeSearchType as any);
+                }}
                 disabled={isSearching || !searchQuery.trim()}
                 size="sm"
               >
@@ -1222,13 +1322,26 @@ export default function ProfileMusicSection({
               <p className="text-red-500 text-sm">{searchError}</p>
             )}
 
-            {searchResults.length > 0 && (
+            {isSearching && (
+              <div className="text-center py-4">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-2"></div>
+                <p className="text-gray-400 text-sm">Searching...</p>
+              </div>
+            )}
+
+            {!isSearching && searchResults.length > 0 && (
               <div className="space-y-2 max-h-60 overflow-y-auto">
+                <p className="text-sm text-gray-400 mb-2">
+                  Found {searchResults.length} results
+                </p>
                 {searchResults.map((item) => (
                   <div
                     key={item.id}
                     className="flex items-center gap-3 p-2 rounded-lg border border-gray-700 hover:bg-gray-800 cursor-pointer"
-                    onClick={() => handleAddItem(item)}
+                    onClick={() => {
+                      console.log("Item selected:", item);
+                      handleAddItem(item);
+                    }}
                   >
                     <div className="w-12 h-12 bg-muted rounded overflow-hidden flex-shrink-0">
                       <Image
@@ -1249,12 +1362,27 @@ export default function ProfileMusicSection({
                       </p>
                       <p className="text-xs text-gray-400 truncate">
                         {item.primaryArtists || item.artist}
+                        {item.album && ` • ${item.album}`}
                       </p>
                     </div>
                   </div>
                 ))}
               </div>
             )}
+
+            {!isSearching &&
+              searchQuery &&
+              searchResults.length === 0 &&
+              !searchError && (
+                <div className="text-center py-4">
+                  <p className="text-gray-400 text-sm">
+                    No results found for "{searchQuery}"
+                  </p>
+                  <p className="text-gray-500 text-xs mt-1">
+                    Try a different search term
+                  </p>
+                </div>
+              )}
           </div>
         </DialogContent>
       </Dialog>

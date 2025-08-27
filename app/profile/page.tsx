@@ -944,7 +944,7 @@ export default function ProfilePage() {
             {/* Music Tab */}
             {profile?.visibleSections?.music !== false && (
               <TabsContent value="music" className="mt-6">
-                <ProfileMusicSection />
+                <ProfileMusicSection userId={user?.uid} readOnly={false} />
               </TabsContent>
             )}
 

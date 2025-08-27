@@ -112,6 +112,9 @@ function ReviewsPageContent() {
   const [isReplying, setIsReplying] = useState<{ [key: string]: boolean }>({});
   const [likedPosts, setLikedPosts] = useState<Set<string>>(new Set());
   const [likedReplies, setLikedReplies] = useState<Set<string>>(new Set());
+  const [showReplies, setShowReplies] = useState<{ [key: string]: boolean }>(
+    {}
+  );
   const wsRef = useRef<WebSocket | null>(null);
 
   // Handle URL parameters for pre-selected media
@@ -618,6 +621,13 @@ function ReviewsPageContent() {
     }));
   };
 
+  const toggleRepliesVisibility = (postId: string) => {
+    setShowReplies((prev) => ({
+      ...prev,
+      [postId]: !prev[postId],
+    }));
+  };
+
   function buildCommentTree(comments: Reply[] | undefined): Reply[] {
     if (!comments || !Array.isArray(comments)) {
       return [];
@@ -745,7 +755,7 @@ function ReviewsPageContent() {
     return sortedReplies.map((reply) => (
       <div
         key={reply._id}
-        className="flex gap-3 border-l border-[#4a4a4a] ml-4 p-3 bg-[#2a2a2a] rounded-r-lg"
+        className="flex gap-3 border-l border-[#4a4a4a] ml-2 p-3 bg-[#2a2a2a] rounded-r-lg w-full"
         style={{ paddingLeft: `${getIndent(depth)}px` }}
       >
         <Avatar className="w-6 h-6 ring-1 ring-green-500/20 flex-shrink-0">
@@ -754,7 +764,7 @@ function ReviewsPageContent() {
           </AvatarFallback>
         </Avatar>
 
-        <div className="flex-1 min-w-0">
+        <div className="flex-1 min-w-0 max-w-full overflow-hidden">
           <div className="flex items-center gap-2 mb-2">
             <span className="font-medium text-sm text-[#e0e0e0]">
               {reply.authorId?.username}
@@ -763,7 +773,16 @@ function ReviewsPageContent() {
               {formatTime(reply.timestamp)}
             </span>
           </div>
-          <p className="text-sm text-[#d0d0d0] whitespace-pre-wrap mb-3 leading-relaxed">
+          <p
+            className="text-sm text-[#d0d0d0] whitespace-pre-wrap mb-3 leading-relaxed break-all word-break-break-all overflow-wrap-anywhere hyphens-auto"
+            style={{
+              wordWrap: "break-word",
+              overflowWrap: "anywhere",
+              wordBreak: "break-all",
+              maxWidth: "100%",
+              width: "100%",
+            }}
+          >
             {reply.content}
           </p>
 
@@ -775,16 +794,14 @@ function ReviewsPageContent() {
               <div className="p-1.5 rounded-full group-hover:bg-blue-600/20 transition-colors">
                 <MessageCircle className="w-4 h-4" />
               </div>
-              <span className="text-xs font-medium">
-                {reply.comments?.length || 0}
-              </span>
+              <span className="text-xs font-medium">Reply</span>
             </button>
 
             <button
               onClick={() => toggleReplyLike(postId, reply._id)}
-              className="flex items-center gap-1.5"
+              className="flex items-center gap-1.5 hover:text-rose-400 transition-all duration-200 group"
             >
-              <div className="p-1.5 rounded-full">
+              <div className="p-1.5 rounded-full group-hover:bg-rose-600/20 transition-colors">
                 <Heart
                   className={`w-4 h-4 ${
                     reply.isLiked ? "fill-current text-rose-400" : ""
@@ -793,6 +810,24 @@ function ReviewsPageContent() {
               </div>
               <span className="text-xs font-medium">{reply.likeCount}</span>
             </button>
+
+            {reply.comments && reply.comments.length > 0 && (
+              <button
+                onClick={() =>
+                  toggleRepliesVisibility(`${postId}-${reply._id}`)
+                }
+                className="flex items-center gap-1.5 hover:text-green-400 transition-all duration-200 group"
+              >
+                <div className="p-1.5 rounded-full group-hover:bg-green-600/20 transition-colors">
+                  <MessageCircle className="w-4 h-4" />
+                </div>
+                <span className="text-xs font-medium">
+                  {showReplies[`${postId}-${reply._id}`]
+                    ? "Hide Replies"
+                    : `See Replies (${reply.comments.length})`}
+                </span>
+              </button>
+            )}
           </div>
 
           {showReplyInput[`${postId}-${reply._id}`] && (
@@ -854,11 +889,13 @@ function ReviewsPageContent() {
             </div>
           )}
 
-          {reply.comments && reply.comments.length > 0 && (
-            <div className="mt-3 space-y-3">
-              {renderReplies(reply.comments, postId, depth + 1)}
-            </div>
-          )}
+          {reply.comments &&
+            reply.comments.length > 0 &&
+            showReplies[`${postId}-${reply._id}`] && (
+              <div className="mt-3 space-y-3 w-full">
+                {renderReplies(reply.comments, postId, depth + 1)}
+              </div>
+            )}
         </div>
       </div>
     ));
@@ -920,7 +957,7 @@ function ReviewsPageContent() {
 
   return (
     <div className="min-h-screen bg-[#0a0a0a]">
-      <div className="container mx-auto px-4 py-8 max-w-2xl">
+      <div className="container mx-auto px-4 py-8 max-w-4xl">
         {/* Search Section */}
         {!selectedMedia && (
           <div className="bg-[#0f0f0f] rounded-lg shadow-lg mb-6 border border-[#1a1a1a]">
@@ -981,13 +1018,13 @@ function ReviewsPageContent() {
                       className="flex items-center gap-3 p-3 border border-[#1a1a1a] rounded-lg cursor-pointer hover:bg-[#0a0a0a] transition-colors"
                       onClick={() => selectMedia(result)}
                     >
-                                                                                                                                                                                       <Image
-                           src={result.cover}
-                           alt={result.title}
-                           width={58}
-                           height={87}
-                           className="rounded object-cover"
-                         />
+                      <Image
+                        src={result.cover}
+                        alt={result.title}
+                        width={58}
+                        height={87}
+                        className="rounded object-cover"
+                      />
                       <div className="flex-1">
                         <h3 className="font-medium text-[#d0d0d0]">
                           {result.title}
@@ -1088,7 +1125,6 @@ function ReviewsPageContent() {
                       />
                     </button>
                   ))}
-
                 </div>
               </div>
 
@@ -1136,10 +1172,10 @@ function ReviewsPageContent() {
         )}
 
         <div className="min-h-screen bg-[#0a0a0a]">
-          <div className="max-w-4xl mx-auto border-x border-[#1a1a1a] min-h-screen">
+          <div className="max-w-6xl mx-auto border-x border-[#1a1a1a] min-h-screen">
             {/* Enhanced Header */}
             <div className="sticky top-0 bg-[#0a0a0a]/95 backdrop-blur-xl border-b border-[#1a1a1a] z-10">
-              <div className="px-6 py-3">
+              <div className="px-4 py-3">
                 <h1 className="text-xl font-medium text-[#e0e0e0]">Home</h1>
                 <p className="text-sm text-[#808080] mt-1">
                   Latest updates from your network
@@ -1149,7 +1185,7 @@ function ReviewsPageContent() {
 
             {/* Enhanced Post Creation */}
             <div className="border-b border-[#1a1a1a] bg-[#0f0f0f]/50">
-              <div className="px-6 py-4">
+              <div className="px-4 py-4">
                 <div className="flex gap-4 w-full">
                   <Avatar className="w-12 h-12 ring-2 ring-green-500/20">
                     <AvatarFallback className="bg-gradient-to-br from-green-500 to-emerald-600 text-white font-semibold">
@@ -1224,7 +1260,7 @@ function ReviewsPageContent() {
                 posts.map((post) => (
                   <div
                     key={post._id}
-                    className="border-b border-[#3a3a3a] px-6 py-4 bg-[#2a2a2a]"
+                    className="border-b border-[#3a3a3a] px-4 py-4 bg-[#2a2a2a]"
                   >
                     <div className="flex gap-3 w-full">
                       <Avatar className="w-10 h-10 ring-1 ring-green-500/20 flex-shrink-0">
@@ -1234,7 +1270,7 @@ function ReviewsPageContent() {
                         </AvatarFallback>
                       </Avatar>
 
-                      <div className="flex-1 min-w-0">
+                      <div className="flex-1 min-w-0 max-w-full">
                         <div className="flex items-center gap-2 mb-2">
                           <span className="font-medium text-sm text-[#e0e0e0]">
                             {post.authorId?.username}
@@ -1244,7 +1280,16 @@ function ReviewsPageContent() {
                           </span>
                         </div>
 
-                        <p className="text-[#d0d0d0] mb-3 whitespace-pre-wrap leading-relaxed text-sm pr-2">
+                        <p
+                          className="text-[#d0d0d0] mb-3 whitespace-pre-wrap leading-relaxed text-sm break-all word-break-break-all overflow-wrap-anywhere hyphens-auto"
+                          style={{
+                            wordWrap: "break-word",
+                            overflowWrap: "anywhere",
+                            wordBreak: "break-all",
+                            maxWidth: "100%",
+                            width: "100%",
+                          }}
+                        >
                           {post.content}
                         </p>
 
@@ -1264,9 +1309,9 @@ function ReviewsPageContent() {
                               <div className="flex-1 p-4">
                                 <div className="flex items-start gap-2 mb-2">
                                   <div className="flex-1">
-                                                                      <h3 className="font-semibold text-base text-[#f0f0f0] line-clamp-2 mb-2 leading-tight">
-                                    {post.mediaTitle}
-                                  </h3>
+                                    <h3 className="font-semibold text-base text-[#f0f0f0] line-clamp-2 mb-2 leading-tight">
+                                      {post.mediaTitle}
+                                    </h3>
                                     <div className="flex items-center gap-2 mb-3">
                                       <Badge
                                         variant="secondary"
@@ -1292,7 +1337,9 @@ function ReviewsPageContent() {
                                       <span className="font-semibold text-[#d0d0d0] min-w-[60px]">
                                         Director:
                                       </span>
-                                      <span className="text-[#e0e0e0]">{post.mediaAuthor}</span>
+                                      <span className="text-[#e0e0e0]">
+                                        {post.mediaAuthor}
+                                      </span>
                                     </div>
                                   )}
                                   {post.mediaArtist && (
@@ -1300,14 +1347,18 @@ function ReviewsPageContent() {
                                       <span className="font-semibold text-[#d0d0d0] min-w-[60px]">
                                         Artist:
                                       </span>
-                                      <span className="text-[#e0e0e0]">{post.mediaArtist}</span>
+                                      <span className="text-[#e0e0e0]">
+                                        {post.mediaArtist}
+                                      </span>
                                     </div>
                                   )}
                                   <div className="flex items-center gap-3">
                                     <span className="font-semibold text-[#d0d0d0] min-w-[60px]">
                                       Year:
                                     </span>
-                                    <span className="text-[#e0e0e0]">{post.mediaYear}</span>
+                                    <span className="text-[#e0e0e0]">
+                                      {post.mediaYear}
+                                    </span>
                                   </div>
                                 </div>
 
@@ -1325,21 +1376,19 @@ function ReviewsPageContent() {
                         <div className="flex items-center gap-6 text-[#a0a0a0] pt-2 border-t border-[#3a3a3a] w-full">
                           <button
                             onClick={() => toggleReplyInput(post._id)}
-                            className="flex items-center gap-1.5"
+                            className="flex items-center gap-1.5 hover:text-blue-400 transition-all duration-200 group"
                           >
-                            <div className="p-1.5 rounded-full">
+                            <div className="p-1.5 rounded-full group-hover:bg-blue-600/20 transition-colors">
                               <MessageCircle className="w-4 h-4" />
                             </div>
-                            <span className="text-xs font-medium">
-                              {post.comments?.length || 0}
-                            </span>
+                            <span className="text-xs font-medium">Reply</span>
                           </button>
 
                           <button
                             onClick={() => toggleLike(post._id)}
-                            className="flex items-center gap-1.5"
+                            className="flex items-center gap-1.5 hover:text-rose-400 transition-all duration-200 group"
                           >
-                            <div className="p-1.5 rounded-full">
+                            <div className="p-1.5 rounded-full group-hover:bg-rose-600/20 transition-colors">
                               <Heart
                                 className={`w-4 h-4 ${
                                   post.isLiked
@@ -1352,6 +1401,22 @@ function ReviewsPageContent() {
                               {post.likeCount}
                             </span>
                           </button>
+
+                          {post.comments && post.comments.length > 0 && (
+                            <button
+                              onClick={() => toggleRepliesVisibility(post._id)}
+                              className="flex items-center gap-1.5 hover:text-green-400 transition-all duration-200 group"
+                            >
+                              <div className="p-1.5 rounded-full group-hover:bg-green-600/20 transition-colors">
+                                <MessageCircle className="w-4 h-4" />
+                              </div>
+                              <span className="text-xs font-medium">
+                                {showReplies[post._id]
+                                  ? "Hide Replies"
+                                  : `See Replies (${post.comments.length})`}
+                              </span>
+                            </button>
+                          )}
                         </div>
 
                         {/* Compact Reply Input Section */}
@@ -1414,14 +1479,16 @@ function ReviewsPageContent() {
                           </div>
                         )}
 
-                        {post.comments && post.comments.length > 0 && (
-                          <div className="mt-3 space-y-2">
-                            {renderReplies(
-                              buildCommentTree(post.comments),
-                              post._id
-                            )}
-                          </div>
-                        )}
+                        {post.comments &&
+                          post.comments.length > 0 &&
+                          showReplies[post._id] && (
+                            <div className="mt-3 space-y-2 w-full">
+                              {renderReplies(
+                                buildCommentTree(post.comments),
+                                post._id
+                              )}
+                            </div>
+                          )}
                       </div>
                     </div>
                   </div>

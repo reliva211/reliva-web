@@ -14,11 +14,26 @@
     scroll-behavior: smooth;
     padding-left: 16px;
     padding-right: 16px;
+    /* Enhanced touch scrolling */
+    scroll-snap-type: x mandatory;
+    scroll-padding: 0 16px;
   }
 
   /* Improve touch scrolling performance */
   .horizontal-scroll-container {
     overscroll-behavior-x: contain;
+  }
+
+  /* Ensure smooth scrolling on mobile */
+  .horizontal-scroll-container * {
+    scroll-snap-align: start;
+  }
+
+  /* Better touch response */
+  .horizontal-scroll-container {
+    touch-action: pan-x;
+    -webkit-user-select: none;
+    user-select: none;
   }
 }
 
@@ -26,7 +41,37 @@
 @media (min-width: 641px) and (max-width: 1024px) {
   .horizontal-scroll-container {
     -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+    /* Enhanced touch scrolling for tablets */
+    scroll-snap-type: x proximity;
+    touch-action: pan-x;
   }
+}
+
+/* Additional mobile touch optimizations */
+.horizontal-scroll-container {
+  /* Ensure smooth scrolling across all devices */
+  scroll-behavior: smooth;
+  /* Better touch handling */
+  touch-action: pan-x;
+  /* Prevent text selection during scroll */
+  -webkit-user-select: none;
+  user-select: none;
+  /* Smooth momentum scrolling */
+  -webkit-overflow-scrolling: touch;
+  /* Hide scrollbars but maintain functionality */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.horizontal-scroll-container::-webkit-scrollbar {
+  display: none;
+}
+
+/* Ensure all horizontal scroll containers work consistently */
+[class*="overflow-x-auto"] {
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
 }
 
 /* Books section specific styling for 3 books display on mobile */

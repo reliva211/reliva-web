@@ -122,14 +122,15 @@ export default function SeriesPage() {
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [trendingSeries, setTrendingSeries] = useState<SearchResult[]>([]);
   const [isLoadingTrending, setIsLoadingTrending] = useState(false);
-  const [showDiscover, setShowDiscover] = useState(true);
+  const [showDiscover, setShowDiscover] = useState(false);
 
   // Default collections for series
   const defaultCollections = [
+    { name: "Watching", isDefault: true, color: "bg-blue-500" },
     { name: "Watched", isDefault: true, color: "bg-green-500" },
     { name: "Watchlist", isDefault: true, color: "bg-purple-500" },
     { name: "Dropped", isDefault: true, color: "bg-red-500" },
-    { name: "Recommendations", isDefault: true, color: "bg-blue-500" },
+    { name: "Recommendations", isDefault: true, color: "bg-orange-500" },
   ];
 
   // Fetch user's series and collections
@@ -188,6 +189,14 @@ export default function SeriesPage() {
           }, [] as Collection[]);
 
           setCollections(uniqueCollections);
+
+          // Auto-select the "Watching" collection if it exists
+          const watchingCollection = uniqueCollections.find(
+            (col) => col.name === "Watching"
+          );
+          if (watchingCollection) {
+            setSelectedCollection(watchingCollection.id);
+          }
         } else {
           // Remove duplicate collections by name (keep the first one)
           const uniqueCollections = collectionsData.reduce((acc, current) => {
@@ -199,6 +208,14 @@ export default function SeriesPage() {
             }
           }, [] as Collection[]);
           setCollections(uniqueCollections);
+
+          // Auto-select the "Watching" collection if it exists
+          const watchingCollection = uniqueCollections.find(
+            (col) => col.name === "Watching"
+          );
+          if (watchingCollection) {
+            setSelectedCollection(watchingCollection.id);
+          }
 
           // Clean up duplicates in the database if we found any (but only after setting collections)
           if (uniqueCollections.length < collectionsData.length) {
@@ -611,7 +628,7 @@ export default function SeriesPage() {
                 setSelectedCollection("");
               }}
               className={`flex items-center gap-3 px-6 py-3 rounded-xl transition-all duration-300 whitespace-nowrap font-medium ${
-                showDiscover
+                showDiscover && !selectedCollection
                   ? "bg-gradient-to-r from-gray-800 to-gray-700 text-white shadow-lg border border-gray-600"
                   : "hover:bg-gray-800/50 text-gray-300 hover:text-white"
               }`}

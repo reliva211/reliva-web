@@ -762,7 +762,7 @@ export default function ProfileSeriesSection({
                           {collection.name}
                         </h3>
                       </div>
-                      <div className="flex gap-2 overflow-x-auto pb-2">
+                      <div className="flex gap-2 overflow-x-auto pb-2 horizontal-scroll-container">
                         {items.slice(0, 4).map((item, idx) => (
                           <div
                             key={item.id || idx}
@@ -818,7 +818,7 @@ export default function ProfileSeriesSection({
             <div className="flex gap-6 items-start">
               {/* Series poster */}
               <div className="relative group flex-shrink-0">
-                <div className="w-48 h-72 bg-muted rounded-md overflow-hidden">
+                <div className="w-32 h-48 bg-muted rounded-md overflow-hidden">
                   <Link href={`/series/${currentRecentlyWatched.id}`}>
                     <Image
                       src={
@@ -829,8 +829,8 @@ export default function ProfileSeriesSection({
                       alt={
                         getTextContent(currentRecentlyWatched.name) || "Series"
                       }
-                      width={192}
-                      height={288}
+                      width={128}
+                      height={192}
                       className="w-full h-full object-cover cursor-pointer"
                       onError={(e) => {
                         const target = e.target as HTMLImageElement;

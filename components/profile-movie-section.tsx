@@ -787,7 +787,7 @@ export default function ProfileMovieSection({
                           {collection.name}
                         </h3>
                       </div>
-                      <div className="flex gap-2 overflow-x-auto pb-2">
+                      <div className="flex gap-2 overflow-x-auto pb-2 horizontal-scroll-container">
                         {items.slice(0, 4).map((item, idx) => (
                           <div
                             key={item.id || idx}
@@ -844,7 +844,7 @@ export default function ProfileMovieSection({
             <div className="flex gap-6 items-start">
               {/* Movie poster */}
               <div className="relative group flex-shrink-0">
-                <div className="w-48 h-72 bg-muted rounded-md overflow-hidden">
+                <div className="w-32 h-48 bg-muted rounded-md overflow-hidden">
                   <Link href={`/movies/${currentRecentlyWatched.id}`}>
                     <Image
                       src={
@@ -854,8 +854,8 @@ export default function ProfileMovieSection({
                       alt={
                         getTextContent(currentRecentlyWatched.title) || "Movie"
                       }
-                      width={192}
-                      height={288}
+                      width={128}
+                      height={192}
                       className="w-full h-full object-cover cursor-pointer"
                       onError={(e) => {
                         const target = e.target as HTMLImageElement;

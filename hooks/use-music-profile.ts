@@ -266,15 +266,39 @@ export function useMusicProfile(userId: string | undefined) {
 
   // Update specific music items
   const updateCurrentObsession = async (song: SaavnSong) => {
-    await saveMusicProfile({ currentObsession: song });
+    console.log("updateCurrentObsession called with:", song);
+    try {
+      const updatedProfile = { ...musicProfile, currentObsession: song };
+      console.log("Saving updated profile:", updatedProfile);
+      await saveMusicProfile({ currentObsession: song });
+      setMusicProfile(updatedProfile);
+      console.log("Current obsession updated successfully");
+    } catch (error) {
+      console.error("Error updating current obsession:", error);
+      throw error;
+    }
   };
 
   const updateFavoriteArtist = async (artist: SaavnArtist) => {
-    await saveMusicProfile({ favoriteArtist: artist });
+    try {
+      const updatedProfile = { ...musicProfile, favoriteArtist: artist };
+      await saveMusicProfile({ favoriteArtist: artist });
+      setMusicProfile(updatedProfile);
+    } catch (error) {
+      console.error("Error updating favorite artist:", error);
+      throw error;
+    }
   };
 
   const updateFavoriteSong = async (song: SaavnSong) => {
-    await saveMusicProfile({ favoriteSong: song });
+    try {
+      const updatedProfile = { ...musicProfile, favoriteSong: song };
+      await saveMusicProfile({ favoriteSong: song });
+      setMusicProfile(updatedProfile);
+    } catch (error) {
+      console.error("Error updating favorite song:", error);
+      throw error;
+    }
   };
 
   const updateFavoriteAlbums = async (albums: SaavnAlbum[]) => {
@@ -496,14 +520,23 @@ export function useMusicProfile(userId: string | undefined) {
       const endpoint = `/api/saavn/search?q=${encodeURIComponent(
         query
       )}&type=${type}&limit=${limit}`;
+
+      console.log("Searching with endpoint:", endpoint);
       const response = await fetch(endpoint);
 
       if (!response.ok) {
-        throw new Error(`Search failed: ${response.status}`);
+        throw new Error(
+          `Search failed: ${response.status} - ${response.statusText}`
+        );
       }
 
       const data = await response.json();
-      return data.data?.results || [];
+      console.log("Raw API response:", data);
+
+      const results = data.data?.results || data.results || [];
+      console.log("Extracted results:", results);
+
+      return results;
     } catch (err) {
       console.error("Search error:", err);
       throw err;
