@@ -39,7 +39,7 @@ import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AudioPlayer } from "@/components/audio-player";
 import { Recommendations } from "@/components/recommendations";
-import YouTubePlayer from "../../components/youtube-player";
+import YouTubePlayer from "@/components/youtube-player";
 import { cn } from "@/lib/utils";
 import { useMusicCollections } from "@/hooks/use-music-collections";
 import { useToast } from "@/hooks/use-toast";
