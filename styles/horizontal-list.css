@@ -74,6 +74,305 @@
   scroll-behavior: smooth;
 }
 
+/* Mobile dialog optimizations */
+@media (max-width: 640px) {
+  /* Ensure dialog content doesn't bleed outside viewport */
+  [data-radix-dialog-content] {
+    margin: 16px !important;
+    width: calc(100vw - 32px) !important;
+    max-width: calc(100vw - 32px) !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    box-sizing: border-box !important;
+    overflow: hidden !important;
+    position: fixed !important;
+    top: 50% !important;
+    transform: translate(-50%, -50%) !important;
+  }
+
+  /* Force dialog to stay within viewport bounds */
+  [data-radix-dialog-content] {
+    max-height: calc(100vh - 40px) !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+  }
+
+  /* Make dialog more compact on mobile */
+  [data-radix-dialog-content] {
+    min-height: auto !important;
+    max-height: 80vh !important;
+  }
+
+  /* Ensure dialog overlay covers full screen */
+  [data-radix-dialog-overlay] {
+    padding: 0 !important;
+  }
+
+  /* Ensure dialog header and content stay within bounds */
+  [data-radix-dialog-content] > * {
+    max-width: 100% !important;
+    overflow: hidden !important;
+  }
+
+  /* Prevent any content from extending beyond dialog boundaries */
+  [data-radix-dialog-content] * {
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  /* Force mobile layout for search dialogs - HIGH PRIORITY */
+  .search-dialog-container {
+    flex-direction: column !important;
+    gap: 8px !important;
+    display: flex !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow: hidden !important;
+    box-sizing: border-box !important;
+  }
+
+  /* Force ALL children to be full width and stacked vertically */
+  .search-dialog-container > * {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    flex: none !important;
+    flex-shrink: 0 !important;
+  }
+
+  /* Override any Tailwind classes that might conflict - MORE AGGRESSIVE */
+  .search-dialog-container.flex.flex-col.sm\\:flex-row,
+  .search-dialog-container.flex.flex-row,
+  .search-dialog-container.flex-row,
+  .search-dialog-container .sm\\:flex-row,
+  .search-dialog-container .flex-row {
+    flex-direction: column !important;
+    flex-wrap: nowrap !important;
+  }
+
+  /* Force input container to be full width */
+  .search-dialog-container .relative.flex-1,
+  .search-dialog-container .relative,
+  .search-dialog-container > div:first-child {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    flex: none !important;
+    flex-shrink: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  /* Improve search input mobile experience */
+  .search-dialog-input {
+    font-size: 16px; /* Prevents zoom on iOS */
+    -webkit-appearance: none;
+    border-radius: 6px;
+    width: 100% !important;
+    padding: 8px 12px !important;
+    height: 40px !important;
+  }
+
+  /* Make search button more compact */
+  .search-dialog-button {
+    height: 40px !important;
+    padding: 8px 16px !important;
+    font-size: 14px !important;
+  }
+
+  /* Better touch targets for mobile */
+  .search-result-item {
+    min-height: 56px;
+    padding: 8px;
+  }
+
+  /* Reduce spacing between search results */
+  .search-result-item + .search-result-item {
+    margin-top: 4px !important;
+  }
+
+  /* Ensure long movie titles show ellipses on mobile */
+  .search-result-item .text-base.font-semibold,
+  .search-result-item .text-base,
+  .search-result-item p:first-child {
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    max-width: 100% !important;
+    display: block !important;
+  }
+
+  /* Ensure year text also shows ellipses if too long */
+  .search-result-item .text-sm.text-muted-foreground,
+  .search-result-item p:last-child {
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    max-width: 100% !important;
+    display: block !important;
+  }
+
+  /* Ensure search button is full width on mobile */
+  .search-dialog-button {
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  /* Override any conflicting flexbox styles */
+  .search-dialog-container.flex.flex-col.sm\\:flex-row {
+    flex-direction: column !important;
+  }
+
+  /* Force input container to full width */
+  .search-dialog-container .relative.flex-1 {
+    width: 100% !important;
+    flex: none !important;
+  }
+
+  /* Force all direct children to be full width on mobile */
+  .search-dialog-container > div,
+  .search-dialog-container > button {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: none !important;
+  }
+
+  /* Ensure the search input takes full width */
+  .search-dialog-container input {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    margin: 0 !important;
+    padding-left: 32px !important;
+    padding-right: 8px !important;
+  }
+
+  /* Override any Input component default styles */
+  .search-dialog-container input[type="text"],
+  .search-dialog-container input[type="search"] {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+
+  /* Force search icon to stay within bounds */
+  .search-dialog-container .absolute.left-3 {
+    z-index: 10;
+    left: 8px !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+  }
+
+  /* Ensure search input has proper right padding */
+  .search-dialog-container input {
+    padding-right: 8px !important;
+  }
+
+  /* Ensure button text doesn't overflow */
+  .search-dialog-container button {
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+
+  /* Ensure the search icon doesn't interfere with layout */
+  .search-dialog-container .absolute.left-3 {
+    z-index: 10;
+  }
+
+  /* Force button to be full width on mobile */
+  .search-dialog-container button {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: none !important;
+  }
+
+  /* Ensure close button area is protected */
+  [data-radix-dialog-content] button[aria-label="Close"],
+  [data-radix-dialog-content] button[data-radix-dialog-close] {
+    position: absolute !important;
+    right: 16px !important;
+    top: 16px !important;
+    z-index: 100 !important;
+  }
+
+  /* Prevent content from overlapping close button */
+  [data-radix-dialog-content] > div:first-child {
+    padding-right: 40px !important;
+  }
+
+  /* Ensure dialog content has proper padding */
+  [data-radix-dialog-content] > div {
+    padding-left: 8px !important;
+    padding-right: 8px !important;
+  }
+
+  /* Reduce dialog header padding for mobile */
+  [data-radix-dialog-content] > div:first-child {
+    padding-top: 12px !important;
+    padding-bottom: 8px !important;
+  }
+
+  /* Reduce main content padding for mobile */
+  [data-radix-dialog-content] > div:not(:first-child) {
+    padding-top: 8px !important;
+    padding-bottom: 12px !important;
+  }
+
+  /* Force search results to stay within bounds */
+  .search-dialog-container + div {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+  }
+
+  /* Reduce spacing in search results container */
+  .search-dialog-container + div {
+    padding-top: 4px !important;
+    padding-bottom: 4px !important;
+  }
+
+  /* Make search results list more compact */
+  .search-dialog-container + div .space-y-2 {
+    gap: 4px !important;
+  }
+
+  /* Ensure search result text containers have proper width constraints */
+  .search-result-item .flex-1.min-w-0 {
+    min-width: 0 !important;
+    max-width: calc(100% - 60px) !important;
+    overflow: hidden !important;
+  }
+
+  /* Force text truncation for all text elements in search results */
+  .search-result-item p {
+    margin: 0 !important;
+    padding: 0 !important;
+    line-height: 1.2 !important;
+  }
+
+  /* Ensure movie poster/thumbnail has proper sizing */
+  .search-result-item .w-12.h-16,
+  .search-result-item .rounded-md.overflow-hidden.flex-shrink-0 {
+    width: 48px !important;
+    height: 64px !important;
+    flex-shrink: 0 !important;
+    margin-right: 8px !important;
+  }
+
+  /* Ensure proper spacing between poster and text */
+  .search-result-item .flex.items-center.gap-3 {
+    gap: 8px !important;
+  }
+}
+
 /* Books section specific styling for 3 books display on mobile */
 .books-horizontal-container {
   /* Ensure container shows exactly 3 books on mobile */

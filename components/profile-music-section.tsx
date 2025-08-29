@@ -1304,14 +1304,14 @@ export default function ProfileMusicSection({
 
       {/* Search Dialog */}
       <Dialog open={isSearchDialogOpen} onOpenChange={setIsSearchDialogOpen}>
-        <DialogContent className="max-w-md mx-auto">
+        <DialogContent className="w-[95vw] max-w-[95vw] sm:max-w-md mx-auto">
           <DialogHeader>
-            <DialogTitle>
+            <DialogTitle className="text-base sm:text-lg">
               {editingItem ? "Replace Item" : "Add New Item"}
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            <div className="flex gap-2">
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-2 search-dialog-container">
               <Input
                 placeholder="Search for music..."
                 value={searchQuery}
@@ -1328,7 +1328,7 @@ export default function ProfileMusicSection({
                     handleSearch(searchQuery, activeSearchType as any);
                   }
                 }}
-                className="flex-1"
+                className="flex-1 w-full search-dialog-input"
               />
               <Button
                 onClick={() => {
@@ -1337,6 +1337,7 @@ export default function ProfileMusicSection({
                 }}
                 disabled={isSearching || !searchQuery.trim()}
                 size="sm"
+                className="w-full sm:w-auto search-dialog-button"
               >
                 {isSearching ? "Searching..." : "Search"}
               </Button>
@@ -1354,14 +1355,14 @@ export default function ProfileMusicSection({
             )}
 
             {!isSearching && searchResults.length > 0 && (
-              <div className="space-y-2 max-h-60 overflow-y-auto">
+              <div className="space-y-2 max-h-60 overflow-y-auto px-1">
                 <p className="text-sm text-gray-400 mb-2">
                   Found {searchResults.length} results
                 </p>
                 {searchResults.map((item) => (
                   <div
                     key={item.id}
-                    className="flex items-center gap-3 p-2 rounded-lg border border-gray-700 hover:bg-gray-800 cursor-pointer"
+                    className="flex items-center gap-3 p-3 rounded-lg border border-gray-700 hover:bg-gray-800 cursor-pointer transition-colors search-result-item"
                     onClick={() => {
                       console.log("Item selected:", item);
                       handleAddItem(item);

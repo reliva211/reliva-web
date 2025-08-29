@@ -935,7 +935,7 @@ export default function ProfileBooksSection({
           <div className="relative">
             <div
               ref={scrollContainerRefs.favoriteBooks}
-              className="flex justify-start gap-6 overflow-hidden"
+              className="flex justify-start gap-6 overflow-x-auto scrollbar-hide pb-4 horizontal-scroll-container"
             >
               {limitedFavoriteBooks.length > 0 ? (
                 <>
@@ -1055,7 +1055,7 @@ export default function ProfileBooksSection({
         <div className="relative">
           <div
             ref={scrollContainerRefs.readingList}
-            className="flex justify-start gap-6 overflow-hidden"
+            className="flex justify-start gap-6 overflow-x-auto scrollbar-hide pb-4 horizontal-scroll-container"
           >
             {limitedReadingList.length > 0 ? (
               <>
@@ -1189,7 +1189,7 @@ export default function ProfileBooksSection({
         <div className="relative">
           <div
             ref={scrollContainerRefs.recommendations}
-            className="flex justify-start gap-6 overflow-hidden"
+            className="flex justify-start gap-6 overflow-x-auto scrollbar-hide pb-4 horizontal-scroll-container"
           >
             {limitedRecommendations.length > 0 ? (
               <>
@@ -1325,7 +1325,7 @@ export default function ProfileBooksSection({
         <div className="relative">
           <div
             ref={scrollContainerRefs.ratings}
-            className="flex justify-start gap-6 overflow-hidden"
+            className="flex justify-start gap-6 overflow-x-auto scrollbar-hide pb-4 horizontal-scroll-container"
           >
             {limitedRatings.length > 0 ? (
               <>
@@ -1459,9 +1459,9 @@ export default function ProfileBooksSection({
 
       {/* Search Dialog */}
       <Dialog open={showSearchDialog} onOpenChange={setShowSearchDialog}>
-        <DialogContent className="sm:max-w-[600px] lg:max-w-[700px]">
+        <DialogContent className="w-[95vw] max-w-[95vw] sm:max-w-[600px] lg:max-w-[700px] mx-auto">
           <DialogHeader>
-            <DialogTitle>
+            <DialogTitle className="text-base sm:text-lg">
               {editingItem ? "Replace" : "Search"}{" "}
               {activeSearchType === "recentlyRead"
                 ? "Recently Read"
@@ -1477,8 +1477,8 @@ export default function ProfileBooksSection({
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            <div className="flex gap-2">
-              <div className="relative flex-1">
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-2 search-dialog-container">
+              <div className="relative flex-1 min-w-0">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                 <Input
                   placeholder={`${
@@ -1503,13 +1503,13 @@ export default function ProfileBooksSection({
                       handleSearch(searchQuery, activeSearchType!);
                     }
                   }}
-                  className="pl-10 text-sm"
+                  className="pl-10 text-sm w-full search-dialog-input"
                 />
               </div>
               <Button
                 onClick={() => handleSearch(searchQuery, activeSearchType!)}
                 disabled={isSearching || !searchQuery.trim()}
-                className="flex-shrink-0"
+                className="flex-shrink-0 w-full sm:w-auto search-dialog-button"
               >
                 {isSearching
                   ? "Searching..."
@@ -1526,11 +1526,11 @@ export default function ProfileBooksSection({
             )}
 
             {searchResults.length > 0 && (
-              <div className="max-h-60 overflow-y-auto space-y-2">
+              <div className="max-h-60 overflow-y-auto space-y-2 px-1">
                 {searchResults.map((item, index) => (
                   <div
                     key={item.id || index}
-                    className="flex items-center gap-3 p-2 rounded-md hover:bg-muted cursor-pointer"
+                    className="flex items-center gap-3 p-3 rounded-md hover:bg-muted cursor-pointer transition-colors search-result-item"
                     onClick={() => handleSelectItem(item)}
                   >
                     <div className="w-12 h-16 rounded-md overflow-hidden flex-shrink-0">

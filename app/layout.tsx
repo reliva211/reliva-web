@@ -2,6 +2,7 @@ import type React from "react";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import "@/styles/mobile-responsive.css";
+import "@/styles/horizontal-list.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { AuthProvider } from "@/components/auth-provider";
 import LayoutWrapper from "@/components/layout-wrapper";

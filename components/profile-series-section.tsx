@@ -949,7 +949,7 @@ export default function ProfileSeriesSection({
         <div className="relative">
           <div
             ref={scrollContainerRefs.favoriteSeriesList}
-            className="flex justify-start gap-6 overflow-hidden"
+            className="flex justify-start gap-6 overflow-x-auto scrollbar-hide pb-4 horizontal-scroll-container"
           >
             {limitedFavoriteSeriesList.length > 0 ? (
               <>
@@ -1066,7 +1066,7 @@ export default function ProfileSeriesSection({
         <div className="relative">
           <div
             ref={scrollContainerRefs.watchlist}
-            className="flex justify-start gap-6 overflow-hidden"
+            className="flex justify-start gap-6 overflow-x-auto scrollbar-hide pb-4 horizontal-scroll-container"
           >
             {limitedWatchlist.length > 0 ? (
               <>
@@ -1205,7 +1205,7 @@ export default function ProfileSeriesSection({
         <div className="relative">
           <div
             ref={scrollContainerRefs.recommendations}
-            className="flex justify-start gap-6 overflow-hidden"
+            className="flex justify-start gap-6 overflow-x-auto scrollbar-hide pb-4 horizontal-scroll-container"
           >
             {limitedRecommendations.length > 0 ? (
               <>
@@ -1344,7 +1344,7 @@ export default function ProfileSeriesSection({
         <div className="relative">
           <div
             ref={scrollContainerRefs.ratings}
-            className="flex justify-start gap-6 overflow-hidden"
+            className="flex justify-start gap-6 overflow-x-auto scrollbar-hide pb-4 horizontal-scroll-container"
           >
             {limitedRatings.length > 0 ? (
               <>
@@ -1486,9 +1486,9 @@ export default function ProfileSeriesSection({
 
       {/* Search Dialog */}
       <Dialog open={showSearchDialog} onOpenChange={setShowSearchDialog}>
-        <DialogContent className="sm:max-w-[500px]">
+        <DialogContent className="w-[95vw] max-w-[95vw] sm:max-w-[500px] mx-auto">
           <DialogHeader>
-            <DialogTitle>
+            <DialogTitle className="text-base sm:text-lg">
               {editingItem ? "Replace" : "Search"}{" "}
               {activeSearchType === "favoriteCreator"
                 ? "Creators"
@@ -1508,8 +1508,8 @@ export default function ProfileSeriesSection({
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            <div className="flex gap-2">
-              <div className="relative flex-1">
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-2 search-dialog-container">
+              <div className="relative flex-1 min-w-0">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                 <Input
                   placeholder={`${
@@ -1538,12 +1538,13 @@ export default function ProfileSeriesSection({
                       handleSearch(searchQuery, activeSearchType!);
                     }
                   }}
-                  className="pl-10"
+                  className="pl-10 w-full search-dialog-input"
                 />
               </div>
               <Button
                 onClick={() => handleSearch(searchQuery, activeSearchType!)}
                 disabled={isSearching || !searchQuery.trim()}
+                className="w-full sm:w-auto search-dialog-button"
               >
                 {isSearching
                   ? "Searching..."
@@ -1560,11 +1561,11 @@ export default function ProfileSeriesSection({
             )}
 
             {searchResults.length > 0 && (
-              <div className="max-h-60 overflow-y-auto space-y-2">
+              <div className="max-h-60 overflow-y-auto space-y-2 px-1">
                 {searchResults.map((item, index) => (
                   <div
                     key={item.id || index}
-                    className="flex items-center gap-3 p-2 rounded-md hover:bg-muted cursor-pointer"
+                    className="flex items-center gap-3 p-3 rounded-md hover:bg-muted cursor-pointer transition-colors search-result-item"
                     onClick={() => handleSelectItem(item)}
                   >
                     <div className="w-12 h-16 rounded-md overflow-hidden flex-shrink-0">

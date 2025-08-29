@@ -25,7 +25,6 @@ import {
 import { useMusicCollections } from "@/hooks/use-music-collections";
 import { useToast } from "@/hooks/use-toast";
 import { useYouTubePlayer } from "@/hooks/use-youtube-player";
-import YouTubePlayer from "@/components/youtube-player";
 
 // Utility functions
 const getImageUrl = (images: Array<{ quality: string; url: string }>) => {
@@ -903,9 +902,6 @@ export default function ArtistDetailPage({
           </Tabs>
         </div>
       </div>
-
-      {/* YouTube Player for music playback */}
-      <YouTubePlayer />
     </div>
   );
 }
