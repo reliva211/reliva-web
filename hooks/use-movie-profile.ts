@@ -9,10 +9,9 @@ import {
   setDoc,
   query,
   where,
+  getDoc,
 } from "firebase/firestore";
-import { getAuth } from "firebase/auth";
 import { db } from "@/lib/firebase";
-import { searchMovies } from "@/lib/tmdb";
 
 export interface TMDBMovie {
   id: string;
@@ -54,7 +53,7 @@ export function useMovieProfile(userId: string | undefined) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Fetch movie profile from Firebase
+  // Fetch movie profile from Firebase using collection-based structure
   const fetchMovieProfile = async () => {
     if (!userId) {
       setLoading(false);
@@ -65,110 +64,109 @@ export function useMovieProfile(userId: string | undefined) {
     setError(null);
 
     try {
-      // Check if user is authenticated
-      const auth = getAuth();
-      if (!auth.currentUser) {
-        setError("User not authenticated");
-        setLoading(false);
-        return;
-      }
-
-      // Fetch from the new collection structure
-      const movieListsRef = collection(db, "users", userId, "movieCollections");
-      const movieListsSnapshot = await getDocs(movieListsRef);
-
-      let watchlist: TMDBMovie[] = [];
-      let recommendations: TMDBMovie[] = [];
-      let ratings: Array<{ movie: TMDBMovie; rating: number }> = [];
-      let favoriteMovies: TMDBMovie[] = [];
-      let recentlyWatched: TMDBMovie[] = [];
-      let favoriteMovie: TMDBMovie | null = null;
-      let favoriteDirector: { id: string; name: string; image: string } | null =
-        null;
-
-      // Fetch all movies first
+      // Fetch movies from the same source as the movies page
       const moviesRef = collection(db, "users", userId, "movies");
       const moviesSnapshot = await getDocs(moviesRef);
-      const allMovies: TMDBMovie[] = moviesSnapshot.docs.map((movieDoc) => {
-        const movieData = movieDoc.data();
-        return {
-          id: movieDoc.id,
-          title: movieData.title || "",
-          year: movieData.year || 0,
-          cover: movieData.cover || "",
-          rating: movieData.rating || 0,
-          overview: movieData.overview || "",
-          release_date: movieData.release_date || "",
-          vote_average: movieData.vote_average || 0,
-          vote_count: movieData.vote_count || 0,
-          genre_ids: Array.isArray(movieData.genre_ids)
-            ? movieData.genre_ids
-            : [],
-          genres: Array.isArray(movieData.genres) ? movieData.genres : [],
-          director: movieData.director || "",
-          cast: Array.isArray(movieData.cast) ? movieData.cast : [],
-          collections: movieData.collections || [],
-        };
+      const moviesData = moviesSnapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      })) as any[];
+
+      // Fetch collections to understand the structure
+      const collectionsRef = collection(
+        db,
+        "users",
+        userId,
+        "movieCollections"
+      );
+      const collectionsSnapshot = await getDocs(collectionsRef);
+      const collectionsData = collectionsSnapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      })) as any[];
+
+      // Organize movies by collection names
+      const watchedMovies = moviesData.filter((movie) =>
+        movie.collections?.some((collectionId: string) => {
+          const collection = collectionsData.find(
+            (col) => col.id === collectionId
+          );
+          return collection?.name === "Watched";
+        })
+      );
+
+      const watchingMovies = moviesData.filter((movie) =>
+        movie.collections?.some((collectionId: string) => {
+          const collection = collectionsData.find(
+            (col) => col.id === collectionId
+          );
+          return collection?.name === "Watching";
+        })
+      );
+
+      const watchlistMovies = moviesData.filter((movie) =>
+        movie.collections?.some((collectionId: string) => {
+          const collection = collectionsData.find(
+            (col) => col.id === collectionId
+          );
+          return collection?.name === "Watchlist";
+        })
+      );
+
+      const recommendationsMovies = moviesData.filter((movie) =>
+        movie.collections?.some((collectionId: string) => {
+          const collection = collectionsData.find(
+            (col) => col.id === collectionId
+          );
+          return collection?.name === "Recommendations";
+        })
+      );
+
+      const favoritesMovies = moviesData.filter((movie) =>
+        movie.collections?.some((collectionId: string) => {
+          const collection = collectionsData.find(
+            (col) => col.id === collectionId
+          );
+          return collection?.name === "Favorites";
+        })
+      );
+
+      // Convert movie data to TMDBMovie format
+      const convertToTMDBMovie = (movie: any): TMDBMovie => ({
+        id: movie.id,
+        title: movie.title || "",
+        year: movie.year || 0,
+        cover: movie.cover || "",
+            rating: movie.rating || 0,
+        overview: movie.overview || "",
+        release_date: movie.release_date || "",
+        vote_average: movie.vote_average || 0,
+        vote_count: movie.vote_count || 0,
+        genre_ids: Array.isArray(movie.genre_ids) ? movie.genre_ids : [],
+        genres: Array.isArray(movie.genres) ? movie.genres : [],
+        director: movie.director || "",
+        cast: Array.isArray(movie.cast) ? movie.cast : [],
+        collections: movie.collections || [],
       });
 
-      // Process each movie collection and categorize movies
-      for (const collectionDoc of movieListsSnapshot.docs) {
-        const collectionData = collectionDoc.data();
-        const collectionName = collectionData.name?.toLowerCase() || "";
-        const collectionId = collectionDoc.id;
-
-        // Find movies that belong to this collection
-        const collectionMovies = allMovies.filter(
-          (movie) =>
-            movie.collections && movie.collections.includes(collectionId)
-        );
-
-        // Categorize movies based on collection name
-        if (
-          collectionName.includes("watchlist") ||
-          collectionName.includes("to watch")
-        ) {
-          watchlist = [...watchlist, ...collectionMovies];
-        } else if (
-          collectionName.includes("recommendation") ||
-          collectionName.includes("recommended")
-        ) {
-          recommendations = [...recommendations, ...collectionMovies];
-        } else if (
-          collectionName.includes("favorite") ||
-          collectionName.includes("favourites")
-        ) {
-          favoriteMovies = [...favoriteMovies, ...collectionMovies];
-        } else if (
-          collectionName.includes("currently watching") ||
-          collectionName.includes("watching")
-        ) {
-          recentlyWatched = [...recentlyWatched, ...collectionMovies];
-        } else if (
-          collectionName.includes("rated") ||
-          collectionName.includes("ratings")
-        ) {
-          // For ratings, we need to extract the rating from the movie data
-          const ratedMovies = collectionMovies.map((movie) => ({
-            movie,
-            rating: movie.rating || 0,
-          }));
-          ratings = [...ratings, ...ratedMovies];
-        } else {
-          // Default collection - add to watchlist
-          watchlist = [...watchlist, ...collectionMovies];
-        }
-      }
-
-      // Set the first movie as favorite movie if available
-      if (favoriteMovies.length > 0) {
-        favoriteMovie = favoriteMovies[0];
-      }
-
-      // Set the first movie as recently watched if available
-      if (recentlyWatched.length === 0 && watchlist.length > 0) {
-        recentlyWatched = [watchlist[0]];
-      }
+      // Create movie profile from the fetched data
+      const profile: MovieProfile = {
+        recentlyWatched: watchingMovies.slice(0, 10).map(convertToTMDBMovie), // Use watching for currently watching
+        favoriteMovie:
+          favoritesMovies.length > 0
+            ? convertToTMDBMovie(favoritesMovies[0])
+            : null,
+        favoriteDirector: null, // This would need separate logic
+        favoriteMovies: favoritesMovies.map(convertToTMDBMovie),
+        watchlist: watchlistMovies.map(convertToTMDBMovie),
+        recommendations: recommendationsMovies.map(convertToTMDBMovie),
+        ratings: watchedMovies
+          .filter((movie) => movie.rating && movie.rating > 0)
+          .map((movie) => ({
+            movie: convertToTMDBMovie(movie),
+            rating: movie.rating,
+          })),
+      };
 
       // Also fetch movie reviews to get ratings
       try {
@@ -182,7 +180,7 @@ export function useMovieProfile(userId: string | undefined) {
         );
 
         const movieReviews = reviewsSnapshot.docs.map((reviewDoc) => {
-          const reviewData = reviewDoc.data();
+          const reviewData = reviewDoc.data() as any;
           return {
             movie: {
               id: reviewData.mediaId || reviewDoc.id,
@@ -204,9 +202,9 @@ export function useMovieProfile(userId: string | undefined) {
         });
 
         // Merge with existing ratings and deduplicate by movie ID
-        const allRatings = [...ratings, ...movieReviews];
+        const allRatings = [...profile.ratings, ...movieReviews];
         const seenMovieIds = new Set();
-        ratings = allRatings.filter((rating) => {
+        profile.ratings = allRatings.filter((rating) => {
           if (seenMovieIds.has(rating.movie.id)) {
             return false;
           }
@@ -217,275 +215,664 @@ export function useMovieProfile(userId: string | undefined) {
         console.log("Could not fetch movie reviews:", reviewError);
       }
 
-      const validatedProfile = {
-        recentlyWatched,
-        favoriteMovie,
-        favoriteDirector,
-        favoriteMovies,
-        watchlist,
-        recommendations,
-        ratings,
-      };
-
-      setMovieProfile(validatedProfile);
+      setMovieProfile(profile);
     } catch (err) {
       console.error("Error fetching movie profile:", err);
       setError("Failed to fetch movie profile");
-      // Set default state on error
-      setMovieProfile({
-        recentlyWatched: [],
-        favoriteMovie: null,
-        favoriteDirector: null,
-        favoriteMovies: [],
-        watchlist: [],
-        recommendations: [],
-        ratings: [],
-      });
     } finally {
       setLoading(false);
     }
   };
 
-  // Helper function to sanitize movie data for Firebase
-  const sanitizeMovieData = (movie: any): TMDBMovie => {
-    return {
-      id: movie.id || "",
-      title: movie.title || "",
-      year: movie.year || 0,
-      cover: movie.cover || "",
-      rating: movie.rating || 0,
-      overview: movie.overview || "",
-      release_date: movie.release_date || "",
-      vote_average: movie.vote_average || 0,
-      vote_count: movie.vote_count || 0,
-      genre_ids: Array.isArray(movie.genre_ids) ? movie.genre_ids : [],
-      genres: Array.isArray(movie.genres) ? movie.genres : [],
-      director: movie.director || "",
-      cast: Array.isArray(movie.cast) ? movie.cast : [],
-    };
-  };
+  // Update recently watched movies
+  const updateRecentlyWatched = async (movie: TMDBMovie) => {
+    if (!userId) return;
 
-  // Helper function to sanitize profile data for Firebase
-  const sanitizeProfileData = (
-    profile: Partial<MovieProfile>
-  ): Partial<MovieProfile> => {
-    const sanitized: any = {};
-
-    if (profile.recentlyWatched) {
-      if (Array.isArray(profile.recentlyWatched)) {
-        sanitized.recentlyWatched =
-          profile.recentlyWatched.map(sanitizeMovieData);
-      } else {
-        sanitized.recentlyWatched = [
-          sanitizeMovieData(profile.recentlyWatched),
-        ];
-      }
-    }
-
-    if (profile.favoriteMovie) {
-      sanitized.favoriteMovie = sanitizeMovieData(profile.favoriteMovie);
-    }
-
-    if (profile.favoriteDirector) {
-      sanitized.favoriteDirector = {
-        id: profile.favoriteDirector.id || "",
-        name: profile.favoriteDirector.name || "",
-        image: profile.favoriteDirector.image || "",
-      };
-    }
-
-    if (Array.isArray(profile.favoriteMovies)) {
-      sanitized.favoriteMovies = profile.favoriteMovies.map(sanitizeMovieData);
-    }
-
-    if (Array.isArray(profile.watchlist)) {
-      sanitized.watchlist = profile.watchlist.map(sanitizeMovieData);
-    }
-
-    if (Array.isArray(profile.recommendations)) {
-      sanitized.recommendations =
-        profile.recommendations.map(sanitizeMovieData);
-    }
-
-    if (Array.isArray(profile.ratings)) {
-      sanitized.ratings = profile.ratings.map((rating) => ({
-        movie: sanitizeMovieData(rating.movie),
-        rating: rating.rating || 0,
-      }));
-    }
-
-    return sanitized;
-  };
-
-  // Save movie profile to Firebase
-  const saveMovieProfile = async (profile: Partial<MovieProfile>) => {
-    if (!userId) {
-      console.error("No user ID provided for saving movie profile");
-      throw new Error("User not authenticated");
+    // Ensure movie.id is a valid string
+    if (!movie.id || typeof movie.id !== "string") {
+      console.error("Invalid movie ID:", movie.id);
+      throw new Error("Invalid movie ID provided");
     }
 
     try {
-      console.log("Saving movie profile:", profile);
-      const movieCollection = collection(db, "users", userId, "movies");
-      const movieSnapshot = await getDocs(movieCollection);
+      // Find the "Watching" collection (for currently watching)
+      const collectionsRef = collection(
+        db,
+        "users",
+        userId,
+        "movieCollections"
+      );
+      const collectionsSnapshot = await getDocs(collectionsRef);
+      const watchingCollection = collectionsSnapshot.docs.find(
+        (doc) => doc.data().name === "Watching"
+      );
 
-      // Sanitize the profile data before saving
-      const sanitizedProfile = sanitizeProfileData(profile);
-      const updatedProfile = { ...movieProfile, ...sanitizedProfile };
-      console.log("Sanitized profile:", updatedProfile);
+      if (!watchingCollection) {
+        throw new Error("Watching collection not found");
+      }
 
-      if (movieSnapshot.empty) {
-        // Create new document
-        console.log("Creating new movie profile document");
-        await addDoc(movieCollection, updatedProfile);
+      // Check if movie already exists
+      const movieRef = doc(db, "users", userId, "movies", movie.id);
+      const movieDoc = await getDoc(movieRef);
+
+      if (movieDoc.exists()) {
+        // Update existing movie with Watching collection
+        const existingData = movieDoc.data();
+        const updatedCollections = existingData.collections?.includes(
+          watchingCollection.id
+        )
+          ? existingData.collections
+          : [...(existingData.collections || []), watchingCollection.id];
+
+        await updateDoc(movieRef, {
+          collections: updatedCollections,
+        });
       } else {
-        // Update existing document
-        console.log("Updating existing movie profile document");
-        const docRef = doc(
+        // Create new movie with Watching collection
+        const movieData = {
+          id: movie.id,
+          title: movie.title,
+          year: movie.year,
+          cover: movie.cover,
+          status: "Watching",
+          rating: movie.rating || 0,
+          notes: "",
+          collections: [watchingCollection.id],
+          overview: movie.overview,
+          release_date: movie.release_date,
+          vote_average: movie.vote_average,
+          vote_count: movie.vote_count,
+          genre_ids: movie.genre_ids,
+          genres: movie.genres,
+          director: movie.director,
+          cast: movie.cast,
+        };
+
+        await setDoc(movieRef, movieData);
+      }
+
+      // Refresh the profile data
+      await fetchMovieProfile();
+    } catch (err) {
+      console.error("Error updating recently watched:", err);
+      throw err;
+    }
+  };
+
+  // Update favorite movie
+  const updateFavoriteMovie = async (movie: TMDBMovie) => {
+    if (!userId) return;
+
+    // Ensure movie.id is a valid string
+    if (!movie.id || typeof movie.id !== "string") {
+      console.error("Invalid movie ID:", movie.id);
+      throw new Error("Invalid movie ID provided");
+    }
+
+    try {
+      // Find the "Favorites" collection
+      const collectionsRef = collection(
           db,
           "users",
           userId,
-          "movies",
-          movieSnapshot.docs[0].id
-        );
-        await setDoc(docRef, updatedProfile, { merge: true });
+        "movieCollections"
+      );
+      const collectionsSnapshot = await getDocs(collectionsRef);
+      const favoritesCollection = collectionsSnapshot.docs.find(
+        (doc) => doc.data().name === "Favorites"
+      );
+
+      if (!favoritesCollection) {
+        throw new Error("Favorites collection not found");
       }
 
-      setMovieProfile(updatedProfile);
-      console.log("Movie profile saved successfully");
+      // Check if movie already exists
+      const movieRef = doc(db, "users", userId, "movies", movie.id);
+      const movieDoc = await getDoc(movieRef);
+
+      if (movieDoc.exists()) {
+        // Update existing movie with Favorites collection
+        const existingData = movieDoc.data();
+        const updatedCollections = existingData.collections?.includes(
+          favoritesCollection.id
+        )
+          ? existingData.collections
+          : [...(existingData.collections || []), favoritesCollection.id];
+
+        await updateDoc(movieRef, {
+          collections: updatedCollections,
+        });
+      } else {
+        // Create new movie with Favorites collection
+        const movieData = {
+          id: movie.id,
+          title: movie.title,
+          year: movie.year,
+          cover: movie.cover,
+          status: "Favorites",
+          rating: movie.rating || 0,
+          notes: "",
+          collections: [favoritesCollection.id],
+          overview: movie.overview,
+          release_date: movie.release_date,
+          vote_average: movie.vote_average,
+          vote_count: movie.vote_count,
+          genre_ids: movie.genre_ids,
+          genres: movie.genres,
+          director: movie.director,
+          cast: movie.cast,
+        };
+
+        await setDoc(movieRef, movieData);
+      }
+
+      // Refresh the profile data
+      await fetchMovieProfile();
     } catch (err) {
-      console.error("Error saving movie profile:", err);
-      setError("Failed to save movie profile");
-      throw err; // Re-throw to let component handle it
+      console.error("Error updating favorite movie:", err);
+      throw err;
     }
   };
 
-  // Update specific movie items
-  const updateRecentlyWatched = async (movie: TMDBMovie) => {
-    const currentRecentlyWatched = movieProfile.recentlyWatched || [];
-    const updatedRecentlyWatched = Array.isArray(currentRecentlyWatched)
-      ? [...currentRecentlyWatched]
-      : [];
-
-    const existingIndex = updatedRecentlyWatched.findIndex(
-      (m) => m.id === movie.id
-    );
-
-    if (existingIndex !== -1) {
-      // Move to front if already exists
-      updatedRecentlyWatched.splice(existingIndex, 1);
-    }
-
-    // Add to front of the list
-    updatedRecentlyWatched.unshift(movie);
-
-    // Keep only 10 recently watched movies
-    const finalRecentlyWatched = updatedRecentlyWatched.slice(0, 10);
-    await saveMovieProfile({ recentlyWatched: finalRecentlyWatched });
-  };
-
-  const updateFavoriteMovie = async (movie: TMDBMovie) => {
-    await saveMovieProfile({ favoriteMovie: movie });
-  };
-
+  // Update favorite director
   const updateFavoriteDirector = async (director: {
     id: string;
     name: string;
     image: string;
   }) => {
-    await saveMovieProfile({ favoriteDirector: director });
+    if (!userId) return;
+
+    try {
+      await updateDoc(doc(db, "movieProfiles", userId), {
+        favoriteDirector: director,
+      });
+
+      setMovieProfile((prev) => ({ ...prev, favoriteDirector: director }));
+    } catch (err) {
+      console.error("Error updating favorite director:", err);
+      throw err;
+    }
   };
 
+  // Add to favorite movies (Favorites collection)
   const addFavoriteMovie = async (movie: TMDBMovie) => {
-    const updatedMovies = [...movieProfile.favoriteMovies];
-    const existingIndex = updatedMovies.findIndex((m) => m.id === movie.id);
+    if (!userId) return;
 
-    if (existingIndex !== -1) {
-      updatedMovies[existingIndex] = movie;
-    } else {
-      updatedMovies.push(movie);
+    // Ensure movie.id is a valid string
+    if (!movie.id || typeof movie.id !== "string") {
+      console.error("Invalid movie ID:", movie.id);
+      throw new Error("Invalid movie ID provided");
     }
 
-    // Keep only 15 movies
-    const finalMovies = updatedMovies.slice(0, 15);
-    await saveMovieProfile({ favoriteMovies: finalMovies });
+    try {
+      // First, find the "Favorites" collection
+      const collectionsRef = collection(
+        db,
+        "users",
+        userId,
+        "movieCollections"
+      );
+      const collectionsSnapshot = await getDocs(collectionsRef);
+      const favoritesCollection = collectionsSnapshot.docs.find(
+        (doc) => doc.data().name === "Favorites"
+      );
+
+      if (!favoritesCollection) {
+        throw new Error("Favorites collection not found");
+      }
+
+      // Check if movie already exists
+      const movieRef = doc(db, "users", userId, "movies", movie.id);
+      const movieDoc = await getDoc(movieRef);
+
+      if (movieDoc.exists()) {
+        // Update existing movie with Favorites collection
+        const existingData = movieDoc.data();
+        const updatedCollections = [
+          ...(existingData.collections || []),
+          favoritesCollection.id,
+        ];
+        await updateDoc(movieRef, {
+          collections: updatedCollections,
+        });
+    } else {
+        // Create new movie with Favorites collection
+        const movieData = {
+          id: movie.id,
+          title: movie.title,
+          year: movie.year,
+          cover: movie.cover,
+          status: "Favorites",
+          rating: movie.rating || 0,
+          notes: "",
+          collections: [favoritesCollection.id],
+          overview: movie.overview,
+          release_date: movie.release_date,
+          vote_average: movie.vote_average,
+          vote_count: movie.vote_count,
+          genre_ids: movie.genre_ids,
+          genres: movie.genres,
+          director: movie.director,
+          cast: movie.cast,
+        };
+
+        await setDoc(movieRef, movieData);
+      }
+
+      // Refresh the profile data
+      await fetchMovieProfile();
+    } catch (err) {
+      console.error("Error adding favorite movie:", err);
+      throw err;
+    }
   };
 
+  // Remove from favorite movies (Favorites collection)
   const removeFavoriteMovie = async (movieId: string) => {
-    const updatedMovies = movieProfile.favoriteMovies.filter(
-      (m) => m.id !== movieId
-    );
-    await saveMovieProfile({ favoriteMovies: updatedMovies });
+    if (!userId) return;
+
+    try {
+      // Find the "Favorites" collection
+      const collectionsRef = collection(
+        db,
+        "users",
+        userId,
+        "movieCollections"
+      );
+      const collectionsSnapshot = await getDocs(collectionsRef);
+      const favoritesCollection = collectionsSnapshot.docs.find(
+        (doc) => doc.data().name === "Favorites"
+      );
+
+      if (!favoritesCollection) {
+        throw new Error("Favorites collection not found");
+      }
+
+      // Remove movie from Favorites collection
+      const movieRef = doc(db, "users", userId, "movies", movieId);
+      const movieDoc = await getDoc(movieRef);
+
+      if (movieDoc.exists()) {
+        const existingData = movieDoc.data();
+        const updatedCollections =
+          existingData.collections?.filter(
+            (id: string) => id !== favoritesCollection.id
+          ) || [];
+
+        if (updatedCollections.length === 0) {
+          // Remove movie entirely if no collections left
+          await deleteDoc(movieRef);
+        } else {
+          // Update movie with remaining collections
+          await updateDoc(movieRef, {
+            collections: updatedCollections,
+          });
+        }
+      }
+
+      // Refresh the profile data
+      await fetchMovieProfile();
+    } catch (err) {
+      console.error("Error removing favorite movie:", err);
+      throw err;
+    }
   };
 
+  // Add to watchlist (Watchlist collection)
   const addToWatchlist = async (movie: TMDBMovie) => {
-    const updatedWatchlist = [...movieProfile.watchlist];
-    const existingIndex = updatedWatchlist.findIndex((m) => m.id === movie.id);
+    if (!userId) return;
 
-    if (existingIndex !== -1) {
-      updatedWatchlist[existingIndex] = movie;
+    try {
+      // Find the "Watchlist" collection
+      const collectionsRef = collection(
+        db,
+        "users",
+        userId,
+        "movieCollections"
+      );
+      const collectionsSnapshot = await getDocs(collectionsRef);
+      const watchlistCollection = collectionsSnapshot.docs.find(
+        (doc) => doc.data().name === "Watchlist"
+      );
+
+      if (!watchlistCollection) {
+        throw new Error("Watchlist collection not found");
+      }
+
+      // Check if movie already exists
+      const movieRef = doc(db, "users", userId, "movies", movie.id);
+      const movieDoc = await getDoc(movieRef);
+
+      if (movieDoc.exists()) {
+        // Update existing movie with Watchlist collection
+        const existingData = movieDoc.data();
+        const updatedCollections = [
+          ...(existingData.collections || []),
+          watchlistCollection.id,
+        ];
+        await updateDoc(movieRef, {
+          collections: updatedCollections,
+        });
     } else {
-      updatedWatchlist.push(movie);
-    }
+        // Create new movie with Watchlist collection
+        const movieData = {
+          id: movie.id,
+          title: movie.title,
+          year: movie.year,
+          cover: movie.cover,
+          status: "Watchlist",
+          rating: movie.rating || 0,
+          notes: "",
+          collections: [watchlistCollection.id],
+          overview: movie.overview,
+          release_date: movie.release_date,
+          vote_average: movie.vote_average,
+          vote_count: movie.vote_count,
+          genre_ids: movie.genre_ids,
+          genres: movie.genres,
+          director: movie.director,
+          cast: movie.cast,
+        };
 
-    // Keep only 15 movies
-    const finalWatchlist = updatedWatchlist.slice(0, 15);
-    await saveMovieProfile({ watchlist: finalWatchlist });
+        await setDoc(movieRef, movieData);
+      }
+
+      // Refresh the profile data
+      await fetchMovieProfile();
+    } catch (err) {
+      console.error("Error adding to watchlist:", err);
+      throw err;
+    }
   };
 
+  // Remove from watchlist (Watchlist collection)
   const removeFromWatchlist = async (movieId: string) => {
-    const updatedWatchlist = movieProfile.watchlist.filter(
-      (m) => m.id !== movieId
-    );
-    await saveMovieProfile({ watchlist: updatedWatchlist });
+    if (!userId) return;
+
+    try {
+      // Find the "Watchlist" collection
+      const collectionsRef = collection(
+        db,
+        "users",
+        userId,
+        "movieCollections"
+      );
+      const collectionsSnapshot = await getDocs(collectionsRef);
+      const watchlistCollection = collectionsSnapshot.docs.find(
+        (doc) => doc.data().name === "Watchlist"
+      );
+
+      if (!watchlistCollection) {
+        throw new Error("Watchlist collection not found");
+      }
+
+      // Remove movie from Watchlist collection
+      const movieRef = doc(db, "users", userId, "movies", movieId);
+      const movieDoc = await getDoc(movieRef);
+
+      if (movieDoc.exists()) {
+        const existingData = movieDoc.data();
+        const updatedCollections =
+          existingData.collections?.filter(
+            (id: string) => id !== watchlistCollection.id
+          ) || [];
+
+        if (updatedCollections.length === 0) {
+          // Remove movie entirely if no collections left
+          await deleteDoc(movieRef);
+        } else {
+          // Update movie with remaining collections
+          await updateDoc(movieRef, {
+            collections: updatedCollections,
+          });
+        }
+      }
+
+      // Refresh the profile data
+      await fetchMovieProfile();
+    } catch (err) {
+      console.error("Error removing from watchlist:", err);
+      throw err;
+    }
   };
 
+  // Add recommendation (Recommendations collection)
   const addRecommendation = async (movie: TMDBMovie) => {
-    const updatedRecommendations = [...movieProfile.recommendations];
-    const existingIndex = updatedRecommendations.findIndex(
-      (m) => m.id === movie.id
-    );
+    if (!userId) return;
 
-    if (existingIndex !== -1) {
-      updatedRecommendations[existingIndex] = movie;
+    try {
+      // Find the "Recommendations" collection
+      const collectionsRef = collection(
+        db,
+        "users",
+        userId,
+        "movieCollections"
+      );
+      const collectionsSnapshot = await getDocs(collectionsRef);
+      const recommendationsCollection = collectionsSnapshot.docs.find(
+        (doc) => doc.data().name === "Recommendations"
+      );
+
+      if (!recommendationsCollection) {
+        throw new Error("Recommendations collection not found");
+      }
+
+      // Check if movie already exists
+      const movieRef = doc(db, "users", userId, "movies", movie.id);
+      const movieDoc = await getDoc(movieRef);
+
+      if (movieDoc.exists()) {
+        // Update existing movie with Recommendations collection
+        const existingData = movieDoc.data();
+        const updatedCollections = [
+          ...(existingData.collections || []),
+          recommendationsCollection.id,
+        ];
+        await updateDoc(movieRef, {
+          collections: updatedCollections,
+        });
     } else {
-      updatedRecommendations.push(movie);
-    }
+        // Create new movie with Recommendations collection
+        const movieData = {
+          id: movie.id,
+          title: movie.title,
+          year: movie.year,
+          cover: movie.cover,
+          status: "Recommendations",
+          rating: movie.rating || 0,
+          notes: "",
+          collections: [recommendationsCollection.id],
+          overview: movie.overview,
+          release_date: movie.release_date,
+          vote_average: movie.vote_average,
+          vote_count: movie.vote_count,
+          genre_ids: movie.genre_ids,
+          genres: movie.genres,
+          director: movie.director,
+          cast: movie.cast,
+        };
 
-    // Keep only 15 recommendations
-    const finalRecommendations = updatedRecommendations.slice(0, 15);
-    await saveMovieProfile({ recommendations: finalRecommendations });
+        await setDoc(movieRef, movieData);
+      }
+
+      // Refresh the profile data
+      await fetchMovieProfile();
+    } catch (err) {
+      console.error("Error adding recommendation:", err);
+      throw err;
+    }
   };
 
+  // Remove recommendation (Recommendations collection)
   const removeRecommendation = async (movieId: string) => {
-    const updatedRecommendations = movieProfile.recommendations.filter(
-      (m) => m.id !== movieId
-    );
-    await saveMovieProfile({ recommendations: updatedRecommendations });
-  };
+    if (!userId) return;
 
-  const addRating = async (movie: TMDBMovie, rating: number) => {
-    const updatedRatings = [...movieProfile.ratings];
-    const existingIndex = updatedRatings.findIndex(
-      (r) => r.movie.id === movie.id
-    );
+    try {
+      // Find the "Recommendations" collection
+      const collectionsRef = collection(
+        db,
+        "users",
+        userId,
+        "movieCollections"
+      );
+      const collectionsSnapshot = await getDocs(collectionsRef);
+      const recommendationsCollection = collectionsSnapshot.docs.find(
+        (doc) => doc.data().name === "Recommendations"
+      );
 
-    if (existingIndex !== -1) {
-      updatedRatings[existingIndex] = { movie, rating };
-    } else {
-      updatedRatings.push({ movie, rating });
+      if (!recommendationsCollection) {
+        throw new Error("Recommendations collection not found");
+      }
+
+      // Remove movie from Recommendations collection
+      const movieRef = doc(db, "users", userId, "movies", movieId);
+      const movieDoc = await getDoc(movieRef);
+
+      if (movieDoc.exists()) {
+        const existingData = movieDoc.data();
+        const updatedCollections =
+          existingData.collections?.filter(
+            (id: string) => id !== recommendationsCollection.id
+          ) || [];
+
+        if (updatedCollections.length === 0) {
+          // Remove movie entirely if no collections left
+          await deleteDoc(movieRef);
+        } else {
+          // Update movie with remaining collections
+          await updateDoc(movieRef, {
+            collections: updatedCollections,
+          });
+        }
+      }
+
+      // Refresh the profile data
+      await fetchMovieProfile();
+    } catch (err) {
+      console.error("Error removing recommendation:", err);
+      throw err;
     }
-
-    // Keep only 15 ratings
-    const finalRatings = updatedRatings.slice(0, 15);
-    await saveMovieProfile({ ratings: finalRatings });
   };
 
+  // Add rating (Ratings collection)
+  const addRating = async (movie: TMDBMovie, rating: number) => {
+    if (!userId) return;
+
+    try {
+      // Find the "Ratings" collection
+      const collectionsRef = collection(
+        db,
+        "users",
+        userId,
+        "movieCollections"
+      );
+      const collectionsSnapshot = await getDocs(collectionsRef);
+      const ratingsCollection = collectionsSnapshot.docs.find(
+        (doc) => doc.data().name === "Ratings"
+      );
+
+      if (!ratingsCollection) {
+        throw new Error("Ratings collection not found");
+      }
+
+      // Check if movie already exists
+      const movieRef = doc(db, "users", userId, "movies", movie.id);
+      const movieDoc = await getDoc(movieRef);
+
+      if (movieDoc.exists()) {
+        // Update existing movie with Ratings collection and rating
+        const existingData = movieDoc.data();
+        const updatedCollections = existingData.collections?.includes(
+          ratingsCollection.id
+        )
+          ? existingData.collections
+          : [...(existingData.collections || []), ratingsCollection.id];
+
+        await updateDoc(movieRef, {
+          collections: updatedCollections,
+          rating: rating,
+        });
+    } else {
+        // Create new movie with Ratings collection
+        const movieData = {
+          id: movie.id,
+          title: movie.title,
+          year: movie.year,
+          cover: movie.cover,
+          status: "Ratings",
+          rating: rating,
+          notes: "",
+          collections: [ratingsCollection.id],
+          overview: movie.overview,
+          release_date: movie.release_date,
+          vote_average: movie.vote_average,
+          vote_count: movie.vote_count,
+          genre_ids: movie.genre_ids,
+          genres: movie.genres,
+          director: movie.director,
+          cast: movie.cast,
+        };
+
+        await setDoc(movieRef, movieData);
+      }
+
+      // Refresh the profile data
+      await fetchMovieProfile();
+    } catch (err) {
+      console.error("Error adding rating:", err);
+      throw err;
+    }
+  };
+
+  // Remove rating (Ratings collection)
   const removeRating = async (movieId: string) => {
-    const updatedRatings = movieProfile.ratings.filter(
-      (r) => r.movie.id !== movieId
-    );
-    await saveMovieProfile({ ratings: updatedRatings });
+    if (!userId) return;
+
+    try {
+      // Find the "Ratings" collection
+      const collectionsRef = collection(
+        db,
+        "users",
+        userId,
+        "movieCollections"
+      );
+      const collectionsSnapshot = await getDocs(collectionsRef);
+      const ratingsCollection = collectionsSnapshot.docs.find(
+        (doc) => doc.data().name === "Ratings"
+      );
+
+      if (!ratingsCollection) {
+        throw new Error("Ratings collection not found");
+      }
+
+      // Remove movie from Ratings collection
+      const movieRef = doc(db, "users", userId, "movies", movieId);
+      const movieDoc = await getDoc(movieRef);
+
+      if (movieDoc.exists()) {
+        const existingData = movieDoc.data();
+        const updatedCollections =
+          existingData.collections?.filter(
+            (id: string) => id !== ratingsCollection.id
+          ) || [];
+
+        if (updatedCollections.length === 0) {
+          // Remove movie entirely if no collections left
+          await deleteDoc(movieRef);
+        } else {
+          // Update movie with remaining collections
+          await updateDoc(movieRef, {
+            collections: updatedCollections,
+          });
+        }
+      }
+
+      // Refresh the profile data
+      await fetchMovieProfile();
+    } catch (err) {
+      console.error("Error removing rating:", err);
+      throw err;
+    }
   };
 
   // Replace functions for editing items
@@ -498,37 +885,16 @@ export function useMovieProfile(userId: string | undefined) {
       return;
     }
 
-    const updatedMovies = [...movieProfile.favoriteMovies];
+    try {
+      // Remove old movie from Favorites collection
+      await removeFavoriteMovie(oldId);
 
-    // Find the item to replace
-    const existingIndex = updatedMovies.findIndex(
-      (movie) => movie.id === oldId
-    );
-
-    if (existingIndex === -1) {
-      console.warn("Movie to replace not found:", oldId);
-      return;
+      // Add new movie to Favorites collection
+      await addFavoriteMovie(newMovie);
+    } catch (err) {
+      console.error("Error replacing favorite movie:", err);
+      throw err;
     }
-
-    // Handle different scenarios dynamically
-    if (oldId === newMovie.id) {
-      // Same ID - just update the content
-      updatedMovies[existingIndex] = newMovie;
-    } else {
-      // Different ID - remove duplicates and replace
-      const filteredMovies = updatedMovies.filter(
-        (movie) => movie.id !== newMovie.id
-      );
-      const newIndex = filteredMovies.findIndex((movie) => movie.id === oldId);
-
-      if (newIndex !== -1) {
-        filteredMovies[newIndex] = newMovie;
-        await saveMovieProfile({ favoriteMovies: filteredMovies });
-        return;
-      }
-    }
-
-    await saveMovieProfile({ favoriteMovies: updatedMovies });
   };
 
   const replaceWatchlistMovie = async (oldId: string, newMovie: TMDBMovie) => {
@@ -540,39 +906,16 @@ export function useMovieProfile(userId: string | undefined) {
       return;
     }
 
-    const updatedWatchlist = [...movieProfile.watchlist];
+    try {
+      // Remove old movie from Watchlist collection
+      await removeFromWatchlist(oldId);
 
-    // Find the item to replace
-    const existingIndex = updatedWatchlist.findIndex(
-      (movie) => movie.id === oldId
-    );
-
-    if (existingIndex === -1) {
-      console.warn("Movie to replace not found:", oldId);
-      return;
+      // Add new movie to Watchlist collection
+      await addToWatchlist(newMovie);
+    } catch (err) {
+      console.error("Error replacing watchlist movie:", err);
+      throw err;
     }
-
-    // Handle different scenarios dynamically
-    if (oldId === newMovie.id) {
-      // Same ID - just update the content
-      updatedWatchlist[existingIndex] = newMovie;
-    } else {
-      // Different ID - remove duplicates and replace
-      const filteredWatchlist = updatedWatchlist.filter(
-        (movie) => movie.id !== newMovie.id
-      );
-      const newIndex = filteredWatchlist.findIndex(
-        (movie) => movie.id === oldId
-      );
-
-      if (newIndex !== -1) {
-        filteredWatchlist[newIndex] = newMovie;
-        await saveMovieProfile({ watchlist: filteredWatchlist });
-        return;
-      }
-    }
-
-    await saveMovieProfile({ watchlist: updatedWatchlist });
   };
 
   const replaceRecommendation = async (oldId: string, newMovie: TMDBMovie) => {
@@ -584,39 +927,16 @@ export function useMovieProfile(userId: string | undefined) {
       return;
     }
 
-    const updatedRecommendations = [...movieProfile.recommendations];
+    try {
+      // Remove old movie from Recommendations collection
+      await removeRecommendation(oldId);
 
-    // Find the item to replace
-    const existingIndex = updatedRecommendations.findIndex(
-      (movie) => movie.id === oldId
-    );
-
-    if (existingIndex === -1) {
-      console.warn("Movie to replace not found:", oldId);
-      return;
+      // Add new movie to Recommendations collection
+      await addRecommendation(newMovie);
+    } catch (err) {
+      console.error("Error replacing recommendation:", err);
+      throw err;
     }
-
-    // Handle different scenarios dynamically
-    if (oldId === newMovie.id) {
-      // Same ID - just update the content
-      updatedRecommendations[existingIndex] = newMovie;
-    } else {
-      // Different ID - remove duplicates and replace
-      const filteredRecommendations = updatedRecommendations.filter(
-        (movie) => movie.id !== newMovie.id
-      );
-      const newIndex = filteredRecommendations.findIndex(
-        (movie) => movie.id === oldId
-      );
-
-      if (newIndex !== -1) {
-        filteredRecommendations[newIndex] = newMovie;
-        await saveMovieProfile({ recommendations: filteredRecommendations });
-        return;
-      }
-    }
-
-    await saveMovieProfile({ recommendations: updatedRecommendations });
   };
 
   const replaceRating = async (
@@ -632,35 +952,16 @@ export function useMovieProfile(userId: string | undefined) {
       return;
     }
 
-    const updatedRatings = [...movieProfile.ratings];
+    try {
+      // Remove old movie from Ratings collection
+      await removeRating(oldId);
 
-    // Find the item to replace
-    const existingIndex = updatedRatings.findIndex((r) => r.movie.id === oldId);
-
-    if (existingIndex === -1) {
-      console.warn("Rating to replace not found:", oldId);
-      return;
+      // Add new movie to Ratings collection with rating
+      await addRating(newMovie, rating);
+    } catch (err) {
+      console.error("Error replacing rating:", err);
+      throw err;
     }
-
-    // Handle different scenarios dynamically
-    if (oldId === newMovie.id) {
-      // Same ID - just update the content
-      updatedRatings[existingIndex] = { movie: newMovie, rating };
-    } else {
-      // Different ID - remove duplicates and replace
-      const filteredRatings = updatedRatings.filter(
-        (r) => r.movie.id !== newMovie.id
-      );
-      const newIndex = filteredRatings.findIndex((r) => r.movie.id === oldId);
-
-      if (newIndex !== -1) {
-        filteredRatings[newIndex] = { movie: newMovie, rating };
-        await saveMovieProfile({ ratings: filteredRatings });
-        return;
-      }
-    }
-
-    await saveMovieProfile({ ratings: updatedRatings });
   };
 
   // Search functionality using TMDB API

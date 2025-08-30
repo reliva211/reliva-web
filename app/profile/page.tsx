@@ -826,9 +826,7 @@ export default function ProfilePage() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">
-          <p className="text-muted-foreground">
-            Please log in to view your profile.
-          </p>
+          <p className="text-white">Please log in to view your profile.</p>
         </div>
       </div>
     );
@@ -839,7 +837,7 @@ export default function ProfilePage() {
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Loading your profile...</p>
+          <p className="text-white">Loading your profile...</p>
         </div>
       </div>
     );
@@ -847,7 +845,7 @@ export default function ProfilePage() {
 
   return (
     <ErrorBoundary>
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black">
         {/* Top Profile Section */}
         <div className="max-w-4xl mx-auto px-2 sm:px-3 py-4 sm:py-6">
           <div className="flex flex-col items-center text-center gap-4 mb-6">
@@ -869,7 +867,7 @@ export default function ProfilePage() {
               <h1 className="text-xl sm:text-2xl font-bold mb-1">
                 {profile?.displayName || user?.displayName || "Your Name"}
               </h1>
-              <p className="text-sm text-muted-foreground mb-3">
+              <p className="text-sm text-white mb-3">
                 {profile?.bio ||
                   "Add your bio to let others know more about you!"}
               </p>
@@ -878,7 +876,7 @@ export default function ProfilePage() {
                   variant="ghost"
                   size="sm"
                   onClick={() => setEditDialogOpen(true)}
-                  className="text-xs sm:text-sm h-9 text-muted-foreground hover:text-foreground"
+                  className="text-xs sm:text-sm h-9 text-white hover:text-gray-200"
                 >
                   edit
                 </Button>
@@ -890,7 +888,7 @@ export default function ProfilePage() {
                     navigator.clipboard.writeText(publicUrl);
                     // You could add a toast notification here
                   }}
-                  className="text-xs sm:text-sm h-9 text-muted-foreground hover:text-foreground"
+                  className="text-xs sm:text-sm h-9 text-white hover:text-gray-200"
                 >
                   share
                 </Button>
@@ -906,7 +904,7 @@ export default function ProfilePage() {
             }}
             className="w-full"
           >
-            <TabsList className="flex w-auto mx-auto justify-center gap-8 h-8 bg-transparent border-b border-border rounded-none mb-4">
+            <TabsList className="flex w-auto mx-auto justify-center gap-8 h-8 bg-transparent border-b border-gray-600 rounded-none mb-4">
               {profile?.visibleSections?.music !== false && (
                 <TabsTrigger
                   value="music"

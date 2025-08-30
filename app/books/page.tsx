@@ -520,7 +520,7 @@ export default function BooksPage() {
         <div className="mb-6 sm:mb-8 w-full">
           <div className="flex flex-col gap-2 sm:gap-3 mb-4 sm:mb-6 w-full">
             {/* Search */}
-            <div className="flex-1 w-full">
+            <div className="flex-1 w-full books-page-search">
               <form
                 onSubmit={handleSearch}
                 className="flex flex-col sm:flex-row gap-2 sm:gap-3 w-full"

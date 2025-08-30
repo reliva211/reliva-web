@@ -423,7 +423,7 @@ export default function ProfileMovieSection({
       | "recommendation"
       | "rating"
   ) => {
-    if (!item || !item.id) {
+    if (!item || !item.id || String(item.id).trim() === "") {
       console.error("Invalid item selected:", item);
       return;
     }
@@ -432,7 +432,7 @@ export default function ProfileMovieSection({
       console.log("Adding item:", item, "to section:", searchType);
 
       const formattedItem = {
-        id: item.id || "",
+        id: String(item.id || ""),
         title: cleanTextContent(getTextContent(item.title || item.name)) || "",
         name: cleanTextContent(getTextContent(item.title || item.name)) || "",
         year: parseInt(
@@ -453,6 +453,12 @@ export default function ProfileMovieSection({
       };
 
       console.log("Formatted item:", formattedItem);
+
+      // Additional safety check for formatted item
+      if (!formattedItem.id || formattedItem.id.trim() === "") {
+        console.error("Formatted item has invalid ID:", formattedItem);
+        throw new Error("Invalid movie ID after formatting");
+      }
 
       switch (searchType) {
         case "recentlyWatched":
@@ -502,7 +508,7 @@ export default function ProfileMovieSection({
         case "favoriteDirector":
           console.log("Updating favorite director");
           await updateFavoriteDirector({
-            id: item.id,
+            id: String(item.id || ""),
             name: item.name,
             image: item.image || item.cover,
           });
@@ -761,9 +767,7 @@ export default function ProfileMovieSection({
       {publicCollections.length > 0 && (
         <div className="max-w-3xl mx-auto">
           <div className="flex items-center justify-start mb-4">
-            <p className="text-sm font-medium text-muted-foreground">
-              public collections
-            </p>
+            <p className="text-sm font-medium text-white">public collections</p>
           </div>
           {loadingPublicCollections ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -833,10 +837,18 @@ export default function ProfileMovieSection({
 
       {/* Recently watched section - horizontal layout */}
       <div className="max-w-3xl mx-auto">
-        <div className="flex items-center justify-start mb-4">
-          <p className="text-sm font-medium text-muted-foreground">
-            recently watched
-          </p>
+        <div className="flex items-center gap-3 mb-4">
+          <p className="text-sm font-medium text-white">recently watched</p>
+          <Link href="/movies">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 px-3 text-xs text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10 rounded-full transition-all duration-200"
+            >
+              <Plus className="h-3 w-3 mr-1" />
+              add
+            </Button>
+          </Link>
         </div>
 
         <div className="relative">
@@ -992,9 +1004,7 @@ export default function ProfileMovieSection({
         {/* favorite movies - takes first column */}
         <div className="col-span-3">
           <div className="flex items-center justify-start mb-4">
-            <p className="text-sm font-medium text-muted-foreground">
-              favorite movies
-            </p>
+            <p className="text-sm font-medium text-white">favorite movies</p>
           </div>
           <div className="relative">
             <div
@@ -1111,7 +1121,7 @@ export default function ProfileMovieSection({
       {/* watchlist */}
       <div className="mt-12 max-w-3xl mx-auto">
         <div className="flex items-center justify-start mb-4">
-          <p className="text-sm font-medium text-muted-foreground">watchlist</p>
+          <p className="text-sm font-medium text-white">watchlist</p>
         </div>
         <div className="relative">
           <div
@@ -1242,9 +1252,7 @@ export default function ProfileMovieSection({
       {/* recommendations */}
       <div className="mt-12 max-w-3xl mx-auto">
         <div className="flex items-center justify-start mb-4">
-          <p className="text-sm font-medium text-muted-foreground">
-            recommendations
-          </p>
+          <p className="text-sm font-medium text-white">recommendations</p>
         </div>
         <div className="relative">
           <div
@@ -1379,7 +1387,7 @@ export default function ProfileMovieSection({
       {/* ratings */}
       <div className="mt-12 max-w-3xl mx-auto">
         <div className="flex items-center justify-start mb-4">
-          <p className="text-sm font-medium text-muted-foreground">ratings</p>
+          <p className="text-sm font-medium text-white">ratings</p>
         </div>
         <div className="relative">
           <div
@@ -1517,7 +1525,7 @@ export default function ProfileMovieSection({
 
       {/* Search Dialog */}
       <Dialog open={showSearchDialog} onOpenChange={setShowSearchDialog}>
-        <DialogContent className="w-[95vw] max-w-[95vw] sm:max-w-[500px] mx-auto">
+        <DialogContent className="w-[95vw] max-w-[95vw] sm:max-w-[500px] mx-auto search-modal-content">
           <DialogHeader>
             <DialogTitle className="text-base sm:text-lg">
               Search{" "}
@@ -1539,7 +1547,7 @@ export default function ProfileMovieSection({
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            <div className="flex flex-col sm:flex-row gap-3 sm:gap-2 search-dialog-container">
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-2 search-dialog-container profile-search-dialog">
               <div className="relative flex-1 min-w-0">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                 <Input

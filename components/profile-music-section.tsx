@@ -541,20 +541,24 @@ export default function ProfileMusicSection({
   const limitedRatings = safeMusicProfile.ratings || [];
 
   return (
-    <div className="w-full max-w-6xl mx-auto px-4 py-6 sm:py-8">
+    <div className="w-full max-w-7xl mx-auto px-4 py-8 sm:py-12">
+      {/* Background gradient overlay */}
+      <div className="absolute inset-0 bg-gradient-to-br from-emerald-900/3 via-transparent to-purple-900/3 pointer-events-none"></div>
+
       {/* Main Content Grid - Responsive Layout */}
-      <div className="space-y-6 sm:space-y-8">
+      <div className="relative space-y-8 sm:space-y-12">
         {/* Top Row - Current Obsession, Favorite Artist, Favorite Song */}
-        <div className="flex flex-col sm:flex-row gap-8 sm:gap-16 items-start justify-start">
+        <div className="flex flex-col sm:flex-row gap-8 sm:gap-12 lg:gap-16 items-start justify-start">
           {/* Current Obsession */}
           <div className="flex flex-col w-full sm:w-auto sm:flex-1 sm:max-w-[200px]">
-            <h3 className="text-base sm:text-lg font-semibold text-white mb-3 flex items-center gap-2">
+            <h3 className="text-base sm:text-lg font-bold text-white mb-4 flex items-center gap-3 bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent whitespace-nowrap">
+              <span className="bg-cyan-400 w-1 h-6 rounded-full block min-w-[4px] flex-shrink-0"></span>
               current obsession
               {!readOnly && isOwnProfile && (
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="h-6 w-6 p-0 text-gray-400 hover:text-white"
+                  className="h-6 w-6 p-0 text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10 rounded-full transition-all duration-200"
                   onClick={() => openSearchDialog("currentObsession")}
                   title="Edit current obsession"
                 >
@@ -581,7 +585,7 @@ export default function ProfileMusicSection({
                       : undefined
                   }
                 >
-                  <div className="aspect-square w-full max-w-[200px] bg-muted rounded-lg overflow-hidden shadow-lg">
+                  <div className="aspect-square w-full max-w-[200px] bg-muted rounded-2xl overflow-hidden shadow-2xl shadow-emerald-500/20 border border-emerald-500/20 hover:shadow-emerald-500/30 hover:border-emerald-500/30 transition-all duration-300">
                     <Image
                       src={
                         getImageUrl(safeMusicProfile.currentObsession.image) ||
@@ -599,26 +603,26 @@ export default function ProfileMusicSection({
                       }}
                     />
                     {!readOnly && isOwnProfile && (
-                      <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center">
+                      <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-all duration-300 rounded-2xl flex items-center justify-center">
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="h-10 w-10 p-0 bg-white/20 hover:bg-white/30 text-white"
+                          className="h-12 w-12 p-0 bg-white/20 hover:bg-white/30 text-white rounded-full border border-white/30"
                           onClick={(e) => {
                             e.stopPropagation();
                             openSearchDialog("currentObsession");
                           }}
                         >
-                          <Edit className="h-5 w-5" />
+                          <Edit className="h-6 w-6" />
                         </Button>
                       </div>
                     )}
                   </div>
-                  <div className="mt-3 text-left">
-                    <p className="text-base sm:text-lg font-semibold text-white leading-tight line-clamp-2 hover:text-emerald-300 transition-colors">
+                  <div className="mt-4 text-left">
+                    <p className="text-lg sm:text-xl font-bold text-white leading-tight line-clamp-2">
                       {getTextContent(safeMusicProfile.currentObsession.name)}
                     </p>
-                    <p className="text-sm text-gray-400 leading-tight mt-1 line-clamp-1">
+                    <p className="text-sm text-white leading-tight mt-2 line-clamp-1 font-medium">
                       {getTextContent(
                         safeMusicProfile.currentObsession.primaryArtists ||
                           safeMusicProfile.currentObsession.artists?.primary
@@ -630,9 +634,9 @@ export default function ProfileMusicSection({
                 </div>
               ) : (
                 <div
-                  className={`aspect-square w-full max-w-[200px] bg-black/20 rounded-lg border-2 border-gray-600 flex items-center justify-center transition-all duration-200 group ${
+                  className={`aspect-square w-full max-w-[200px] bg-gradient-to-br from-gray-900/40 to-gray-800/40 rounded-2xl border-2 border-emerald-500/30 flex items-center justify-center transition-all duration-300 group backdrop-blur-sm ${
                     isOwnProfile && !readOnly
-                      ? "cursor-pointer hover:bg-black/30 hover:border-gray-500 hover:shadow-lg hover:scale-[1.02]"
+                      ? "cursor-pointer hover:bg-gradient-to-br hover:from-emerald-900/20 hover:to-cyan-900/20 hover:border-emerald-400/50 hover:shadow-2xl hover:shadow-emerald-500/20 hover:scale-[1.02]"
                       : "opacity-60"
                   }`}
                   onClick={
@@ -653,8 +657,10 @@ export default function ProfileMusicSection({
                   }
                 >
                   <div className="text-center">
-                    <Plus className="h-12 w-12 mx-auto mb-3 text-gray-400" />
-                    <p className="text-sm text-gray-400">
+                    <div className="w-16 h-16 bg-gradient-to-br from-emerald-500/20 to-cyan-500/20 rounded-full flex items-center justify-center mb-4 border border-emerald-500/30">
+                      <Plus className="h-8 w-8 text-emerald-400" />
+                    </div>
+                    <p className="text-sm font-medium text-emerald-300">
                       Add Current Obsession
                     </p>
                   </div>
@@ -665,13 +671,14 @@ export default function ProfileMusicSection({
 
           {/* Favorite Artist */}
           <div className="flex flex-col w-full sm:w-auto sm:flex-1 sm:max-w-[200px]">
-            <h3 className="text-base sm:text-lg font-semibold text-white mb-3 flex items-center gap-2">
+            <h3 className="text-base sm:text-lg font-bold text-white mb-4 flex items-center gap-3 bg-gradient-to-r from-emerald-400 to-green-400 bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-emerald-500 to-green-500 w-1 h-5 rounded-full"></span>
               favorite artist
               {!readOnly && isOwnProfile && (
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="h-6 w-6 p-0 text-gray-400 hover:text-white"
+                  className="h-6 w-6 p-0 text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10 rounded-full transition-all duration-200"
                   onClick={() => openSearchDialog("favoriteArtist")}
                   title="Edit favorite artist"
                 >
@@ -696,7 +703,7 @@ export default function ProfileMusicSection({
                       : undefined
                   }
                 >
-                  <div className="aspect-square w-full max-w-[200px] rounded-full overflow-hidden border-2 border-gray-600 shadow-lg">
+                  <div className="aspect-square w-full max-w-[200px] rounded-full overflow-hidden shadow-2xl shadow-purple-500/20 border-2 border-purple-500/20 hover:shadow-purple-500/30 hover:border-purple-500/30 transition-all duration-300">
                     <Image
                       src={
                         getImageUrl(safeMusicProfile.favoriteArtist.image) ||
@@ -729,17 +736,17 @@ export default function ProfileMusicSection({
                       </div>
                     )}
                   </div>
-                  <div className="mt-3 text-left">
-                    <p className="text-base sm:text-lg font-semibold text-white leading-tight line-clamp-2 hover:text-emerald-300 transition-colors">
+                  <div className="mt-4 text-left">
+                    <p className="text-lg sm:text-xl font-bold text-white leading-tight line-clamp-2 hover:text-emerald-300 transition-colors duration-200">
                       {getTextContent(safeMusicProfile.favoriteArtist?.name)}
                     </p>
                   </div>
                 </div>
               ) : (
                 <div
-                  className={`aspect-square w-full max-w-[200px] bg-black/20 rounded-full border-2 border-gray-600 flex items-center justify-center transition-all duration-200 group ${
+                  className={`aspect-square w-full max-w-[200px] bg-gradient-to-br from-purple-900/20 to-pink-900/20 rounded-full border-2 border-purple-500/30 flex items-center justify-center transition-all duration-300 group backdrop-blur-sm ${
                     isOwnProfile && !readOnly
-                      ? "cursor-pointer hover:bg-black/30 hover:border-gray-500 hover:shadow-lg hover:scale-[1.02]"
+                      ? "cursor-pointer hover:bg-gradient-to-br hover:from-purple-800/30 hover:to-pink-800/30 hover:border-purple-400/50 hover:shadow-2xl hover:shadow-purple-500/20 hover:scale-[1.02]"
                       : "opacity-60"
                   }`}
                   onClick={
@@ -752,8 +759,12 @@ export default function ProfileMusicSection({
                   }
                 >
                   <div className="text-center">
-                    <Plus className="h-12 w-12 mx-auto mb-3 text-gray-400" />
-                    <p className="text-sm text-gray-400">Add Favorite Artist</p>
+                    <div className="w-16 h-16 bg-gradient-to-br from-purple-500/20 to-pink-500/20 rounded-full flex items-center justify-center mb-4 border border-purple-500/30">
+                      <Plus className="h-8 w-8 text-purple-400" />
+                    </div>
+                    <p className="text-sm font-medium text-purple-300">
+                      Add Favorite Artist
+                    </p>
                   </div>
                 </div>
               )}
@@ -762,13 +773,14 @@ export default function ProfileMusicSection({
 
           {/* Favorite Song */}
           <div className="flex flex-col w-full sm:w-auto sm:flex-1 sm:max-w-[200px]">
-            <h3 className="text-base sm:text-lg font-semibold text-white mb-3 flex items-center gap-2">
+            <h3 className="text-base sm:text-lg font-bold text-white mb-4 flex items-center gap-3 bg-gradient-to-r from-orange-400 to-red-400 bg-clip-text text-transparent">
+              <span className="bg-emerald-400 w-1 h-5 rounded-full"></span>
               favorite song
               {!readOnly && isOwnProfile && (
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="h-6 w-6 p-0 text-gray-400 hover:text-white"
+                  className="h-6 w-6 p-0 text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10 rounded-full transition-all duration-200"
                   onClick={() => openSearchDialog("favoriteSong")}
                   title="Edit favorite song"
                 >
@@ -793,7 +805,7 @@ export default function ProfileMusicSection({
                       : undefined
                   }
                 >
-                  <div className="aspect-square w-full max-w-[200px] bg-muted rounded-lg overflow-hidden shadow-lg">
+                  <div className="aspect-square w-full max-w-[200px] bg-muted rounded-2xl overflow-hidden transition-all duration-300">
                     <Image
                       src={
                         getImageUrl(safeMusicProfile.favoriteSong.image) ||
@@ -809,27 +821,27 @@ export default function ProfileMusicSection({
                       }}
                     />
                     {!readOnly && isOwnProfile && (
-                      <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center">
+                      <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-all duration-300 rounded-2xl flex items-center justify-center">
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="h-10 w-10 p-0 bg-white/20 hover:bg-white/30 text-white"
+                          className="h-12 w-12 p-0 bg-white/20 hover:bg-white/30 text-white rounded-full border border-white/30"
                           onClick={(e) => {
                             e.stopPropagation();
                             openSearchDialog("favoriteSong");
                           }}
                           title="Edit favorite song"
                         >
-                          <Edit className="h-5 w-5" />
+                          <Edit className="h-6 w-6" />
                         </Button>
                       </div>
                     )}
                   </div>
-                  <div className="mt-3 text-left">
-                    <p className="text-base sm:text-lg font-semibold text-white leading-tight line-clamp-2 hover:text-emerald-300 transition-colors">
+                  <div className="mt-4 text-left">
+                    <p className="text-lg sm:text-xl font-bold text-white leading-tight line-clamp-2">
                       {getTextContent(safeMusicProfile.favoriteSong.name)}
                     </p>
-                    <p className="text-sm text-gray-400 leading-tight mt-1 line-clamp-1">
+                    <p className="text-sm text-white leading-tight mt-2 line-clamp-1 font-medium">
                       {getTextContent(
                         safeMusicProfile.favoriteSong.primaryArtists ||
                           safeMusicProfile.favoriteSong.artists?.primary
@@ -841,9 +853,9 @@ export default function ProfileMusicSection({
                 </div>
               ) : (
                 <div
-                  className={`aspect-square w-full max-w-[200px] bg-black/20 rounded-lg border border-gray-600 flex items-center justify-center transition-all duration-200 group ${
+                  className={`aspect-square w-full max-w-[200px] bg-gradient-to-br from-orange-900/20 to-red-900/20 rounded-2xl flex items-center justify-center transition-all duration-300 group backdrop-blur-sm ${
                     isOwnProfile && !readOnly
-                      ? "cursor-pointer hover:bg-black/30 hover:border-gray-500 hover:shadow-lg hover:scale-[1.02]"
+                      ? "cursor-pointer hover:bg-gradient-to-br hover:from-orange-800/30 hover:to-red-800/30 hover:scale-[1.02]"
                       : undefined
                   }`}
                   onClick={
@@ -856,8 +868,12 @@ export default function ProfileMusicSection({
                   }
                 >
                   <div className="text-center">
-                    <Plus className="h-12 w-12 mx-auto mb-3 text-gray-400" />
-                    <p className="text-sm text-gray-400">Add Favorite Song</p>
+                    <div className="w-16 h-16 bg-gradient-to-br from-orange-500/20 to-red-500/20 rounded-full flex items-center justify-center mb-4 border border-orange-500/30">
+                      <Plus className="h-8 w-8 text-orange-400" />
+                    </div>
+                    <p className="text-sm font-medium text-orange-300">
+                      Add Favorite Song
+                    </p>
                   </div>
                 </div>
               )}
@@ -961,7 +977,7 @@ export default function ProfileMusicSection({
                     )}
                 </>
               ) : (
-                <div className="flex flex-col items-center justify-center min-h-[200px] w-full">
+                <div className="flex flex-col items-start justify-start min-h-[200px] w-full">
                   <div className="aspect-square w-32 sm:w-36 md:w-40 bg-transparent rounded-lg border-2 border-gray-600 flex flex-col items-center justify-center mb-4">
                     <p className="text-sm text-gray-400 mb-1">Add</p>
                     <p className="text-xs text-gray-500 text-center">
@@ -1104,7 +1120,7 @@ export default function ProfileMusicSection({
                   )}
                 </>
               ) : (
-                <div className="flex flex-col items-center justify-center min-h-[200px] w-full">
+                <div className="flex flex-col items-start justify-start min-h-[200px] w-full">
                   <div className="aspect-square w-32 sm:w-36 md:w-40 bg-transparent rounded-lg border-2 border-gray-600 flex flex-col items-center justify-center mb-4">
                     <p className="text-sm text-gray-400 mb-1">Add</p>
                     <p className="text-xs text-gray-500 text-center">
@@ -1255,7 +1271,7 @@ export default function ProfileMusicSection({
                   )}
                 </>
               ) : (
-                <div className="flex flex-col items-center justify-center min-h-[200px] w-full">
+                <div className="flex flex-col items-start justify-start min-h-[200px] w-full">
                   <div className="aspect-square w-32 sm:w-36 md:w-40 bg-transparent rounded-lg border-2 border-gray-600 flex flex-col items-center justify-center mb-4">
                     <p className="text-sm text-gray-400 mb-1">Add</p>
                     <p className="text-xs text-gray-500 text-center">
@@ -1304,14 +1320,14 @@ export default function ProfileMusicSection({
 
       {/* Search Dialog */}
       <Dialog open={isSearchDialogOpen} onOpenChange={setIsSearchDialogOpen}>
-        <DialogContent className="w-[95vw] max-w-[95vw] sm:max-w-md mx-auto">
+        <DialogContent className="w-[95vw] max-w-[95vw] sm:max-w-md mx-auto search-modal-content">
           <DialogHeader>
             <DialogTitle className="text-base sm:text-lg">
               {editingItem ? "Replace Item" : "Add New Item"}
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            <div className="flex flex-col sm:flex-row gap-3 sm:gap-2 search-dialog-container">
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-2 search-dialog-container profile-search-dialog">
               <Input
                 placeholder="Search for music..."
                 value={searchQuery}

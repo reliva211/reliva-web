@@ -687,9 +687,7 @@ export default function ProfileBooksSection({
       {publicCollections.length > 0 && (
         <div className="max-w-3xl mx-auto">
           <div className="flex items-center justify-start mb-4">
-            <p className="text-sm font-medium text-muted-foreground">
-              public collections
-            </p>
+            <p className="text-sm font-medium text-white">public collections</p>
           </div>
           {loadingPublicCollections ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -759,10 +757,18 @@ export default function ProfileBooksSection({
 
       {/* Recently read section - horizontal layout */}
       <div className="max-w-3xl mx-auto">
-        <div className="flex items-center justify-start mb-4">
-          <p className="text-sm font-medium text-muted-foreground">
-            currently reading
-          </p>
+        <div className="flex items-center gap-3 mb-4">
+          <p className="text-sm font-medium text-white">currently reading</p>
+          <Link href="/books">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 px-3 text-xs text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10 rounded-full transition-all duration-200"
+            >
+              <Plus className="h-3 w-3 mr-1" />
+              add
+            </Button>
+          </Link>
         </div>
 
         <div className="relative">
@@ -928,9 +934,7 @@ export default function ProfileBooksSection({
         {/* favorite books - takes first column */}
         <div className="col-span-3">
           <div className="flex items-center justify-start mb-4">
-            <p className="text-sm font-medium text-muted-foreground">
-              favorite books
-            </p>
+            <p className="text-sm font-medium text-white">favorite books</p>
           </div>
           <div className="relative">
             <div
@@ -1182,9 +1186,7 @@ export default function ProfileBooksSection({
       {/* recommendations */}
       <div className="mt-12 max-w-3xl mx-auto">
         <div className="flex items-center justify-start mb-4">
-          <p className="text-sm font-medium text-muted-foreground">
-            recommendations
-          </p>
+          <p className="text-sm font-medium text-white">recommendations</p>
         </div>
         <div className="relative">
           <div
@@ -1320,7 +1322,7 @@ export default function ProfileBooksSection({
       {/* ratings */}
       <div className="mt-12 max-w-3xl mx-auto">
         <div className="flex items-center justify-start mb-4">
-          <p className="text-sm font-medium text-muted-foreground">ratings</p>
+          <p className="text-sm font-medium text-white">ratings</p>
         </div>
         <div className="relative">
           <div
@@ -1459,7 +1461,7 @@ export default function ProfileBooksSection({
 
       {/* Search Dialog */}
       <Dialog open={showSearchDialog} onOpenChange={setShowSearchDialog}>
-        <DialogContent className="w-[95vw] max-w-[95vw] sm:max-w-[600px] lg:max-w-[700px] mx-auto">
+        <DialogContent className="w-[95vw] max-w-[95vw] sm:max-w-[600px] lg:max-w-[700px] mx-auto search-modal-content">
           <DialogHeader>
             <DialogTitle className="text-base sm:text-lg">
               {editingItem ? "Replace" : "Search"}{" "}
@@ -1477,7 +1479,7 @@ export default function ProfileBooksSection({
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            <div className="flex flex-col sm:flex-row gap-3 sm:gap-2 search-dialog-container">
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-2 search-dialog-container profile-search-dialog">
               <div className="relative flex-1 min-w-0">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                 <Input
