@@ -7,7 +7,7 @@ export async function GET(request: NextRequest) {
   const query = searchParams.get("q");
   const type = searchParams.get("type") || "movie";
 
-  console.log("TMDB search request:", { query, type });
+  // TMDB search request
 
   if (!query) {
     console.error("Missing query parameter");
@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  console.log("TMDB API key configured:", TMDB_API_KEY ? "Yes" : "No");
+  // TMDB API key configured
 
   try {
     let apiUrl: string;
@@ -57,7 +57,7 @@ export async function GET(request: NextRequest) {
         )}&language=en-US&page=${page}&include_adult=false&sort_by=popularity.desc`;
     }
 
-    console.log("Making request to TMDB API:", apiUrl);
+    // Making request to TMDB API
     const response = await fetch(apiUrl);
 
     console.log("TMDB API response status:", response.status);

@@ -140,7 +140,7 @@ export default function MoviesPage() {
         const moviesSnapshot = await getDocs(moviesRef);
         const moviesData = moviesSnapshot.docs.map((doc) => {
           const data = doc.data();
-          console.log("Raw movie data from DB:", data);
+          // Raw movie data from DB
 
           const movieData = {
             id: parseInt(doc.id),
@@ -154,11 +154,11 @@ export default function MoviesPage() {
             title: data.title || "Unknown Title",
           };
 
-          console.log("Processed movie data:", movieData);
+          // Processed movie data
           return movieData;
         }) as Movie[];
 
-        console.log("Final fetched movies data:", moviesData);
+        // Final fetched movies data
         setSavedMovies(moviesData);
 
         // Fetch collections
@@ -730,7 +730,7 @@ export default function MoviesPage() {
                 overview: movie.overview,
               }))}
               isLoading={isLoadingTrending}
-                              onRetryAction={fetchTrendingMovies}
+              onRetryAction={fetchTrendingMovies}
               itemType="movie"
               containerId="trending-movies-container"
             />
@@ -986,7 +986,7 @@ function SavedMovieCard({
                 fill
                 className="object-cover cursor-pointer"
                 onError={(e) => {
-                  console.log("Image failed to load:", validatedMovie.cover);
+                  // Image failed to load
                   const target = e.target as HTMLImageElement;
                   target.src = "/placeholder.svg";
                 }}
@@ -1048,7 +1048,7 @@ function SavedMovieCard({
             fill
             className="object-cover cursor-pointer"
             onError={(e) => {
-              console.log("Image failed to load:", validatedMovie.cover);
+              // Image failed to load
               const target = e.target as HTMLImageElement;
               target.src = "/placeholder.svg";
             }}

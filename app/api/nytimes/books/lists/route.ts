@@ -39,7 +39,7 @@ export async function GET(request: NextRequest) {
       apiUrl += `&published_date=${publishedDate}`;
     }
 
-    console.log("Fetching NYTimes list data from:", apiUrl);
+    // Fetching NYTimes list data
 
     const response = await fetch(apiUrl, {
       headers: {
@@ -93,4 +93,3 @@ export async function GET(request: NextRequest) {
     );
   }
 }
-

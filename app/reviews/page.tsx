@@ -20,6 +20,7 @@ import { useRef } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Gamepad2, Book, Play } from "lucide-react";
+import Link from "next/link";
 
 interface Reply {
   _id: string;
@@ -112,9 +113,6 @@ function ReviewsPageContent() {
   const [isReplying, setIsReplying] = useState<{ [key: string]: boolean }>({});
   const [likedPosts, setLikedPosts] = useState<Set<string>>(new Set());
   const [likedReplies, setLikedReplies] = useState<Set<string>>(new Set());
-  const [showReplies, setShowReplies] = useState<{ [key: string]: boolean }>(
-    {}
-  );
   const wsRef = useRef<WebSocket | null>(null);
 
   // Handle URL parameters for pre-selected media
@@ -127,7 +125,7 @@ function ReviewsPageContent() {
     const artist = searchParams.get("artist");
     const POSTS_PER_PAGE = 50;
 
-    console.log("URL Parameters:", { type, id, title, author, cover, artist });
+    // URL Parameters processed
 
     if (type && id && title) {
       setSearchType(type);
@@ -152,7 +150,7 @@ function ReviewsPageContent() {
 
       // Set the media directly without searching
       setSelectedMedia(mediaFromUrl);
-      console.log("Directly set media from URL:", mediaFromUrl);
+      // Directly set media from URL
 
       // Clear search results since we don't need them
       setSearchResults([]);
@@ -167,8 +165,14 @@ function ReviewsPageContent() {
         const res = await fetch(`${API_BASE}/posts?userId=${user.authorId}`);
         const data = await res.json();
         if (data.success) {
-          console.log(data.posts);
+          // Posts data received
           setPosts(data.posts);
+          // Store posts in sessionStorage for thread navigation
+          try {
+            sessionStorage.setItem("reliva_posts", JSON.stringify(data.posts));
+          } catch (e) {
+            console.log("Could not store posts in sessionStorage");
+          }
         }
       } catch (error) {
         console.error("Failed to fetch posts:", error);
@@ -181,7 +185,7 @@ function ReviewsPageContent() {
       const WS_BASE = process.env.NEXT_PUBLIC_WS_BASE || "ws://localhost:8080";
       wsRef.current = new WebSocket(WS_BASE);
       wsRef.current.onopen = () => {
-        console.log("author id", user.authorId);
+        // Author ID retrieved
         wsRef.current?.send(
           JSON.stringify({
             type: "auth",
@@ -197,8 +201,14 @@ function ReviewsPageContent() {
         const msg = JSON.parse(event.data);
 
         if (msg.type === "init") {
-          console.log(msg.posts);
+          // Posts message received
           setPosts(msg.posts);
+          // Store posts in sessionStorage for thread navigation
+          try {
+            sessionStorage.setItem("reliva_posts", JSON.stringify(msg.posts));
+          } catch (e) {
+            console.log("Could not store posts in sessionStorage");
+          }
           //setHasMorePosts(msg.posts.length === POSTS_PER_PAGE);
           //setCurrentPage(0);
         } else if (msg.type === "comment") {
@@ -395,10 +405,7 @@ function ReviewsPageContent() {
 
     setIsSubmitting(true);
     try {
-      console.log("entering post in firebase");
-
-      console.log(user);
-      console.log(selectedMedia);
+      // Entering post in firebase
       wsRef.current?.send(
         JSON.stringify({
           type: "newPost",
@@ -468,7 +475,7 @@ function ReviewsPageContent() {
 
     setIsPosting(true);
     try {
-      console.log("entering post");
+      // Entering post
 
       wsRef.current?.send(
         JSON.stringify({
@@ -491,7 +498,7 @@ function ReviewsPageContent() {
 
     try {
       if (isLiked) {
-        console.log("unCliking the post");
+        // Unclicking the post
         wsRef.current?.send(
           JSON.stringify({
             type: "unlikePost",
@@ -506,7 +513,7 @@ function ReviewsPageContent() {
           return newSet;
         });
       } else {
-        console.log("liking the post");
+        // Liking the post
         wsRef.current?.send(
           JSON.stringify({
             type: "likePost",
@@ -621,13 +628,6 @@ function ReviewsPageContent() {
     }));
   };
 
-  const toggleRepliesVisibility = (postId: string) => {
-    setShowReplies((prev) => ({
-      ...prev,
-      [postId]: !prev[postId],
-    }));
-  };
-
   function buildCommentTree(comments: Reply[] | undefined): Reply[] {
     if (!comments || !Array.isArray(comments)) {
       return [];
@@ -659,7 +659,7 @@ function ReviewsPageContent() {
     if (!content) return;
 
     setIsReplying((prev) => ({ ...prev, [replyKey]: true }));
-    console.log("commented");
+    // Comment added
 
     try {
       wsRef.current?.send(
@@ -722,9 +722,6 @@ function ReviewsPageContent() {
         comments: reply.comments ? sortReplies(reply.comments) : [],
       }));
   };
-  const getIndent = (depth: number) => {
-    return 0;
-  };
 
   const renderStarRating = (rating: number) => {
     return (
@@ -741,36 +738,38 @@ function ReviewsPageContent() {
       </div>
     );
   };
-  const renderReplies = (
+  const renderTopLevelComments = (
     comments: Reply[] | undefined,
-    postId: string,
-    depth = 0
+    postId: string
   ) => {
     if (!comments || !Array.isArray(comments)) {
       return null;
     }
 
-    const sortedReplies = sortReplies(comments);
+    // Get only top-level comments (no parentCommentId or parentCommentId is null)
+    const topLevelComments = comments.filter(
+      (comment) => !comment.parentCommentId
+    );
+    const sortedComments = sortReplies(topLevelComments);
 
-    return sortedReplies.map((reply) => (
+    return sortedComments.map((comment) => (
       <div
-        key={reply._id}
+        key={comment._id}
         className="flex gap-3 border-l border-[#2a2a2a] ml-2 p-3 bg-[#0a0a0a] rounded-r-lg w-full"
-        style={{ paddingLeft: `${getIndent(depth)}px` }}
       >
         <Avatar className="w-6 h-6 ring-1 ring-green-500/20 flex-shrink-0">
           <AvatarFallback className="bg-gradient-to-br from-green-500 to-emerald-600 text-white font-semibold text-xs">
-            {reply.authorId?.username?.charAt(0)?.toUpperCase() || "U"}
+            {comment.authorId?.username?.charAt(0)?.toUpperCase() || "U"}
           </AvatarFallback>
         </Avatar>
 
         <div className="flex-1 min-w-0 max-w-full overflow-hidden">
           <div className="flex items-center gap-2 mb-2">
             <span className="font-medium text-sm text-[#f5f5f5]">
-              {reply.authorId?.username}
+              {comment.authorId?.username}
             </span>
             <span className="text-[#a0a0a0] text-xs bg-[#3a3a3a] px-2 py-0.5 rounded-full">
-              {formatTime(reply.timestamp)}
+              {formatTime(comment.timestamp)}
             </span>
           </div>
           <p
@@ -783,12 +782,12 @@ function ReviewsPageContent() {
               width: "100%",
             }}
           >
-            {reply.content}
+            {comment.content}
           </p>
 
           <div className="flex items-center gap-4 text-[#a0a0a0]">
             <button
-              onClick={() => toggleReplyInput(`${postId}-${reply._id}`)}
+              onClick={() => toggleReplyInput(`${postId}-${comment._id}`)}
               className="flex items-center gap-1.5 hover:text-blue-400 transition-all duration-200 group"
             >
               <div className="p-1.5 rounded-full group-hover:bg-blue-600/20 transition-colors">
@@ -798,39 +797,37 @@ function ReviewsPageContent() {
             </button>
 
             <button
-              onClick={() => toggleReplyLike(postId, reply._id)}
+              onClick={() => toggleReplyLike(postId, comment._id)}
               className="flex items-center gap-1.5 hover:text-rose-400 transition-all duration-200 group"
             >
               <div className="p-1.5 rounded-full group-hover:bg-rose-600/20 transition-colors">
                 <Heart
                   className={`w-4 h-4 ${
-                    reply.isLiked ? "fill-current text-rose-400" : ""
+                    comment.isLiked ? "fill-current text-rose-400" : ""
                   }`}
                 />
               </div>
-              <span className="text-xs font-medium">{reply.likeCount}</span>
+              <span className="text-xs font-medium">{comment.likeCount}</span>
             </button>
 
-            {reply.comments && reply.comments.length > 0 && (
-              <button
-                onClick={() =>
-                  toggleRepliesVisibility(`${postId}-${reply._id}`)
-                }
+            {/* Thread Navigation - Show "See Replies" for comments with responses */}
+            {comment.comments && comment.comments.length > 0 && (
+              <Link
+                href={`/reviews/${postId}/thread/${comment._id}`}
                 className="flex items-center gap-1.5 hover:text-green-400 transition-all duration-200 group"
               >
                 <div className="p-1.5 rounded-full group-hover:bg-green-600/20 transition-colors">
                   <MessageCircle className="w-4 h-4" />
                 </div>
                 <span className="text-xs font-medium">
-                  {showReplies[`${postId}-${reply._id}`]
-                    ? "Hide Replies"
-                    : `See Replies (${reply.comments.length})`}
+                  💬 {comment.comments.length} replies
                 </span>
-              </button>
+              </Link>
             )}
           </div>
 
-          {showReplyInput[`${postId}-${reply._id}`] && (
+          {/* Reply Input for top-level comments */}
+          {showReplyInput[`${postId}-${comment._id}`] && (
             <div className="mt-3 bg-[#3a3a3a] rounded-lg border border-[#4a4a4a] shadow-sm overflow-hidden">
               <div className="p-3">
                 <div className="flex gap-2 mb-3">
@@ -843,16 +840,16 @@ function ReviewsPageContent() {
                   </Avatar>
                   <div className="flex-1 min-w-0">
                     <Textarea
-                      value={replyInputs[`${postId}-${reply._id}`] || ""}
+                      value={replyInputs[`${postId}-${comment._id}`] || ""}
                       onChange={(e) =>
                         setReplyInputs((prev) => ({
                           ...prev,
-                          [`${postId}-${reply._id}`]: e.target.value,
+                          [`${postId}-${comment._id}`]: e.target.value,
                         }))
                       }
                       placeholder="Write a reply..."
                       className="min-h-[35px] max-h-[80px] text-sm border-none resize-none focus-visible:ring-0 bg-transparent px-2 py-1 rounded-lg text-[#e0e0e0] placeholder-[#808080]"
-                      disabled={isReplying[`${postId}-${reply._id}`]}
+                      disabled={isReplying[`${postId}-${comment._id}`]}
                     />
                   </div>
                 </div>
@@ -860,22 +857,22 @@ function ReviewsPageContent() {
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => toggleReplyInput(`${postId}-${reply._id}`)}
-                    disabled={isReplying[`${postId}-${reply._id}`]}
+                    onClick={() => toggleReplyInput(`${postId}-${comment._id}`)}
+                    disabled={isReplying[`${postId}-${comment._id}`]}
                     className="text-[#a0a0a0] hover:text-[#c0c0c0] text-xs px-1.5 py-0.5 h-5 bg-[#2a2a2a] border border-[#3a3a3a]"
                   >
                     Cancel
                   </Button>
                   <Button
                     size="sm"
-                    onClick={() => handleReply(postId, reply._id)}
+                    onClick={() => handleReply(postId, comment._id)}
                     disabled={
-                      !replyInputs[`${postId}-${reply._id}`]?.trim() ||
-                      isReplying[`${postId}-${reply._id}`]
+                      !replyInputs[`${postId}-${comment._id}`]?.trim() ||
+                      isReplying[`${postId}-${comment._id}`]
                     }
                     className="bg-blue-600/80 hover:bg-blue-700/80 text-white font-medium rounded-md px-1.5 py-0.5 text-xs shadow-sm hover:shadow-md transition-all duration-200 h-5"
                   >
-                    {isReplying[`${postId}-${reply._id}`] ? (
+                    {isReplying[`${postId}-${comment._id}`] ? (
                       <div className="flex items-center gap-1">
                         <div className="w-2 h-2 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                         <span>Replying...</span>
@@ -888,14 +885,6 @@ function ReviewsPageContent() {
               </div>
             </div>
           )}
-
-          {reply.comments &&
-            reply.comments.length > 0 &&
-            showReplies[`${postId}-${reply._id}`] && (
-              <div className="mt-3 space-y-3 w-full">
-                {renderReplies(reply.comments, postId, depth + 1)}
-              </div>
-            )}
         </div>
       </div>
     ));
@@ -1403,19 +1392,13 @@ function ReviewsPageContent() {
                           </button>
 
                           {post.comments && post.comments.length > 0 && (
-                            <button
-                              onClick={() => toggleRepliesVisibility(post._id)}
-                              className="flex items-center gap-1.5 hover:text-green-400 transition-all duration-200 group"
-                            >
-                              <div className="p-1.5 rounded-full group-hover:bg-green-600/20 transition-colors">
-                                <MessageCircle className="w-4 h-4" />
-                              </div>
+                            <div className="flex items-center gap-1.5 text-[#808080]">
+                              <MessageCircle className="w-4 h-4" />
                               <span className="text-xs font-medium">
-                                {showReplies[post._id]
-                                  ? "Hide Replies"
-                                  : `See Replies (${post.comments.length})`}
+                                {post.comments.length} comment
+                                {post.comments.length !== 1 ? "s" : ""}
                               </span>
-                            </button>
+                            </div>
                           )}
                         </div>
 
@@ -1479,16 +1462,14 @@ function ReviewsPageContent() {
                           </div>
                         )}
 
-                        {post.comments &&
-                          post.comments.length > 0 &&
-                          showReplies[post._id] && (
-                            <div className="mt-3 space-y-2 w-full">
-                              {renderReplies(
-                                buildCommentTree(post.comments),
-                                post._id
-                              )}
-                            </div>
-                          )}
+                        {post.comments && post.comments.length > 0 && (
+                          <div className="mt-3 space-y-2 w-full">
+                            {renderTopLevelComments(
+                              buildCommentTree(post.comments),
+                              post._id
+                            )}
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>

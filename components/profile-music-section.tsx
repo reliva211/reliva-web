@@ -172,13 +172,9 @@ export default function ProfileMusicSection({
     rating: number;
   } | null>(null);
 
-  // Debug dialog state
+  // Debug dialog state - removed for security
   useEffect(() => {
-    console.log("Dialog state changed:", {
-      isSearchDialogOpen,
-      activeSearchType,
-      searchQuery,
-    });
+    // Dialog state monitoring removed for production
   }, [isSearchDialogOpen, activeSearchType, searchQuery]);
 
   // Horizontal scroll functionality
@@ -231,7 +227,7 @@ export default function ProfileMusicSection({
         <div key={i} className="relative inline-block">
           {/* Full star */}
           <Star
-            className={`h-3 w-3 sm:h-4 sm:w-4 transition-colors ${
+            className={`h-2.5 w-2.5 sm:h-3 sm:w-3 md:h-4 md:w-4 transition-colors ${
               isFullStar ? "fill-yellow-400 text-yellow-400" : "text-gray-300"
             } ${
               !readOnly && currentUser?.uid === userId ? "cursor-pointer" : ""
@@ -298,7 +294,7 @@ export default function ProfileMusicSection({
   ) => {
     if (!query.trim()) return;
 
-    console.log("Starting search for:", query, "Type:", searchType);
+    // Search started for security
     setIsSearching(true);
     setSearchError(null);
     setActiveSearchType(searchType);
@@ -314,9 +310,8 @@ export default function ProfileMusicSection({
         apiType = "song";
       }
 
-      console.log("Searching with API type:", apiType);
+      // API search completed
       const results = await searchMusic(query, apiType, 10);
-      console.log("Search results:", results);
 
       // Validate and sanitize search results
       const validatedResults = (results || []).map((item: any) => {
@@ -367,7 +362,7 @@ export default function ProfileMusicSection({
         };
       });
 
-      console.log("Validated results:", validatedResults);
+      // Results validated
       setSearchResults(validatedResults);
     } catch (error) {
       console.error("Search error:", error);
@@ -382,28 +377,20 @@ export default function ProfileMusicSection({
   };
 
   const openSearchDialog = (searchType: string, itemToReplace?: any) => {
-    console.log("openSearchDialog called with:", searchType, itemToReplace);
     setActiveSearchType(searchType);
     setEditingItem(itemToReplace);
     setSearchQuery("");
     setSearchResults([]);
     setSearchError(null);
     setIsSearchDialogOpen(true);
-    console.log("Search dialog state set to true");
-    console.log("Dialog should now be open. State:", {
-      isSearchDialogOpen: true,
-      activeSearchType: searchType,
-    });
   };
 
   const handleAddItem = async (item: any) => {
-    console.log("handleAddItem called with:", item, "Type:", activeSearchType);
     try {
       let success = false;
 
       switch (activeSearchType) {
         case "currentObsession":
-          console.log("Updating current obsession with:", item);
           await updateCurrentObsession(item);
           success = true;
           break;
@@ -486,14 +473,9 @@ export default function ProfileMusicSection({
   const isOwnProfile = currentUser?.uid === userId;
 
   // Debug: Monitor search dialog state changes
+  // Search dialog state monitoring removed for security
   useEffect(() => {
-    console.log("Search dialog state changed:", isSearchDialogOpen);
-  }, [isSearchDialogOpen]);
-
-  // Debug: Monitor component props and state
-  useEffect(() => {
-    console.log("Component props:", { userId, readOnly, isOwnProfile });
-    console.log("Current search dialog state:", isSearchDialogOpen);
+    // Component props monitoring removed for security
   }, [userId, readOnly, isOwnProfile, isSearchDialogOpen]);
 
   // Show loading state
@@ -579,7 +561,6 @@ export default function ProfileMusicSection({
                       ? (e) => {
                           e.preventDefault();
                           e.stopPropagation();
-                          console.log("Current obsession section clicked!");
                           openSearchDialog("currentObsession");
                         }
                       : undefined
@@ -644,21 +625,14 @@ export default function ProfileMusicSection({
                       ? (e) => {
                           e.preventDefault();
                           e.stopPropagation();
-                          console.log("Current obsession placeholder clicked!");
-                          console.log("Click conditions:", {
-                            isOwnProfile,
-                            readOnly,
-                            currentUser: currentUser?.uid,
-                            userId,
-                          });
                           openSearchDialog("currentObsession");
                         }
                       : undefined
                   }
                 >
-                  <div className="text-center">
-                    <div className="w-16 h-16 bg-gradient-to-br from-emerald-500/20 to-cyan-500/20 rounded-full flex items-center justify-center mb-4 border border-emerald-500/30">
-                      <Plus className="h-8 w-8 text-emerald-400" />
+                  <div className="text-center w-full">
+                    <div className="w-16 h-16 bg-gradient-to-br from-emerald-500/20 to-cyan-500/20 rounded-full flex items-center justify-center mb-4 border border-emerald-500/30 mx-auto">
+                      <Plus className="h-8 w-8 text-emerald-400 flex-shrink-0" />
                     </div>
                     <p className="text-sm font-medium text-emerald-300">
                       Add Current Obsession
@@ -697,7 +671,6 @@ export default function ProfileMusicSection({
                   onClick={
                     !readOnly && isOwnProfile
                       ? () => {
-                          console.log("Favorite artist section clicked!");
                           openSearchDialog("favoriteArtist");
                         }
                       : undefined
@@ -752,15 +725,14 @@ export default function ProfileMusicSection({
                   onClick={
                     isOwnProfile && !readOnly
                       ? () => {
-                          console.log("Favorite artist placeholder clicked!");
                           openSearchDialog("favoriteArtist");
                         }
                       : undefined
                   }
                 >
-                  <div className="text-center">
-                    <div className="w-16 h-16 bg-gradient-to-br from-purple-500/20 to-pink-500/20 rounded-full flex items-center justify-center mb-4 border border-purple-500/30">
-                      <Plus className="h-8 w-8 text-purple-400" />
+                  <div className="text-center w-full">
+                    <div className="w-16 h-16 bg-gradient-to-br from-purple-500/20 to-pink-500/20 rounded-full flex items-center justify-center mb-4 border border-purple-500/30 mx-auto">
+                      <Plus className="h-8 w-8 text-purple-400 flex-shrink-0" />
                     </div>
                     <p className="text-sm font-medium text-purple-300">
                       Add Favorite Artist
@@ -799,7 +771,6 @@ export default function ProfileMusicSection({
                   onClick={
                     !readOnly && isOwnProfile
                       ? () => {
-                          console.log("Favorite song section clicked!");
                           openSearchDialog("favoriteSong");
                         }
                       : undefined
@@ -861,15 +832,14 @@ export default function ProfileMusicSection({
                   onClick={
                     isOwnProfile && !readOnly
                       ? () => {
-                          console.log("Favorite song placeholder clicked!");
                           openSearchDialog("favoriteSong");
                         }
                       : undefined
                   }
                 >
-                  <div className="text-center">
-                    <div className="w-16 h-16 bg-gradient-to-br from-orange-500/20 to-red-500/20 rounded-full flex items-center justify-center mb-4 border border-orange-500/30">
-                      <Plus className="h-8 w-8 text-orange-400" />
+                  <div className="text-center w-full">
+                    <div className="w-16 h-16 bg-gradient-to-br from-orange-500/20 to-red-500/20 rounded-full flex items-center justify-center mb-4 border border-orange-500/30 mx-auto">
+                      <Plus className="h-8 w-8 text-orange-400 flex-shrink-0" />
                     </div>
                     <p className="text-sm font-medium text-orange-300">
                       Add Favorite Song
@@ -1332,15 +1302,10 @@ export default function ProfileMusicSection({
                 placeholder="Search for music..."
                 value={searchQuery}
                 onChange={(e) => {
-                  console.log("Search input changed:", e.target.value);
                   setSearchQuery(e.target.value);
                 }}
                 onKeyDown={(e) => {
                   if (e.key === "Enter") {
-                    console.log(
-                      "Enter key pressed, searching for:",
-                      searchQuery
-                    );
                     handleSearch(searchQuery, activeSearchType as any);
                   }
                 }}
@@ -1348,7 +1313,6 @@ export default function ProfileMusicSection({
               />
               <Button
                 onClick={() => {
-                  console.log("Search button clicked for:", searchQuery);
                   handleSearch(searchQuery, activeSearchType as any);
                 }}
                 disabled={isSearching || !searchQuery.trim()}
@@ -1380,7 +1344,6 @@ export default function ProfileMusicSection({
                     key={item.id}
                     className="flex items-center gap-3 p-3 rounded-lg border border-gray-700 hover:bg-gray-800 cursor-pointer transition-colors search-result-item"
                     onClick={() => {
-                      console.log("Item selected:", item);
                       handleAddItem(item);
                     }}
                   >

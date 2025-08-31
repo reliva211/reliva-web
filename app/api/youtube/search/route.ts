@@ -46,13 +46,13 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    console.log(`🔍 Searching YouTube for: ${query}`);
+    // Searching YouTube
 
     // Use YouTube Data API v3 to search for videos
     const apiKey = process.env.YOUTUBE_API_KEY;
 
     if (!apiKey) {
-      console.log("⚠️ No YouTube API key found, using fallback");
+      // No YouTube API key found, using fallback
 
       // Check if this is a trailer search (contains "trailer")
       const isTrailerSearch = query.toLowerCase().includes("trailer");
@@ -115,7 +115,7 @@ export async function GET(request: NextRequest) {
         const data = await response.json();
 
         if (!data.items || data.items.length === 0) {
-          console.log(`❌ No videos found for query: ${searchQuery}`);
+          // No videos found for query
           continue; // Try next strategy
         }
 
@@ -137,9 +137,7 @@ export async function GET(request: NextRequest) {
         const title = bestVideo.snippet.title;
         const thumbnail = bestVideo.snippet.thumbnails?.medium?.url || "";
 
-        console.log(
-          `✅ Found video: ${title} (${videoId}) using query: ${searchQuery}`
-        );
+        // Video found
 
         return NextResponse.json({
           success: true,
@@ -157,7 +155,6 @@ export async function GET(request: NextRequest) {
     }
 
     // If all strategies failed, return a fallback
-    console.log("❌ All search strategies failed, using fallback");
 
     // Check if this is a trailer search (contains "trailer")
     const isTrailerSearch = query.toLowerCase().includes("trailer");

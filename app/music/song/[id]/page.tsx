@@ -357,13 +357,7 @@ export default function SongDetailPage({
                     // Create a single-song queue
                     const queue = [songForPlayer];
 
-                    console.log(
-                      "🎵 Song Detail Page Play Button - Queue created:",
-                      {
-                        queueLength: queue.length,
-                        song: songForPlayer,
-                      }
-                    );
+                    // Song Detail Page Play Button - Queue created
 
                     // Start playing the song
                     await showPlayer(songForPlayer, queue, 0);

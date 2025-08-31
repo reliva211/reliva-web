@@ -144,7 +144,7 @@ export default function MovieDetailPage({
           throw new Error("TMDB API key is not configured");
         }
 
-        console.log("Fetching movie details for ID:", resolvedParams.id);
+        // Fetching movie details for ID
         const response = await fetch(
           `https://api.themoviedb.org/3/movie/${resolvedParams.id}?api_key=${apiKey}&append_to_response=videos,credits`
         );
@@ -156,7 +156,7 @@ export default function MovieDetailPage({
         }
 
         const data = await response.json();
-        console.log("Movie data received:", data);
+        // Movie data received
         setMovie(data);
       } catch (err) {
         console.error("Error fetching movie details:", err);

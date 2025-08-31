@@ -62,7 +62,7 @@ export const useYouTubePlayer = create<YouTubePlayerState>((set, get) => ({
       // If no videoId, search YouTube for the song
       if (!currentSong.videoId) {
         const searchQuery = `${currentSong.title} ${currentSong.artist} official audio`;
-        console.log(`🔍 Searching for: ${searchQuery}`);
+        // Searching for video
 
         const response = await fetch(
           `/api/youtube/search?q=${encodeURIComponent(searchQuery)}`
@@ -75,9 +75,9 @@ export const useYouTubePlayer = create<YouTubePlayerState>((set, get) => ({
             ...currentSong,
             videoId: data.data.videoId,
           };
-          console.log(`✅ Found video ID: ${data.data.videoId}`);
+          // Found video ID
         } else {
-          console.log("❌ No video found, using fallback");
+          // No video found, using fallback
           // Use a popular music video as fallback
           finalQueue[finalIndex] = {
             ...currentSong,
@@ -106,29 +106,19 @@ export const useYouTubePlayer = create<YouTubePlayerState>((set, get) => ({
   },
   playNext: async () => {
     const { queue, currentIndex } = get();
-    console.log(
-      "🎵 playNext called - currentIndex:",
-      currentIndex,
-      "queue length:",
-      queue.length
-    );
+    // playNext called
 
     if (currentIndex < queue.length - 1) {
       const nextIndex = currentIndex + 1;
       const nextSong = queue[nextIndex];
-      console.log(
-        "🎵 Moving to next song:",
-        nextSong.title,
-        "at index:",
-        nextIndex
-      );
+      // Moving to next song
 
       // If next song has no videoId, search for it
       if (!nextSong.videoId) {
         set({ isLoading: true });
         try {
           const searchQuery = `${nextSong.title} ${nextSong.artist} official audio`;
-          console.log(`🔍 Searching for next song: ${searchQuery}`);
+          // Searching for next song
 
           const response = await fetch(
             `/api/youtube/search?q=${encodeURIComponent(searchQuery)}`
@@ -143,7 +133,7 @@ export const useYouTubePlayer = create<YouTubePlayerState>((set, get) => ({
               videoId: data.data.videoId,
             };
 
-            console.log("✅ Found video for next song:", data.data.videoId);
+            // Found video for next song
             set({
               currentSong: updatedQueue[nextIndex],
               queue: updatedQueue,
@@ -158,7 +148,7 @@ export const useYouTubePlayer = create<YouTubePlayerState>((set, get) => ({
               videoId: "9bZkp7q19f0",
             };
 
-            console.log("⚠️ Using fallback video for next song");
+            // Using fallback video for next song
             set({
               currentSong: updatedQueue[nextIndex],
               queue: updatedQueue,
@@ -171,41 +161,31 @@ export const useYouTubePlayer = create<YouTubePlayerState>((set, get) => ({
           set({ isLoading: false });
         }
       } else {
-        console.log("✅ Next song already has videoId:", nextSong.videoId);
+        // Next song already has videoId
         set({
           currentSong: nextSong,
           currentIndex: nextIndex,
         });
       }
     } else {
-      console.log("⚠️ No next song available");
+      // No next song available
     }
   },
   playPrevious: async () => {
     const { queue, currentIndex } = get();
-    console.log(
-      "🎵 playPrevious called - currentIndex:",
-      currentIndex,
-      "queue length:",
-      queue.length
-    );
+    // playPrevious called
 
     if (currentIndex > 0) {
       const prevIndex = currentIndex - 1;
       const prevSong = queue[prevIndex];
-      console.log(
-        "🎵 Moving to previous song:",
-        prevSong.title,
-        "at index:",
-        prevIndex
-      );
+      // Moving to previous song
 
       // If previous song has no videoId, search for it
       if (!prevSong.videoId) {
         set({ isLoading: true });
         try {
           const searchQuery = `${prevSong.title} ${prevSong.artist} official audio`;
-          console.log(`🔍 Searching for previous song: ${searchQuery}`);
+          // Searching for previous song
 
           const response = await fetch(
             `/api/youtube/search?q=${encodeURIComponent(searchQuery)}`
@@ -220,7 +200,7 @@ export const useYouTubePlayer = create<YouTubePlayerState>((set, get) => ({
               videoId: data.data.videoId,
             };
 
-            console.log("✅ Found video for previous song:", data.data.videoId);
+            // Found video for previous song
             set({
               currentSong: updatedQueue[prevIndex],
               queue: updatedQueue,
@@ -235,7 +215,7 @@ export const useYouTubePlayer = create<YouTubePlayerState>((set, get) => ({
               videoId: "9bZkp7q19f0",
             };
 
-            console.log("⚠️ Using fallback video for previous song");
+            // Using fallback video for previous song
             set({
               currentSong: updatedQueue[prevIndex],
               queue: updatedQueue,
@@ -248,14 +228,14 @@ export const useYouTubePlayer = create<YouTubePlayerState>((set, get) => ({
           set({ isLoading: false });
         }
       } else {
-        console.log("✅ Previous song already has videoId:", prevSong.videoId);
+        // Previous song already has videoId
         set({
           currentSong: prevSong,
           currentIndex: prevIndex,
         });
       }
     } else {
-      console.log("⚠️ No previous song available");
+      // No previous song available
     }
   },
   hidePlayer: () =>

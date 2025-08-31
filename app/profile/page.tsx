@@ -149,7 +149,7 @@ export default function ProfilePage() {
       const collections: PublicCollection[] = [];
       const items: PublicCollectionItems = {};
 
-      console.log("Fetching public collections for user:", userId);
+      // Fetching public collections for user
 
       // Fetch public movie collections
       const movieListsRef = collection(db, "users", userId, "movieLists");
@@ -157,22 +157,13 @@ export default function ProfilePage() {
         query(movieListsRef, where("isPublic", "==", true))
       );
 
-      console.log(
-        "Found",
-        movieListsSnapshot.docs.length,
-        "public movie collections"
-      );
+      // Found public movie collections
 
       for (const doc of movieListsSnapshot.docs) {
         const data = doc.data();
         const collectionId = doc.id;
 
-        console.log(
-          "Processing movie collection:",
-          data.name,
-          "with ID:",
-          collectionId
-        );
+        // Processing movie collection
 
         // Fetch movies in this collection from the subcollection structure
         let collectionMovies: any[] = [];
@@ -198,20 +189,10 @@ export default function ProfilePage() {
             };
           });
         } catch (error) {
-          console.log(
-            "Error fetching movies for collection",
-            collectionId,
-            ":",
-            error
-          );
+          // Error fetching movies for collection
         }
 
-        console.log(
-          "Found",
-          collectionMovies.length,
-          "movies in collection:",
-          data.name
-        );
+        // Found movies in collection
 
         collections.push({
           id: collectionId,
@@ -231,26 +212,13 @@ export default function ProfilePage() {
         query(seriesListsRef, where("isPublic", "==", true))
       );
 
-      console.log(
-        "Found",
-        seriesListsSnapshot.docs.length,
-        "public series collections"
-      );
-      console.log(
-        "Public series collections:",
-        seriesListsSnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }))
-      );
+      // Found public series collections
 
       for (const doc of seriesListsSnapshot.docs) {
         const data = doc.data();
         const collectionId = doc.id;
 
-        console.log(
-          "Processing series collection:",
-          data.name,
-          "with ID:",
-          collectionId
-        );
+        // Processing series collection
 
         // Fetch series in this collection from the subcollection structure
         let collectionSeries: any[] = [];
@@ -276,21 +244,10 @@ export default function ProfilePage() {
             };
           });
         } catch (error) {
-          console.log(
-            "Error fetching series for collection",
-            collectionId,
-            ":",
-            error
-          );
+          // Error fetching series for collection
         }
 
-        console.log(
-          "Found",
-          collectionSeries.length,
-          "series in collection:",
-          data.name
-        );
-        console.log("Series in collection:", collectionSeries);
+        // Found series in collection
 
         collections.push({
           id: collectionId,
@@ -310,22 +267,13 @@ export default function ProfilePage() {
         query(bookCollectionsRef, where("isPublic", "==", true))
       );
 
-      console.log(
-        "Found",
-        bookCollectionsSnapshot.docs.length,
-        "public book collections"
-      );
+      // Found public book collections
 
       for (const doc of bookCollectionsSnapshot.docs) {
         const data = doc.data();
         const collectionId = doc.id;
 
-        console.log(
-          "Processing book collection:",
-          data.name,
-          "with ID:",
-          collectionId
-        );
+        // Processing book collection
 
         // Fetch books in this collection
         const booksRef = collection(db, "users", userId, "books");
@@ -351,12 +299,7 @@ export default function ProfilePage() {
           })
           .filter(Boolean);
 
-        console.log(
-          "Found",
-          collectionBooks.length,
-          "books in collection:",
-          data.name
-        );
+        // Found books in collection
 
         collections.push({
           id: collectionId,
@@ -373,15 +316,7 @@ export default function ProfilePage() {
       setPublicCollections(collections);
       setPublicCollectionItems(items);
 
-      console.log("Public collections fetch complete:", {
-        totalCollections: collections.length,
-        totalItems: Object.values(items).flat().length,
-        collectionsByType: {
-          movies: collections.filter((c) => c.type === "movies").length,
-          series: collections.filter((c) => c.type === "series").length,
-          books: collections.filter((c) => c.type === "books").length,
-        },
-      });
+      // Public collections fetch complete
     } catch (error) {
       console.error("Error fetching public collections:", error);
     } finally {
@@ -751,9 +686,9 @@ export default function ProfilePage() {
 
   const handleAvatarUpload = async (file: File) => {
     try {
-      console.log("Starting avatar upload for file:", file.name);
+      // Starting avatar upload
       const url = await uploadImage(file, "avatar");
-      console.log("Avatar upload successful, URL:", url);
+      // Avatar upload successful
       // Note: uploadImage already updates the profile, so we don't need to call updateProfile again
     } catch (error) {
       console.error("Avatar upload failed:", error);
@@ -1069,7 +1004,9 @@ export default function ProfilePage() {
           searchResults={musicSearch.results}
           isSearching={musicSearch.isSearching}
           onSearchAction={musicSearch.search}
-          onItemClickAction={(music: any) => console.log("Add music:", music)}
+          onItemClickAction={(music: any) => {
+            // Add music
+          }}
           itemType="music"
           error={musicSearch.error}
         />

@@ -166,8 +166,8 @@ export function Recommendations({
       }
     };
 
-         fetchRecommendations();
-   }, [currentSong]);
+    fetchRecommendations();
+  }, [currentSong]);
 
   if (loading) {
     return (
@@ -178,7 +178,10 @@ export function Recommendations({
 
         {/* Loading Skeleton for Songs */}
         <div className="flex gap-4 overflow-x-auto pb-4">
-          {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20].map((item) => (
+          {[
+            1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19,
+            20,
+          ].map((item) => (
             <div
               key={item}
               className="flex-shrink-0 w-[160px] sm:w-[180px] md:w-[200px] relative"
@@ -280,67 +283,60 @@ export function Recommendations({
 
                 {/* Hover Overlay with Controls */}
                 <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-xl flex items-center justify-center gap-2">
-                                     <button
-                     onClick={async (e) => {
-                       e.stopPropagation();
-                       const artistName =
-                         song.artists?.primary
-                           ?.map((artist) => artist.name)
-                           .join(", ") || "Unknown Artist";
+                  <button
+                    onClick={async (e) => {
+                      e.stopPropagation();
+                      const artistName =
+                        song.artists?.primary
+                          ?.map((artist) => artist.name)
+                          .join(", ") || "Unknown Artist";
 
-                       // Create song object
-                       const songObj = {
-                         id: song.id,
-                         title: song.name,
-                         artist: artistName,
-                       };
+                      // Create song object
+                      const songObj = {
+                        id: song.id,
+                        title: song.name,
+                        artist: artistName,
+                      };
 
-                       // Create queue from all recommendations for navigation
-                       const queue = recommendations.map((s) => ({
-                         id: s.id,
-                         title: s.name,
-                         artist:
-                           s.artists?.primary
-                             ?.map((artist) => artist.name)
-                             .join(", ") || "Unknown Artist",
-                       }));
+                      // Create queue from all recommendations for navigation
+                      const queue = recommendations.map((s) => ({
+                        id: s.id,
+                        title: s.name,
+                        artist:
+                          s.artists?.primary
+                            ?.map((artist) => artist.name)
+                            .join(", ") || "Unknown Artist",
+                      }));
 
-                       console.log(
-                         "🎵 Recommendations Play Button - Queue created:",
-                         {
-                           queueLength: queue.length,
-                           firstSong: queue[0],
-                           allSongs: queue.map((s) => s.title),
-                         }
-                       );
+                      // Recommendations Play Button - Queue created
 
-                       await showPlayer(songObj, queue);
-                     }}
-                     className="w-10 h-10 bg-green-500/80 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-green-600/80 transition-all duration-200 hover:scale-110"
-                     title="Play Song"
-                   >
-                     <Play className="w-4 h-4 text-white fill-white" />
-                   </button>
-                                                                           <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onToggleMyListAction(song);
-                      }}
-                      className="w-10 h-10 bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-full flex items-center justify-center transition-all duration-200 hover:scale-110"
-                      title={
+                      await showPlayer(songObj, queue);
+                    }}
+                    className="w-10 h-10 bg-green-500/80 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-green-600/80 transition-all duration-200 hover:scale-110"
+                    title="Play Song"
+                  >
+                    <Play className="w-4 h-4 text-white fill-white" />
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onToggleMyListAction(song);
+                    }}
+                    className="w-10 h-10 bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-full flex items-center justify-center transition-all duration-200 hover:scale-110"
+                    title={
+                      myList.has(song.id)
+                        ? "Remove from liked songs"
+                        : "Add to liked songs"
+                    }
+                  >
+                    <Heart
+                      className={`w-4 h-4 ${
                         myList.has(song.id)
-                          ? "Remove from liked songs"
-                          : "Add to liked songs"
-                      }
-                    >
-                      <Heart
-                        className={`w-4 h-4 ${
-                          myList.has(song.id)
-                            ? "fill-red-400 text-red-400"
-                            : "fill-white text-white"
-                        }`}
-                      />
-                    </button>
+                          ? "fill-red-400 text-red-400"
+                          : "fill-white text-white"
+                      }`}
+                    />
+                  </button>
                 </div>
               </div>
 

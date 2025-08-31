@@ -316,7 +316,7 @@ export default function ProfileMovieSection({
       return (
         <Star
           key={i}
-          className={`h-4 w-4 transition-colors ${
+          className={`h-2.5 w-2.5 sm:h-3 sm:w-3 md:h-4 md:w-4 transition-colors ${
             isFullStar ? "fill-yellow-400 text-yellow-400" : "text-gray-300"
           } ${!readOnly ? "cursor-pointer" : ""}`}
           onMouseEnter={
@@ -429,7 +429,7 @@ export default function ProfileMovieSection({
     }
 
     try {
-      console.log("Adding item:", item, "to section:", searchType);
+      // Adding item to section
 
       const formattedItem = {
         id: String(item.id || ""),
@@ -452,7 +452,7 @@ export default function ProfileMovieSection({
         type: item.type || "movie",
       };
 
-      console.log("Formatted item:", formattedItem);
+      // Item formatted
 
       // Additional safety check for formatted item
       if (!formattedItem.id || formattedItem.id.trim() === "") {
@@ -462,11 +462,9 @@ export default function ProfileMovieSection({
 
       switch (searchType) {
         case "recentlyWatched":
-          console.log("Updating recently watched");
           await updateRecentlyWatched(formattedItem);
           break;
         case "favoriteMovie":
-          console.log("Updating favorite movie");
           await updateFavoriteMovie(formattedItem);
           break;
         case "favoriteMovies":
@@ -506,7 +504,6 @@ export default function ProfileMovieSection({
           }
           break;
         case "favoriteDirector":
-          console.log("Updating favorite director");
           await updateFavoriteDirector({
             id: String(item.id || ""),
             name: item.name,
@@ -515,7 +512,7 @@ export default function ProfileMovieSection({
           break;
       }
 
-      console.log("Item added successfully");
+      // Item added successfully
       setShowSearchDialog(false);
       setSearchQuery("");
       setSearchResults([]);

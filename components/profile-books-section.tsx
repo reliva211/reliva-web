@@ -356,7 +356,7 @@ export default function ProfileBooksSection({
       return (
         <Star
           key={i}
-          className={`h-3 w-3 sm:h-3.5 sm:w-3.5 transition-colors ${
+          className={`h-2.5 w-2.5 sm:h-3 sm:w-3 md:h-3.5 md:w-3.5 transition-colors ${
             isFullStar ? "fill-yellow-400 text-yellow-400" : "text-gray-300"
           } ${!readOnly ? "cursor-pointer" : ""}`}
           onMouseEnter={

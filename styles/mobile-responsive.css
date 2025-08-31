@@ -314,6 +314,71 @@
     height: 0.5rem !important;
   }
 
+  /* Profile section star size optimization for mobile */
+  .w-2\.5.h-2\.5 {
+    width: 0.625rem !important;
+    height: 0.625rem !important;
+  }
+
+  .w-3.h-3 {
+    width: 0.75rem !important;
+    height: 0.75rem !important;
+  }
+
+  .w-4.h-4 {
+    width: 1rem !important;
+    height: 1rem !important;
+  }
+
+  /* Force smaller star sizes on mobile for profile ratings to match public profile */
+  @media (max-width: 640px) {
+    /* Target stars in profile rating sections specifically */
+    .profile-movie-section .h-2\.5.w-2\.5,
+    .profile-series-section .h-2\.5.w-2\.5,
+    .profile-books-section .h-2\.5.w-2\.5,
+    .profile-music-section .h-2\.5.w-2\.5 {
+      width: 0.625rem !important;
+      height: 0.625rem !important;
+      min-width: 0.625rem !important;
+      min-height: 0.625rem !important;
+      max-width: 0.625rem !important;
+      max-height: 0.625rem !important;
+    }
+
+    /* Ensure stars in ratings sections are properly sized */
+    div[class*="mt-12"] svg[class*="h-2\.5"],
+    div[class*="mt-12"] svg[class*="w-2\.5"] {
+      width: 0.625rem !important;
+      height: 0.625rem !important;
+      min-width: 0.625rem !important;
+      min-height: 0.625rem !important;
+      max-width: 0.625rem !important;
+      max-height: 0.625rem !important;
+    }
+
+    /* Ensure plus icons in profile music section are perfectly centered */
+    .profile-music-section .w-16.h-16 {
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      margin-left: auto !important;
+      margin-right: auto !important;
+    }
+
+    .profile-music-section .w-16.h-16 svg {
+      flex-shrink: 0 !important;
+      display: block !important;
+    }
+
+    /* Force center alignment for plus icon containers */
+    .profile-music-section div[class*="text-center"] {
+      display: flex !important;
+      flex-direction: column !important;
+      align-items: center !important;
+      width: 100% !important;
+    }
+  }
+
   /* Ensure smaller gaps on mobile */
   .gap-0\.5 {
     gap: 0.125rem !important;

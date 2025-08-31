@@ -87,13 +87,11 @@ export default function YouTubePlayer() {
         try {
           player.destroy();
         } catch (error) {
-          console.log("Error destroying player:", error);
+          // Error destroying player
         }
       }
 
-      console.log(
-        `🎥 Loading video: ${currentSong.videoId} for song: ${currentSong.title}`
-      );
+      // Loading video
 
       // Responsive player dimensions - smaller for mobile floating design
       const isMobile = window.innerWidth < 768;
@@ -120,17 +118,17 @@ export default function YouTubePlayer() {
           onReady: (event: any) => {
             setPlayer(event.target);
             setPlayerLoading(false);
-            console.log("✅ YouTube player ready for:", currentSong.title);
+            // YouTube player ready
 
             // Auto-play the video
             try {
               event.target.playVideo();
             } catch (error) {
-              console.log("⚠️ Autoplay blocked, user needs to interact first");
+              // Autoplay blocked, user needs to interact first
             }
           },
           onStateChange: (event: any) => {
-            console.log("🔄 Player state changed:", event.data);
+            // Player state changed
             if (event.data === window.YT.PlayerState.PLAYING) {
               setIsPlaying(true);
             } else if (event.data === window.YT.PlayerState.PAUSED) {
@@ -139,7 +137,6 @@ export default function YouTubePlayer() {
               setIsPlaying(false);
               // Auto-play next song when current ends
               if (hasNext) {
-                console.log("🎵 Song ended, playing next song");
                 playNext();
               }
             }
@@ -180,7 +177,7 @@ export default function YouTubePlayer() {
         try {
           player.destroy();
         } catch (error) {
-          console.log("Error destroying player on cleanup:", error);
+          // Error destroying player on cleanup
         }
       }
     };
@@ -201,30 +198,20 @@ export default function YouTubePlayer() {
   };
 
   const handleNext = async () => {
-    console.log(
-      "🔄 Next button clicked, hasNext:",
-      hasNext,
-      "queue length:",
-      queue.length
-    );
+    // Next button clicked
     if (hasNext) {
       await playNext();
     } else {
-      console.log("⚠️ Cannot go to next song - no more songs in queue");
+      // Cannot go to next song - no more songs in queue
     }
   };
 
   const handlePrevious = async () => {
-    console.log(
-      "🔄 Previous button clicked, hasPrevious:",
-      hasPrevious,
-      "queue length:",
-      queue.length
-    );
+    // Previous button clicked
     if (hasPrevious) {
       await playPrevious();
     } else {
-      console.log("⚠️ Cannot go to previous song - at first song");
+      // Cannot go to previous song - at first song
     }
   };
 

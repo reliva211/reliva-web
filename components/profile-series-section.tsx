@@ -308,7 +308,7 @@ export default function ProfileSeriesSection({
       return (
         <Star
           key={i}
-          className={`h-4 w-4 transition-colors ${
+          className={`h-2.5 w-2.5 sm:h-3 sm:w-3 md:h-4 md:w-4 transition-colors ${
             isFullStar ? "fill-yellow-400 text-yellow-400" : "text-gray-300"
           } ${!readOnly ? "cursor-pointer" : ""}`}
           onMouseEnter={

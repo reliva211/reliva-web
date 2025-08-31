@@ -237,9 +237,9 @@ export function EnhancedMediaBar({
                 variant={variant}
                 rank={showRanking ? currentIndex + index + 1 : undefined}
                 showRanking={showRanking}
-                onClick={() =>
-                  console.log(`${title} item clicked:`, item.title)
-                }
+                onClick={() => {
+                  // Item clicked
+                }}
               />
             ))}
         </div>

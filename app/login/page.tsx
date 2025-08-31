@@ -32,7 +32,7 @@ export default function LoginPage() {
 
     try {
       const userCred = await signInWithEmailAndPassword(auth, email, password);
-      console.log("Firebase login success:", userCred.user);
+      // Firebase login success
       window.location.href = "/reviews";
     } catch (err) {
       console.error("Firebase login failed:", err);
@@ -48,7 +48,7 @@ export default function LoginPage() {
     try {
       const provider = new GoogleAuthProvider();
       const result = await signInWithPopup(auth, provider);
-      console.log("Google login success:", result.user);
+      // Google login success
       window.location.href = "/reviews";
     } catch (err) {
       console.error("Google login failed:", err);

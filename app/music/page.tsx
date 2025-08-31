@@ -1379,15 +1379,7 @@ export default function MusicApp() {
                                           (s) => s.id === song.id
                                         );
 
-                                        console.log(
-                                          "🎵 Search Results Song Play Button - Queue created:",
-                                          {
-                                            queueLength: queue.length,
-                                            clickedSong: queue[songIndex],
-                                            songIndex,
-                                            allSongs: queue.map((s) => s.title),
-                                          }
-                                        );
+                                        // Search Results Song Play Button - Queue created
 
                                         // Start with the clicked song
                                         await showPlayer(
@@ -1636,7 +1628,7 @@ export default function MusicApp() {
                             onClick={(e) => {
                               e.stopPropagation();
                               // Placeholder for play functionality
-                              console.log("Play album:", album.name);
+                              // Play album
                             }}
                             className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-white/30 transition-all duration-200 hover:scale-110"
                           >
@@ -1794,15 +1786,7 @@ export default function MusicApp() {
                                     (s) => s.id === song.id
                                   );
 
-                                  console.log(
-                                    "🎵 Liked Songs Play Button - Queue created:",
-                                    {
-                                      queueLength: queue.length,
-                                      clickedSong: queue[songIndex],
-                                      songIndex,
-                                      allSongs: queue.map((s) => s.title),
-                                    }
-                                  );
+                                  // Liked Songs Play Button - Queue created
 
                                   // Start with the clicked song
                                   await showPlayer(
@@ -1969,7 +1953,7 @@ export default function MusicApp() {
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   // Placeholder for play functionality
-                                  console.log("Play album:", album.name);
+                                  // Play album
                                 }}
                                 className="w-8 h-8 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-white/30 transition-all duration-200 hover:scale-110"
                               >
@@ -2142,15 +2126,7 @@ export default function MusicApp() {
                                 (s) => s.id === song.id
                               );
 
-                              console.log(
-                                "🎵 Album Dialog Song Play Button - Queue created:",
-                                {
-                                  queueLength: queue.length,
-                                  clickedSong: queue[songIndex],
-                                  songIndex,
-                                  allSongs: queue.map((s) => s.title),
-                                }
-                              );
+                              // Album Dialog Song Play Button - Queue created
 
                               // Start with the clicked song
                               await showPlayer(

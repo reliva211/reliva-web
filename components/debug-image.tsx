@@ -21,11 +21,11 @@ export function DebugImage({ src, alt, className }: DebugImageProps) {
 
     const img = new window.Image();
     img.onload = () => {
-      console.log("Image loaded successfully:", src);
+      // Image loaded successfully
       setImageStatus("loaded");
     };
     img.onerror = () => {
-      console.log("Image failed to load:", src);
+      // Image failed to load
       setImageStatus("error");
       setError("Failed to load image");
     };

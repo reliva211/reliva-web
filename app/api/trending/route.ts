@@ -8,7 +8,7 @@ export async function GET(request: Request) {
     // Fetch trending songs from JioSaavn API
     const trendingSongsEndpoint = `https://jiosavan-api-with-playlist.vercel.app/api/modules?language=english&page=1&limit=${limit}`;
 
-    console.log("Fetching trending songs from:", trendingSongsEndpoint);
+    // Fetching trending songs
 
     const response = await fetch(trendingSongsEndpoint);
 
@@ -19,7 +19,7 @@ export async function GET(request: Request) {
     }
 
     const data = await response.json();
-    console.log("JioSaavn trending response:", data);
+    // JioSaavn trending response received
 
     let results = data.data?.results || data.results || [];
 

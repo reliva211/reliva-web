@@ -41,7 +41,7 @@ export function SearchModal<T>({
 }: SearchModalProps<T>) {
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
-    console.log("Input changed to:", value);
+    // Input changed
     setSearchQueryAction(value);
     // Trigger search with debouncing
     onSearchAction(value);

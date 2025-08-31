@@ -32,14 +32,14 @@ export function useUserConnections() {
       setError(null);
 
       try {
-        console.log("Fetching user connections for:", user.uid);
-        
+        // Fetching user connections
+
         // Get current user's data
         const userRef = doc(db, "users", user.uid);
         const userSnap = await getDoc(userRef);
-        
+
         if (!userSnap.exists()) {
-          console.log("User document does not exist");
+          // User document does not exist
           setFollowers([]);
           setFollowing([]);
           return;
@@ -48,14 +48,13 @@ export function useUserConnections() {
         const userData = userSnap.data();
         const followersList = userData.followers || [];
         const followingList = userData.following || [];
-        
-        console.log("Followers list:", followersList);
-        console.log("Following list:", followingList);
+
+        // Followers and following lists retrieved
 
         // Get all users to fetch details
         const usersRef = collection(db, "users");
         const usersSnapshot = await getDocs(usersRef);
-        
+
         const allUsers: { [key: string]: UserConnection } = {};
         usersSnapshot.forEach((doc) => {
           const data = doc.data();
@@ -64,7 +63,7 @@ export function useUserConnections() {
             email: data.email || "",
             username: data.username || "",
             fullName: data.fullName || "",
-            avatarUrl: data.avatarUrl || ""
+            avatarUrl: data.avatarUrl || "",
           };
         });
 
@@ -72,20 +71,18 @@ export function useUserConnections() {
         const followersData = followersList
           .map((uid: string) => allUsers[uid])
           .filter(Boolean);
-        
+
         const followingData = followingList
           .map((uid: string) => allUsers[uid])
           .filter(Boolean);
 
-        console.log("Followers data:", followersData.length);
-        console.log("Following data:", followingData.length);
-        
+        // Followers and following data retrieved
+
         setFollowers(followersData);
         setFollowing(followingData);
-
       } catch (err) {
         console.error("Error fetching user connections:", err);
-        
+
         if (err instanceof Error) {
           if (err.message.includes("permission")) {
             setError("Permission denied. Please check your account.");
@@ -106,4 +103,4 @@ export function useUserConnections() {
   }, [user]);
 
   return { followers, following, loading, error };
-} 
+}

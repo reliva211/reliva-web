@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
       apiUrl += `&published_date=${publishedDate}`;
     }
 
-    console.log("Fetching NYTimes books data from:", apiUrl);
+    // Fetching NYTimes books data
 
     const response = await fetch(apiUrl, {
       headers: {

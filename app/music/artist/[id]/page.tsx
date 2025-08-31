@@ -255,13 +255,13 @@ export default function ArtistDetailPage({
       setLoading(true);
       try {
         // Fetch artist details first
-        console.log(`Attempting to fetch artist with ID: ${resolvedParams.id}`);
+        // Attempting to fetch artist with ID
         const artistResponse = await fetch(
           `/api/saavn/artist?id=${resolvedParams.id}`
         );
         const artistData = await artistResponse.json();
 
-        console.log("Artist API response:", artistData);
+        // Artist API response received
 
         if (artistData.data) {
           setArtist(artistData.data);
@@ -269,25 +269,23 @@ export default function ArtistDetailPage({
           // Set songs from artist data
           const topSongs = artistData.data.topSongs || [];
           setSongs(topSongs);
-          console.log(`Fetched ${topSongs.length} top songs`);
+          // Top songs fetched
 
           // Fetch similar artists
           try {
-            console.log(
-              `Fetching similar artists for artist ID: ${resolvedParams.id}`
-            );
+            // Fetching similar artists
             const similarResponse = await fetch(
               `/api/saavn/artist/similar?id=${resolvedParams.id}`
             );
             const similarData = await similarResponse.json();
 
-            console.log("Similar artists API response:", similarData);
+            // Similar artists API response received
 
             if (similarData.data && Array.isArray(similarData.data)) {
               setSimilarArtists(similarData.data);
-              console.log(`Fetched ${similarData.data.length} similar artists`);
+              // Similar artists fetched
             } else {
-              console.log("No similar artists data found in response");
+              // No similar artists data found in response
               setSimilarArtists([]);
             }
           } catch (similarError) {
@@ -307,49 +305,37 @@ export default function ArtistDetailPage({
               albumsData.data.albums &&
               albumsData.data.albums.length > 0
             ) {
-              console.log(
-                `Fetched ${albumsData.data.albums.length} albums from albums endpoint`
-              );
+              // Albums fetched from albums endpoint
               // Remove duplicate albums based on ID
               const uniqueAlbums = albumsData.data.albums.filter(
                 (album: any, index: number, self: any[]) =>
                   index === self.findIndex((a) => a.id === album.id)
               );
-              console.log(
-                `After deduplication: ${uniqueAlbums.length} unique albums`
-              );
+              // Albums deduplication completed
               setAlbums(uniqueAlbums);
             } else {
               // Fallback to topAlbums from artist data
               const topAlbums = artistData.data.topAlbums || [];
-              console.log(
-                `Using fallback topAlbums: ${topAlbums.length} albums`
-              );
+              // Using fallback topAlbums
               // Remove duplicate albums based on ID
               const uniqueTopAlbums = topAlbums.filter(
                 (album: any, index: number, self: any[]) =>
                   index === self.findIndex((a) => a.id === album.id)
               );
-              console.log(
-                `After deduplication: ${uniqueTopAlbums.length} unique top albums`
-              );
+              // Top albums deduplication completed
               setAlbums(uniqueTopAlbums);
             }
           } catch (albumError) {
             console.error("Error fetching albums:", albumError);
             // Fallback to topAlbums from artist data
             const topAlbums = artistData.data.topAlbums || [];
-            console.log(
-              `Using fallback topAlbums after error: ${topAlbums.length} albums`
-            );
+            // Using fallback topAlbums after error
             // Remove duplicate albums based on ID
             const uniqueTopAlbums = topAlbums.filter(
               (album: any, index: number, self: any[]) =>
                 index === self.findIndex((a) => a.id === album.id)
             );
-            console.log(
-              `After deduplication: ${uniqueTopAlbums.length} unique top albums`
-            );
+            // Top albums deduplication completed after error
             setAlbums(uniqueTopAlbums);
           }
         } else {
@@ -823,15 +809,7 @@ export default function ArtistDetailPage({
                               (s) => s.id === song.id
                             );
 
-                            console.log(
-                              "🎵 Artist Page Song Play Button - Queue created:",
-                              {
-                                queueLength: queue.length,
-                                clickedSong: queue[songIndex],
-                                songIndex,
-                                allSongs: queue.map((s) => s.title),
-                              }
-                            );
+                            // Artist Page Song Play Button - Queue created
 
                             // Start with the clicked song
                             await showPlayer(

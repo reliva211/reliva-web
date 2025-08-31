@@ -194,7 +194,7 @@ export default function AlbumDetailPage({
         );
         const albumData = await albumResponse.json();
 
-        console.log("Album Data:", albumData);
+        // Album Data received
 
         if (albumData.data) {
           setAlbum(albumData.data);
@@ -473,11 +473,7 @@ export default function AlbumDetailPage({
                           .join(", ") || "Unknown Artist",
                     }));
 
-                    console.log("🎵 Album Play Button - Queue created:", {
-                      queueLength: queue.length,
-                      firstSong: queue[0],
-                      allSongs: queue.map((s) => s.title),
-                    });
+                    // Album Play Button - Queue created
 
                     // Start with the first song
                     await showPlayer(queue[0], queue, 0);
@@ -661,15 +657,7 @@ export default function AlbumDetailPage({
                                     (s) => s.id === song.id
                                   );
 
-                                  console.log(
-                                    "🎵 Individual Song Play Button - Queue created:",
-                                    {
-                                      queueLength: queue.length,
-                                      clickedSong: queue[songIndex],
-                                      songIndex,
-                                      allSongs: queue.map((s) => s.title),
-                                    }
-                                  );
+                                  // Individual Song Play Button - Queue created
 
                                   // Start with the clicked song
                                   await showPlayer(

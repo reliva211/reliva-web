@@ -36,7 +36,7 @@ export default function SignupPage() {
         if (result) {
           const user = result.user;
 
-          console.log("Handling redirect result for user:", user.email);
+          // Handling redirect result for user
 
           // Create MongoDB user first
           // Generate a unique username to avoid conflicts
@@ -56,7 +56,6 @@ export default function SignupPage() {
           });
 
           const mongoData = await mongoRes.json();
-          console.log("Redirect result MongoDB response:", mongoData);
           if (!mongoData.success) {
             console.error(
               "Redirect result MongoDB API error:",
@@ -66,7 +65,6 @@ export default function SignupPage() {
           }
 
           const authorId = mongoData.user._id;
-          console.log("Redirect result author id", authorId);
 
           // Create Firestore user doc with complete user data
           const firestoreUserData = {
@@ -81,16 +79,13 @@ export default function SignupPage() {
             spotify: { connected: false },
           };
 
-          console.log("Saving redirect user to Firestore:", firestoreUserData);
+          // Saving redirect user to Firestore
 
           await setDoc(doc(db, "users", user.uid), firestoreUserData, {
             merge: true,
           });
 
-          console.log(
-            "Successfully saved redirect user to Firestore with authorId:",
-            authorId
-          );
+          // Successfully saved redirect user to Firestore
 
           window.location.href = "/reviews";
         }
@@ -119,7 +114,7 @@ export default function SignupPage() {
         displayName: fullName,
       });
 
-      console.log("Making MongoDB API call...");
+      // Making MongoDB API call
 
       // Generate a unique username to avoid conflicts
       const baseUsername = user.displayName || user.email?.split("@")[0];
@@ -137,9 +132,8 @@ export default function SignupPage() {
         }),
       });
 
-      console.log("MongoDB response status:", mongoRes.status);
+      // MongoDB response received
       const mongoData = await mongoRes.json();
-      console.log("MongoDB response data:", mongoData);
 
       if (!mongoData.success) {
         console.error("MongoDB API error:", mongoData.error);
@@ -147,7 +141,6 @@ export default function SignupPage() {
       }
 
       const authorId = mongoData.user._id;
-      console.log("author id", authorId);
 
       // Create Firestore user doc with complete user data
       const firestoreUserData = {
@@ -162,16 +155,13 @@ export default function SignupPage() {
         spotify: { connected: false },
       };
 
-      console.log("Saving to Firestore:", firestoreUserData);
+      // Saving to Firestore
 
       await setDoc(doc(db, "users", user.uid), firestoreUserData, {
         merge: true,
       });
 
-      console.log(
-        "Successfully saved user to Firestore with authorId:",
-        authorId
-      );
+      // Successfully saved user to Firestore
 
       window.location.href = "/reviews";
     } catch (error: any) {
@@ -212,7 +202,7 @@ export default function SignupPage() {
 
       const googleUser = googleResult.user;
 
-      console.log("Making MongoDB API call for Google user...");
+      // Making MongoDB API call for Google user
 
       // Generate a unique username to avoid conflicts
       const baseUsername =
@@ -231,9 +221,8 @@ export default function SignupPage() {
         }),
       });
 
-      console.log("MongoDB response status:", mongoRes.status);
+      // MongoDB response received
       const mongoData = await mongoRes.json();
-      console.log("MongoDB response data:", mongoData);
 
       if (!mongoData.success) {
         console.error("MongoDB API error:", mongoData.error);
@@ -241,7 +230,6 @@ export default function SignupPage() {
       }
 
       const authorId = mongoData.user._id;
-      console.log("Google user author id", authorId);
 
       // Create Firestore user doc with complete user data
       const firestoreUserData = {
@@ -256,16 +244,13 @@ export default function SignupPage() {
         spotify: { connected: false },
       };
 
-      console.log("Saving Google user to Firestore:", firestoreUserData);
+      // Saving Google user to Firestore
 
       await setDoc(doc(db, "users", googleUser.uid), firestoreUserData, {
         merge: true,
       });
 
-      console.log(
-        "Successfully saved Google user to Firestore with authorId:",
-        authorId
-      );
+      // Successfully saved Google user to Firestore
 
       window.location.href = "/reviews";
     } catch (error: any) {

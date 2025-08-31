@@ -39,7 +39,7 @@ export async function GET(request: NextRequest) {
         endpoint = `https://jiosavan-api-with-playlist.vercel.app/api/modules?language={english}&page=${page}&limit=${limit}`;
     }
 
-    console.log("Using JioSaavn API endpoint:", endpoint);
+    // Using JioSaavn API endpoint
 
     const response = await fetch(endpoint);
 
@@ -50,7 +50,7 @@ export async function GET(request: NextRequest) {
     }
 
     const data = await response.json();
-    console.log("JioSaavn API response:", data);
+    // JioSaavn API response received
 
     let results = data.data?.results || data.results || [];
 

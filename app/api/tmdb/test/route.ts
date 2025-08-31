@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 const TMDB_API_KEY = process.env.NEXT_PUBLIC_TMDB_API_KEY || "";
 
 export async function GET(request: NextRequest) {
-  console.log("Testing TMDB API connection...");
+  // Testing TMDB API connection
 
   if (!TMDB_API_KEY) {
     return NextResponse.json({
@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
     // Test with a simple movie search
     const testUrl = `https://api.themoviedb.org/3/search/movie?api_key=${TMDB_API_KEY}&query=inception&language=en-US&page=1&include_adult=false`;
 
-    console.log("Testing TMDB API with URL:", testUrl);
+    // Testing TMDB API with URL
 
     const response = await fetch(testUrl);
 
@@ -48,4 +48,3 @@ export async function GET(request: NextRequest) {
     });
   }
 }
-

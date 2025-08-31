@@ -29,11 +29,9 @@ export function useAllReviews() {
 
   // Function to update a specific review in the local state
   const updateReview = (reviewId: string, updates: Partial<Review>) => {
-    setReviews(prevReviews => 
-      prevReviews.map(review => 
-        review.id === reviewId 
-          ? { ...review, ...updates }
-          : review
+    setReviews((prevReviews) =>
+      prevReviews.map((review) =>
+        review.id === reviewId ? { ...review, ...updates } : review
       )
     );
   };
@@ -44,38 +42,40 @@ export function useAllReviews() {
       setError(null);
 
       try {
-        console.log("Fetching all reviews...");
-        
+        // Fetching all reviews
+
         // Get all reviews from the reviews collection
         const reviewsRef = collection(db, "reviews");
         const reviewsSnapshot = await getDocs(reviewsRef);
-        
-        console.log("Total reviews in collection:", reviewsSnapshot.size);
-        
+
+        // Total reviews in collection
+
         const allReviews: Review[] = [];
         reviewsSnapshot.forEach((doc) => {
           const data = doc.data();
           allReviews.push({
             id: doc.id,
-            ...data
+            ...data,
           } as Review);
         });
 
         // Filter out anonymous reviews
-        const validReviews = allReviews.filter(review => {
-          return review.userDisplayName && 
-            review.userDisplayName !== "Anonymous" && 
+        const validReviews = allReviews.filter((review) => {
+          return (
+            review.userDisplayName &&
+            review.userDisplayName !== "Anonymous" &&
             review.userDisplayName.trim() !== "" &&
-            review.userDisplayName !== "Unknown";
+            review.userDisplayName !== "Unknown"
+          );
         });
-        
-        console.log("Valid reviews (excluding anonymous):", validReviews.length);
+
+        // Valid reviews (excluding anonymous)
 
         // Sort by timestamp (most recent first)
         validReviews.sort((a, b) => {
           try {
             let aTime, bTime;
-            
+
             if (a.timestamp?.toDate) {
               aTime = a.timestamp.toDate();
             } else if (a.timestamp?.seconds) {
@@ -85,7 +85,7 @@ export function useAllReviews() {
             } else {
               aTime = new Date(0);
             }
-            
+
             if (b.timestamp?.toDate) {
               bTime = b.timestamp.toDate();
             } else if (b.timestamp?.seconds) {
@@ -95,7 +95,7 @@ export function useAllReviews() {
             } else {
               bTime = new Date(0);
             }
-            
+
             return bTime.getTime() - aTime.getTime();
           } catch (sortError) {
             console.error("Error sorting reviews:", sortError);
@@ -105,13 +105,12 @@ export function useAllReviews() {
 
         // Limit to 20 most recent reviews
         const finalReviews = validReviews.slice(0, 20);
-        console.log("Final reviews count:", finalReviews.length);
-        
-        setReviews(finalReviews);
+        // Final reviews count
 
+        setReviews(finalReviews);
       } catch (err) {
         console.error("Error fetching all reviews:", err);
-        
+
         if (err instanceof Error) {
           if (err.message.includes("permission")) {
             setError("Permission denied. Please check your account.");
@@ -139,38 +138,40 @@ export function useAllReviews() {
       setError(null);
 
       try {
-        console.log("Fetching all reviews...");
-        
+        // Fetching all reviews
+
         // Get all reviews from the reviews collection
         const reviewsRef = collection(db, "reviews");
         const reviewsSnapshot = await getDocs(reviewsRef);
-        
-        console.log("Total reviews in collection:", reviewsSnapshot.size);
-        
+
+        // Total reviews in collection
+
         const allReviews: Review[] = [];
         reviewsSnapshot.forEach((doc) => {
           const data = doc.data();
           allReviews.push({
             id: doc.id,
-            ...data
+            ...data,
           } as Review);
         });
 
         // Filter out anonymous reviews
-        const validReviews = allReviews.filter(review => {
-          return review.userDisplayName && 
-            review.userDisplayName !== "Anonymous" && 
+        const validReviews = allReviews.filter((review) => {
+          return (
+            review.userDisplayName &&
+            review.userDisplayName !== "Anonymous" &&
             review.userDisplayName.trim() !== "" &&
-            review.userDisplayName !== "Unknown";
+            review.userDisplayName !== "Unknown"
+          );
         });
-        
-        console.log("Valid reviews (excluding anonymous):", validReviews.length);
+
+        // Valid reviews (excluding anonymous)
 
         // Sort by timestamp (most recent first)
         validReviews.sort((a, b) => {
           try {
             let aTime, bTime;
-            
+
             if (a.timestamp?.toDate) {
               aTime = a.timestamp.toDate();
             } else if (a.timestamp?.seconds) {
@@ -180,7 +181,7 @@ export function useAllReviews() {
             } else {
               aTime = new Date(0);
             }
-            
+
             if (b.timestamp?.toDate) {
               bTime = b.timestamp.toDate();
             } else if (b.timestamp?.seconds) {
@@ -190,7 +191,7 @@ export function useAllReviews() {
             } else {
               bTime = new Date(0);
             }
-            
+
             return bTime.getTime() - aTime.getTime();
           } catch (sortError) {
             console.error("Error sorting reviews:", sortError);
@@ -200,13 +201,12 @@ export function useAllReviews() {
 
         // Limit to 20 most recent reviews
         const finalReviews = validReviews.slice(0, 20);
-        console.log("Final reviews count:", finalReviews.length);
-        
-        setReviews(finalReviews);
+        // Final reviews count
 
+        setReviews(finalReviews);
       } catch (err) {
         console.error("Error fetching all reviews:", err);
-        
+
         if (err instanceof Error) {
           if (err.message.includes("permission")) {
             setError("Permission denied. Please check your account.");
@@ -222,7 +222,7 @@ export function useAllReviews() {
         setLoading(false);
       }
     };
-    
+
     fetchAllReviews();
   };
 

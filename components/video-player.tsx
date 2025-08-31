@@ -87,13 +87,11 @@ export default function VideoPlayer() {
         try {
           player.destroy();
         } catch (error) {
-          console.log("Error destroying player:", error);
+          // Error destroying player
         }
       }
 
-      console.log(
-        `🎬 Loading trailer: ${currentVideo.trailerKey} for ${currentVideo.type}: ${currentVideo.title}`
-      );
+      // Loading trailer
 
       // Responsive player dimensions - smaller for mobile floating design
       const isMobile = window.innerWidth < 768;
@@ -120,17 +118,17 @@ export default function VideoPlayer() {
           onReady: (event: any) => {
             setPlayer(event.target);
             setPlayerLoading(false);
-            console.log("✅ Video player ready for:", currentVideo.title);
+            // Video player ready
 
             // Auto-play the video
             try {
               event.target.playVideo();
             } catch (error) {
-              console.log("⚠️ Autoplay blocked, user needs to interact first");
+              // Autoplay blocked, user needs to interact first
             }
           },
           onStateChange: (event: any) => {
-            console.log("🔄 Player state changed:", event.data);
+            // Player state changed
             if (event.data === window.YT.PlayerState.PLAYING) {
               setIsPlaying(true);
             } else if (event.data === window.YT.PlayerState.PAUSED) {
@@ -139,7 +137,6 @@ export default function VideoPlayer() {
               setIsPlaying(false);
               // Auto-play next video when current ends
               if (hasNext) {
-                console.log("🎬 Trailer ended, playing next trailer");
                 playNext();
               }
             }
@@ -162,7 +159,7 @@ export default function VideoPlayer() {
         try {
           player.destroy();
         } catch (error) {
-          console.log("Error destroying player on cleanup:", error);
+          // Error destroying player on cleanup
         }
       }
     };

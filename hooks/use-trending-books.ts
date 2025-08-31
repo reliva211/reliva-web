@@ -138,7 +138,7 @@ const getTrendingBooks = async (): Promise<SearchResult[]> => {
     // If fetch fails, try to return cached data even if expired
     const expiredCache = getCachedTrendingBooks();
     if (expiredCache && expiredCache.length > 0) {
-      console.log("Using expired cache as fallback");
+      // Using expired cache as fallback
       return expiredCache;
     }
 

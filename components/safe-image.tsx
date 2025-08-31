@@ -26,7 +26,7 @@ export function SafeImage({
   const [hasError, setHasError] = useState(false);
 
   const handleError = () => {
-    console.log("Image failed to load:", src);
+    // Image failed to load
     if (!hasError) {
       setHasError(true);
       setImgSrc("/placeholder.svg");

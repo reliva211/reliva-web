@@ -65,7 +65,7 @@ export const useVideoPlayer = create<VideoPlayerState>((set, get) => ({
         const searchQuery = `${currentVideo.title} ${
           currentVideo.type === "movie" ? "movie" : "series"
         } official trailer 2024`;
-        console.log(`🔍 Searching for trailer: ${searchQuery}`);
+        // Searching for trailer
 
         try {
           const response = await fetch(
@@ -84,9 +84,9 @@ export const useVideoPlayer = create<VideoPlayerState>((set, get) => ({
               ...currentVideo,
               trailerKey: data.data.videoId,
             };
-            console.log(`✅ Found trailer: ${data.data.videoId}`);
+            // Found trailer
           } else {
-            console.log("❌ No trailer found, using fallback");
+            // No trailer found, using fallback
             // Use a popular movie trailer as fallback
             finalQueue[finalIndex] = {
               ...currentVideo,
@@ -136,12 +136,7 @@ export const useVideoPlayer = create<VideoPlayerState>((set, get) => ({
 
     if (nextIndex < queue.length) {
       const nextVideo = queue[nextIndex];
-      console.log(
-        "🎬 Playing next video:",
-        nextVideo.title,
-        "at index:",
-        nextIndex
-      );
+      // Playing next video
 
       // If next video has no trailerKey, search for it
       if (!nextVideo.trailerKey) {
@@ -150,7 +145,7 @@ export const useVideoPlayer = create<VideoPlayerState>((set, get) => ({
           const searchQuery = `${nextVideo.title} ${
             nextVideo.type === "movie" ? "movie" : "series"
           } official trailer 2024`;
-          console.log(`🔍 Searching for next trailer: ${searchQuery}`);
+          // Searching for next trailer
 
           const response = await fetch(
             `/api/youtube/search?q=${encodeURIComponent(searchQuery)}`
@@ -170,7 +165,7 @@ export const useVideoPlayer = create<VideoPlayerState>((set, get) => ({
               trailerKey: data.data.videoId,
             };
 
-            console.log("✅ Found trailer for next video:", data.data.videoId);
+            // Found trailer for next video
             set({
               currentVideo: updatedQueue[nextIndex],
               queue: updatedQueue,
@@ -185,7 +180,7 @@ export const useVideoPlayer = create<VideoPlayerState>((set, get) => ({
               trailerKey: "dQw4w9WgXcQ",
             };
 
-            console.log("⚠️ Using fallback trailer for next video");
+            // Using fallback trailer for next video
             set({
               currentVideo: updatedQueue[nextIndex],
               queue: updatedQueue,
@@ -198,17 +193,14 @@ export const useVideoPlayer = create<VideoPlayerState>((set, get) => ({
           set({ isLoading: false });
         }
       } else {
-        console.log(
-          "✅ Next video already has trailerKey:",
-          nextVideo.trailerKey
-        );
+        // Next video already has trailerKey
         set({
           currentVideo: nextVideo,
           currentIndex: nextIndex,
         });
       }
     } else {
-      console.log("⚠️ No next video available");
+      // No next video available
     }
   },
   playPrevious: async () => {
@@ -217,12 +209,7 @@ export const useVideoPlayer = create<VideoPlayerState>((set, get) => ({
 
     if (prevIndex >= 0) {
       const prevVideo = queue[prevIndex];
-      console.log(
-        "🎬 Playing previous video:",
-        prevVideo.title,
-        "at index:",
-        prevIndex
-      );
+      // Playing previous video
 
       // If previous video has no trailerKey, search for it
       if (!prevVideo.trailerKey) {
@@ -231,7 +218,7 @@ export const useVideoPlayer = create<VideoPlayerState>((set, get) => ({
           const searchQuery = `${prevVideo.title} ${
             prevVideo.type === "movie" ? "movie" : "series"
           } official trailer 2024`;
-          console.log(`🔍 Searching for previous trailer: ${searchQuery}`);
+          // Searching for previous trailer
 
           const response = await fetch(
             `/api/youtube/search?q=${encodeURIComponent(searchQuery)}`
@@ -251,10 +238,7 @@ export const useVideoPlayer = create<VideoPlayerState>((set, get) => ({
               trailerKey: data.data.videoId,
             };
 
-            console.log(
-              "✅ Found trailer for previous video:",
-              data.data.videoId
-            );
+            // Found trailer for previous video
             set({
               currentVideo: updatedQueue[prevIndex],
               queue: updatedQueue,
@@ -269,7 +253,7 @@ export const useVideoPlayer = create<VideoPlayerState>((set, get) => ({
               trailerKey: "dQw4w9WgXcQ",
             };
 
-            console.log("⚠️ Using fallback trailer for previous video");
+            // Using fallback trailer for previous video
             set({
               currentVideo: updatedQueue[prevIndex],
               queue: updatedQueue,
@@ -282,17 +266,14 @@ export const useVideoPlayer = create<VideoPlayerState>((set, get) => ({
           set({ isLoading: false });
         }
       } else {
-        console.log(
-          "✅ Previous video already has trailerKey:",
-          prevVideo.trailerKey
-        );
+        // Previous video already has trailerKey
         set({
           currentVideo: prevVideo,
           currentIndex: prevIndex,
         });
       }
     } else {
-      console.log("⚠️ No previous video available");
+      // No previous video available
     }
   },
   setLoading: (loading: boolean) => {
