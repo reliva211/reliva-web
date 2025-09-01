@@ -12,8 +12,6 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    console.log(`🎵 Fetching ALL albums for artist ID: ${id}`);
-
     // First, get the artist details to get the name
     let artistName = "";
     try {
@@ -30,25 +28,23 @@ export async function GET(request: NextRequest) {
         const artistData = await artistResponse.json();
         if (artistData.data && artistData.data.name) {
           artistName = artistData.data.name;
-          console.log(`🎤 Artist name: ${artistName}`);
         }
       }
     } catch (error) {
-      console.log("❌ Failed to get artist name:", error);
+      // Failed to get artist name
     }
 
     let allAlbums = [];
 
     // Approach 1: Try the direct albums endpoint with pagination
     try {
-      console.log("🔄 Attempting direct albums endpoint with pagination...");
-      let page = 1;
+      let page = 0; // Start from page 0 as per JioSaavn API docs
       let hasMorePages = true;
-      const maxPages = 10; // Safety limit to prevent infinite loops
+      const maxPages = 50; // Increased limit to fetch more albums
 
       while (hasMorePages && page <= maxPages) {
         const response = await fetch(
-          `https://saavn.dev/api/artists/${id}/albums?page=${page}`,
+          `https://saavn.dev/api/artists/${id}/albums?page=${page}&sortBy=popularity&sortOrder=desc`,
           {
             headers: {
               "Content-Type": "application/json",
@@ -58,43 +54,95 @@ export async function GET(request: NextRequest) {
 
         if (response.ok) {
           const data = await response.json();
-          console.log(`📄 Page ${page} response:`, data);
 
           if (data.data && data.data.albums && data.data.albums.length > 0) {
             allAlbums.push(...data.data.albums);
-            console.log(
-              `📀 Added ${data.data.albums.length} albums from page ${page}`
-            );
 
-            // Check if there are more pages
-            if (data.data.albums.length < 20) {
-              // Assuming 20 is the default page size
+            // Check if there are more pages - continue if we got a full page
+            if (data.data.albums.length >= 20) {
+              // If we got a full page, there might be more
+              page++;
+            } else {
+              // If we got less than a full page, we've reached the end
               hasMorePages = false;
             }
-            page++;
           } else {
+            // No albums returned, we've reached the end
             hasMorePages = false;
           }
         } else {
-          console.log(`❌ Page ${page} failed with status:`, response.status);
           hasMorePages = false;
         }
       }
-
-      console.log(`📊 Total albums from direct endpoint: ${allAlbums.length}`);
     } catch (error) {
-      console.log("❌ Direct albums endpoint failed:", error);
+      // Direct albums endpoint failed
+    }
+
+    // Approach 1.5: Try different sorting options to get more albums
+    if (allAlbums.length < 20) {
+      try {
+        const sortOptions = [
+          { sortBy: "latest", sortOrder: "desc" },
+          { sortBy: "alphabetical", sortOrder: "asc" },
+          { sortBy: "alphabetical", sortOrder: "desc" },
+        ];
+
+        for (const sortOption of sortOptions) {
+          let page = 0;
+          let hasMorePages = true;
+          const maxPages = 10; // Limit for additional sorting attempts
+
+          while (hasMorePages && page <= maxPages) {
+            const response = await fetch(
+              `https://saavn.dev/api/artists/${id}/albums?page=${page}&sortBy=${sortOption.sortBy}&sortOrder=${sortOption.sortOrder}`,
+              {
+                headers: {
+                  "Content-Type": "application/json",
+                },
+              }
+            );
+
+            if (response.ok) {
+              const data = await response.json();
+
+              if (
+                data.data &&
+                data.data.albums &&
+                data.data.albums.length > 0
+              ) {
+                // Add new albums (avoid duplicates)
+                data.data.albums.forEach((album: any) => {
+                  if (
+                    !allAlbums.some((existing: any) => existing.id === album.id)
+                  ) {
+                    allAlbums.push(album);
+                  }
+                });
+
+                if (data.data.albums.length >= 20) {
+                  page++;
+                } else {
+                  hasMorePages = false;
+                }
+              } else {
+                hasMorePages = false;
+              }
+            } else {
+              hasMorePages = false;
+            }
+          }
+        }
+      } catch (error) {
+        // Different sorting options failed
+      }
     }
 
     // Approach 2: If we have artist name, search for albums with pagination
     if (artistName) {
       try {
-        console.log(
-          "🔍 Searching for albums by artist name with pagination..."
-        );
-        let page = 1;
+        let page = 0; // Start from page 0 as per JioSaavn API docs
         let hasMorePages = true;
-        const maxPages = 5; // Limit search pages
+        const maxPages = 20; // Increased limit for search pages
 
         while (hasMorePages && page <= maxPages) {
           const searchResponse = await fetch(
@@ -110,7 +158,6 @@ export async function GET(request: NextRequest) {
 
           if (searchResponse.ok) {
             const searchData = await searchResponse.json();
-            console.log(`🔍 Search page ${page} response:`, searchData);
 
             if (
               searchData.data &&
@@ -128,10 +175,6 @@ export async function GET(request: NextRequest) {
                   )
               );
 
-              console.log(
-                `🎯 Found ${filteredAlbums.length} matching albums on search page ${page}`
-              );
-
               // Add new albums (avoid duplicates)
               filteredAlbums.forEach((album: any) => {
                 if (
@@ -141,30 +184,29 @@ export async function GET(request: NextRequest) {
                 }
               });
 
-              if (searchData.data.results.length < 20) {
+              // Check if there are more pages - continue if we got a full page
+              if (searchData.data.results.length >= 20) {
+                // If we got a full page, there might be more
+                page++;
+              } else {
+                // If we got less than a full page, we've reached the end
                 hasMorePages = false;
               }
-              page++;
             } else {
               hasMorePages = false;
             }
           } else {
-            console.log(
-              `❌ Search page ${page} failed with status:`,
-              searchResponse.status
-            );
             hasMorePages = false;
           }
         }
       } catch (error) {
-        console.log("❌ Search albums failed:", error);
+        // Search albums failed
       }
     }
 
     // Approach 3: Try alternative API endpoint
     if (allAlbums.length < 5) {
       try {
-        console.log("🔄 Trying alternative API endpoint...");
         const altResponse = await fetch(
           `https://jiosavan-api-with-playlist.vercel.app/api/artists/${id}/albums`,
           {
@@ -176,12 +218,7 @@ export async function GET(request: NextRequest) {
 
         if (altResponse.ok) {
           const altData = await altResponse.json();
-          console.log("🔄 Alternative API response:", altData);
           if (altData.data && altData.data.albums) {
-            console.log(
-              `📀 Found ${altData.data.albums.length} albums via alternative API`
-            );
-
             // Add new albums (avoid duplicates)
             altData.data.albums.forEach((album: any) => {
               if (
@@ -193,14 +230,13 @@ export async function GET(request: NextRequest) {
           }
         }
       } catch (error) {
-        console.log("❌ Alternative API failed:", error);
+        // Alternative API failed
       }
     }
 
     // Approach 4: Try Saavn.me API as another fallback
-    if (allAlbums.length < 10) {
+    if (allAlbums.length < 50) {
       try {
-        console.log("🔄 Trying Saavn.me API...");
         const saavnMeResponse = await fetch(
           `https://saavn.me/artists?id=${id}`,
           {
@@ -213,13 +249,8 @@ export async function GET(request: NextRequest) {
 
         if (saavnMeResponse.ok) {
           const saavnMeData = await saavnMeResponse.json();
-          console.log("🔄 Saavn.me API response:", saavnMeData);
 
           if (saavnMeData.data && saavnMeData.data.topAlbums) {
-            console.log(
-              `📀 Found ${saavnMeData.data.topAlbums.length} albums via Saavn.me`
-            );
-
             // Add new albums (avoid duplicates)
             saavnMeData.data.topAlbums.forEach((album: any) => {
               if (
@@ -231,7 +262,7 @@ export async function GET(request: NextRequest) {
           }
         }
       } catch (error) {
-        console.log("❌ Saavn.me API failed:", error);
+        // Saavn.me API failed
       }
     }
 
@@ -239,10 +270,6 @@ export async function GET(request: NextRequest) {
     const uniqueAlbums = allAlbums.filter(
       (album: any, index: number, self: any[]) =>
         index === self.findIndex((a) => a.id === album.id)
-    );
-
-    console.log(
-      `🎉 Final results: ${allAlbums.length} total albums, ${uniqueAlbums.length} unique albums`
     );
 
     const data = {
@@ -255,7 +282,6 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(data);
   } catch (error) {
-    console.error("❌ Error fetching artist albums:", error);
     return NextResponse.json(
       { error: "Failed to fetch artist albums" },
       { status: 500 }

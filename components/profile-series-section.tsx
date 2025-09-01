@@ -248,6 +248,10 @@ export default function ProfileSeriesSection({
   const [currentRecentlyWatchedIndex, setCurrentRecentlyWatchedIndex] =
     useState(0);
 
+  // Trailer state
+  const [trailerOpen, setTrailerOpen] = useState(false);
+  const [selectedTrailer, setSelectedTrailer] = useState<any>(null);
+
   // Scroll functions
   const scrollLeft = (ref: React.RefObject<HTMLDivElement | null>) => {
     if (ref.current) {
@@ -595,6 +599,50 @@ export default function ProfileSeriesSection({
     }
   };
 
+  // Handle trailer click
+  const handleTrailerClick = async (series: TMDBSeries) => {
+    const seriesTitle = getTextContent(series.name);
+
+    try {
+      // Fetch trailers from TMDB API
+      const response = await fetch(
+        `https://api.themoviedb.org/3/tv/${series.id}/videos?api_key=${process.env.NEXT_PUBLIC_TMDB_API_KEY}&language=en-US`
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch trailers");
+      }
+
+      const data = await response.json();
+      const trailers = data.results || [];
+
+      if (trailers.length === 0) {
+        // Fallback to YouTube search if no trailers found
+        const searchQuery = `${seriesTitle} official trailer`;
+        const youtubeUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(
+          searchQuery
+        )}`;
+        window.open(youtubeUrl, "_blank");
+        return;
+      }
+
+      // Prefer official trailers, then the first one
+      const officialTrailer = trailers.find((trailer: any) => trailer.official);
+      const selectedTrailer = officialTrailer || trailers[0];
+
+      setSelectedTrailer(selectedTrailer);
+      setTrailerOpen(true);
+    } catch (error) {
+      console.error("Error fetching trailers:", error);
+      // Fallback to YouTube search
+      const searchQuery = `${seriesTitle} official trailer`;
+      const youtubeUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(
+        searchQuery
+      )}`;
+      window.open(youtubeUrl, "_blank");
+    }
+  };
+
   // Show loading state
   if (loading) {
     return (
@@ -861,11 +909,11 @@ export default function ProfileSeriesSection({
 
               {/* Content section */}
               <div className="flex-1 min-w-0">
-                <h3 className="text-xl font-semibold text-foreground mb-2">
+                <h3 className="text-xl font-semibold text-white mb-2">
                   {getTextContent(currentRecentlyWatched.name) ||
                     "Unknown Series"}
                 </h3>
-                <p className="text-sm text-muted-foreground mb-4 line-clamp-3">
+                <p className="text-sm text-white mb-4 line-clamp-3">
                   {currentRecentlyWatched.overview
                     ? stripHtmlTags(currentRecentlyWatched.overview)
                     : "No description available"}
@@ -888,6 +936,17 @@ export default function ProfileSeriesSection({
                       ))}
                     </div>
                   )}
+
+                  {/* Trailer button */}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-8 px-4"
+                    onClick={() => handleTrailerClick(currentRecentlyWatched)}
+                  >
+                    <Play className="h-3 w-3 mr-1" />
+                    trailer
+                  </Button>
                 </div>
               </div>
 
@@ -909,20 +968,16 @@ export default function ProfileSeriesSection({
               <div className="w-48 h-72 bg-muted rounded-md border border-border/30 flex items-center justify-center flex-shrink-0">
                 <div className="text-center">
                   <Video className="h-16 w-16 mx-auto mb-4 text-muted-foreground/50" />
-                  <p className="text-sm text-muted-foreground/50">
-                    Add Current Watch
-                  </p>
+                  <p className="text-sm text-white">Add Current Watch</p>
                 </div>
               </div>
 
               {/* Empty state content */}
               <div className="flex-1 min-w-0">
-                <h3 className="text-xl font-semibold text-muted-foreground/50 mb-2">
+                <h3 className="text-xl font-semibold text-white mb-2">
                   Series Title
                 </h3>
-                <p className="text-sm text-muted-foreground/50 mb-4">
-                  Series description
-                </p>
+                <p className="text-sm text-white mb-4">Series description</p>
 
                 <div className="flex items-center gap-4">
                   <div className="flex gap-1">
@@ -930,6 +985,16 @@ export default function ProfileSeriesSection({
                     <div className="w-2 h-2 bg-muted-foreground/30 rounded-full"></div>
                     <div className="w-2 h-2 bg-muted-foreground/30 rounded-full"></div>
                   </div>
+
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-8 px-4"
+                    disabled
+                  >
+                    <Play className="h-3 w-3 mr-1" />
+                    trailer
+                  </Button>
                 </div>
               </div>
 
@@ -1016,7 +1081,7 @@ export default function ProfileSeriesSection({
                       <p className="text-sm font-semibold leading-tight min-h-[1.5rem] truncate">
                         {truncateTitleToWords(series.name)}
                       </p>
-                      <p className="text-xs text-muted-foreground leading-tight mt-0.5 truncate">
+                      <p className="text-xs text-white leading-tight mt-0.5 truncate">
                         {series.first_air_date?.split("-")[0] || "Unknown Year"}
                       </p>
                     </div>
@@ -1131,7 +1196,7 @@ export default function ProfileSeriesSection({
                       <p className="text-sm font-semibold leading-tight truncate min-h-[1.5rem] flex items-center justify-center">
                         {truncateTitleToWords(series.name)}
                       </p>
-                      <p className="text-xs text-muted-foreground leading-tight mt-0.5">
+                      <p className="text-xs text-white leading-tight mt-0.5">
                         {series.first_air_date?.split("-")[0] || "Unknown Year"}
                       </p>
                     </div>
@@ -1204,9 +1269,7 @@ export default function ProfileSeriesSection({
       {/* recommendations */}
       <div className="mt-12 max-w-3xl mx-auto">
         <div className="flex items-center justify-start mb-4">
-          <p className="text-sm font-medium text-muted-foreground">
-            recommendation
-          </p>
+          <p className="text-sm font-medium text-white">recommendation</p>
         </div>
         <div className="relative">
           <div
@@ -1419,7 +1482,7 @@ export default function ProfileSeriesSection({
                       <p className="text-sm font-semibold leading-tight px-2 min-h-[1.5rem] truncate">
                         {truncateTitleToWords(rating.series.name)}
                       </p>
-                      <p className="text-xs text-muted-foreground leading-tight -mt-1 px-2 truncate">
+                      <p className="text-xs text-white leading-tight -mt-1 px-2 truncate">
                         {rating.series.first_air_date?.split("-")[0] ||
                           "Unknown Year"}
                       </p>
@@ -1516,7 +1579,7 @@ export default function ProfileSeriesSection({
           <div className="space-y-4">
             <div className="flex flex-col sm:flex-row gap-3 sm:gap-2 search-dialog-container profile-search-dialog">
               <div className="relative flex-1 min-w-0">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white h-4 w-4" />
                 <Input
                   placeholder={`${
                     editingItem ? "Search for replacement" : "Search"
@@ -1599,7 +1662,7 @@ export default function ProfileSeriesSection({
                           getTextContent(item.name || item.title)
                         ) || "Unknown"}
                       </p>
-                      <p className="text-sm text-muted-foreground truncate">
+                      <p className="text-sm text-white truncate">
                         {item.year || "Unknown Year"}
                       </p>
                     </div>
@@ -1608,6 +1671,28 @@ export default function ProfileSeriesSection({
               </div>
             )}
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Trailer Dialog */}
+      <Dialog open={trailerOpen} onOpenChange={setTrailerOpen}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-hidden">
+          <DialogHeader>
+            <DialogTitle>
+              {selectedTrailer?.name || "Series Trailer"}
+            </DialogTitle>
+          </DialogHeader>
+          {selectedTrailer && (
+            <div className="relative w-full aspect-video">
+              <iframe
+                src={`https://www.youtube.com/embed/${selectedTrailer.key}?autoplay=1`}
+                title={selectedTrailer.name}
+                className="w-full h-full rounded-lg"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+              />
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>

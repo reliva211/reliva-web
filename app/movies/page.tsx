@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
+import { useSearchParams } from "next/navigation";
 
 // Force dynamic rendering to prevent prerender issues
 export const dynamic = "force-dynamic";
@@ -101,6 +102,7 @@ interface SearchResult {
 
 export default function MoviesPage() {
   const { user } = useCurrentUser();
+  const searchParams = useSearchParams();
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearching, setIsSearching] = useState(false);
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
@@ -128,6 +130,21 @@ export default function MoviesPage() {
     { name: "Dropped", isDefault: true, color: "bg-red-500" },
     { name: "Recommendations", isDefault: true, color: "bg-blue-500" },
   ];
+
+  // Handle URL section parameter
+  useEffect(() => {
+    const section = searchParams.get("section");
+    if (section && collections.length > 0) {
+      // Find the collection that matches the section name
+      const targetCollection = collections.find(
+        (col) => col.name.toLowerCase() === section.toLowerCase()
+      );
+      if (targetCollection) {
+        setSelectedCollection(targetCollection.id);
+        setShowDiscover(false); // Hide discover section when filtering by collection
+      }
+    }
+  }, [searchParams, collections]);
 
   // Fetch user's movies and collections
   useEffect(() => {

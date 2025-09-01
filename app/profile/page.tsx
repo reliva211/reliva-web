@@ -843,7 +843,7 @@ export default function ProfilePage() {
               {profile?.visibleSections?.music !== false && (
                 <TabsTrigger
                   value="music"
-                  className="text-xs py-1 h-6 data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:text-primary rounded-none w-fit"
+                  className="text-xs py-1 h-6 data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-emerald-500 data-[state=active]:text-emerald-400 text-gray-400 hover:text-gray-300 transition-colors duration-200 rounded-none w-fit"
                 >
                   music
                 </TabsTrigger>
@@ -851,7 +851,7 @@ export default function ProfilePage() {
               {profile?.visibleSections?.movies !== false && (
                 <TabsTrigger
                   value="movie-profile"
-                  className="text-xs py-1 h-6 data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:text-primary rounded-none w-fit"
+                  className="text-xs py-1 h-6 data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-emerald-500 data-[state=active]:text-emerald-400 text-gray-400 hover:text-gray-300 transition-colors duration-200 rounded-none w-fit"
                 >
                   movies
                 </TabsTrigger>
@@ -859,7 +859,7 @@ export default function ProfilePage() {
               {profile?.visibleSections?.series !== false && (
                 <TabsTrigger
                   value="series"
-                  className="text-xs py-1 h-6 data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:text-primary rounded-none w-fit"
+                  className="text-xs py-1 h-6 data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-emerald-500 data-[state=active]:text-emerald-400 text-gray-400 hover:text-gray-300 transition-colors duration-200 rounded-none w-fit"
                 >
                   shows
                 </TabsTrigger>
@@ -867,7 +867,7 @@ export default function ProfilePage() {
               {profile?.visibleSections?.books !== false && (
                 <TabsTrigger
                   value="books"
-                  className="text-xs py-1 h-6 data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:text-primary rounded-none w-fit"
+                  className="text-xs py-1 h-6 data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-emerald-500 data-[state=active]:text-emerald-400 text-gray-400 hover:text-gray-300 transition-colors duration-200 rounded-none w-fit"
                 >
                   books
                 </TabsTrigger>

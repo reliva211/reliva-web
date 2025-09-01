@@ -702,6 +702,15 @@ function ReviewsPageContent() {
 
     return [...comments]
       .sort((a, b) => {
+        // Check if current user is the author of either comment
+        const isUserA = user?.authorId === a.authorId?._id;
+        const isUserB = user?.authorId === b.authorId?._id;
+
+        // If one is by current user and the other isn't, prioritize user's comment
+        if (isUserA && !isUserB) return -1;
+        if (!isUserA && isUserB) return 1;
+
+        // If both are by the same user or both are by different users, sort by time (newest first)
         const getTime = (timestamp: string | Date) => {
           if (typeof timestamp === "string") {
             const d = new Date(timestamp);
@@ -715,7 +724,7 @@ function ReviewsPageContent() {
         const timeA = getTime(a.timestamp);
         const timeB = getTime(b.timestamp);
 
-        return timeA - timeB;
+        return timeB - timeA; // Reverse order for newest first
       })
       .map((reply) => ({
         ...reply,
@@ -1287,13 +1296,20 @@ function ReviewsPageContent() {
                           <Card className="mb-4 overflow-hidden border border-[#2a2a2a] bg-[#0f0f0f]">
                             <div className="flex">
                               <div className="w-36 h-44 flex-shrink-0 relative p-3">
-                                <div className="relative w-full h-full rounded-xl overflow-hidden shadow-lg">
+                                <Link
+                                  href={`/${
+                                    post.mediaType === "series"
+                                      ? "series"
+                                      : post.mediaType + "s"
+                                  }/${post.mediaId}`}
+                                  className="block relative w-full h-full rounded-xl overflow-hidden shadow-lg cursor-pointer"
+                                >
                                   <img
                                     src={post.mediaCover || "/placeholder.svg"}
                                     alt={post.mediaTitle}
                                     className="w-full h-full object-cover hover:scale-105 transition-transform duration-200"
                                   />
-                                </div>
+                                </Link>
                               </div>
                               <div className="flex-1 p-4">
                                 <div className="flex items-start gap-2 mb-2">

@@ -810,19 +810,19 @@ export default function ProfileBooksSection({
 
               {/* Content section */}
               <div className="flex-1 min-w-0">
-                <h3 className="text-lg font-semibold text-foreground mb-1">
+                <h3 className="text-lg font-semibold text-white mb-1">
                   {getTextContent(currentRecentlyRead.title) || "Unknown Book"}
                 </h3>
 
                 {/* Publication year if available */}
                 {currentRecentlyRead.publishedDate && (
-                  <p className="text-xs text-muted-foreground/70 mb-3">
+                  <p className="text-xs text-white mb-3">
                     {currentRecentlyRead.publishedDate.split("-")[0]}
                   </p>
                 )}
 
                 {/* Description */}
-                <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
+                <p className="text-sm text-white mb-4 line-clamp-2">
                   {currentRecentlyRead.description
                     ? stripHtmlTags(currentRecentlyRead.description)
                     : "No description available"}
@@ -845,17 +845,6 @@ export default function ProfileBooksSection({
                       ))}
                     </div>
                   )}
-
-                  {/* Read button */}
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="h-8 px-4"
-                    disabled
-                  >
-                    <BookOpen className="h-3 w-3 mr-1" />
-                    read
-                  </Button>
                 </div>
               </div>
 
@@ -877,24 +866,18 @@ export default function ProfileBooksSection({
               <div className="w-48 h-72 bg-muted rounded-md border border-border/30 flex items-center justify-center flex-shrink-0">
                 <div className="text-center">
                   <BookOpen className="h-12 w-12 mx-auto mb-3 text-muted-foreground/50" />
-                  <p className="text-xs text-muted-foreground/50">
-                    Add Current Read
-                  </p>
+                  <p className="text-xs text-white">Add Current Read</p>
                 </div>
               </div>
 
               {/* Empty state content */}
               <div className="flex-1 min-w-0">
-                <h3 className="text-lg font-semibold text-muted-foreground/50 mb-1">
+                <h3 className="text-lg font-semibold text-white mb-1">
                   Book Title
                 </h3>
-                <p className="text-sm text-muted-foreground/50 mb-2">
-                  by Author Name
-                </p>
-                <p className="text-xs text-muted-foreground/30 mb-3">2024</p>
-                <p className="text-sm text-muted-foreground/50 mb-4">
-                  Book description
-                </p>
+                <p className="text-sm text-white mb-2">by Author Name</p>
+                <p className="text-xs text-white mb-3">2024</p>
+                <p className="text-sm text-white mb-4">Book description</p>
 
                 <div className="flex items-center gap-4">
                   <div className="flex gap-1">
@@ -902,16 +885,6 @@ export default function ProfileBooksSection({
                     <div className="w-2 h-2 bg-muted-foreground/30 rounded-full"></div>
                     <div className="w-2 h-2 bg-muted-foreground/30 rounded-full"></div>
                   </div>
-
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="h-8 px-4"
-                    disabled
-                  >
-                    <BookOpen className="h-3 w-3 mr-1" />
-                    read
-                  </Button>
                 </div>
               </div>
 
@@ -996,7 +969,7 @@ export default function ProfileBooksSection({
                         <p className="text-sm font-semibold leading-tight px-2 min-h-[1.25rem] truncate">
                           {truncateTitleToWords(book.title)}
                         </p>
-                        <p className="text-xs text-muted-foreground leading-tight mt-0.5 px-2 truncate">
+                        <p className="text-xs text-white leading-tight mt-0.5 px-2 truncate">
                           {truncateAuthorsAggressive(book.authors) ||
                             "Unknown Author"}
                         </p>
@@ -1052,9 +1025,7 @@ export default function ProfileBooksSection({
       {/* reading list */}
       <div className="mt-12 max-w-3xl mx-auto">
         <div className="flex items-center justify-start mb-4">
-          <p className="text-sm font-medium text-muted-foreground">
-            reading list
-          </p>
+          <p className="text-sm font-medium text-white">reading list</p>
         </div>
         <div className="relative">
           <div
@@ -1112,7 +1083,7 @@ export default function ProfileBooksSection({
                       <p className="text-sm font-semibold leading-tight px-2 min-h-[1.25rem] truncate">
                         {truncateTitleToWords(book.title)}
                       </p>
-                      <p className="text-xs text-muted-foreground leading-tight mt-0.5 px-2 truncate">
+                      <p className="text-xs text-white leading-tight mt-0.5 px-2 truncate">
                         {truncateAuthorsAggressive(book.authors) ||
                           "Unknown Author"}
                       </p>
@@ -1248,7 +1219,7 @@ export default function ProfileBooksSection({
                       <p className="text-sm font-semibold leading-tight px-2 min-h-[1.25rem] truncate">
                         {truncateTitleToWords(book.title)}
                       </p>
-                      <p className="text-xs text-muted-foreground leading-tight mt-0.5 px-2 truncate">
+                      <p className="text-xs text-white leading-tight mt-0.5 px-2 truncate">
                         {truncateAuthorsAggressive(book.authors) ||
                           "Unknown Author"}
                       </p>
@@ -1388,7 +1359,7 @@ export default function ProfileBooksSection({
                       <p className="text-sm font-semibold leading-tight px-2 min-h-[1.5rem] truncate">
                         {truncateTitleToWords(rating.book.title)}
                       </p>
-                      <p className="text-xs text-muted-foreground leading-tight mt-0.5 px-2 truncate">
+                      <p className="text-xs text-white leading-tight mt-0.5 px-2 truncate">
                         {truncateAuthorsAggressive(rating.book.authors) ||
                           "Unknown Author"}
                       </p>
@@ -1481,7 +1452,7 @@ export default function ProfileBooksSection({
           <div className="space-y-4">
             <div className="flex flex-col sm:flex-row gap-3 sm:gap-2 search-dialog-container profile-search-dialog">
               <div className="relative flex-1 min-w-0">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white h-4 w-4" />
                 <Input
                   placeholder={`${
                     editingItem ? "Search for replacement" : "Search"
@@ -1554,7 +1525,7 @@ export default function ProfileBooksSection({
                           getTextContent(item.title || item.name)
                         ) || "Unknown"}
                       </p>
-                      <p className="text-xs text-muted-foreground truncate leading-tight mt-0.5">
+                      <p className="text-xs text-white truncate leading-tight mt-0.5">
                         {truncateAuthorsAggressive(item.authors) ||
                           "Unknown Author"}
                       </p>

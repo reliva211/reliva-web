@@ -6,6 +6,14 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight, RefreshCw } from "lucide-react";
 
+// Utility function to decode HTML entities
+const decodeHtmlEntities = (text: string): string => {
+  if (typeof window === "undefined") return text; // Server-side rendering
+  const textarea = document.createElement("textarea");
+  textarea.innerHTML = text;
+  return textarea.value;
+};
+
 interface DiscoverItem {
   id: string | number;
   title: string;
@@ -195,7 +203,7 @@ export default function DiscoverSection({
               <div className="mt-3 sm:mt-4 space-y-1">
                 {/* Title */}
                 <h4 className="font-bold text-sm sm:text-xs md:text-base text-white leading-tight line-clamp-2 min-h-[2rem] sm:min-h-[1.5rem] text-center group-hover:text-blue-300 transition-colors duration-200">
-                  {item.title || "Unknown Title"}
+                  {decodeHtmlEntities(item.title || "Unknown Title")}
                 </h4>
 
                 {/* Year - Only show year for books, no author or other details */}
@@ -208,7 +216,7 @@ export default function DiscoverSection({
                 {/* Author/Artist - Only show for non-book items */}
                 {itemType !== "book" && item.author && (
                   <p className="text-sm sm:text-xs md:text-sm text-gray-400 font-medium truncate line-clamp-1 text-center group-hover:text-gray-300 transition-colors duration-200">
-                    {item.author}
+                    {decodeHtmlEntities(item.author)}
                   </p>
                 )}
 

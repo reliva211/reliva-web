@@ -110,6 +110,7 @@ export default function YouTubePlayer() {
           showinfo: 0, // Hide video info
           iv_load_policy: 3,
           fs: 0, // Disable fullscreen button
+          disablekb: 1, // Disable keyboard controls
           mute: 0, // Start unmuted for autoplay to work
           color: "white", // White progress bar
           theme: "dark", // Dark theme
@@ -257,36 +258,34 @@ export default function YouTubePlayer() {
 
         {/* Control Overlay - Positioned over the video */}
         <div className="absolute inset-0 pointer-events-none">
-          {/* Top Controls */}
-          <div className="absolute top-2 left-2 right-2 flex items-center justify-between pointer-events-auto">
-            {/* Settings/Info Button */}
+          {/* Top Left - Settings Button */}
+          <div className="absolute top-2 left-2 pointer-events-auto">
             <Button
               variant="ghost"
               size="sm"
-              className="h-6 w-6 p-0 bg-black/50 hover:bg-black/70 text-white rounded-full"
+              className="h-8 w-8 p-0 bg-black/50 hover:bg-black/70 text-white rounded-full"
             >
               <span className="text-xs">⚙️</span>
             </Button>
+          </div>
 
-            {/* Expand/Close Button */}
-            <div className="flex items-center gap-1">
-              <Button
-                onClick={() => setIsExpanded(!isExpanded)}
-                variant="ghost"
-                size="sm"
-                className="h-6 w-6 p-0 bg-black/50 hover:bg-black/70 text-white rounded-full"
-              >
-                <span className="text-xs">⛶</span>
-              </Button>
-              <Button
-                onClick={hidePlayer}
-                variant="ghost"
-                size="sm"
-                className="h-6 w-6 p-0 bg-black/50 hover:bg-black/70 text-white rounded-full"
-              >
-                <X className="h-3 w-3" />
-              </Button>
-            </div>
+          {/* Center - Play/Pause Button */}
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-auto">
+            <Button
+              onClick={togglePlay}
+              variant="ghost"
+              size="sm"
+              className="h-12 w-12 p-0 bg-black/50 hover:bg-black/70 text-white rounded-full"
+              disabled={!player}
+            >
+              {isPlaying ? (
+                <div className="h-6 w-6 flex items-center justify-center">
+                  <div className="w-1.5 h-6 bg-current border-l border-r border-current"></div>
+                </div>
+              ) : (
+                <Play className="h-6 w-6 ml-0.5" />
+              )}
+            </Button>
           </div>
 
           {/* Bottom Controls */}
@@ -304,23 +303,6 @@ export default function YouTubePlayer() {
               <SkipBack className="h-4 w-4" />
             </Button>
 
-            {/* Play/Pause Button */}
-            <Button
-              onClick={togglePlay}
-              variant="ghost"
-              size="sm"
-              className="h-8 w-8 p-0 bg-black/50 hover:bg-black/70 text-white rounded-full"
-              disabled={!player}
-            >
-              {isPlaying ? (
-                <div className="h-4 w-4 flex items-center justify-center">
-                  <div className="w-1 h-4 bg-current border-l border-r border-current"></div>
-                </div>
-              ) : (
-                <Play className="h-4 w-4 ml-0.5" />
-              )}
-            </Button>
-
             {/* Next Button */}
             <Button
               onClick={handleNext}
@@ -334,36 +316,23 @@ export default function YouTubePlayer() {
               <SkipForward className="h-4 w-4" />
             </Button>
           </div>
-
-          {/* Center Info (when not playing) */}
-          {!isPlaying && player && (
-            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-              <div className="bg-black/70 rounded-lg px-3 py-1">
-                <p className="text-white text-xs font-medium truncate max-w-[200px]">
-                  {currentSong.title}
-                </p>
-              </div>
-            </div>
-          )}
         </div>
       </div>
 
-      {/* Song Info Bar - Only show on mobile when expanded */}
-      {isExpanded && (
-        <div className="px-3 py-2 bg-gray-900 border-t border-gray-700">
-          <p className="text-white text-xs font-medium truncate song-title">
-            {currentSong.title}
+      {/* Information Panel */}
+      <div className="px-3 py-2 bg-gray-900 border-t border-gray-700">
+        <p className="text-white text-xs font-medium truncate song-title">
+          {currentSong.title}
+        </p>
+        <p className="text-gray-400 text-xs truncate artist-name">
+          {currentSong.artist}
+        </p>
+        {queue.length > 1 && (
+          <p className="text-gray-500 text-xs mt-1">
+            {currentIndex + 1} of {queue.length}
           </p>
-          <p className="text-gray-400 text-xs truncate artist-name">
-            {currentSong.artist}
-          </p>
-          {queue.length > 1 && (
-            <p className="text-gray-500 text-xs">
-              {currentIndex + 1} of {queue.length}
-            </p>
-          )}
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }

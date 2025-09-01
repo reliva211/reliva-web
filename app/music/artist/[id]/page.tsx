@@ -615,7 +615,7 @@ export default function ArtistDetailPage({
                   Top Albums
                 </h3>
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 sm:gap-3 px-2 sm:px-4">
-                  {albums.slice(0, 6).map((album) => (
+                  {albums.map((album) => (
                     <div
                       key={album.id}
                       className="overflow-hidden cursor-pointer hover:shadow-lg transition-all duration-300 rounded-xl group bg-muted/30 backdrop-blur-sm hover:bg-muted/50 hover:scale-105 border border-border/20"

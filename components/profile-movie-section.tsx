@@ -567,7 +567,7 @@ export default function ProfileMovieSection({
       let section = "";
       switch (sectionType) {
         case "recentlyWatched":
-          section = "recently-watched";
+          section = "Watched";
           break;
         case "watchlist":
           section = "watchlist";
@@ -889,11 +889,11 @@ export default function ProfileMovieSection({
 
               {/* Content section */}
               <div className="flex-1 min-w-0">
-                <h3 className="text-xl font-semibold text-foreground mb-2">
+                <h3 className="text-xl font-semibold text-white mb-2">
                   {getTextContent(currentRecentlyWatched.title) ||
                     "Unknown Movie"}
                 </h3>
-                <p className="text-sm text-muted-foreground mb-4 line-clamp-3">
+                <p className="text-sm text-white mb-4 line-clamp-3">
                   {currentRecentlyWatched.overview
                     ? stripHtmlTags(currentRecentlyWatched.overview)
                     : "No description available"}
@@ -948,20 +948,16 @@ export default function ProfileMovieSection({
               <div className="w-48 h-72 bg-muted rounded-md border border-border/30 flex items-center justify-center flex-shrink-0">
                 <div className="text-center">
                   <Video className="h-16 w-16 mx-auto mb-4 text-muted-foreground/50" />
-                  <p className="text-sm text-muted-foreground/50">
-                    Add Current Watch
-                  </p>
+                  <p className="text-sm text-white">Add Current Watch</p>
                 </div>
               </div>
 
               {/* Empty state content */}
               <div className="flex-1 min-w-0">
-                <h3 className="text-xl font-semibold text-muted-foreground/50 mb-2">
+                <h3 className="text-xl font-semibold text-white mb-2">
                   Movie Title
                 </h3>
-                <p className="text-sm text-muted-foreground/50 mb-4">
-                  Movie description
-                </p>
+                <p className="text-sm text-white mb-4">Movie description</p>
 
                 <div className="flex items-center gap-4">
                   <div className="flex gap-1">
@@ -1063,7 +1059,7 @@ export default function ProfileMovieSection({
                         <p className="text-base font-semibold leading-tight px-2 truncate min-h-[1.5rem] flex items-center justify-center">
                           {truncateTitleToWords(movie.title)}
                         </p>
-                        <p className="text-sm text-muted-foreground leading-tight mt-0.5 px-2">
+                        <p className="text-sm text-white leading-tight mt-0.5 px-2">
                           {movie.year || "Unknown Year"}
                         </p>
                       </div>
@@ -1176,7 +1172,7 @@ export default function ProfileMovieSection({
                       <p className="text-base font-semibold leading-tight px-2 truncate min-h-[1.5rem] flex items-center justify-center">
                         {truncateTitleToWords(movie.title)}
                       </p>
-                      <p className="text-sm text-muted-foreground leading-tight mt-0.5 px-2">
+                      <p className="text-sm text-white leading-tight mt-0.5 px-2">
                         {movie.year || "Unknown Year"}
                       </p>
                     </div>
@@ -1311,7 +1307,7 @@ export default function ProfileMovieSection({
                       <p className="text-base font-semibold leading-tight px-2 truncate min-h-[1.5rem] flex items-center justify-center">
                         {truncateTitleToWords(movie.title)}
                       </p>
-                      <p className="text-sm text-muted-foreground leading-tight mt-0.5 px-2">
+                      <p className="text-sm text-white leading-tight mt-0.5 px-2">
                         {movie.year || "Unknown Year"}
                       </p>
                     </div>
@@ -1450,7 +1446,7 @@ export default function ProfileMovieSection({
                       <p className="text-sm font-semibold leading-tight px-2 min-h-[1.5rem] truncate">
                         {truncateTitleToWords(rating.movie.title)}
                       </p>
-                      <p className="text-xs text-muted-foreground leading-tight mt-0.5 px-2 truncate">
+                      <p className="text-xs text-white leading-tight mt-0.5 px-2 truncate">
                         {rating.movie.year || "Unknown Year"}
                       </p>
                     </div>
@@ -1546,7 +1542,7 @@ export default function ProfileMovieSection({
           <div className="space-y-4">
             <div className="flex flex-col sm:flex-row gap-3 sm:gap-2 search-dialog-container profile-search-dialog">
               <div className="relative flex-1 min-w-0">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white h-4 w-4" />
                 <Input
                   placeholder={`Search ${
                     activeSearchType === "favoriteDirector"
@@ -1617,7 +1613,7 @@ export default function ProfileMovieSection({
                           getTextContent(item.title || item.name)
                         ) || "Unknown"}
                       </p>
-                      <p className="text-sm text-muted-foreground truncate">
+                      <p className="text-sm text-white truncate">
                         {item.year || "Unknown Year"}
                       </p>
                     </div>

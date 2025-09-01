@@ -191,7 +191,7 @@ export default function Sidebar({ isLandingPage = false }: SidebarProps) {
                   ) : (
                     <span className="flex items-center gap-2">
                       reliva
-                      <span className="text-xs text-muted-foreground px-1.5 py-0.5 rounded-full font-medium">
+                      <span className="text-xs text-white px-1.5 py-0.5 rounded-full font-medium">
                         beta
                       </span>
                     </span>
@@ -276,7 +276,7 @@ export default function Sidebar({ isLandingPage = false }: SidebarProps) {
                             : "px-4 py-3",
                           isActive
                             ? "bg-accent text-accent-foreground"
-                            : "text-muted-foreground"
+                            : "text-white"
                         )}
                       >
                         <Icon
@@ -311,7 +311,7 @@ export default function Sidebar({ isLandingPage = false }: SidebarProps) {
                       <DropdownMenuTrigger asChild>
                         <button
                           className={cn(
-                            "flex w-full items-center gap-3 rounded-lg text-sm font-medium transition-all duration-200 hover:bg-accent hover:text-accent-foreground px-4 py-3 text-muted-foreground",
+                            "flex w-full items-center gap-3 rounded-lg text-sm font-medium transition-all duration-200 hover:bg-accent hover:text-accent-foreground px-4 py-3 text-white",
                             (pathname === "/music" ||
                               pathname === "/books" ||
                               pathname === "/movies" ||
@@ -371,7 +371,7 @@ export default function Sidebar({ isLandingPage = false }: SidebarProps) {
                               : "px-4 py-3",
                             isActive
                               ? "bg-accent text-accent-foreground"
-                              : "text-muted-foreground"
+                              : "text-white"
                           )}
                         >
                           <Icon
@@ -415,7 +415,7 @@ export default function Sidebar({ isLandingPage = false }: SidebarProps) {
                             : "px-4 py-3",
                           isActive
                             ? "bg-accent text-accent-foreground"
-                            : "text-muted-foreground"
+                            : "text-white"
                         )}
                       >
                         <Icon
@@ -467,7 +467,7 @@ export default function Sidebar({ isLandingPage = false }: SidebarProps) {
                             setIsMobileOpen(false);
                           }}
                           className={cn(
-                            "flex items-center gap-3 rounded-lg text-sm font-medium transition-all duration-200 hover:bg-accent hover:text-accent-foreground text-muted-foreground",
+                            "flex items-center gap-3 rounded-lg text-sm font-medium transition-all duration-200 hover:bg-accent hover:text-accent-foreground text-white",
                             isCollapsed
                               ? "justify-center px-2 py-3"
                               : "px-4 py-3"
@@ -514,7 +514,7 @@ export default function Sidebar({ isLandingPage = false }: SidebarProps) {
                             : "px-4 py-3",
                           isActive
                             ? "bg-accent text-accent-foreground"
-                            : "text-muted-foreground"
+                            : "text-white"
                         )}
                       >
                         <Icon

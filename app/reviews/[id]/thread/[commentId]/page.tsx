@@ -242,8 +242,27 @@ export default function ThreadPage() {
           };
         });
 
-        // Set the replies state
-        setReplies(repliesWithCounts);
+        // Sort replies to prioritize current user's replies (latest first)
+        const sortReplies = (replies: Reply[]): Reply[] => {
+          return [...replies].sort((a, b) => {
+            // Check if current user is the author of either reply
+            const isUserA = user?.authorId === a.authorId?._id;
+            const isUserB = user?.authorId === b.authorId?._id;
+
+            // If one is by current user and the other isn't, prioritize user's reply
+            if (isUserA && !isUserB) return -1;
+            if (!isUserA && isUserB) return 1;
+
+            // If both are by the same user or both are by different users, sort by time (newest first)
+            const timeA = new Date(a.timestamp).getTime();
+            const timeB = new Date(b.timestamp).getTime();
+
+            return timeB - timeA; // Reverse order for newest first
+          });
+        };
+
+        // Set the replies state with sorting applied
+        setReplies(sortReplies(repliesWithCounts));
       } catch (error) {
         setError(
           error instanceof Error ? error.message : "Failed to fetch data"
@@ -743,10 +762,93 @@ export default function ThreadPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-[#0a0a0a]">
-        <div className="container mx-auto px-4 py-8 max-w-4xl">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
-            <p className="text-[#808080]">Loading thread...</p>
+        <div className="container mx-auto px-4 sm:px-6 py-4 sm:py-8 max-w-4xl">
+          {/* Top Spacing for Navigation */}
+          <div className="h-16 sm:h-20"></div>
+
+          {/* Back Button Skeleton */}
+          <div className="mb-8 mt-6 sm:mt-8">
+            <div className="w-24 h-10 bg-[#1a1a1a] rounded-lg animate-pulse"></div>
+          </div>
+
+          {/* Main Comment Skeleton */}
+          <div className="mb-8 border-2 border-[#2a2a2a] bg-[#0f0f0f] rounded-lg">
+            <div className="p-4 sm:p-6">
+              <div className="flex items-start gap-4">
+                {/* Avatar Skeleton */}
+                <div className="w-12 h-12 bg-[#2a2a2a] rounded-full animate-pulse flex-shrink-0"></div>
+                <div className="flex-1 min-w-0">
+                  {/* Username and Timestamp Skeleton */}
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-32 h-5 bg-[#2a2a2a] rounded animate-pulse"></div>
+                    <div className="w-16 h-5 bg-[#2a2a2a] rounded-full animate-pulse"></div>
+                  </div>
+                  {/* Content Skeleton */}
+                  <div className="space-y-2">
+                    <div className="w-full h-4 bg-[#2a2a2a] rounded animate-pulse"></div>
+                    <div className="w-3/4 h-4 bg-[#2a2a2a] rounded animate-pulse"></div>
+                    <div className="w-1/2 h-4 bg-[#2a2a2a] rounded animate-pulse"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Replies Section Skeleton */}
+          <div className="space-y-6 mb-8">
+            {/* Section Header Skeleton */}
+            <div className="border-b border-[#2a2a2a] pb-3">
+              <div className="w-32 h-6 bg-[#2a2a2a] rounded animate-pulse"></div>
+            </div>
+
+            {/* Reply Cards Skeleton */}
+            <div className="space-y-4">
+              {[1, 2, 3].map((i) => (
+                <div
+                  key={i}
+                  className="border border-[#2a2a2a] bg-[#0f0f0f] rounded-lg"
+                >
+                  <div className="p-5">
+                    <div className="flex items-start gap-4">
+                      {/* Reply Avatar Skeleton */}
+                      <div className="w-10 h-10 bg-[#2a2a2a] rounded-full animate-pulse flex-shrink-0"></div>
+                      <div className="flex-1 min-w-0">
+                        {/* Reply Username and Timestamp Skeleton */}
+                        <div className="flex items-center gap-3 mb-3">
+                          <div className="w-28 h-4 bg-[#2a2a2a] rounded animate-pulse"></div>
+                          <div className="w-14 h-4 bg-[#2a2a2a] rounded-full animate-pulse"></div>
+                        </div>
+                        {/* Reply Content Skeleton */}
+                        <div className="space-y-2 mb-4">
+                          <div className="w-full h-3 bg-[#2a2a2a] rounded animate-pulse"></div>
+                          <div className="w-2/3 h-3 bg-[#2a2a2a] rounded animate-pulse"></div>
+                        </div>
+                        {/* See Replies Button Skeleton */}
+                        <div className="w-24 h-6 bg-[#2a2a2a] rounded animate-pulse"></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Reply Input Skeleton */}
+          <div className="border border-[#2a2a2a] bg-[#0f0f0f] rounded-lg">
+            <div className="p-5">
+              <div className="flex gap-4">
+                {/* Input Avatar Skeleton */}
+                <div className="w-8 h-8 bg-[#2a2a2a] rounded-full animate-pulse flex-shrink-0"></div>
+                <div className="flex-1">
+                  {/* Input Field Skeleton */}
+                  <div className="w-full h-20 bg-[#2a2a2a] rounded animate-pulse mb-3"></div>
+                  {/* Button Skeleton */}
+                  <div className="flex justify-end">
+                    <div className="w-20 h-8 bg-[#2a2a2a] rounded animate-pulse"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -775,161 +877,160 @@ export default function ThreadPage() {
 
   return (
     <div className="min-h-screen bg-[#0a0a0a]">
-      <div className="container mx-auto px-4 sm:px-6 py-4 sm:py-8 max-w-4xl">
+      <div className="container mx-auto px-3 sm:px-4 md:px-6 py-2 sm:py-4 max-w-4xl">
         {/* Top Spacing for Navigation */}
-        <div className="h-16 sm:h-20"></div>
-        
+        <div className="h-12 sm:h-16"></div>
+
         {/* Back Button */}
-        <div className="mb-8 mt-6 sm:mt-8">
+        <div className="mb-6 mt-2 sm:mt-4">
           <Button
             variant="ghost"
             onClick={() => router.back()}
-            className="text-[#808080] hover:text-[#c0c0c0] hover:bg-[#1a1a1a] px-3 py-2 text-sm sm:text-base"
+            className="text-[#808080] hover:text-[#c0c0c0] hover:bg-[#1a1a1a] px-2 sm:px-3 py-1.5 sm:py-2 text-sm"
           >
-            <ArrowLeft className="w-4 h-4 mr-2" />
+            <ArrowLeft className="w-3 h-3 sm:w-4 sm:h-4 mr-1.5 sm:mr-2" />
             <span className="hidden sm:inline">Back to Review</span>
             <span className="sm:hidden">Back</span>
           </Button>
         </div>
 
         {/* Main Comment */}
-        <Card className="mb-8 border-2 border-green-500/30 bg-gradient-to-r from-green-500/5 to-emerald-500/5">
-          <div className="p-4 sm:p-6">
-            <div className="flex items-start gap-4">
-              <Avatar className="w-12 h-12 ring-2 ring-green-500/30 flex-shrink-0">
-                <AvatarFallback className="bg-gradient-to-br from-green-500 to-emerald-600 text-white font-semibold">
-                  {parentComment.authorId?.username?.charAt(0)?.toUpperCase() ||
-                    "U"}
-                </AvatarFallback>
-              </Avatar>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-3 mb-4">
-                  <span className="font-semibold text-base text-[#f0e0e0]">
-                    {parentComment.authorId?.username}
-                  </span>
-                  <span className="text-[#a0a0a0] text-xs bg-[#3a3a3a] px-3 py-1 rounded-full">
-                    {formatTime(parentComment.timestamp)}
-                  </span>
-                </div>
-                <p className="text-[#f0f0f0] text-base leading-relaxed mb-0">
-                  {parentComment.content}
-                </p>
+        <div className="mb-6 sm:mb-8 relative">
+          <div className="flex items-start gap-3 sm:gap-4">
+            <Avatar className="w-8 h-8 sm:w-10 sm:h-10 ring-2 ring-green-500/40 flex-shrink-0 shadow-md">
+              <AvatarFallback className="bg-gradient-to-br from-green-500 to-emerald-600 text-white font-semibold text-xs sm:text-sm">
+                {parentComment.authorId?.username?.charAt(0)?.toUpperCase() ||
+                  "U"}
+              </AvatarFallback>
+            </Avatar>
+            <div className="flex-1 min-w-0">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 mb-2">
+                <span className="font-semibold text-sm sm:text-base text-[#f0f0f0] truncate">
+                  {parentComment.authorId?.username}
+                </span>
+                <span className="text-[#808080] text-xs sm:text-sm">
+                  {formatTime(parentComment.timestamp)}
+                </span>
               </div>
+              <p className="text-[#e0e0e0] text-sm leading-relaxed break-words">
+                {parentComment.content}
+              </p>
             </div>
           </div>
-        </Card>
+          {/* Subtle accent line */}
+          <div className="absolute left-4 sm:left-5 top-8 sm:top-10 w-0.5 h-full bg-gradient-to-b from-green-500/30 to-transparent"></div>
+        </div>
 
         {/* Replies Section */}
-        <div className="space-y-6 mb-8">
-          <h3 className="text-lg font-semibold text-[#e0e0e0] border-b border-[#2a2a2a] pb-3">
-            All Replies ({replies.length})
+        <div className="mb-6 sm:mb-8">
+          <h3 className="text-base sm:text-lg font-semibold text-[#e0e0e0] mb-4 sm:mb-6 flex items-center gap-2 sm:gap-3">
+            <div className="w-1 h-4 sm:h-5 bg-gradient-to-b from-green-500 to-emerald-500 rounded-full"></div>
+            Replies ({replies.length})
           </h3>
 
           {replies.length === 0 ? (
-            <Card className="border border-[#2a2a2a] bg-[#0f0f0f]">
-              <div className="p-8 text-center">
-                <div className="w-16 h-16 bg-[#2a2a2a] rounded-full flex items-center justify-center mx-auto mb-4">
-                  <MessageCircle className="w-8 h-8 text-[#606060]" />
-                </div>
-                <h4 className="text-lg font-medium text-[#d0d0d0] mb-2">
-                  No replies yet
-                </h4>
-                <p className="text-[#808080] mb-4">
-                  Be the first to respond to this comment.
-                </p>
+            <div className="text-center py-8 sm:py-12">
+              <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-br from-green-500/10 to-emerald-500/10 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
+                <MessageCircle className="w-6 h-6 sm:w-8 sm:h-8 text-green-500/60" />
               </div>
-            </Card>
+              <h4 className="text-base sm:text-lg font-medium text-[#d0d0d0] mb-2">
+                No replies yet
+              </h4>
+              <p className="text-[#808080] text-sm sm:text-base">
+                Be the first to respond to this comment.
+              </p>
+            </div>
           ) : (
-            <div className="space-y-4">
-              {replies.map((reply) => (
-                <Card
-                  key={reply._id}
-                  className="border border-[#2a2a2a] bg-[#0f0f0f]"
-                >
-                  <div className="p-5">
-                    <div className="flex items-start gap-4">
-                      <Avatar className="w-10 h-10 ring-1 ring-green-500/20 flex-shrink-0">
-                        <AvatarFallback className="bg-gradient-to-br from-green-500 to-emerald-600 text-white font-semibold text-sm">
-                          {reply.authorId?.username?.charAt(0)?.toUpperCase() ||
-                            "U"}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-3 mb-3">
-                          <span className="font-medium text-sm text-[#f5f5f5]">
-                            {reply.authorId?.username}
-                          </span>
-                          <span className="text-[#a0a0a0] text-xs bg-[#3a3a2a] px-3 py-1 rounded-full">
-                            {formatTime(reply.timestamp)}
-                          </span>
-                        </div>
-                        <p className="text-[#f0f0f0] text-sm leading-relaxed mb-4">
-                          {reply.content}
-                        </p>
+            <div className="space-y-4 sm:space-y-6">
+              {replies.map((reply, index) => (
+                <div key={reply._id} className="relative pl-4 sm:pl-6">
+                  {/* Reply line connector */}
+                  <div className="absolute left-2 sm:left-3 top-4 sm:top-5 w-0.5 h-full bg-gradient-to-b from-green-500/20 to-transparent"></div>
 
-                        <div className="flex items-center gap-4 text-[#a0a0a0]">
-                          {/* See Replies Button - Always show */}
-                          <Link
-                            href={`/reviews/${reviewId}/thread/${reply._id}`}
-                            className="flex items-center gap-1.5 hover:text-green-400 transition-all duration-200 group"
-                          >
-                            <div className="p-1.5 rounded-full group-hover:bg-green-600/20 transition-colors">
-                              <MessageCircle className="w-4 h-4" />
-                            </div>
-                            <span className="text-xs font-medium">
-                              {(() => {
-                                const replyCount = reply.comments
-                                  ? reply.comments.length
-                                  : 0;
-                                return replyCount > 0
-                                  ? `See Replies (${replyCount})`
-                                  : "See Replies (0)";
-                              })()}
-                            </span>
-                          </Link>
-                        </div>
+                  <div className="flex items-start gap-2 sm:gap-3">
+                    <Avatar className="w-6 h-6 sm:w-8 sm:h-8 ring-2 ring-green-500/30 flex-shrink-0 shadow-md">
+                      <AvatarFallback className="bg-gradient-to-br from-green-500 to-emerald-600 text-white font-semibold text-xs">
+                        {reply.authorId?.username?.charAt(0)?.toUpperCase() ||
+                          "U"}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 mb-1">
+                        <span className="font-medium text-xs sm:text-sm text-[#f0f0f0] truncate">
+                          {reply.authorId?.username}
+                        </span>
+                        <span className="text-[#808080] text-xs">
+                          {formatTime(reply.timestamp)}
+                        </span>
+                      </div>
+                      <p className="text-[#e0e0e0] text-xs sm:text-sm leading-relaxed mb-2 sm:mb-3 break-words">
+                        {reply.content}
+                      </p>
+
+                      <div className="flex items-center gap-3 sm:gap-4">
+                        {/* See Replies Button */}
+                        <Link
+                          href={`/reviews/${reviewId}/thread/${reply._id}`}
+                          className="inline-flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1 sm:py-1.5 bg-green-500/10 hover:bg-green-500/20 text-green-400 rounded-full transition-all duration-200 group text-xs"
+                        >
+                          <MessageCircle className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
+                          <span className="font-medium">
+                            {(() => {
+                              const replyCount = reply.comments
+                                ? reply.comments.length
+                                : 0;
+                              return replyCount > 0
+                                ? `${replyCount} replies`
+                                : "Reply";
+                            })()}
+                          </span>
+                        </Link>
                       </div>
                     </div>
                   </div>
-                </Card>
+                </div>
               ))}
             </div>
           )}
         </div>
 
         {/* Reply Input */}
-        <Card className="border border-[#2a2a2a] bg-[#0f0f0f]">
-          <div className="p-5">
-            <div className="flex gap-4">
-              <Avatar className="w-8 h-8 ring-1 ring-green-500/20 flex-shrink-0">
-                <AvatarFallback className="bg-gradient-to-br from-green-500 to-emerald-600 text-white font-semibold text-xs">
-                  {user?.displayName?.charAt(0) ||
-                    user?.email?.charAt(0) ||
-                    "U"}
-                </AvatarFallback>
-              </Avatar>
-              <div className="flex-1">
+        <div className="relative pl-4 sm:pl-6">
+          <div className="flex items-start gap-2 sm:gap-3">
+            <Avatar className="w-6 h-6 sm:w-8 sm:h-8 ring-2 ring-green-500/30 flex-shrink-0 shadow-md">
+              <AvatarFallback className="bg-gradient-to-br from-green-500 to-emerald-600 text-white font-semibold text-xs">
+                {user?.displayName?.charAt(0) || user?.email?.charAt(0) || "U"}
+              </AvatarFallback>
+            </Avatar>
+            <div className="flex-1">
+              <div className="bg-[#0f0f0f]/50 backdrop-blur-sm border border-[#2a2a2a]/50 rounded-lg sm:rounded-xl p-2 sm:p-3">
                 <Textarea
                   value={replyInput}
                   onChange={(e) => setReplyInput(e.target.value)}
                   placeholder="Add to this thread..."
-                  className="min-h-[80px] border-none resize-none focus-visible:ring-0 bg-transparent text-[#e0e0e0] placeholder-[#606060]"
+                  className="min-h-[50px] sm:min-h-[60px] border-none resize-none focus-visible:ring-0 bg-transparent text-[#e0e0e0] placeholder-[#808080] text-xs sm:text-sm"
                   disabled={isReplying}
                 />
-                <div className="flex justify-end gap-2 pt-2 border-t border-[#2a2a2a]">
+                <div className="flex justify-end pt-1.5 sm:pt-2">
                   <Button
-                    size="sm"
                     onClick={handleReply}
                     disabled={!replyInput.trim() || isReplying}
-                    className="bg-blue-600/80 hover:bg-blue-700/80 text-white"
+                    className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white px-3 sm:px-4 py-1 sm:py-1.5 rounded-full font-medium transition-all duration-200 shadow-md hover:shadow-lg text-xs sm:text-sm"
                   >
-                    {isReplying ? "Replying..." : "Reply"}
+                    {isReplying ? (
+                      <div className="flex items-center gap-1 sm:gap-1.5">
+                        <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                        <span>Replying...</span>
+                      </div>
+                    ) : (
+                      "Reply"
+                    )}
                   </Button>
                 </div>
               </div>
             </div>
           </div>
-        </Card>
+        </div>
       </div>
     </div>
   );

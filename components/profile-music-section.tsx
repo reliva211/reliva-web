@@ -566,7 +566,7 @@ export default function ProfileMusicSection({
                       : undefined
                   }
                 >
-                  <div className="aspect-square w-full max-w-[200px] bg-muted rounded-2xl overflow-hidden shadow-2xl shadow-emerald-500/20 border border-emerald-500/20 hover:shadow-emerald-500/30 hover:border-emerald-500/30 transition-all duration-300">
+                  <div className="aspect-square w-full max-w-[200px] bg-muted rounded-2xl overflow-hidden shadow-2xl shadow-emerald-500/20 border border-emerald-500/20 hover:shadow-emerald-500/40 hover:border-emerald-500/40 hover:scale-[1.05] transition-all duration-300">
                     <Image
                       src={
                         getImageUrl(safeMusicProfile.currentObsession.image) ||
@@ -600,10 +600,10 @@ export default function ProfileMusicSection({
                     )}
                   </div>
                   <div className="mt-4 text-left">
-                    <p className="text-lg sm:text-xl font-bold text-white leading-tight line-clamp-2">
+                    <p className="text-lg sm:text-xl font-bold text-white leading-tight line-clamp-2 hover:text-emerald-300 transition-colors duration-200 cursor-pointer">
                       {getTextContent(safeMusicProfile.currentObsession.name)}
                     </p>
-                    <p className="text-sm text-white leading-tight mt-2 line-clamp-1 font-medium">
+                    <p className="text-sm text-white leading-tight mt-2 line-clamp-1 font-medium hover:text-emerald-200 transition-colors duration-200">
                       {getTextContent(
                         safeMusicProfile.currentObsession.primaryArtists ||
                           safeMusicProfile.currentObsession.artists?.primary
@@ -676,7 +676,7 @@ export default function ProfileMusicSection({
                       : undefined
                   }
                 >
-                  <div className="aspect-square w-full max-w-[200px] rounded-full overflow-hidden shadow-2xl shadow-purple-500/20 border-2 border-purple-500/20 hover:shadow-purple-500/30 hover:border-purple-500/30 transition-all duration-300">
+                  <div className="aspect-square w-full max-w-[200px] rounded-full overflow-hidden shadow-2xl shadow-purple-500/20 border-2 border-purple-500/20 hover:shadow-purple-500/40 hover:border-purple-500/40 hover:scale-[1.05] transition-all duration-300">
                     <Image
                       src={
                         getImageUrl(safeMusicProfile.favoriteArtist.image) ||
@@ -710,7 +710,7 @@ export default function ProfileMusicSection({
                     )}
                   </div>
                   <div className="mt-4 text-left">
-                    <p className="text-lg sm:text-xl font-bold text-white leading-tight line-clamp-2 hover:text-emerald-300 transition-colors duration-200">
+                    <p className="text-lg sm:text-xl font-bold text-white leading-tight line-clamp-2 hover:text-emerald-300 transition-colors duration-200 cursor-pointer">
                       {getTextContent(safeMusicProfile.favoriteArtist?.name)}
                     </p>
                   </div>
@@ -776,7 +776,7 @@ export default function ProfileMusicSection({
                       : undefined
                   }
                 >
-                  <div className="aspect-square w-full max-w-[200px] bg-muted rounded-2xl overflow-hidden transition-all duration-300">
+                  <div className="aspect-square w-full max-w-[200px] bg-muted rounded-2xl overflow-hidden shadow-lg hover:shadow-xl hover:scale-[1.05] transition-all duration-300">
                     <Image
                       src={
                         getImageUrl(safeMusicProfile.favoriteSong.image) ||
@@ -809,10 +809,10 @@ export default function ProfileMusicSection({
                     )}
                   </div>
                   <div className="mt-4 text-left">
-                    <p className="text-lg sm:text-xl font-bold text-white leading-tight line-clamp-2">
+                    <p className="text-lg sm:text-xl font-bold text-white leading-tight line-clamp-2 hover:text-emerald-300 transition-colors duration-200 cursor-pointer">
                       {getTextContent(safeMusicProfile.favoriteSong.name)}
                     </p>
-                    <p className="text-sm text-white leading-tight mt-2 line-clamp-1 font-medium">
+                    <p className="text-sm text-white leading-tight mt-2 line-clamp-1 font-medium hover:text-emerald-200 transition-colors duration-200">
                       {getTextContent(
                         safeMusicProfile.favoriteSong.primaryArtists ||
                           safeMusicProfile.favoriteSong.artists?.primary

@@ -1284,9 +1284,9 @@ export default function MusicApp() {
                                 <div className="space-y-2">
                                   <h4
                                     className="font-semibold text-white truncate"
-                                    title={album.name}
+                                    title={decodeHtmlEntities(album.name)}
                                   >
-                                    {album.name}
+                                    {decodeHtmlEntities(album.name)}
                                   </h4>
                                   <p className="text-sm text-gray-400 truncate">
                                     {album.artists?.primary
@@ -1452,7 +1452,7 @@ export default function MusicApp() {
                                   </p>
                                   {song.album?.name && (
                                     <p className="text-xs text-gray-500 truncate">
-                                      {song.album.name}
+                                      {decodeHtmlEntities(song.album.name)}
                                     </p>
                                   )}
 
@@ -1685,9 +1685,9 @@ export default function MusicApp() {
                       <div className="mt-3">
                         <h3
                           className="font-semibold text-white truncate text-sm sm:text-base"
-                          title={album.name}
+                          title={decodeHtmlEntities(album.name)}
                         >
-                          {album.name}
+                          {decodeHtmlEntities(album.name)}
                         </h3>
                         <p className="text-xs text-gray-400 truncate mt-1">
                           {album.artists?.primary
@@ -1836,7 +1836,9 @@ export default function MusicApp() {
                                 .join(", ") || "Unknown Artist"}
                             </p>
                             <p className="text-xs text-gray-500 truncate">
-                              {song.album?.name}
+                              {song.album?.name
+                                ? decodeHtmlEntities(song.album.name)
+                                : ""}
                             </p>
                           </div>
                           <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
