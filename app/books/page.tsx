@@ -501,9 +501,9 @@ export default function BooksPage() {
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black w-full overflow-x-hidden">
       {/* Header */}
       <div className="border-b border-gray-800 bg-gradient-to-r from-gray-900/95 to-gray-800/95 backdrop-blur-sm w-full">
-        <div className="container mx-auto px-2 sm:px-4 md:px-6 py-4 sm:py-6 md:py-8 max-w-full">
+        <div className="container mx-auto px-1 sm:px-4 md:px-6 py-4 sm:py-6 md:py-8 max-w-full">
           <div className="flex items-center justify-between">
-            <div className="ml-16 lg:ml-0">
+            <div className="ml-0 lg:ml-0">
               <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold bg-gradient-to-r from-white via-gray-200 to-gray-400 bg-clip-text text-transparent">
                 Books
               </h1>
@@ -515,7 +515,7 @@ export default function BooksPage() {
         </div>
       </div>
 
-      <div className="container mx-auto px-2 sm:px-4 md:px-6 py-4 sm:py-6 md:py-8 max-w-full">
+      <div className="container mx-auto px-1 sm:px-4 md:px-6 py-4 sm:py-6 md:py-8 max-w-full">
         {/* Search and Filters */}
         <div className="mb-6 sm:mb-8 w-full">
           <div className="flex flex-col gap-2 sm:gap-3 mb-4 sm:mb-6 w-full">

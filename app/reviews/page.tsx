@@ -955,14 +955,14 @@ function ReviewsPageContent() {
 
   return (
     <div className="min-h-screen bg-[#0a0a0a]">
-      <div className="container mx-auto px-4 py-8 max-w-4xl">
+      <div className="container mx-auto px-1 sm:px-4 py-8 max-w-4xl">
         {/* Search Section */}
         {!selectedMedia && (
           <div className="bg-[#0f0f0f] rounded-lg shadow-lg mb-6 border border-[#1a1a1a]">
-            <div className="p-6 border-b border-[#1a1a1a]">
+            <div className="p-2 sm:p-6 border-b border-[#1a1a1a]">
               <h2 className="text-lg font-medium text-[#d0d0d0]">Quick log</h2>
             </div>
-            <div className="p-6 space-y-4">
+            <div className="p-2 sm:p-6 space-y-4">
               {/* Type Selector */}
               <div className="flex gap-2">
                 {[
@@ -990,7 +990,7 @@ function ReviewsPageContent() {
               <div className="flex gap-2">
                 <input
                   type="text"
-                  placeholder={`Search for ${
+                  placeholder={`Rate ${
                     searchType === "music" ? "songs and albums" : searchType
                   }s...`}
                   value={searchQuery}
@@ -1053,12 +1053,12 @@ function ReviewsPageContent() {
         {/* Selected Media & Review Form */}
         {selectedMedia && (
           <div className="bg-[#0f0f0f] rounded-lg shadow-lg border border-[#1a1a1a]">
-            <div className="p-6 border-b border-[#1a1a1a]">
+            <div className="p-2 sm:p-6 border-b border-[#1a1a1a]">
               <h2 className="text-lg font-medium text-[#d0d0d0]">
                 Review: {selectedMedia.title}
               </h2>
             </div>
-            <div className="p-6 space-y-6">
+            <div className="p-2 sm:p-6 space-y-6">
               {/* Selected Media Display */}
               <div className="flex items-center gap-4 p-4 bg-[#0a0a0a] rounded-lg border border-[#1a1a1a]">
                 <div className="relative">
@@ -1173,20 +1173,17 @@ function ReviewsPageContent() {
           <div className="max-w-6xl mx-auto border border-[#2a2a2a] min-h-screen rounded-lg">
             {/* Enhanced Header */}
             <div className="sticky top-0 bg-[#0a0a0a]/95 backdrop-blur-xl border-b border-[#1a1a1a] z-10">
-              <div className="px-4 py-3">
+              <div className="px-1 sm:px-4 py-3">
                 <h1 className="text-xl font-medium text-[#e0e0e0]">Home</h1>
-                <p className="text-sm text-[#808080] mt-1">
-                  Latest updates from your network
-                </p>
               </div>
             </div>
 
             {/* Enhanced Post Creation */}
             <div className="border-b border-[#1a1a1a] bg-[#0f0f0f]/50">
-              <div className="px-4 py-4">
+              <div className="px-1 sm:px-4 py-4">
                 <div className="flex gap-4 w-full">
-                  <Avatar className="w-12 h-12 ring-2 ring-green-500/20">
-                    <AvatarFallback className="bg-gradient-to-br from-green-500 to-emerald-600 text-white font-semibold">
+                  <Avatar className="w-10 h-10 ring-2 ring-green-500/20">
+                    <AvatarFallback className="bg-gradient-to-br from-green-500 to-emerald-600 text-white font-semibold text-sm">
                       {user?.displayName?.charAt(0) ||
                         user?.email?.charAt(0) ||
                         "U"}
@@ -1204,14 +1201,7 @@ function ReviewsPageContent() {
                     </div>
 
                     {/* Enhanced Action Bar */}
-                    <div className="flex justify-between items-center mt-4">
-                      <div className="flex items-center gap-4 text-[#808080]">
-                        <div className="flex items-center gap-2 text-sm">
-                          <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                          <span>Ready to post</span>
-                        </div>
-                      </div>
-
+                    <div className="flex justify-end items-center mt-4">
                       <Button
                         onClick={handlePost}
                         disabled={!newPost.trim() || isPosting}
@@ -1238,7 +1228,7 @@ function ReviewsPageContent() {
             {/* Feed */}
             <ScrollArea className="flex-1 w-full">
               {(!posts || posts.length === 0) && (
-                <div className="text-center py-16 px-4">
+                <div className="text-center py-16 px-1 sm:px-4">
                   <div className="w-20 h-20 bg-gradient-to-br from-green-900/20 to-emerald-900/20 rounded-full flex items-center justify-center mx-auto mb-6">
                     <CheckCircle className="w-10 h-10 text-green-400" />
                   </div>
@@ -1258,7 +1248,7 @@ function ReviewsPageContent() {
                 posts.map((post) => (
                   <div
                     key={post._id}
-                    className="border-b border-[#1a1a1a] px-4 py-4 bg-[#0f0f0f]"
+                    className="border-b border-[#1a1a1a] px-1 sm:px-4 py-4 bg-[#0f0f0f]"
                   >
                     <div className="flex gap-3 w-full">
                       <Avatar className="w-10 h-10 ring-1 ring-green-500/20 flex-shrink-0">

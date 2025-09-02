@@ -125,7 +125,7 @@ export default function DiscoverSection({
 
   return (
     <div className="w-full discover-section">
-      <div className="mb-3 sm:mb-4 px-1 sm:px-0 discover-header">
+      <div className="mb-3 sm:mb-4 px-0 sm:px-0 discover-header">
         <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-white leading-tight discover-title">
           {title}
         </h2>
@@ -139,7 +139,7 @@ export default function DiscoverSection({
         {showLeftArrow && (
           <button
             onClick={scrollLeft}
-            className="absolute left-2 sm:left-2 top-1/2 transform -translate-y-1/2 z-30 bg-black/90 hover:bg-black text-white rounded-full p-3 sm:p-4 transition-all duration-300 backdrop-blur-md shadow-2xl border border-white/20 hover:scale-110 flex items-center justify-center min-w-[44px] min-h-[44px] discover-nav-arrow"
+            className="absolute left-0 sm:left-2 top-1/2 transform -translate-y-1/2 z-30 bg-black/90 hover:bg-black text-white rounded-full p-3 sm:p-4 transition-all duration-300 backdrop-blur-md shadow-2xl border border-white/20 hover:scale-110 flex items-center justify-center min-w-[44px] min-h-[44px] discover-nav-arrow"
           >
             <ChevronLeft className="h-5 w-5 sm:h-6 sm:w-6" />
           </button>
@@ -149,7 +149,7 @@ export default function DiscoverSection({
         {showRightArrow && (
           <button
             onClick={scrollRight}
-            className="absolute right-2 sm:right-2 top-1/2 transform -translate-y-1/2 z-30 bg-black/90 hover:bg-black text-white rounded-full p-3 sm:p-4 transition-all duration-300 backdrop-blur-md shadow-2xl border border-white/20 hover:scale-110 flex items-center justify-center min-w-[44px] min-h-[44px] discover-nav-arrow"
+            className="absolute right-0 sm:right-2 top-1/2 transform -translate-y-1/2 z-30 bg-black/90 hover:bg-black text-white rounded-full p-3 sm:p-4 transition-all duration-300 backdrop-blur-md shadow-2xl border border-white/20 hover:scale-110 flex items-center justify-center min-w-[44px] min-h-[44px] discover-nav-arrow"
           >
             <ChevronRight className="h-5 w-5 sm:h-6 sm:w-6" />
           </button>
@@ -158,7 +158,7 @@ export default function DiscoverSection({
         {/* Items Container */}
         <div
           id={containerId}
-          className={`flex gap-2 sm:gap-4 md:gap-6 overflow-x-auto px-2 sm:px-4 md:px-8 py-3 sm:py-4 md:py-6 scrollbar-hide horizontal-scroll-container ${
+          className={`flex gap-2 sm:gap-4 md:gap-6 overflow-x-auto px-0 sm:px-4 md:px-8 py-3 sm:py-4 md:py-6 scrollbar-hide horizontal-scroll-container ${
             itemType === "book" ? "books-horizontal-container" : "w-full"
           }`}
           style={{

@@ -567,9 +567,9 @@ export default function MoviesPage() {
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black w-full overflow-x-hidden">
       {/* Header */}
       <div className="border-b border-gray-800 bg-gradient-to-r from-gray-900/95 to-gray-800/95 backdrop-blur-sm w-full">
-        <div className="container mx-auto px-4 sm:px-6 py-6 sm:py-8 max-w-full">
+        <div className="container mx-auto px-1 sm:px-6 py-6 sm:py-8 max-w-full">
           <div className="flex items-center justify-between">
-            <div className="ml-16 lg:ml-0">
+            <div className="ml-0 lg:ml-0">
               <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold bg-gradient-to-r from-white via-gray-200 to-gray-400 bg-clip-text text-transparent">
                 Movies
               </h1>
@@ -581,7 +581,7 @@ export default function MoviesPage() {
         </div>
       </div>
 
-      <div className="container mx-auto px-4 sm:px-6 py-6 sm:py-8 max-w-full overflow-x-hidden">
+      <div className="container mx-auto px-1 sm:px-6 py-6 sm:py-8 max-w-full overflow-x-hidden">
         {/* Search and Filters */}
         <div className="mb-8 sm:mb-10 w-full">
           <div className="flex flex-col gap-4 sm:gap-6 mb-6 sm:mb-8 w-full">

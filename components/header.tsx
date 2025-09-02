@@ -44,6 +44,7 @@ import { signOut } from "firebase/auth";
 import { Input } from "@/components/ui/input";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { useNotifications } from "@/hooks/use-notifications";
+import MobileHeader from "@/components/mobile-header";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   AlertDialog,
@@ -134,19 +135,8 @@ export default function Sidebar({ isLandingPage = false }: SidebarProps) {
   return (
     <TooltipProvider>
       <>
-        {/* Mobile Menu Button - Only show when sidebar is closed */}
-        {!isMobileOpen && (
-          <div className="lg:hidden fixed top-4 left-4 z-50">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setIsMobileOpen(!isMobileOpen)}
-              className="bg-background/80 backdrop-blur-sm border shadow-lg h-12 w-12"
-            >
-              <Menu className="h-6 w-6" />
-            </Button>
-          </div>
-        )}
+        {/* Mobile Header */}
+        <MobileHeader onMenuClick={() => setIsMobileOpen(!isMobileOpen)} />
 
         {/* Mobile Sidebar Overlay */}
         {isMobileOpen && (
@@ -161,7 +151,7 @@ export default function Sidebar({ isLandingPage = false }: SidebarProps) {
           className={cn(
             "fixed left-0 top-0 z-40 h-full bg-zinc-900/95 backdrop-blur supports-[backdrop-filter]:bg-zinc-900/90 border-r border-zinc-800 transition-all duration-300 ease-in-out",
             // Desktop: collapsible, Mobile: full width when open
-            isCollapsed ? "lg:w-16 w-64" : "w-64",
+            isCollapsed ? "lg:w-16 w-64" : "w-72",
             // Mobile: slide in/out, Desktop: always visible
             isMobileOpen
               ? "translate-x-0"
@@ -182,7 +172,7 @@ export default function Sidebar({ isLandingPage = false }: SidebarProps) {
               >
                 <span
                   className={cn(
-                    "font-bold transition-all duration-300 truncate",
+                    "font-bold transition-all duration-300",
                     isCollapsed ? "text-lg mx-auto" : "text-lg lg:text-xl"
                   )}
                 >
@@ -190,9 +180,9 @@ export default function Sidebar({ isLandingPage = false }: SidebarProps) {
                     "R"
                   ) : (
                     <span className="flex items-center gap-2">
-                      reliva
-                      <span className="text-xs text-white px-1.5 py-0.5 rounded-full font-medium">
-                        beta
+                      Reliva
+                      <span className="text-xs text-white px-2 py-0.5 rounded-full border border-white font-medium">
+                        BETA
                       </span>
                     </span>
                   )}
@@ -270,13 +260,11 @@ export default function Sidebar({ isLandingPage = false }: SidebarProps) {
                         href={item.href}
                         onClick={() => setIsMobileOpen(false)}
                         className={cn(
-                          "flex items-center gap-3 rounded-lg text-sm font-medium transition-all duration-200 hover:bg-accent hover:text-accent-foreground",
+                          "flex items-center gap-3 rounded-lg text-sm font-medium transition-all duration-200 hover:bg-gray-700 hover:text-white",
                           isCollapsed
                             ? "justify-center px-2 py-3"
                             : "px-4 py-3",
-                          isActive
-                            ? "bg-accent text-accent-foreground"
-                            : "text-white"
+                          isActive ? "text-white" : "text-white"
                         )}
                       >
                         <Icon
@@ -552,7 +540,7 @@ export default function Sidebar({ isLandingPage = false }: SidebarProps) {
         <div
           className={cn(
             "transition-all duration-300 ease-in-out",
-            isCollapsed ? "lg:ml-16" : "lg:ml-64"
+            isCollapsed ? "lg:ml-16" : "lg:ml-72"
           )}
         >
           {/* Mobile padding for content */}

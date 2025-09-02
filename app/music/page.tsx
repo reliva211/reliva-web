@@ -807,9 +807,9 @@ export default function MusicApp() {
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black w-full overflow-x-hidden">
       {/* Header */}
       <div className="border-b border-gray-800 bg-gradient-to-r from-gray-900/95 to-gray-800/95 backdrop-blur-sm w-full">
-        <div className="container mx-auto px-4 sm:px-6 py-6 sm:py-8 max-w-full">
+        <div className="container mx-auto px-1 sm:px-6 py-6 sm:py-8 max-w-full">
           <div className="flex items-center justify-between">
-            <div className="ml-16 lg:ml-0">
+            <div className="ml-0 lg:ml-0">
               <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold bg-gradient-to-r from-white via-gray-200 to-gray-400 bg-clip-text text-transparent">
                 Music
               </h1>
@@ -821,7 +821,7 @@ export default function MusicApp() {
         </div>
       </div>
 
-      <div className="container mx-auto px-4 sm:px-6 py-6 sm:py-8 max-w-full overflow-x-hidden">
+      <div className="container mx-auto px-1 sm:px-6 py-6 sm:py-8 max-w-full overflow-x-hidden">
         {/* Search and Filters */}
         <div className="mb-8 sm:mb-10 w-full">
           <div className="flex flex-col gap-3 sm:gap-4 mb-6 sm:mb-8 w-full">
@@ -1095,7 +1095,7 @@ export default function MusicApp() {
                           variant="ghost"
                           size="sm"
                           onClick={scrollArtistsLeft}
-                          className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-gray-800/80 hover:bg-gray-700/80 text-white border border-gray-600 rounded-full w-10 h-10 p-0 shadow-lg"
+                          className="absolute left-1 sm:left-0 top-1/2 -translate-y-1/2 z-10 bg-gray-800/80 hover:bg-gray-700/80 text-white border border-gray-600 rounded-full w-10 h-10 p-0 shadow-lg"
                         >
                           <ChevronLeft className="w-5 h-5" />
                         </Button>
@@ -1105,14 +1105,14 @@ export default function MusicApp() {
                           variant="ghost"
                           size="sm"
                           onClick={scrollArtistsRight}
-                          className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-gray-800/80 hover:bg-gray-700/80 text-white border border-gray-600 rounded-full w-10 h-10 p-0 shadow-lg"
+                          className="absolute right-1 sm:right-0 top-1/2 -translate-y-1/2 z-10 bg-gray-800/80 hover:bg-gray-700/80 text-white border border-gray-600 rounded-full w-10 h-10 p-0 shadow-lg"
                         >
                           <ChevronRight className="w-5 h-5" />
                         </Button>
 
                         <div
                           ref={artistsScrollRef}
-                          className="flex gap-2 overflow-x-auto scrollbar-hide pb-4 px-12 horizontal-scroll-container"
+                          className="flex gap-2 overflow-x-auto scrollbar-hide pb-4 px-2 sm:px-12 horizontal-scroll-container"
                         >
                           {artists.map((artist) => (
                             <div
@@ -1192,7 +1192,7 @@ export default function MusicApp() {
                           variant="ghost"
                           size="sm"
                           onClick={scrollAlbumsLeft}
-                          className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-gray-800/80 hover:bg-gray-700/80 text-white border border-gray-600 rounded-full w-10 h-10 p-0 shadow-lg"
+                          className="absolute left-1 sm:left-0 top-1/2 -translate-y-1/2 z-10 bg-gray-800/80 hover:bg-gray-700/80 text-white border border-gray-600 rounded-full w-10 h-10 p-0 shadow-lg"
                         >
                           <ChevronLeft className="w-5 h-5" />
                         </Button>
@@ -1202,14 +1202,14 @@ export default function MusicApp() {
                           variant="ghost"
                           size="sm"
                           onClick={scrollAlbumsRight}
-                          className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-gray-800/80 hover:bg-gray-700/80 text-white border border-gray-600 rounded-full w-10 h-10 p-0 shadow-lg"
+                          className="absolute right-1 sm:right-0 top-1/2 -translate-y-1/2 z-10 bg-gray-800/80 hover:bg-gray-700/80 text-white border border-gray-600 rounded-full w-10 h-10 p-0 shadow-lg"
                         >
                           <ChevronRight className="w-5 h-5" />
                         </Button>
 
                         <div
                           ref={albumsScrollRef}
-                          className="flex gap-2 overflow-x-auto scrollbar-hide pb-4 px-12 horizontal-scroll-container"
+                          className="flex gap-2 overflow-x-auto scrollbar-hide pb-4 px-2 sm:px-12 horizontal-scroll-container"
                         >
                           {albums.map((album) => (
                             <div
@@ -1318,7 +1318,7 @@ export default function MusicApp() {
                           variant="ghost"
                           size="sm"
                           onClick={scrollSongsLeft}
-                          className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-gray-800/80 hover:bg-gray-700/80 text-white border border-gray-600 rounded-full w-10 h-10 p-0 shadow-lg"
+                          className="absolute left-1 sm:left-0 top-1/2 -translate-y-1/2 z-10 bg-gray-800/80 hover:bg-gray-700/80 text-white border border-gray-600 rounded-full w-10 h-10 p-0 shadow-lg"
                         >
                           <ChevronLeft className="w-5 h-5" />
                         </Button>
@@ -1328,14 +1328,14 @@ export default function MusicApp() {
                           variant="ghost"
                           size="sm"
                           onClick={scrollSongsRight}
-                          className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-gray-800/80 hover:bg-gray-700/80 text-white border border-gray-600 rounded-full w-10 h-10 p-0 shadow-lg"
+                          className="absolute right-1 sm:right-0 top-1/2 -translate-y-1/2 z-10 bg-gray-800/80 hover:bg-gray-700/80 text-white border border-gray-600 rounded-full w-10 h-10 p-0 shadow-lg"
                         >
                           <ChevronRight className="w-5 h-5" />
                         </Button>
 
                         <div
                           ref={songsScrollRef}
-                          className="flex gap-2 overflow-x-auto scrollbar-hide pb-4 px-12 horizontal-scroll-container"
+                          className="flex gap-2 overflow-x-auto scrollbar-hide pb-4 px-2 sm:px-12 horizontal-scroll-container"
                         >
                           {songs.map((song) => (
                             <div
@@ -1438,7 +1438,7 @@ export default function MusicApp() {
                                   </div>
                                 </div>
 
-                                <div className="space-y-2">
+                                <div className="space-y-1">
                                   <h4
                                     className="font-semibold text-white truncate"
                                     title={song.name}
