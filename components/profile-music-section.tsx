@@ -530,9 +530,9 @@ export default function ProfileMusicSection({
       {/* Main Content Grid - Responsive Layout */}
       <div className="relative space-y-8 sm:space-y-12">
         {/* Top Row - Current Obsession, Favorite Artist, Favorite Song */}
-        <div className="flex flex-col sm:flex-row gap-8 sm:gap-12 lg:gap-16 items-start justify-start">
+        <div className="flex flex-col sm:flex-row gap-8 sm:gap-12 lg:gap-16 items-start justify-start px-4 sm:px-8 lg:px-12">
           {/* Current Obsession */}
-          <div className="flex flex-col w-full sm:w-auto sm:flex-1 sm:max-w-[200px]">
+          <div className="flex flex-col w-full sm:w-auto sm:flex-1 sm:max-w-[200px] py-2">
             <h3 className="text-base sm:text-lg font-bold text-white mb-4 flex items-center gap-3 bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent whitespace-nowrap">
               <span className="bg-cyan-400 w-1 h-6 rounded-full block min-w-[4px] flex-shrink-0"></span>
               current obsession
@@ -552,9 +552,7 @@ export default function ProfileMusicSection({
               {safeMusicProfile.currentObsession ? (
                 <div
                   className={`group relative ${
-                    !readOnly && isOwnProfile
-                      ? "cursor-pointer hover:scale-[1.02] transition-transform duration-200"
-                      : ""
+                    !readOnly && isOwnProfile ? "cursor-pointer" : ""
                   }`}
                   onClick={
                     !readOnly && isOwnProfile
@@ -566,7 +564,7 @@ export default function ProfileMusicSection({
                       : undefined
                   }
                 >
-                  <div className="aspect-square w-full max-w-[200px] bg-muted rounded-2xl overflow-hidden shadow-2xl shadow-emerald-500/20 border border-emerald-500/20 hover:shadow-emerald-500/40 hover:border-emerald-500/40 hover:scale-[1.05] transition-all duration-300">
+                  <div className="aspect-square w-full max-w-[200px] bg-muted rounded-2xl overflow-hidden shadow-2xl shadow-emerald-500/20 border border-emerald-500/20">
                     <Image
                       src={
                         getImageUrl(safeMusicProfile.currentObsession.image) ||
@@ -583,27 +581,12 @@ export default function ProfileMusicSection({
                         target.src = PLACEHOLDER.currentObsession.cover;
                       }}
                     />
-                    {!readOnly && isOwnProfile && (
-                      <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-all duration-300 rounded-2xl flex items-center justify-center">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-12 w-12 p-0 bg-white/20 hover:bg-white/30 text-white rounded-full border border-white/30"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            openSearchDialog("currentObsession");
-                          }}
-                        >
-                          <Edit className="h-6 w-6" />
-                        </Button>
-                      </div>
-                    )}
                   </div>
                   <div className="mt-4 text-center">
-                    <p className="text-lg sm:text-xl font-bold text-white leading-tight line-clamp-2 hover:text-emerald-300 transition-colors duration-200 cursor-pointer">
+                    <p className="text-lg sm:text-xl font-bold text-white leading-tight line-clamp-2">
                       {getTextContent(safeMusicProfile.currentObsession.name)}
                     </p>
-                    <p className="text-sm text-white leading-tight mt-2 line-clamp-1 font-medium hover:text-emerald-200 transition-colors duration-200">
+                    <p className="text-sm text-white leading-tight mt-2 line-clamp-1 font-medium">
                       {getTextContent(
                         safeMusicProfile.currentObsession.primaryArtists ||
                           safeMusicProfile.currentObsession.artists?.primary
@@ -615,10 +598,8 @@ export default function ProfileMusicSection({
                 </div>
               ) : (
                 <div
-                  className={`aspect-square w-full max-w-[200px] bg-gradient-to-br from-gray-900/40 to-gray-800/40 rounded-2xl border-2 border-emerald-500/30 flex items-center justify-center transition-all duration-300 group backdrop-blur-sm ${
-                    isOwnProfile && !readOnly
-                      ? "cursor-pointer hover:bg-gradient-to-br hover:from-emerald-900/20 hover:to-cyan-900/20 hover:border-emerald-400/50 hover:shadow-2xl hover:shadow-emerald-500/20 hover:scale-[1.02]"
-                      : "opacity-60"
+                  className={`aspect-square w-full max-w-[200px] bg-gradient-to-br from-gray-900/40 to-gray-800/40 rounded-2xl border-2 border-emerald-500/30 flex items-center justify-center group backdrop-blur-sm ${
+                    isOwnProfile && !readOnly ? "cursor-pointer" : "opacity-60"
                   }`}
                   onClick={
                     isOwnProfile && !readOnly
@@ -644,7 +625,7 @@ export default function ProfileMusicSection({
           </div>
 
           {/* Favorite Artist */}
-          <div className="flex flex-col w-full sm:w-auto sm:flex-1 sm:max-w-[200px]">
+          <div className="flex flex-col w-full sm:w-auto sm:flex-1 sm:max-w-[200px] py-2">
             <h3 className="text-base sm:text-lg font-bold text-white mb-4 flex items-center gap-3 bg-gradient-to-r from-emerald-400 to-green-400 bg-clip-text text-transparent">
               <span className="bg-gradient-to-r from-emerald-500 to-green-500 w-1 h-5 rounded-full"></span>
               favorite artist
@@ -664,9 +645,7 @@ export default function ProfileMusicSection({
               {safeMusicProfile.favoriteArtist ? (
                 <div
                   className={`group relative ${
-                    !readOnly && isOwnProfile
-                      ? "cursor-pointer hover:scale-[1.02] transition-transform duration-200"
-                      : ""
+                    !readOnly && isOwnProfile ? "cursor-pointer" : ""
                   }`}
                   onClick={
                     !readOnly && isOwnProfile
@@ -676,7 +655,7 @@ export default function ProfileMusicSection({
                       : undefined
                   }
                 >
-                  <div className="aspect-square w-full max-w-[200px] rounded-full overflow-hidden shadow-2xl shadow-purple-500/20 border-2 border-purple-500/20 hover:shadow-purple-500/40 hover:border-purple-500/40 hover:scale-[1.05] transition-all duration-300">
+                  <div className="aspect-square w-full max-w-[200px] rounded-full overflow-hidden shadow-2xl shadow-purple-500/20 border-2 border-purple-500/20">
                     <Image
                       src={
                         getImageUrl(safeMusicProfile.favoriteArtist.image) ||
@@ -693,34 +672,17 @@ export default function ProfileMusicSection({
                         target.src = PLACEHOLDER.favoriteArtist.avatar;
                       }}
                     />
-                    {!readOnly && isOwnProfile && (
-                      <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-full flex items-center justify-center">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-10 w-10 p-0 bg-white/20 hover:bg-white/30 text-white"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            openSearchDialog("favoriteArtist");
-                          }}
-                        >
-                          <Edit className="h-5 w-5" />
-                        </Button>
-                      </div>
-                    )}
                   </div>
                   <div className="mt-4 text-center">
-                    <p className="text-lg sm:text-xl font-bold text-white leading-tight line-clamp-2 hover:text-emerald-300 transition-colors duration-200 cursor-pointer">
+                    <p className="text-lg sm:text-xl font-bold text-white leading-tight line-clamp-2">
                       {getTextContent(safeMusicProfile.favoriteArtist?.name)}
                     </p>
                   </div>
                 </div>
               ) : (
                 <div
-                  className={`aspect-square w-full max-w-[200px] bg-gradient-to-br from-purple-900/20 to-pink-900/20 rounded-full border-2 border-purple-500/30 flex items-center justify-center transition-all duration-300 group backdrop-blur-sm ${
-                    isOwnProfile && !readOnly
-                      ? "cursor-pointer hover:bg-gradient-to-br hover:from-purple-800/30 hover:to-pink-800/30 hover:border-purple-400/50 hover:shadow-2xl hover:shadow-purple-500/20 hover:scale-[1.02]"
-                      : "opacity-60"
+                  className={`aspect-square w-full max-w-[200px] bg-gradient-to-br from-purple-900/20 to-pink-900/20 rounded-full border-2 border-purple-500/30 flex items-center justify-center group backdrop-blur-sm ${
+                    isOwnProfile && !readOnly ? "cursor-pointer" : "opacity-60"
                   }`}
                   onClick={
                     isOwnProfile && !readOnly
@@ -744,7 +706,7 @@ export default function ProfileMusicSection({
           </div>
 
           {/* Favorite Song */}
-          <div className="flex flex-col w-full sm:w-auto sm:flex-1 sm:max-w-[200px]">
+          <div className="flex flex-col w-full sm:w-auto sm:flex-1 sm:max-w-[200px] py-2">
             <h3 className="text-base sm:text-lg font-bold text-white mb-4 flex items-center gap-3 bg-gradient-to-r from-orange-400 to-red-400 bg-clip-text text-transparent">
               <span className="bg-emerald-400 w-1 h-5 rounded-full"></span>
               favorite song
@@ -764,9 +726,7 @@ export default function ProfileMusicSection({
               {safeMusicProfile.favoriteSong ? (
                 <div
                   className={`group relative ${
-                    !readOnly && isOwnProfile
-                      ? "cursor-pointer hover:scale-[1.02] transition-transform duration-200"
-                      : ""
+                    !readOnly && isOwnProfile ? "cursor-pointer" : ""
                   }`}
                   onClick={
                     !readOnly && isOwnProfile
@@ -776,7 +736,7 @@ export default function ProfileMusicSection({
                       : undefined
                   }
                 >
-                  <div className="aspect-square w-full max-w-[200px] bg-muted rounded-2xl overflow-hidden shadow-lg hover:shadow-xl hover:scale-[1.05] transition-all duration-300">
+                  <div className="aspect-square w-full max-w-[200px] bg-muted rounded-2xl overflow-hidden shadow-lg">
                     <Image
                       src={
                         getImageUrl(safeMusicProfile.favoriteSong.image) ||
@@ -791,28 +751,12 @@ export default function ProfileMusicSection({
                         target.src = PLACEHOLDER.favoriteSong.cover;
                       }}
                     />
-                    {!readOnly && isOwnProfile && (
-                      <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-all duration-300 rounded-2xl flex items-center justify-center">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-12 w-12 p-0 bg-white/20 hover:bg-white/30 text-white rounded-full border border-white/30"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            openSearchDialog("favoriteSong");
-                          }}
-                          title="Edit favorite song"
-                        >
-                          <Edit className="h-6 w-6" />
-                        </Button>
-                      </div>
-                    )}
                   </div>
                   <div className="mt-4 text-center">
-                    <p className="text-lg sm:text-xl font-bold text-white leading-tight line-clamp-2 hover:text-emerald-300 transition-colors duration-200 cursor-pointer">
+                    <p className="text-lg sm:text-xl font-bold text-white leading-tight line-clamp-2">
                       {getTextContent(safeMusicProfile.favoriteSong.name)}
                     </p>
-                    <p className="text-sm text-white leading-tight mt-2 line-clamp-1 font-medium hover:text-emerald-200 transition-colors duration-200">
+                    <p className="text-sm text-white leading-tight mt-2 line-clamp-1 font-medium">
                       {getTextContent(
                         safeMusicProfile.favoriteSong.primaryArtists ||
                           safeMusicProfile.favoriteSong.artists?.primary
@@ -824,10 +768,8 @@ export default function ProfileMusicSection({
                 </div>
               ) : (
                 <div
-                  className={`aspect-square w-full max-w-[200px] bg-gradient-to-br from-orange-900/20 to-red-900/20 rounded-2xl flex items-center justify-center transition-all duration-300 group backdrop-blur-sm ${
-                    isOwnProfile && !readOnly
-                      ? "cursor-pointer hover:bg-gradient-to-br hover:from-orange-800/30 hover:to-red-800/30 hover:scale-[1.02]"
-                      : undefined
+                  className={`aspect-square w-full max-w-[200px] bg-gradient-to-br from-orange-900/20 to-red-900/20 rounded-2xl flex items-center justify-center group backdrop-blur-sm ${
+                    isOwnProfile && !readOnly ? "cursor-pointer" : undefined
                   }`}
                   onClick={
                     isOwnProfile && !readOnly
@@ -968,8 +910,6 @@ export default function ProfileMusicSection({
                 </div>
               )}
             </div>
-
-
           </div>
         </div>
 
@@ -1097,7 +1037,9 @@ export default function ProfileMusicSection({
                   variant="ghost"
                   size="sm"
                   className="absolute left-2 top-1/2 transform -translate-y-1/2 h-8 w-8 p-0 bg-black/80 hover:bg-black backdrop-blur-md border border-white/10 text-white rounded-full shadow-2xl hover:scale-110 transition-all duration-300 z-30"
-                  onClick={() => scrollLeft(scrollContainerRefs.recommendations)}
+                  onClick={() =>
+                    scrollLeft(scrollContainerRefs.recommendations)
+                  }
                 >
                   <ChevronLeft className="h-4 w-4" />
                 </Button>
@@ -1105,7 +1047,9 @@ export default function ProfileMusicSection({
                   variant="ghost"
                   size="sm"
                   className="absolute right-2 top-1/2 transform -translate-y-1/2 h-8 w-8 p-0 bg-black/80 hover:bg-black backdrop-blur-md border border-white/10 text-white rounded-full shadow-2xl hover:scale-110 transition-all duration-300 z-30"
-                  onClick={() => scrollRight(scrollContainerRefs.recommendations)}
+                  onClick={() =>
+                    scrollRight(scrollContainerRefs.recommendations)
+                  }
                 >
                   <ChevronRight className="h-4 w-4" />
                 </Button>

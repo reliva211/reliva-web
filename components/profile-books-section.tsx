@@ -759,16 +759,18 @@ export default function ProfileBooksSection({
       <div className="max-w-3xl mx-auto">
         <div className="flex items-center gap-3 mb-4">
           <p className="text-sm font-medium text-white">currently reading</p>
-          <Link href="/books">
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-7 px-3 text-xs text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10 rounded-full transition-all duration-200"
-            >
-              <Plus className="h-3 w-3 mr-1" />
-              add
-            </Button>
-          </Link>
+          {!readOnly && (
+            <Link href="/books">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 px-3 text-xs text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10 rounded-full transition-all duration-200"
+              >
+                <Plus className="h-3 w-3 mr-1" />
+                add
+              </Button>
+            </Link>
+          )}
         </div>
 
         <div className="relative">
@@ -978,7 +980,7 @@ export default function ProfileBooksSection({
                   ))}
 
                   {/* Add button - only show when less than 5 items */}
-                  {limitedFavoriteBooks.length < 5 && (
+                  {limitedFavoriteBooks.length < 5 && !readOnly && (
                     <div className="flex-shrink-0">
                       <div className="aspect-[2/3] w-32 bg-transparent rounded-md border-2 border-gray-600 flex items-center justify-center overflow-visible">
                         <Button

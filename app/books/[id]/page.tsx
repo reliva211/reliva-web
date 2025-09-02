@@ -78,7 +78,7 @@ export default function BookDetailPage({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [userLists, setUserLists] = useState<UserList[]>([]);
-  const [selectedListId, setSelectedListId] = useState("");
+  const [selectedListIds, setSelectedListIds] = useState<string[]>([]);
   const [addToListOpen, setAddToListOpen] = useState(false);
   const [isSavingToList, setIsSavingToList] = useState(false);
   const [activeTab, setActiveTab] = useState("overview");
@@ -170,7 +170,7 @@ export default function BookDetailPage({
   }, [resolvedParams.id, user]);
 
   const handleAddToList = async () => {
-    if (!user?.uid || !selectedListId || !book) return;
+    if (!user?.uid || selectedListIds.length === 0 || !book) return;
 
     setIsSavingToList(true);
     try {
@@ -186,7 +186,7 @@ export default function BookDetailPage({
         rating: book.averageRating || 0,
         notes: "",
         status: "To Read",
-        collections: [selectedListId],
+        collections: selectedListIds,
         overview: book.description || "",
         publishedDate: book.publishedDate || "",
         pageCount: book.pageCount || 0,
@@ -198,10 +198,14 @@ export default function BookDetailPage({
       );
 
       // If adding to Recommendations collection, also add to the recommendations subcollection
-      const selectedCollection = userLists.find(
-        (list) => list.id === selectedListId
+      const selectedCollections = userLists.filter((list) =>
+        selectedListIds.includes(list.id)
       );
-      if (selectedCollection && selectedCollection.name === "Recommendations") {
+      const recommendationsCollection = selectedCollections.find(
+        (list) => list.name === "Recommendations"
+      );
+
+      if (recommendationsCollection) {
         try {
           const recommendationsRef = collection(
             db,
@@ -230,7 +234,7 @@ export default function BookDetailPage({
       }
 
       setAddToListOpen(false);
-      setSelectedListId("");
+      setSelectedListIds([]);
     } catch (err) {
       console.error("Error adding book to list:", err);
       alert("Failed to add book to list. Please try again.");
@@ -475,7 +479,7 @@ export default function BookDetailPage({
                       <DialogHeader>
                         <DialogTitle>Add to List</DialogTitle>
                         <DialogDescription>
-                          Choose a list to add "{book.title}" to.
+                          Choose one or more lists to add "{book.title}" to.
                         </DialogDescription>
                       </DialogHeader>
                       <div className="space-y-4">
@@ -487,12 +491,24 @@ export default function BookDetailPage({
                                 className="flex items-center gap-3 cursor-pointer p-3 rounded-xl hover:bg-muted/50 transition-colors"
                               >
                                 <input
-                                  type="radio"
-                                  name="book-list"
+                                  type="checkbox"
                                   value={list.id}
-                                  checked={selectedListId === list.id}
-                                  onChange={() => setSelectedListId(list.id)}
-                                  className="text-primary"
+                                  checked={selectedListIds.includes(list.id)}
+                                  onChange={(e) => {
+                                    if (e.target.checked) {
+                                      setSelectedListIds([
+                                        ...selectedListIds,
+                                        list.id,
+                                      ]);
+                                    } else {
+                                      setSelectedListIds(
+                                        selectedListIds.filter(
+                                          (id) => id !== list.id
+                                        )
+                                      );
+                                    }
+                                  }}
+                                  className="text-primary rounded"
                                 />
                                 <span className="font-medium">{list.name}</span>
                               </label>
@@ -507,10 +523,18 @@ export default function BookDetailPage({
                       <div className="flex justify-end gap-2">
                         <Button
                           onClick={handleAddToList}
-                          disabled={isSavingToList || !selectedListId}
+                          disabled={
+                            isSavingToList || selectedListIds.length === 0
+                          }
                           className="rounded-xl"
                         >
-                          {isSavingToList ? "Saving..." : "Add to List"}
+                          {isSavingToList
+                            ? "Saving..."
+                            : `Add to ${
+                                selectedListIds.length > 1
+                                  ? `${selectedListIds.length} Lists`
+                                  : "List"
+                              }`}
                         </Button>
                       </div>
                     </DialogContent>

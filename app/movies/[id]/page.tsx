@@ -108,7 +108,7 @@ export default function MovieDetailPage({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [userLists, setUserLists] = useState<UserList[]>([]);
-  const [selectedListId, setSelectedListId] = useState("");
+  const [selectedListIds, setSelectedListIds] = useState<string[]>([]);
   const [addToListOpen, setAddToListOpen] = useState(false);
   const [isSavingToList, setIsSavingToList] = useState(false);
   const [activeTab, setActiveTab] = useState("overview");
@@ -237,7 +237,7 @@ export default function MovieDetailPage({
   }, [resolvedParams.id, user]);
 
   const handleAddToList = async () => {
-    if (!user?.uid || !selectedListId || !movie) return;
+    if (!user?.uid || selectedListIds.length === 0 || !movie) return;
 
     setIsSavingToList(true);
     try {
@@ -252,7 +252,7 @@ export default function MovieDetailPage({
         rating: movie.vote_average,
         notes: "",
         status: "Watchlist",
-        collections: [selectedListId],
+        collections: selectedListIds,
         overview: movie.overview || "",
         release_date: movie.release_date || "",
       };
@@ -263,10 +263,14 @@ export default function MovieDetailPage({
       );
 
       // If adding to Recommendations collection, also add to the recommendations subcollection
-      const selectedCollection = userLists.find(
-        (list) => list.id === selectedListId
+      const selectedCollections = userLists.filter((list) =>
+        selectedListIds.includes(list.id)
       );
-      if (selectedCollection && selectedCollection.name === "Recommendations") {
+      const recommendationsCollection = selectedCollections.find(
+        (list) => list.name === "Recommendations"
+      );
+
+      if (recommendationsCollection) {
         try {
           const recommendationsRef = collection(
             db,
@@ -295,7 +299,7 @@ export default function MovieDetailPage({
       }
 
       setAddToListOpen(false);
-      setSelectedListId("");
+      setSelectedListIds([]);
     } catch (err) {
       console.error("Error adding movie to list:", err);
       alert("Failed to add movie to list. Please try again.");
@@ -514,7 +518,7 @@ export default function MovieDetailPage({
                       <DialogHeader>
                         <DialogTitle>Add to List</DialogTitle>
                         <DialogDescription>
-                          Choose a list to add "{movie.title}" to.
+                          Choose one or more lists to add "{movie.title}" to.
                         </DialogDescription>
                       </DialogHeader>
                       <div className="space-y-4">
@@ -526,12 +530,24 @@ export default function MovieDetailPage({
                                 className="flex items-center gap-3 cursor-pointer p-3 rounded-xl hover:bg-muted/50 transition-colors"
                               >
                                 <input
-                                  type="radio"
-                                  name="movie-list"
+                                  type="checkbox"
                                   value={list.id}
-                                  checked={selectedListId === list.id}
-                                  onChange={() => setSelectedListId(list.id)}
-                                  className="text-primary"
+                                  checked={selectedListIds.includes(list.id)}
+                                  onChange={(e) => {
+                                    if (e.target.checked) {
+                                      setSelectedListIds([
+                                        ...selectedListIds,
+                                        list.id,
+                                      ]);
+                                    } else {
+                                      setSelectedListIds(
+                                        selectedListIds.filter(
+                                          (id) => id !== list.id
+                                        )
+                                      );
+                                    }
+                                  }}
+                                  className="text-primary rounded"
                                 />
                                 <span className="font-medium">{list.name}</span>
                               </label>
@@ -546,10 +562,18 @@ export default function MovieDetailPage({
                       <div className="flex justify-end gap-2">
                         <Button
                           onClick={handleAddToList}
-                          disabled={isSavingToList || !selectedListId}
+                          disabled={
+                            isSavingToList || selectedListIds.length === 0
+                          }
                           className="rounded-xl"
                         >
-                          {isSavingToList ? "Saving..." : "Add to List"}
+                          {isSavingToList
+                            ? "Saving..."
+                            : `Add to ${
+                                selectedListIds.length > 1
+                                  ? `${selectedListIds.length} Lists`
+                                  : "List"
+                              }`}
                         </Button>
                       </div>
                     </DialogContent>

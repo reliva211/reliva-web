@@ -171,6 +171,15 @@ export function useMovieProfile(userId: string | undefined) {
         })
       );
 
+      const ratingsMovies = moviesData.filter((movie) =>
+        movie.collections?.some((collectionId: string) => {
+          const collection = collectionsData.find(
+            (col) => col.id === collectionId
+          );
+          return collection?.name === "Ratings";
+        })
+      );
+
       // Convert movie data to TMDBMovie format
       const convertToTMDBMovie = (movie: any): TMDBMovie => ({
         id: String(movie.id || ""),
@@ -200,12 +209,10 @@ export function useMovieProfile(userId: string | undefined) {
         favoriteMovies: favoritesMovies.map(convertToTMDBMovie),
         watchlist: watchlistMovies.map(convertToTMDBMovie),
         recommendations: recommendationsMovies.map(convertToTMDBMovie),
-        ratings: watchedMovies
-          .filter((movie) => movie.rating && movie.rating > 0)
-          .map((movie) => ({
-            movie: convertToTMDBMovie(movie),
-            rating: movie.rating,
-          })),
+        ratings: ratingsMovies.map((movie) => ({
+          movie: convertToTMDBMovie(movie),
+          rating: movie.rating || 0,
+        })),
       };
 
       // Also fetch movie reviews to get ratings
@@ -315,7 +322,7 @@ export function useMovieProfile(userId: string | undefined) {
           year: movie.year,
           cover: movie.cover,
           status: "Watching",
-          rating: movie.rating || 0,
+          rating: 0, // Don't set rating for recently watched movies
           notes: "",
           collections: [watchingCollection.id],
           overview: movie.overview,
@@ -514,7 +521,7 @@ export function useMovieProfile(userId: string | undefined) {
 
     // Ensure movieId is a string for Firebase document reference
     const movieIdStr = String(movieId);
-    
+
     if (!movieIdStr || movieIdStr.trim() === "") {
       console.error("Invalid movie ID for removal:", movieId);
       return;
@@ -927,7 +934,10 @@ export function useMovieProfile(userId: string | undefined) {
   };
 
   // Replace functions for editing items
-  const replaceFavoriteMovie = async (oldId: string | number, newMovie: TMDBMovie) => {
+  const replaceFavoriteMovie = async (
+    oldId: string | number,
+    newMovie: TMDBMovie
+  ) => {
     if (!oldId || !newMovie?.id) {
       console.warn("Invalid parameters for replaceFavoriteMovie:", {
         oldId,
