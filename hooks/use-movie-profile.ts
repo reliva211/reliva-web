@@ -53,6 +53,46 @@ export function useMovieProfile(userId: string | undefined) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Ensure required collections exist
+  const ensureCollectionsExist = async () => {
+    if (!userId) return;
+
+    try {
+      const collectionsRef = collection(
+        db,
+        "users",
+        userId,
+        "movieCollections"
+      );
+      const collectionsSnapshot = await getDocs(collectionsRef);
+      const existingCollections = collectionsSnapshot.docs.map(
+        (doc) => doc.data().name
+      );
+
+      const requiredCollections = [
+        { name: "Watched", description: "Movies you have watched" },
+        { name: "Watching", description: "Movies you are currently watching" },
+        { name: "Watchlist", description: "Movies you want to watch" },
+        { name: "Recommendations", description: "Recommended movies" },
+        { name: "Favorites", description: "Your favorite movies" },
+      ];
+
+      for (const collection of requiredCollections) {
+        if (!existingCollections.includes(collection.name)) {
+          await addDoc(collectionsRef, {
+            name: collection.name,
+            description: collection.description,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          });
+          console.log(`Created movie collection: ${collection.name}`);
+        }
+      }
+    } catch (err) {
+      console.error("Error ensuring movie collections exist:", err);
+    }
+  };
+
   // Fetch movie profile from Firebase using collection-based structure
   const fetchMovieProfile = async () => {
     if (!userId) {
@@ -137,7 +177,7 @@ export function useMovieProfile(userId: string | undefined) {
         title: movie.title || "",
         year: movie.year || 0,
         cover: movie.cover || "",
-            rating: movie.rating || 0,
+        rating: movie.rating || 0,
         overview: movie.overview || "",
         release_date: movie.release_date || "",
         vote_average: movie.vote_average || 0,
@@ -151,7 +191,7 @@ export function useMovieProfile(userId: string | undefined) {
 
       // Create movie profile from the fetched data
       const profile: MovieProfile = {
-        recentlyWatched: watchingMovies.slice(0, 10).map(convertToTMDBMovie), // Use watching for currently watching
+        recentlyWatched: watchedMovies.slice(0, 10).map(convertToTMDBMovie), // Use watched for recently watched
         favoriteMovie:
           favoritesMovies.length > 0
             ? convertToTMDBMovie(favoritesMovies[0])
@@ -312,9 +352,9 @@ export function useMovieProfile(userId: string | undefined) {
     try {
       // Find the "Favorites" collection
       const collectionsRef = collection(
-          db,
-          "users",
-          userId,
+        db,
+        "users",
+        userId,
         "movieCollections"
       );
       const collectionsSnapshot = await getDocs(collectionsRef);
@@ -435,7 +475,7 @@ export function useMovieProfile(userId: string | undefined) {
         await updateDoc(movieRef, {
           collections: updatedCollections,
         });
-    } else {
+      } else {
         // Create new movie with Favorites collection
         const movieData = {
           id: movie.id,
@@ -553,7 +593,7 @@ export function useMovieProfile(userId: string | undefined) {
         await updateDoc(movieRef, {
           collections: updatedCollections,
         });
-    } else {
+      } else {
         // Create new movie with Watchlist collection
         const movieData = {
           id: movie.id,
@@ -671,7 +711,7 @@ export function useMovieProfile(userId: string | undefined) {
         await updateDoc(movieRef, {
           collections: updatedCollections,
         });
-    } else {
+      } else {
         // Create new movie with Recommendations collection
         const movieData = {
           id: movie.id,
@@ -792,7 +832,7 @@ export function useMovieProfile(userId: string | undefined) {
           collections: updatedCollections,
           rating: rating,
         });
-    } else {
+      } else {
         // Create new movie with Ratings collection
         const movieData = {
           id: movie.id,
@@ -1032,7 +1072,11 @@ export function useMovieProfile(userId: string | undefined) {
 
   // Initialize on mount
   useEffect(() => {
-    fetchMovieProfile();
+    const initializeProfile = async () => {
+      await ensureCollectionsExist();
+      await fetchMovieProfile();
+    };
+    initializeProfile();
   }, [userId]);
 
   return {

@@ -134,7 +134,7 @@ export default function DiscoverSection({
         </p>
       </div>
 
-      <div className="relative w-full overflow-hidden">
+      <div className="relative w-full overflow-visible">
         {/* Left Arrow */}
         {showLeftArrow && (
           <button

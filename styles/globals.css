@@ -91,4 +91,15 @@ body {
   body {
     @apply bg-background text-foreground;
   }
+
+  /* Remove text selection highlighting for reply inputs */
+  textarea::selection {
+    background: transparent !important;
+    color: white !important;
+  }
+
+  textarea::-moz-selection {
+    background: transparent !important;
+    color: white !important;
+  }
 }

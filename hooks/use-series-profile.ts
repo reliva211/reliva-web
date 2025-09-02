@@ -270,7 +270,7 @@ export function useSeriesProfile(userId: string | undefined) {
           year: new Date(series.first_air_date).getFullYear(),
           cover: series.poster_path,
           status: "Watching",
-          rating: series.vote_average,
+          rating: 0, // Don't set rating when adding to collections
           notes: "",
           collections: [watchingCollection.id],
           overview: series.overview,
@@ -341,7 +341,7 @@ export function useSeriesProfile(userId: string | undefined) {
           year: new Date(series.first_air_date).getFullYear(),
           cover: series.poster_path,
           status: "Watched",
-          rating: series.vote_average,
+          rating: 0, // Don't set rating when adding to favorites
           notes: "",
           collections: [watchedCollection.id],
           overview: series.overview,
@@ -430,7 +430,7 @@ export function useSeriesProfile(userId: string | undefined) {
           year: new Date(series.first_air_date).getFullYear(),
           cover: series.poster_path,
           status: "Watched",
-          rating: series.vote_average,
+          rating: 0, // Don't set rating when adding to favorites
           notes: "",
           collections: [watchedCollection.id],
           overview: series.overview,
@@ -550,7 +550,7 @@ export function useSeriesProfile(userId: string | undefined) {
           year: new Date(series.first_air_date).getFullYear(),
           cover: series.poster_path,
           status: "Watchlist",
-          rating: series.vote_average,
+          rating: 0, // Don't set rating when adding to collections
           notes: "",
           collections: [watchlistCollection.id],
           overview: series.overview,
@@ -670,7 +670,7 @@ export function useSeriesProfile(userId: string | undefined) {
           year: new Date(series.first_air_date).getFullYear(),
           cover: series.poster_path,
           status: "Recommendations",
-          rating: series.vote_average,
+          rating: 0, // Don't set rating when adding to collections
           notes: "",
           collections: [recommendationsCollection.id],
           overview: series.overview,
@@ -1006,7 +1006,7 @@ export function useSeriesProfile(userId: string | undefined) {
         year: new Date(newSeries.first_air_date).getFullYear(),
         cover: newSeries.poster_path,
         status: "Watched",
-        rating: newSeries.vote_average,
+        rating: 0, // Don't set rating when replacing in collections
         notes: "",
         collections: [watchedCollection.id],
         overview: newSeries.overview,
@@ -1066,7 +1066,7 @@ export function useSeriesProfile(userId: string | undefined) {
         year: new Date(newSeries.first_air_date).getFullYear(),
         cover: newSeries.poster_path,
         status: "Watchlist",
-        rating: newSeries.vote_average,
+        rating: 0, // Don't set rating when replacing in collections
         notes: "",
         collections: [watchlistCollection.id],
         overview: newSeries.overview,
@@ -1126,7 +1126,7 @@ export function useSeriesProfile(userId: string | undefined) {
         year: new Date(newSeries.first_air_date).getFullYear(),
         cover: newSeries.poster_path,
         status: "Recommendations",
-        rating: newSeries.vote_average,
+        rating: 0, // Don't set rating when replacing in collections
         notes: "",
         collections: [recommendationsCollection.id],
         overview: newSeries.overview,

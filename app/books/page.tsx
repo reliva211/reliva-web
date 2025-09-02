@@ -515,7 +515,7 @@ export default function BooksPage() {
         </div>
       </div>
 
-      <div className="container mx-auto px-2 sm:px-4 md:px-6 py-4 sm:py-6 md:py-8 max-w-full overflow-x-hidden">
+      <div className="container mx-auto px-2 sm:px-4 md:px-6 py-4 sm:py-6 md:py-8 max-w-full">
         {/* Search and Filters */}
         <div className="mb-6 sm:mb-8 w-full">
           <div className="flex flex-col gap-2 sm:gap-3 mb-4 sm:mb-6 w-full">

@@ -41,6 +41,17 @@ const API_BASE =
 
 export default function ThreadPage() {
   const params = useParams();
+
+  // State for nested comment reply inputs
+  const [nestedReplyInputs, setNestedReplyInputs] = useState<{
+    [key: string]: string;
+  }>({});
+  const [showNestedReplyInputs, setShowNestedReplyInputs] = useState<{
+    [key: string]: boolean;
+  }>({});
+  const [isReplyingToNested, setIsReplyingToNested] = useState<{
+    [key: string]: boolean;
+  }>({});
   const router = useRouter();
   const { user } = useCurrentUser();
 
@@ -602,22 +613,15 @@ export default function ThreadPage() {
                     </Link>
                   )}
 
-                  {/* Quick Reply Button */}
+                  {/* Reply Button */}
                   <button
-                    onClick={() => {
-                      const replyText = prompt(
-                        `Reply to "${reply.authorId?.username}":`
-                      );
-                      if (replyText && replyText.trim()) {
-                        addReplyToComment(reply._id, replyText.trim());
-                      }
-                    }}
+                    onClick={() => toggleNestedReplyInput(reply._id)}
                     className="flex items-center gap-1.5 hover:text-green-400 transition-all duration-200 group"
                   >
                     <div className="p-1.5 rounded-full group-hover:bg-green-600/20 transition-colors">
                       <MessageCircle className="w-4 h-4" />
                     </div>
-                    <span className="text-xs font-medium">Quick Reply</span>
+                    <span className="text-xs font-medium">Reply</span>
                   </button>
                 </div>
               </div>
@@ -625,12 +629,109 @@ export default function ThreadPage() {
           </div>
         </Card>
 
+        {/* Nested Reply Input */}
+        {showNestedReplyInputs[reply._id] && (
+          <div className="mt-3 bg-[#0f0f0f]/50 backdrop-blur-sm border border-[#2a2a2a]/50 rounded-lg sm:rounded-xl p-2 sm:p-3 ml-6">
+            <div className="flex items-start gap-2 sm:gap-3">
+              <Avatar className="w-6 h-6 sm:w-8 sm:w-8 ring-2 ring-green-500/30 flex-shrink-0 shadow-md">
+                <AvatarFallback className="bg-gradient-to-br from-green-500 to-emerald-600 text-white font-semibold text-xs">
+                  {user?.displayName?.charAt(0) ||
+                    user?.email?.charAt(0) ||
+                    "U"}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex-1">
+                <Textarea
+                  value={nestedReplyInputs[reply._id] || ""}
+                  onChange={(e) =>
+                    setNestedReplyInputs((prev) => ({
+                      ...prev,
+                      [reply._id]: e.target.value,
+                    }))
+                  }
+                  placeholder={`Reply to ${reply.authorId?.username}...`}
+                  className="min-h-[50px] sm:min-h-[60px] border-none resize-none focus-visible:ring-0 bg-black text-white placeholder-[#808080] text-xs sm:text-sm selection:bg-transparent selection:text-white"
+                  disabled={isReplyingToNested[reply._id]}
+                />
+                <div className="flex justify-end pt-1.5 sm:pt-2">
+                  <Button
+                    onClick={() => toggleNestedReplyInput(reply._id)}
+                    disabled={isReplyingToNested[reply._id]}
+                    className="text-[#808080] hover:text-[#a0a0a0] text-xs px-2 sm:px-3 py-1 sm:py-1.5 h-6 sm:h-7 bg-[#1a1a1a] border border-[#2a2a2a] rounded-md mr-2"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={() => handleNestedReply(reply._id)}
+                    disabled={
+                      !nestedReplyInputs[reply._id]?.trim() ||
+                      isReplyingToNested[reply._id]
+                    }
+                    className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white px-3 sm:px-4 py-1 sm:py-1.5 rounded-full font-medium transition-all duration-200 shadow-md hover:shadow-lg text-xs sm:text-sm h-6 sm:h-7"
+                  >
+                    {isReplyingToNested[reply._id] ? (
+                      <div className="flex items-center gap-1 sm:gap-1.5">
+                        <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                        <span>Replying...</span>
+                      </div>
+                    ) : (
+                      "Reply"
+                    )}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Render nested replies recursively */}
         {reply.comments && reply.comments.length > 0 && (
           <div className="ml-6">{renderAllReplies(reply, depth + 1)}</div>
         )}
       </div>
     ));
+  };
+
+  // Helper functions for nested reply inputs
+  const toggleNestedReplyInput = (commentId: string) => {
+    setShowNestedReplyInputs((prev) => ({
+      ...prev,
+      [commentId]: !prev[commentId],
+    }));
+    if (!showNestedReplyInputs[commentId]) {
+      setNestedReplyInputs((prev) => ({
+        ...prev,
+        [commentId]: "",
+      }));
+    }
+  };
+
+  const handleNestedReply = async (targetCommentId: string) => {
+    const replyContent = nestedReplyInputs[targetCommentId];
+    if (!replyContent?.trim()) return;
+
+    setIsReplyingToNested((prev) => ({
+      ...prev,
+      [targetCommentId]: true,
+    }));
+
+    try {
+      await addReplyToComment(targetCommentId, replyContent);
+      // Clear the input and hide it
+      setNestedReplyInputs((prev) => ({
+        ...prev,
+        [targetCommentId]: "",
+      }));
+      setShowNestedReplyInputs((prev) => ({
+        ...prev,
+        [targetCommentId]: false,
+      }));
+    } finally {
+      setIsReplyingToNested((prev) => ({
+        ...prev,
+        [targetCommentId]: false,
+      }));
+    }
   };
 
   // Function to add reply to any nested comment
@@ -1008,7 +1109,7 @@ export default function ThreadPage() {
                   value={replyInput}
                   onChange={(e) => setReplyInput(e.target.value)}
                   placeholder="Add to this thread..."
-                  className="min-h-[50px] sm:min-h-[60px] border-none resize-none focus-visible:ring-0 bg-transparent text-[#e0e0e0] placeholder-[#808080] text-xs sm:text-sm"
+                  className="min-h-[50px] sm:min-h-[60px] border-none resize-none focus-visible:ring-0 bg-black text-white placeholder-[#808080] text-xs sm:text-sm selection:bg-transparent selection:text-white"
                   disabled={isReplying}
                 />
                 <div className="flex justify-end pt-1.5 sm:pt-2">

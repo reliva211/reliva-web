@@ -837,7 +837,7 @@ function ReviewsPageContent() {
 
           {/* Reply Input for top-level comments */}
           {showReplyInput[`${postId}-${comment._id}`] && (
-            <div className="mt-3 bg-[#3a3a3a] rounded-lg border border-[#4a4a4a] shadow-sm overflow-hidden">
+            <div className="mt-3 bg-[#0f0f0f] rounded-lg border border-[#2a2a2a] shadow-sm overflow-hidden">
               <div className="p-3">
                 <div className="flex gap-2 mb-3">
                   <Avatar className="w-6 h-6 ring-1 ring-green-500/20 flex-shrink-0">
@@ -857,18 +857,18 @@ function ReviewsPageContent() {
                         }))
                       }
                       placeholder="Write a reply..."
-                      className="min-h-[35px] max-h-[80px] text-sm border-none resize-none focus-visible:ring-0 bg-transparent px-2 py-1 rounded-lg text-[#e0e0e0] placeholder-[#808080]"
+                      className="min-h-[35px] max-h-[80px] text-sm border-none resize-none focus-visible:ring-0 bg-black px-2 py-1 rounded-lg text-white placeholder-[#606060] selection:bg-transparent selection:text-white"
                       disabled={isReplying[`${postId}-${comment._id}`]}
                     />
                   </div>
                 </div>
-                <div className="flex gap-2 pt-2 border-t border-[#4a4a4a]">
+                <div className="flex gap-2 pt-2 border-t border-[#2a2a2a]">
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={() => toggleReplyInput(`${postId}-${comment._id}`)}
                     disabled={isReplying[`${postId}-${comment._id}`]}
-                    className="text-[#a0a0a0] hover:text-[#c0c0c0] text-xs px-1.5 py-0.5 h-5 bg-[#2a2a2a] border border-[#3a3a3a]"
+                    className="text-[#808080] hover:text-[#a0a0a0] text-xs px-1.5 py-0.5 h-5 bg-[#1a1a1a] border border-[#2a2a2a]"
                   >
                     Cancel
                   </Button>
@@ -1440,7 +1440,7 @@ function ReviewsPageContent() {
                                       }))
                                     }
                                     placeholder="Write a reply..."
-                                    className="min-h-[35px] max-h-[80px] text-sm border-none resize-none focus-visible:ring-0 bg-transparent px-2 py-1 rounded-lg text-[#c0c0c0] placeholder-[#606060]"
+                                    className="min-h-[35px] max-h-[80px] text-sm border-none resize-none focus-visible:ring-0 bg-black px-2 py-1 rounded-lg text-white placeholder-[#606060] selection:bg-transparent selection:text-white"
                                     disabled={isReplying[post._id]}
                                   />
                                 </div>
