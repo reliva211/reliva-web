@@ -614,11 +614,11 @@ export default function ArtistDetailPage({
                 <h3 className="text-lg sm:text-xl font-semibold text-foreground px-2 sm:px-4">
                   Top Albums
                 </h3>
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 sm:gap-3 px-2 sm:px-4">
-                  {albums.map((album) => (
+                <div className="flex gap-3 sm:gap-4 px-2 sm:px-4 overflow-x-auto scrollbar-hide">
+                  {albums.slice(0, 10).map((album) => (
                     <div
                       key={album.id}
-                      className="overflow-hidden cursor-pointer hover:shadow-lg transition-all duration-300 rounded-xl group bg-muted/30 backdrop-blur-sm hover:bg-muted/50 hover:scale-105 border border-border/20"
+                      className="flex-shrink-0 w-40 sm:w-44 overflow-hidden cursor-pointer hover:shadow-lg transition-all duration-300 rounded-xl group bg-muted/30 backdrop-blur-sm hover:bg-muted/50 hover:scale-105 border border-border/20"
                       onClick={() => router.push(`/music/album/${album.id}`)}
                     >
                       <div className="aspect-square relative overflow-hidden">
@@ -630,11 +630,11 @@ export default function ArtistDetailPage({
                         {/* Hover overlay */}
                         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                       </div>
-                      <div className="p-2">
-                        <h3 className="font-medium text-xs truncate mb-1 group-hover:text-primary transition-colors">
+                      <div className="p-3">
+                        <h3 className="font-medium text-sm truncate mb-1 group-hover:text-primary transition-colors">
                           {album.name}
                         </h3>
-                        <p className="text-xs text-muted-foreground truncate">
+                        <p className="text-sm text-muted-foreground truncate">
                           {album.year}
                         </p>
                       </div>

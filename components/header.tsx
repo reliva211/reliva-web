@@ -194,15 +194,7 @@ export default function Sidebar({ isLandingPage = false }: SidebarProps) {
                   isCollapsed ? "hidden" : "flex"
                 )}
               >
-                {/* Mobile close button - only show when sidebar is open on mobile */}
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setIsMobileOpen(false)}
-                  className="lg:hidden"
-                >
-                  <X className="h-4 w-4" />
-                </Button>
+
 
                 {/* Desktop collapse button */}
                 <Button

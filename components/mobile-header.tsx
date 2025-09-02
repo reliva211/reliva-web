@@ -128,7 +128,7 @@ export default function MobileHeader({ onMenuClick }: MobileHeaderProps) {
                 <button
                   onClick={() => setShowDiscoverDropdown(!showDiscoverDropdown)}
                   className={cn(
-                    "py-3 px-3 text-sm font-medium transition-colors duration-200 text-center flex items-center justify-center gap-1",
+                    "py-3 px-3 text-base font-medium transition-colors duration-200 text-center flex items-center justify-center gap-1",
                     item.isActive
                       ? "text-gray-900 dark:text-white"
                       : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
@@ -146,7 +146,7 @@ export default function MobileHeader({ onMenuClick }: MobileHeaderProps) {
                         key={option.href}
                         href={option.href}
                         onClick={() => setShowDiscoverDropdown(false)}
-                        className="block py-2 px-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200 first:rounded-t-lg last:rounded-b-lg text-center"
+                        className="block py-2 px-3 text-base text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200 first:rounded-t-lg last:rounded-b-lg text-center"
                       >
                         {option.label}
                       </Link>
@@ -158,7 +158,7 @@ export default function MobileHeader({ onMenuClick }: MobileHeaderProps) {
               <Link
                 href={item.href}
                 className={cn(
-                  "block py-3 px-3 text-sm font-medium transition-colors duration-200 text-center",
+                  "block py-3 px-3 text-base font-medium transition-colors duration-200 text-center",
                   item.isActive
                     ? "text-gray-900 dark:text-white"
                     : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"

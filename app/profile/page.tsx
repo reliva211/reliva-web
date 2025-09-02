@@ -9,6 +9,7 @@ import { useCurrentUser } from "@/hooks/use-current-user";
 import { useProfile } from "@/hooks/use-profile";
 import { useCollections } from "@/hooks/use-collections";
 import { useSearch } from "@/hooks/use-search";
+import { useToast } from "@/hooks/use-toast";
 import {
   searchService,
   TMDBMovie,
@@ -82,6 +83,7 @@ interface PublicCollectionItems {
 
 export default function ProfilePage() {
   const { user } = useCurrentUser();
+  const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("music");
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [publicCollections, setPublicCollections] = useState<
@@ -821,7 +823,10 @@ export default function ProfilePage() {
                   onClick={() => {
                     const publicUrl = `${window.location.origin}/users/${user?.uid}`;
                     navigator.clipboard.writeText(publicUrl);
-                    // You could add a toast notification here
+                    toast({
+                      title: "Profile link copied!",
+                      description: "Your profile link has been copied to clipboard.",
+                    });
                   }}
                   className="text-xs sm:text-sm h-9 text-white hover:text-gray-200"
                 >

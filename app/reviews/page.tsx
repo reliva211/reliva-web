@@ -959,10 +959,10 @@ function ReviewsPageContent() {
         {/* Search Section */}
         {!selectedMedia && (
           <div className="bg-[#0f0f0f] rounded-lg shadow-lg mb-6 border border-[#1a1a1a]">
-            <div className="p-2 sm:p-6 border-b border-[#1a1a1a]">
+            <div className="p-1 sm:p-3 border-b border-[#1a1a1a]">
               <h2 className="text-lg font-medium text-[#d0d0d0]">Quick log</h2>
             </div>
-            <div className="p-2 sm:p-6 space-y-4">
+            <div className="p-2 sm:p-4 space-y-4">
               {/* Type Selector */}
               <div className="flex gap-2">
                 {[
@@ -990,9 +990,12 @@ function ReviewsPageContent() {
               <div className="flex gap-2">
                 <input
                   type="text"
-                  placeholder={`Rate ${
-                    searchType === "music" ? "songs and albums" : searchType
-                  }s...`}
+                  placeholder={`Rate and review ${
+                    searchType === "music" ? "songs and albums" : 
+                    searchType === "movie" ? "movies" :
+                    searchType === "tv" ? "TV shows" :
+                    searchType === "book" ? "books" : searchType
+                  }...`}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && searchMedia()}
@@ -1019,8 +1022,8 @@ function ReviewsPageContent() {
                       <Image
                         src={result.cover}
                         alt={result.title}
-                        width={58}
-                        height={87}
+                        width={80}
+                        height={120}
                         className="rounded object-cover"
                       />
                       <div className="flex-1">
@@ -1053,7 +1056,7 @@ function ReviewsPageContent() {
         {/* Selected Media & Review Form */}
         {selectedMedia && (
           <div className="bg-[#0f0f0f] rounded-lg shadow-lg border border-[#1a1a1a]">
-            <div className="p-2 sm:p-6 border-b border-[#1a1a1a]">
+            <div className="p-1 sm:p-3 border-b border-[#1a1a1a]">
               <h2 className="text-lg font-medium text-[#d0d0d0]">
                 Review: {selectedMedia.title}
               </h2>
@@ -1065,8 +1068,8 @@ function ReviewsPageContent() {
                   <Image
                     src={selectedMedia.cover}
                     alt={selectedMedia.title}
-                    width={112}
-                    height={168}
+                    width={140}
+                    height={210}
                     className="rounded-xl object-cover shadow-lg"
                   />
                 </div>

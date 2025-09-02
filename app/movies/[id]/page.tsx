@@ -658,7 +658,7 @@ export default function MovieDetailPage({
                         View More
                       </button>
                     </div>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4">
+                    <div className="grid grid-cols-5 gap-3 sm:gap-4"> 
                       {movie.credits.cast.slice(0, 10).map((actor, index) => (
                         <div
                           key={`overview-cast-${actor.id}-${index}`}
@@ -666,12 +666,12 @@ export default function MovieDetailPage({
                           onClick={() => router.push(`/person/${actor.id}`)}
                         >
                           {actor.profile_path ? (
-                            <Image
-                              src={`https://image.tmdb.org/t/p/w92${actor.profile_path}`}
-                              alt={actor.name}
-                              width={40}
-                              height={40}
-                              className="rounded-full object-cover group-hover:scale-110 transition-transform duration-200"
+                                                         <Image
+                               src={`https://image.tmdb.org/t/p/w92${actor.profile_path}`}
+                               alt={actor.name}
+                               width={56}
+                               height={56}
+                               className="rounded-full object-cover group-hover:scale-110 transition-transform duration-200"
                               onError={(e) => {
                                 const target = e.target as HTMLImageElement;
                                 target.src = "/placeholder-user.jpg";
@@ -712,7 +712,7 @@ export default function MovieDetailPage({
                         View More
                       </button>
                     </div>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4">
+                    <div className="grid grid-cols-5 gap-3 sm:gap-4">
                       {movie.credits.crew.slice(0, 10).map((person, index) => (
                         <div
                           key={`overview-crew-${person.id}-${index}`}
@@ -720,12 +720,12 @@ export default function MovieDetailPage({
                           onClick={() => router.push(`/person/${person.id}`)}
                         >
                           {person.profile_path ? (
-                            <Image
-                              src={`https://image.tmdb.org/t/p/w92${person.profile_path}`}
-                              alt={person.name}
-                              width={40}
-                              height={40}
-                              className="rounded-full object-cover group-hover:scale-110 transition-transform duration-200"
+                                                         <Image
+                               src={`https://image.tmdb.org/t/p/w92${person.profile_path}`}
+                               alt={person.name}
+                               width={56}
+                               height={56}
+                               className="rounded-full object-cover group-hover:scale-110 transition-transform duration-200"
                               onError={(e) => {
                                 const target = e.target as HTMLImageElement;
                                 target.src = "/placeholder-user.jpg";
@@ -852,7 +852,7 @@ export default function MovieDetailPage({
                     <h3 className="text-2xl font-semibold mb-6 bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent">
                       Cast
                     </h3>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                    <div className="grid grid-cols-5 gap-4">
                       {movie.credits.cast.map((actor, index) => (
                         <div
                           key={`cast-${actor.id}-${index}`}
@@ -860,12 +860,12 @@ export default function MovieDetailPage({
                           onClick={() => router.push(`/person/${actor.id}`)}
                         >
                           {actor.profile_path ? (
-                            <Image
-                              src={`https://image.tmdb.org/t/p/w92${actor.profile_path}`}
-                              alt={actor.name}
-                              width={48}
-                              height={48}
-                              className="rounded-full object-cover group-hover:scale-110 transition-transform duration-200"
+                                                         <Image
+                               src={`https://image.tmdb.org/t/p/w92${actor.profile_path}`}
+                               alt={actor.name}
+                               width={64}
+                               height={64}
+                               className="rounded-full object-cover group-hover:scale-110 transition-transform duration-200"
                               onError={(e) => {
                                 const target = e.target as HTMLImageElement;
                                 target.src = "/placeholder-user.jpg";
@@ -897,7 +897,7 @@ export default function MovieDetailPage({
                     <h3 className="text-2xl font-semibold mb-6 bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent">
                       Crew
                     </h3>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                    <div className="grid grid-cols-5 gap-4">
                       {movie.credits.crew
                         .filter((person) =>
                           [
@@ -915,12 +915,12 @@ export default function MovieDetailPage({
                             onClick={() => router.push(`/person/${person.id}`)}
                           >
                             {person.profile_path ? (
-                              <Image
-                                src={`https://image.tmdb.org/t/p/w92${person.profile_path}`}
-                                alt={person.name}
-                                width={48}
-                                height={48}
-                                className="rounded-full object-cover group-hover:scale-110 transition-transform duration-200"
+                                                           <Image
+                               src={`https://image.tmdb.org/t/p/w92${person.profile_path}`}
+                               alt={person.name}
+                               width={64}
+                               height={64}
+                               className="rounded-full object-cover group-hover:scale-110 transition-transform duration-200"
                                 onError={(e) => {
                                   const target = e.target as HTMLImageElement;
                                   target.src = "/placeholder-user.jpg";
@@ -974,7 +974,7 @@ export default function MovieDetailPage({
                     <p className="text-lg">Loading similar movies...</p>
                   </div>
                 ) : similarMovies.length > 0 ? (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                  <div className="grid grid-cols-3 gap-4">
                     {similarMovies.map((similarMovie) => (
                       <div
                         key={similarMovie.id}
