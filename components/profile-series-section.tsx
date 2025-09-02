@@ -1421,7 +1421,7 @@ export default function ProfileSeriesSection({
               <>
                 {limitedRatings.map((rating, idx) => (
                   <div
-                    key={`rating-${rating.series.id || idx}`}
+                    key={`rating-${rating.series.id}-${rating.rating}-${idx}`}
                     className="relative group flex-shrink-0 w-32"
                   >
                     <div className="aspect-[2/3] w-full bg-muted rounded-md overflow-hidden">

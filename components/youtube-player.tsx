@@ -48,8 +48,6 @@ export default function YouTubePlayer() {
   const [player, setPlayer] = useState<any>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
-  const [isMuted, setIsMuted] = useState(true);
-  const [hasUserInteracted, setHasUserInteracted] = useState(false);
   const playerRef = useRef<HTMLDivElement>(null);
 
   // Check if we can navigate
@@ -105,7 +103,7 @@ export default function YouTubePlayer() {
         width: playerWidth,
         videoId: currentSong.videoId,
         playerVars: {
-          autoplay: 0, // Disable autoplay to comply with browser policies
+          autoplay: 1, // Enable autoplay
           controls: 0, // Hide YouTube's built-in controls for custom overlay
           modestbranding: 1,
           rel: 0, // Don't show related videos
@@ -113,7 +111,7 @@ export default function YouTubePlayer() {
           iv_load_policy: 3,
           fs: 0, // Disable fullscreen button
           disablekb: 1, // Disable keyboard controls
-          mute: 1, // Start muted to comply with autoplay policies
+          mute: 0, // Start unmuted for autoplay to work
           color: "white", // White progress bar
           theme: "dark", // Dark theme
         },
@@ -123,12 +121,11 @@ export default function YouTubePlayer() {
             setPlayerLoading(false);
             // YouTube player ready
 
-            // Try to play the video (will be muted initially)
+            // Auto-play the video
             try {
               event.target.playVideo();
             } catch (error) {
               // Autoplay blocked, user needs to interact first
-              console.log("Autoplay blocked, waiting for user interaction");
             }
           },
           onStateChange: (event: any) => {
@@ -191,13 +188,6 @@ export default function YouTubePlayer() {
     if (!player) return;
 
     try {
-      // On first user interaction, unmute the player
-      if (!hasUserInteracted && isMuted) {
-        player.unMute();
-        setIsMuted(false);
-        setHasUserInteracted(true);
-      }
-
       if (isPlaying) {
         player.pauseVideo();
       } else {
@@ -211,12 +201,6 @@ export default function YouTubePlayer() {
   const handleNext = async () => {
     // Next button clicked
     if (hasNext) {
-      // Unmute on user interaction
-      if (!hasUserInteracted && isMuted && player) {
-        player.unMute();
-        setIsMuted(false);
-        setHasUserInteracted(true);
-      }
       await playNext();
     } else {
       // Cannot go to next song - no more songs in queue
@@ -226,32 +210,9 @@ export default function YouTubePlayer() {
   const handlePrevious = async () => {
     // Previous button clicked
     if (hasPrevious) {
-      // Unmute on user interaction
-      if (!hasUserInteracted && isMuted && player) {
-        player.unMute();
-        setIsMuted(false);
-        setHasUserInteracted(true);
-      }
       await playPrevious();
     } else {
       // Cannot go to previous song - at first song
-    }
-  };
-
-  const toggleMute = () => {
-    if (!player) return;
-
-    try {
-      if (isMuted) {
-        player.unMute();
-        setIsMuted(false);
-        setHasUserInteracted(true);
-      } else {
-        player.mute();
-        setIsMuted(true);
-      }
-    } catch (error) {
-      console.error("Error toggling mute:", error);
     }
   };
 
@@ -297,27 +258,14 @@ export default function YouTubePlayer() {
 
         {/* Control Overlay - Positioned over the video */}
         <div className="absolute inset-0 pointer-events-none">
-          {/* Top Left - Settings and Mute Buttons */}
-          <div className="absolute top-2 left-2 pointer-events-auto flex gap-1">
+          {/* Top Left - Settings Button */}
+          <div className="absolute top-2 left-2 pointer-events-auto">
             <Button
               variant="ghost"
               size="sm"
               className="h-8 w-8 p-0 bg-black/50 hover:bg-black/70 text-white rounded-full"
             >
               <span className="text-xs">⚙️</span>
-            </Button>
-            <Button
-              onClick={toggleMute}
-              variant="ghost"
-              size="sm"
-              className="h-8 w-8 p-0 bg-black/50 hover:bg-black/70 text-white rounded-full"
-              title={isMuted ? "Unmute" : "Mute"}
-            >
-              {isMuted ? (
-                <span className="text-xs">🔇</span>
-              ) : (
-                <span className="text-xs">🔊</span>
-              )}
             </Button>
           </div>
 
@@ -373,31 +321,17 @@ export default function YouTubePlayer() {
 
       {/* Information Panel */}
       <div className="px-3 py-2 bg-gray-900 border-t border-gray-700">
-        <div className="flex items-center justify-between">
-          <div className="flex-1 min-w-0">
-            <p className="text-white text-xs font-medium truncate song-title">
-              {currentSong.title}
-            </p>
-            <p className="text-gray-400 text-xs truncate artist-name">
-              {currentSong.artist}
-            </p>
-            {queue.length > 1 && (
-              <p className="text-gray-500 text-xs mt-1">
-                {currentIndex + 1} of {queue.length}
-              </p>
-            )}
-          </div>
-          {isMuted && (
-            <div className="ml-2 flex-shrink-0">
-              <span
-                className="text-xs text-yellow-400"
-                title="Click play to unmute"
-              >
-                🔇
-              </span>
-            </div>
-          )}
-        </div>
+        <p className="text-white text-xs font-medium truncate song-title">
+          {currentSong.title}
+        </p>
+        <p className="text-gray-400 text-xs truncate artist-name">
+          {currentSong.artist}
+        </p>
+        {queue.length > 1 && (
+          <p className="text-gray-500 text-xs mt-1">
+            {currentIndex + 1} of {queue.length}
+          </p>
+        )}
       </div>
     </div>
   );
