@@ -587,6 +587,38 @@ export default function MusicApp() {
     }
   };
 
+  const handleAddSongToRecommendations = async (song: Song) => {
+    try {
+      // Convert Song to MusicRecommendation format
+      const recommendation = {
+        id: song.id,
+        name: song.name || "Unknown Song",
+        artists: song.artists || { primary: [] },
+        image: song.image || [],
+        album: song.album || { name: "Unknown Album" },
+        duration: song.duration || 0,
+        year: song.year || "Unknown",
+        language: song.language || "Unknown",
+        playCount: song.playCount || 0,
+        type: 'song' as const,
+        addedAt: new Date(),
+      };
+
+      await addAlbumToRecommendations(recommendation);
+      toast({
+        title: "Song added to recommendations",
+        description: `${song.name} has been added to your recommendations.`,
+      });
+    } catch (error) {
+      console.error("Error adding song to recommendations:", error);
+      toast({
+        title: "Error",
+        description: "Failed to add song to recommendations. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
   const playSong = (song: Song) => {
     setCurrentSong(song);
   };
@@ -1435,6 +1467,16 @@ export default function MusicApp() {
                                         }`}
                                       />
                                     </button>
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleAddSongToRecommendations(song);
+                                      }}
+                                      className="w-8 h-8 sm:w-10 sm:h-10 bg-blue-500/80 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-blue-600/80 transition-all duration-200 hover:scale-110"
+                                      title="Add to recommendations"
+                                    >
+                                      <Plus className="w-3 h-3 sm:w-4 sm:h-4 text-white fill-white" />
+                                    </button>
                                   </div>
                                 </div>
 
@@ -1884,6 +1926,19 @@ export default function MusicApp() {
                                     : ""
                                 }`}
                               />
+                            </Button>
+                            {/* Add to recommendations button */}
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="text-green-400 hover:text-green-300 flex-shrink-0"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleAddSongToRecommendations(song);
+                              }}
+                              title="Add to recommendations"
+                            >
+                              <Plus className="w-4 h-4" />
                             </Button>
                           </div>
                         </div>

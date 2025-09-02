@@ -389,7 +389,7 @@ export default function Sidebar({ isLandingPage = false }: SidebarProps) {
                         href={item.href}
                         onClick={() => setIsMobileOpen(false)}
                         className={cn(
-                          "flex items-center gap-3 rounded-lg text-sm font-medium transition-all duration-200 hover:bg-accent hover:text-accent-foreground",
+                          "relative flex items-center gap-3 rounded-lg text-sm font-medium transition-all duration-200 hover:bg-accent hover:text-accent-foreground",
                           isCollapsed
                             ? "justify-center px-2 py-3"
                             : "px-4 py-3",
@@ -406,6 +406,17 @@ export default function Sidebar({ isLandingPage = false }: SidebarProps) {
                         />
                         {!isCollapsed && (
                           <span className="truncate">{item.label}</span>
+                        )}
+                        {/* Notification badge */}
+                        {item.href === "/notifications" && unreadCount > 0 && (
+                          <span className={cn(
+                            "absolute bg-red-500 text-white text-xs rounded-full flex items-center justify-center font-semibold",
+                            isCollapsed 
+                              ? "-top-1 -right-1 h-4 w-4 min-w-[16px]" 
+                              : "ml-auto h-5 w-5 min-w-[20px]"
+                          )}>
+                            {unreadCount > 99 ? "99+" : unreadCount}
+                          </span>
                         )}
                       </Link>
                     );

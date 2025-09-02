@@ -5,7 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Star, Heart, MoreHorizontal, Trash2 } from "lucide-react";
 import { useCurrentUser } from "@/hooks/use-current-user";
-import { doc, updateDoc, arrayUnion, arrayRemove, deleteDoc } from "firebase/firestore";
+import { doc, updateDoc, arrayUnion, arrayRemove, deleteDoc, addDoc, collection, serverTimestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 
 interface ReviewPostProps {
@@ -42,6 +42,31 @@ export default function ReviewPost({ review, onLikeToggle, onDelete }: ReviewPos
   const likeCount = localLikes.length;
   const isOwnReview = user && review.userId === user.uid;
 
+  // Create notification for post like
+  const createLikeNotification = async () => {
+    if (!user || isOwnReview) return; // Don't notify if liking own post
+
+    try {
+      const notificationData = {
+        type: "like",
+        message: `liked your review of "${review.mediaTitle}"`,
+        fromUserId: user.uid,
+        toUserId: review.userId,
+        fromUserName: user.displayName || user.email?.split("@")[0] || "Anonymous",
+        fromUserAvatar: user.photoURL || "",
+        actionUrl: `/reviews/${review.id}`,
+        isRead: false,
+        createdAt: serverTimestamp(),
+      };
+
+      console.log("Creating like notification:", notificationData);
+      const docRef = await addDoc(collection(db, "notifications"), notificationData);
+      console.log("Like notification created with ID:", docRef.id);
+    } catch (error) {
+      console.error("Error creating like notification:", error);
+    }
+  };
+
   const handleLike = async () => {
     if (!user) return;
 
@@ -59,6 +84,14 @@ export default function ReviewPost({ review, onLikeToggle, onDelete }: ReviewPos
           ? arrayRemove(user.uid)
           : arrayUnion(user.uid)
       });
+      
+      // Create notification only when liking (not unliking)
+      if (!isLiked) {
+        console.log("Creating like notification for review:", review.id, "from user:", user.uid, "to user:", review.userId);
+        await createLikeNotification();
+      } else {
+        console.log("User is unliking, no notification created");
+      }
       
       // Call the callback with the updated review data
       if (onLikeToggle) {

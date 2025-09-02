@@ -78,6 +78,7 @@ export default function NotificationsPage() {
               return dateB - dateA; // Descending order
             });
 
+            console.log("Notifications fetched:", notificationsData.length, "total notifications");
             setNotifications(notificationsData);
             setError(null);
           } catch (err) {

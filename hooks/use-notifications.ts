@@ -27,6 +27,7 @@ export function useNotifications() {
 
       const unsubscribe = onSnapshot(q, (snapshot) => {
         try {
+          console.log("Notifications updated:", snapshot.docs.length, "unread notifications");
           setUnreadCount(snapshot.docs.length);
           setError(null);
         } catch (err) {

@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Star,
   Heart,
@@ -13,6 +14,8 @@ import {
   Calendar,
   User,
   Clock,
+  MessageCircle,
+  Send,
 } from "lucide-react";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import {
@@ -22,6 +25,13 @@ import {
   arrayUnion,
   arrayRemove,
   deleteDoc,
+  addDoc,
+  collection,
+  query,
+  where,
+  orderBy,
+  onSnapshot,
+  serverTimestamp,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 
@@ -54,6 +64,16 @@ interface Review {
   spoilerWarning?: boolean;
 }
 
+interface Comment {
+  id: string;
+  reviewId: string;
+  userId: string;
+  userDisplayName: string;
+  userPhotoURL?: string;
+  content: string;
+  createdAt: any;
+}
+
 export default function ReviewDetailPage() {
   const params = useParams();
   const router = useRouter();
@@ -65,6 +85,9 @@ export default function ReviewDetailPage() {
   const [isLiking, setIsLiking] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [comments, setComments] = useState<Comment[]>([]);
+  const [newComment, setNewComment] = useState("");
+  const [isSubmittingComment, setIsSubmittingComment] = useState(false);
 
   const reviewId = params.id as string;
 
@@ -96,9 +119,108 @@ export default function ReviewDetailPage() {
     fetchReview();
   }, [reviewId]);
 
+  // Fetch comments for this review
+  useEffect(() => {
+    if (!reviewId) return;
+
+    const q = query(
+      collection(db, "comments"),
+      where("reviewId", "==", reviewId),
+      orderBy("createdAt", "desc")
+    );
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const commentsData = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      })) as Comment[];
+      setComments(commentsData);
+    });
+
+    return () => unsubscribe();
+  }, [reviewId]);
+
+  // Create notification for comment
+  const createCommentNotification = async (comment: string) => {
+    if (!user || !review || isOwnReview) return; // Don't notify if commenting on own review
+
+    try {
+      const notificationData = {
+        type: "comment",
+        message: `commented on your review of "${review.mediaTitle}": "${comment.substring(0, 50)}${comment.length > 50 ? "..." : ""}"`,
+        fromUserId: user.uid,
+        toUserId: review.userId,
+        fromUserName: user.displayName || user.email?.split("@")[0] || "Anonymous",
+        fromUserAvatar: user.photoURL || "",
+        actionUrl: `/reviews/${review.id}`,
+        isRead: false,
+        createdAt: serverTimestamp(),
+      };
+
+      console.log("Creating comment notification:", notificationData);
+      const docRef = await addDoc(collection(db, "notifications"), notificationData);
+      console.log("Comment notification created with ID:", docRef.id);
+    } catch (error) {
+      console.error("Error creating comment notification:", error);
+    }
+  };
+
+  // Submit comment
+  const handleSubmitComment = async () => {
+    if (!user || !review || !newComment.trim() || isSubmittingComment) return;
+
+    setIsSubmittingComment(true);
+    try {
+      const commentData = {
+        reviewId: review.id,
+        userId: user.uid,
+        userDisplayName: user.displayName || user.email?.split("@")[0] || "Anonymous",
+        userPhotoURL: user.photoURL || "",
+        content: newComment.trim(),
+        createdAt: serverTimestamp(),
+      };
+
+      await addDoc(collection(db, "comments"), commentData);
+      
+      // Create notification
+      await createCommentNotification(newComment.trim());
+      
+      setNewComment("");
+    } catch (error) {
+      console.error("Error adding comment:", error);
+    } finally {
+      setIsSubmittingComment(false);
+    }
+  };
+
   const isLiked = user ? localLikes.includes(user.uid) : false;
   const likeCount = localLikes.length;
   const isOwnReview = user && review?.userId === user.uid;
+
+  // Create notification for review like
+  const createLikeNotification = async () => {
+    if (!user || !review || isOwnReview) return; // Don't notify if liking own review
+
+    try {
+      const notificationData = {
+        type: "like",
+        message: `liked your review of "${review.mediaTitle}"`,
+        fromUserId: user.uid,
+        toUserId: review.userId,
+        fromUserName: user.displayName || user.email?.split("@")[0] || "Anonymous",
+        fromUserAvatar: user.photoURL || "",
+        actionUrl: `/reviews/${review.id}`,
+        isRead: false,
+        createdAt: serverTimestamp(),
+      };
+
+      console.log("Creating like notification:", notificationData);
+      const docRef = await addDoc(collection(db, "notifications"), notificationData);
+      console.log("Like notification created with ID:", docRef.id);
+    } catch (error) {
+      console.error("Error creating like notification:", error);
+    }
+  };
 
   const handleLike = async () => {
     if (!user || !review || isLiking) return;
@@ -117,6 +239,14 @@ export default function ReviewDetailPage() {
       await updateDoc(reviewRef, {
         likes: isLiked ? arrayRemove(user.uid) : arrayUnion(user.uid),
       });
+
+      // Create notification only when liking (not unliking)
+      if (!isLiked) {
+        console.log("Creating like notification for review:", review.id, "from user:", user.uid, "to user:", review.userId);
+        await createLikeNotification();
+      } else {
+        console.log("User is unliking, no notification created");
+      }
 
       // Update local review state
       setReview((prev) => (prev ? { ...prev, likes: newLikes } : null));
@@ -461,6 +591,75 @@ export default function ReviewDetailPage() {
                 </p>
               </div>
             </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Comments Section */}
+      <div className="container mx-auto px-4 pb-8 max-w-4xl">
+        <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg border border-gray-200 dark:border-gray-700">
+          <div className="flex items-center gap-2 mb-6">
+            <MessageCircle className="h-5 w-5 text-gray-600 dark:text-gray-400" />
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+              Comments ({comments.length})
+            </h3>
+          </div>
+
+          {/* Add Comment Form */}
+          {user && (
+            <div className="mb-6 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+              <Textarea
+                value={newComment}
+                onChange={(e) => setNewComment(e.target.value)}
+                placeholder="Share your thoughts about this review..."
+                className="mb-3 resize-none"
+                rows={3}
+              />
+              <div className="flex justify-end">
+                <Button
+                  onClick={handleSubmitComment}
+                  disabled={!newComment.trim() || isSubmittingComment}
+                  className="flex items-center gap-2"
+                >
+                  <Send className="h-4 w-4" />
+                  {isSubmittingComment ? "Posting..." : "Post Comment"}
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* Comments List */}
+          <div className="space-y-4">
+            {comments.length === 0 ? (
+              <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                <MessageCircle className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                <p>No comments yet. Be the first to share your thoughts!</p>
+              </div>
+            ) : (
+              comments.map((comment) => (
+                <div
+                  key={comment.id}
+                  className="flex gap-3 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg"
+                >
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white font-semibold text-sm flex-shrink-0">
+                    {comment.userDisplayName?.charAt(0) || "U"}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="font-medium text-gray-900 dark:text-white">
+                        {comment.userDisplayName}
+                      </span>
+                      <span className="text-sm text-gray-500 dark:text-gray-400">
+                        {formatTimestamp(comment.createdAt)}
+                      </span>
+                    </div>
+                    <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
+                      {comment.content}
+                    </p>
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         </div>
       </div>
