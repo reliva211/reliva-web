@@ -451,8 +451,16 @@ export function useSeriesProfile(userId: string | undefined) {
   };
 
   // Remove from favorite series (Watched collection)
-  const removeFavoriteSeries = async (seriesId: string) => {
+  const removeFavoriteSeries = async (seriesId: string | number) => {
     if (!userId) return;
+
+    // Ensure seriesId is a string for Firebase document reference
+    const seriesIdStr = String(seriesId);
+    
+    if (!seriesIdStr || seriesIdStr.trim() === "") {
+      console.error("Invalid series ID for removal:", seriesId);
+      return;
+    }
 
     try {
       // Find the "Watched" collection
@@ -472,7 +480,7 @@ export function useSeriesProfile(userId: string | undefined) {
       }
 
       // Remove series from Watched collection
-      const seriesRef = doc(db, "users", userId, "series", seriesId);
+      const seriesRef = doc(db, "users", userId, "series", seriesIdStr);
       const seriesDoc = await getDoc(seriesRef);
 
       if (seriesDoc.exists()) {
@@ -491,6 +499,8 @@ export function useSeriesProfile(userId: string | undefined) {
             collections: updatedCollections,
           });
         }
+      } else {
+        console.warn(`Series with ID ${seriesIdStr} not found in database`);
       }
 
       // Refresh the profile data
@@ -966,7 +976,7 @@ export function useSeriesProfile(userId: string | undefined) {
 
   // Replace functions
   const replaceFavoriteSeries = async (
-    oldId: string,
+    oldId: string | number,
     newSeries: TMDBSeries
   ) => {
     if (!userId) return;

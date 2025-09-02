@@ -10,13 +10,10 @@ export interface UserProfile {
   displayName: string;
   username: string;
   bio: string;
-  location: string;
   website: string;
-  tagline: string;
   avatarUrl: string;
   coverImageUrl: string;
   joinDate: string;
-  isPublic: boolean;
   socialLinks: {
     twitter?: string;
     instagram?: string;

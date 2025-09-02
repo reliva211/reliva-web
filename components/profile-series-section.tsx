@@ -500,7 +500,7 @@ export default function ProfileSeriesSection({
 
   const handleRemoveItem = async (
     type: "favoriteSeriesList" | "watchlist" | "recommendation" | "rating",
-    id: string
+    id: string | number
   ) => {
     if (!id) {
       console.error("Invalid ID for removal:", id);
@@ -513,13 +513,13 @@ export default function ProfileSeriesSection({
           await removeFavoriteSeries(id);
           break;
         case "watchlist":
-          await removeFromWatchlist(id);
+          await removeFromWatchlist(String(id));
           break;
         case "recommendation":
-          await removeRecommendation(id);
+          await removeRecommendation(String(id));
           break;
         case "rating":
-          await removeRating(id);
+          await removeRating(String(id));
           break;
       }
     } catch (error) {
@@ -811,7 +811,7 @@ export default function ProfileSeriesSection({
                       <div className="flex gap-2 overflow-x-auto pb-2 horizontal-scroll-container">
                         {items.slice(0, 4).map((item, idx) => (
                           <div
-                            key={item.id || idx}
+                            key={`public-${item.id || idx}`}
                             className="flex-shrink-0 w-16 h-24 bg-muted rounded-md overflow-hidden"
                           >
                             <Image
@@ -1026,7 +1026,7 @@ export default function ProfileSeriesSection({
               <>
                 {limitedFavoriteSeriesList.map((series, idx) => (
                   <div
-                    key={series.id || idx}
+                    key={`favorite-${series.id || idx}`}
                     className="relative group flex-shrink-0 w-32"
                   >
                     <div className="aspect-[2/3] w-full bg-muted rounded-md overflow-hidden">
@@ -1143,7 +1143,7 @@ export default function ProfileSeriesSection({
               <>
                 {limitedWatchlist.map((series, idx) => (
                   <div
-                    key={series.id || idx}
+                    key={`watchlist-${series.id || idx}`}
                     className="relative group flex-shrink-0 w-32"
                   >
                     <div className="aspect-[2/3] w-full bg-muted rounded-md overflow-hidden">
@@ -1280,7 +1280,7 @@ export default function ProfileSeriesSection({
               <>
                 {limitedRecommendations.map((series, idx) => (
                   <div
-                    key={series.id || idx}
+                    key={`recommendation-${series.id || idx}`}
                     className="relative group flex-shrink-0 w-32"
                   >
                     <div className="aspect-[2/3] w-full bg-muted rounded-md overflow-hidden">
@@ -1419,7 +1419,7 @@ export default function ProfileSeriesSection({
               <>
                 {limitedRatings.map((rating, idx) => (
                   <div
-                    key={rating.series.id || idx}
+                    key={`rating-${rating.id || rating.series.id || idx}`}
                     className="relative group flex-shrink-0 w-32"
                   >
                     <div className="aspect-[2/3] w-full bg-muted rounded-md overflow-hidden">
@@ -1633,7 +1633,7 @@ export default function ProfileSeriesSection({
               <div className="max-h-60 overflow-y-auto space-y-2 px-1">
                 {searchResults.map((item, index) => (
                   <div
-                    key={item.id || index}
+                    key={`search-${item.id || index}`}
                     className="flex items-center gap-3 p-3 rounded-md hover:bg-muted cursor-pointer transition-colors search-result-item"
                     onClick={() => handleSelectItem(item)}
                   >

@@ -599,7 +599,7 @@ export default function ProfileMusicSection({
                       </div>
                     )}
                   </div>
-                  <div className="mt-4 text-left">
+                  <div className="mt-4 text-center">
                     <p className="text-lg sm:text-xl font-bold text-white leading-tight line-clamp-2 hover:text-emerald-300 transition-colors duration-200 cursor-pointer">
                       {getTextContent(safeMusicProfile.currentObsession.name)}
                     </p>
@@ -709,7 +709,7 @@ export default function ProfileMusicSection({
                       </div>
                     )}
                   </div>
-                  <div className="mt-4 text-left">
+                  <div className="mt-4 text-center">
                     <p className="text-lg sm:text-xl font-bold text-white leading-tight line-clamp-2 hover:text-emerald-300 transition-colors duration-200 cursor-pointer">
                       {getTextContent(safeMusicProfile.favoriteArtist?.name)}
                     </p>
@@ -808,7 +808,7 @@ export default function ProfileMusicSection({
                       </div>
                     )}
                   </div>
-                  <div className="mt-4 text-left">
+                  <div className="mt-4 text-center">
                     <p className="text-lg sm:text-xl font-bold text-white leading-tight line-clamp-2 hover:text-emerald-300 transition-colors duration-200 cursor-pointer">
                       {getTextContent(safeMusicProfile.favoriteSong.name)}
                     </p>
@@ -859,7 +859,7 @@ export default function ProfileMusicSection({
           <div className="relative">
             <div
               ref={scrollContainerRefs.favoriteAlbums}
-              className="flex gap-4 sm:gap-6 overflow-x-auto scrollbar-hide pb-4 horizontal-scroll-container"
+              className="flex gap-6 sm:gap-8 md:gap-10 overflow-x-auto scrollbar-hide pb-4 horizontal-scroll-container"
             >
               {limitedFavoriteAlbums.length > 0 ? (
                 <>
@@ -868,7 +868,7 @@ export default function ProfileMusicSection({
                       key={album.id || idx}
                       className="relative group flex-shrink-0"
                     >
-                      <div className="aspect-square w-32 sm:w-36 md:w-40 bg-muted rounded-lg overflow-hidden shadow-lg">
+                      <div className="aspect-square w-36 sm:w-40 md:w-44 bg-muted rounded-lg overflow-hidden shadow-lg">
                         <Link href={`/music/album/${album.id}`}>
                           <Image
                             src={
@@ -910,7 +910,7 @@ export default function ProfileMusicSection({
                           </div>
                         )}
                       </div>
-                      <div className="mt-3 text-center w-32 sm:w-36 md:w-40">
+                      <div className="mt-3 text-center w-36 sm:w-40 md:w-44">
                         <p className="text-sm font-semibold text-white leading-tight line-clamp-2">
                           {truncateTitle(getTextContent(album.name))}
                         </p>
@@ -933,7 +933,7 @@ export default function ProfileMusicSection({
                     isOwnProfile &&
                     !readOnly && (
                       <div className="flex-shrink-0">
-                        <div className="aspect-square w-32 sm:w-36 md:w-40 bg-transparent rounded-lg border-2 border-gray-600 flex items-center justify-center">
+                        <div className="aspect-square w-36 sm:w-40 md:w-44 bg-transparent rounded-lg border-2 border-gray-600 flex items-center justify-center">
                           <Button
                             variant="ghost"
                             size="sm"
@@ -948,7 +948,7 @@ export default function ProfileMusicSection({
                 </>
               ) : (
                 <div className="flex flex-col items-start justify-start min-h-[200px] w-full">
-                  <div className="aspect-square w-32 sm:w-36 md:w-40 bg-transparent rounded-lg border-2 border-gray-600 flex flex-col items-center justify-center mb-4">
+                  <div className="aspect-square w-36 sm:w-40 md:w-44 bg-transparent rounded-lg border-2 border-gray-600 flex flex-col items-center justify-center mb-4">
                     <p className="text-sm text-gray-400 mb-1">Add</p>
                     <p className="text-xs text-gray-500 text-center">
                       No favorite albums
@@ -969,29 +969,7 @@ export default function ProfileMusicSection({
               )}
             </div>
 
-            {/* Scroll Navigation Buttons */}
-            {limitedFavoriteAlbums.length > 2 && (
-              <div className="flex justify-between items-center mt-3">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => scrollLeft(scrollContainerRefs.favoriteAlbums)}
-                  className="h-8 w-8 p-0 bg-black/20 hover:bg-black/40 text-white rounded-full"
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() =>
-                    scrollRight(scrollContainerRefs.favoriteAlbums)
-                  }
-                  className="h-8 w-8 p-0 bg-black/20 hover:bg-black/40 text-white rounded-full"
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
-              </div>
-            )}
+
           </div>
         </div>
 
@@ -1112,30 +1090,26 @@ export default function ProfileMusicSection({
               )}
             </div>
 
-            {/* Scroll Navigation Buttons */}
-            {limitedRecommendations.length > 2 && (
-              <div className="flex justify-between items-center mt-3">
+            {/* Navigation arrows for recommendations */}
+            {limitedRecommendations.length > 0 && (
+              <>
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() =>
-                    scrollLeft(scrollContainerRefs.recommendations)
-                  }
-                  className="h-8 w-8 p-0 bg-black/20 hover:bg-black/40 text-white rounded-full"
+                  className="absolute left-2 top-1/2 transform -translate-y-1/2 h-8 w-8 p-0 bg-black/80 hover:bg-black backdrop-blur-md border border-white/10 text-white rounded-full shadow-2xl hover:scale-110 transition-all duration-300 z-30"
+                  onClick={() => scrollLeft(scrollContainerRefs.recommendations)}
                 >
                   <ChevronLeft className="h-4 w-4" />
                 </Button>
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() =>
-                    scrollRight(scrollContainerRefs.recommendations)
-                  }
-                  className="h-8 w-8 p-0 bg-black/20 hover:bg-black/40 text-white rounded-full"
+                  className="absolute right-2 top-1/2 transform -translate-y-1/2 h-8 w-8 p-0 bg-black/80 hover:bg-black backdrop-blur-md border border-white/10 text-white rounded-full shadow-2xl hover:scale-110 transition-all duration-300 z-30"
+                  onClick={() => scrollRight(scrollContainerRefs.recommendations)}
                 >
                   <ChevronRight className="h-4 w-4" />
                 </Button>
-              </div>
+              </>
             )}
           </div>
         </div>
@@ -1263,26 +1237,26 @@ export default function ProfileMusicSection({
               )}
             </div>
 
-            {/* Scroll Navigation Buttons */}
-            {limitedRatings.length > 2 && (
-              <div className="flex justify-between items-center mt-3">
+            {/* Navigation arrows for ratings */}
+            {limitedRatings.length > 0 && (
+              <>
                 <Button
                   variant="ghost"
                   size="sm"
+                  className="absolute left-2 top-1/2 transform -translate-y-1/2 h-8 w-8 p-0 bg-black/80 hover:bg-black backdrop-blur-md border border-white/10 text-white rounded-full shadow-2xl hover:scale-110 transition-all duration-300 z-30"
                   onClick={() => scrollLeft(scrollContainerRefs.ratings)}
-                  className="h-8 w-8 p-0 bg-black/20 hover:bg-black/40 text-white rounded-full"
                 >
                   <ChevronLeft className="h-4 w-4" />
                 </Button>
                 <Button
                   variant="ghost"
                   size="sm"
+                  className="absolute right-2 top-1/2 transform -translate-y-1/2 h-8 w-8 p-0 bg-black/80 hover:bg-black backdrop-blur-md border border-white/10 text-white rounded-full shadow-2xl hover:scale-110 transition-all duration-300 z-30"
                   onClick={() => scrollRight(scrollContainerRefs.ratings)}
-                  className="h-8 w-8 p-0 bg-black/20 hover:bg-black/40 text-white rounded-full"
                 >
                   <ChevronRight className="h-4 w-4" />
                 </Button>
-              </div>
+              </>
             )}
           </div>
         </div>

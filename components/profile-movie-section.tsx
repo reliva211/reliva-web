@@ -529,7 +529,7 @@ export default function ProfileMovieSection({
 
   const handleRemoveItem = async (
     type: "favoriteMovies" | "watchlist" | "recommendation" | "rating",
-    id: string
+    id: string | number
   ) => {
     if (!id) {
       console.error("Invalid ID for removal:", id);
@@ -542,13 +542,13 @@ export default function ProfileMovieSection({
           await removeFavoriteMovie(id);
           break;
         case "watchlist":
-          await removeFromWatchlist(id);
+          await removeFromWatchlist(String(id));
           break;
         case "recommendation":
-          await removeRecommendation(id);
+          await removeRecommendation(String(id));
           break;
         case "rating":
-          await removeRating(id);
+          await removeRating(String(id));
           break;
       }
     } catch (error) {

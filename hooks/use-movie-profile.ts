@@ -173,7 +173,7 @@ export function useMovieProfile(userId: string | undefined) {
 
       // Convert movie data to TMDBMovie format
       const convertToTMDBMovie = (movie: any): TMDBMovie => ({
-        id: movie.id,
+        id: String(movie.id || ""),
         title: movie.title || "",
         year: movie.year || 0,
         cover: movie.cover || "",
@@ -439,7 +439,8 @@ export function useMovieProfile(userId: string | undefined) {
     if (!userId) return;
 
     // Ensure movie.id is a valid string
-    if (!movie.id || typeof movie.id !== "string") {
+    const movieIdStr = String(movie.id || "");
+    if (!movieIdStr || movieIdStr.trim() === "") {
       console.error("Invalid movie ID:", movie.id);
       throw new Error("Invalid movie ID provided");
     }
@@ -462,7 +463,7 @@ export function useMovieProfile(userId: string | undefined) {
       }
 
       // Check if movie already exists
-      const movieRef = doc(db, "users", userId, "movies", movie.id);
+      const movieRef = doc(db, "users", userId, "movies", movieIdStr);
       const movieDoc = await getDoc(movieRef);
 
       if (movieDoc.exists()) {
@@ -478,7 +479,7 @@ export function useMovieProfile(userId: string | undefined) {
       } else {
         // Create new movie with Favorites collection
         const movieData = {
-          id: movie.id,
+          id: movieIdStr,
           title: movie.title,
           year: movie.year,
           cover: movie.cover,
@@ -508,8 +509,16 @@ export function useMovieProfile(userId: string | undefined) {
   };
 
   // Remove from favorite movies (Favorites collection)
-  const removeFavoriteMovie = async (movieId: string) => {
+  const removeFavoriteMovie = async (movieId: string | number) => {
     if (!userId) return;
+
+    // Ensure movieId is a string for Firebase document reference
+    const movieIdStr = String(movieId);
+    
+    if (!movieIdStr || movieIdStr.trim() === "") {
+      console.error("Invalid movie ID for removal:", movieId);
+      return;
+    }
 
     try {
       // Find the "Favorites" collection
@@ -529,7 +538,7 @@ export function useMovieProfile(userId: string | undefined) {
       }
 
       // Remove movie from Favorites collection
-      const movieRef = doc(db, "users", userId, "movies", movieId);
+      const movieRef = doc(db, "users", userId, "movies", movieIdStr);
       const movieDoc = await getDoc(movieRef);
 
       if (movieDoc.exists()) {
@@ -548,6 +557,8 @@ export function useMovieProfile(userId: string | undefined) {
             collections: updatedCollections,
           });
         }
+      } else {
+        console.warn(`Movie with ID ${movieIdStr} not found in database`);
       }
 
       // Refresh the profile data
@@ -916,7 +927,7 @@ export function useMovieProfile(userId: string | undefined) {
   };
 
   // Replace functions for editing items
-  const replaceFavoriteMovie = async (oldId: string, newMovie: TMDBMovie) => {
+  const replaceFavoriteMovie = async (oldId: string | number, newMovie: TMDBMovie) => {
     if (!oldId || !newMovie?.id) {
       console.warn("Invalid parameters for replaceFavoriteMovie:", {
         oldId,

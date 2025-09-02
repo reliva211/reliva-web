@@ -38,9 +38,6 @@ export function EditProfileDialog({
     displayName: profile.displayName,
     username: profile.username,
     bio: profile.bio,
-    location: profile.location,
-    tagline: profile.tagline,
-    isPublic: profile.isPublic,
     visibleSections: {
       music: profile.visibleSections?.music ?? true,
       movies: profile.visibleSections?.movies ?? true,
@@ -109,16 +106,6 @@ export function EditProfileDialog({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="tagline">Tagline</Label>
-            <Input
-              id="tagline"
-              value={formData.tagline}
-              onChange={(e) => updateFormData("tagline", e.target.value)}
-              placeholder="Music • Movies • Books"
-            />
-          </div>
-
-          <div className="space-y-2">
             <Label htmlFor="bio">Bio</Label>
             <Textarea
               id="bio"
@@ -129,103 +116,94 @@ export function EditProfileDialog({
             />
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="location">Location</Label>
-            <Input
-              id="location"
-              value={formData.location}
-              onChange={(e) => updateFormData("location", e.target.value)}
-              placeholder="City, Country"
-            />
-          </div>
-
           <div className="space-y-4">
-            <Label>Profile Sections</Label>
-            <div className="grid grid-cols-2 gap-4">
-              <Button
+            <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              Profile Sections
+            </Label>
+            <div className="grid grid-cols-2 gap-3">
+              <button
                 type="button"
-                variant={formData.visibleSections.music ? "default" : "outline"}
                 onClick={() =>
                   updateVisibleSection("music", !formData.visibleSections.music)
                 }
-                className={`w-full ${
+                className={`relative flex items-center justify-center px-4 py-3 rounded-xl border-2 transition-all duration-200 font-medium text-sm ${
                   formData.visibleSections.music
-                    ? "bg-emerald-600 hover:bg-emerald-700"
-                    : "bg-gray-100 hover:bg-gray-200 text-gray-700"
+                    ? "border-emerald-500 bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300 dark:border-emerald-400"
+                    : "border-gray-200 bg-white text-gray-600 hover:border-gray-300 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:border-gray-600 dark:hover:bg-gray-750"
                 }`}
               >
-                {formData.visibleSections.music ? "✓ Music" : "Music"}
-              </Button>
-              <Button
+                {formData.visibleSections.music && (
+                  <div className="absolute top-2 right-2 w-2 h-2 bg-emerald-500 rounded-full"></div>
+                )}
+                <span className="flex items-center gap-2">
+                  <span className="text-lg">🎵</span>
+                  Music
+                </span>
+              </button>
+              
+              <button
                 type="button"
-                variant={
-                  formData.visibleSections.movies ? "default" : "outline"
-                }
                 onClick={() =>
-                  updateVisibleSection(
-                    "movies",
-                    !formData.visibleSections.movies
-                  )
+                  updateVisibleSection("movies", !formData.visibleSections.movies)
                 }
-                className={`w-full ${
+                className={`relative flex items-center justify-center px-4 py-3 rounded-xl border-2 transition-all duration-200 font-medium text-sm ${
                   formData.visibleSections.movies
-                    ? "bg-emerald-600 hover:bg-emerald-700"
-                    : "bg-gray-100 hover:bg-gray-200 text-gray-700"
+                    ? "border-emerald-500 bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300 dark:border-emerald-400"
+                    : "border-gray-200 bg-white text-gray-600 hover:border-gray-300 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:border-gray-600 dark:hover:bg-gray-750"
                 }`}
               >
-                {formData.visibleSections.movies ? "✓ Movies" : "Movies"}
-              </Button>
-              <Button
+                {formData.visibleSections.movies && (
+                  <div className="absolute top-2 right-2 w-2 h-2 bg-emerald-500 rounded-full"></div>
+                )}
+                <span className="flex items-center gap-2">
+                  <span className="text-lg">🎬</span>
+                  Movies
+                </span>
+              </button>
+              
+              <button
                 type="button"
-                variant={
-                  formData.visibleSections.series ? "default" : "outline"
-                }
                 onClick={() =>
-                  updateVisibleSection(
-                    "series",
-                    !formData.visibleSections.series
-                  )
+                  updateVisibleSection("series", !formData.visibleSections.series)
                 }
-                className={`w-full ${
+                className={`relative flex items-center justify-center px-4 py-3 rounded-xl border-2 transition-all duration-200 font-medium text-sm ${
                   formData.visibleSections.series
-                    ? "bg-emerald-600 hover:bg-emerald-700"
-                    : "bg-gray-100 hover:bg-gray-200 text-gray-700"
+                    ? "border-emerald-500 bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300 dark:border-emerald-400"
+                    : "border-gray-200 bg-white text-gray-600 hover:border-gray-300 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:border-gray-600 dark:hover:bg-gray-750"
                 }`}
               >
-                {formData.visibleSections.series ? "✓ Series" : "Series"}
-              </Button>
-              <Button
+                {formData.visibleSections.series && (
+                  <div className="absolute top-2 right-2 w-2 h-2 bg-emerald-500 rounded-full"></div>
+                )}
+                <span className="flex items-center gap-2">
+                  <span className="text-lg">📺</span>
+                  Series
+                </span>
+              </button>
+              
+              <button
                 type="button"
-                variant={formData.visibleSections.books ? "default" : "outline"}
                 onClick={() =>
                   updateVisibleSection("books", !formData.visibleSections.books)
                 }
-                className={`w-full ${
+                className={`relative flex items-center justify-center px-4 py-3 rounded-xl border-2 transition-all duration-200 font-medium text-sm ${
                   formData.visibleSections.books
-                    ? "bg-emerald-600 hover:bg-emerald-700"
-                    : "bg-gray-100 hover:bg-gray-200 text-gray-700"
+                    ? "border-emerald-500 bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300 dark:border-emerald-400"
+                    : "border-gray-200 bg-white text-gray-600 hover:border-gray-300 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:border-gray-600 dark:hover:bg-gray-750"
                 }`}
               >
-                {formData.visibleSections.books ? "✓ Books" : "Books"}
-              </Button>
+                {formData.visibleSections.books && (
+                  <div className="absolute top-2 right-2 w-2 h-2 bg-emerald-500 rounded-full"></div>
+                )}
+                <span className="flex items-center gap-2">
+                  <span className="text-lg">📚</span>
+                  Books
+                </span>
+              </button>
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label>Profile Visibility</Label>
-            <Button
-              type="button"
-              variant={formData.isPublic ? "default" : "outline"}
-              onClick={() => updateFormData("isPublic", !formData.isPublic)}
-              className={`w-full ${
-                formData.isPublic
-                  ? "bg-emerald-600 hover:bg-emerald-700"
-                  : "bg-gray-100 hover:bg-gray-200 text-gray-700"
-              }`}
-            >
-              {formData.isPublic ? "✓ Public Profile" : "Private Profile"}
-            </Button>
-          </div>
+
 
           <DialogFooter>
             <Button
@@ -235,7 +213,11 @@ export function EditProfileDialog({
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={saving}>
+            <Button 
+              type="submit" 
+              disabled={saving}
+              className="bg-emerald-600 hover:bg-emerald-700 text-white"
+            >
               {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Save Changes
             </Button>

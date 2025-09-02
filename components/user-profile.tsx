@@ -273,17 +273,11 @@ export default function UserProfile({ userId: propUserId }: UserProfileProps) {
             {user?.email || "your@email.com"}
           </p>
           <p className="text-muted-foreground text-lg">@username</p>
-          <p className="mt-1 text-sm font-medium text-primary">
-            Add a tagline to your profile!
-          </p>
+
           <p className="mt-2 max-w-md mx-auto">
             Add your bio to let others know more about you!
           </p>
           <div className="flex flex-wrap items-center gap-4 mt-3 text-sm text-muted-foreground justify-center">
-            <div className="flex items-center gap-1 opacity-60">
-              <MapPin className="h-4 w-4" />
-              No location set
-            </div>
             <div className="flex items-center gap-1 opacity-60">
               <LinkIcon className="h-4 w-4" />
               No website set
@@ -372,26 +366,13 @@ export default function UserProfile({ userId: propUserId }: UserProfileProps) {
                 <p className="text-muted-foreground text-lg">
                   @{profile.username || "username"}
                 </p>
-                <p className="mt-1 text-sm font-medium text-primary">
-                  {profile.tagline || "Add a tagline to your profile!"}
-                </p>
+
                 <p className="mt-2 max-w-md">
                   {profile.bio ||
                     "Add your bio to let others know more about you!"}
                 </p>
 
                 <div className="flex flex-wrap items-center gap-4 mt-3 text-sm text-muted-foreground">
-                  {profile.location ? (
-                    <div className="flex items-center gap-1">
-                      <MapPin className="h-4 w-4" />
-                      {profile.location}
-                    </div>
-                  ) : (
-                    <div className="flex items-center gap-1 opacity-60">
-                      <MapPin className="h-4 w-4" />
-                      No location set
-                    </div>
-                  )}
                   {profile.website ? (
                     <div className="flex items-center gap-1">
                       <LinkIcon className="h-4 w-4" />
