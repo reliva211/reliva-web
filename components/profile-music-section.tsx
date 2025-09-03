@@ -31,6 +31,7 @@ import {
   type SaavnAlbum,
 } from "@/hooks/use-music-profile";
 import { useCurrentUser } from "@/hooks/use-current-user";
+import { useRouter } from "next/navigation";
 
 interface ProfileMusicSectionProps {
   userId?: string;
@@ -140,6 +141,7 @@ export default function ProfileMusicSection({
   userId,
   readOnly = false,
 }: ProfileMusicSectionProps) {
+  const router = useRouter();
   const { user: currentUser, loading: userLoading } = useCurrentUser();
   const {
     musicProfile,
@@ -458,6 +460,11 @@ export default function ProfileMusicSection({
     } catch (error) {
       console.error("Error updating rating:", error);
     }
+  };
+
+  // Function to redirect to recommended collection in music section
+  const redirectToRecommendedCollection = () => {
+    router.push('/music?tab=recommended');
   };
 
   // Safe access to music profile data
@@ -931,7 +938,7 @@ export default function ProfileMusicSection({
                       className="relative group flex-shrink-0"
                     >
                       <div className="aspect-square w-32 sm:w-36 md:w-40 bg-muted rounded-lg overflow-hidden shadow-lg">
-                        <Link href={`/music/song/${song.id}`}>
+                        <Link href={`/music/album/${song.id}`}>
                           <Image
                             src={
                               getImageUrl(song.image) ||
@@ -953,10 +960,8 @@ export default function ProfileMusicSection({
                               variant="ghost"
                               size="sm"
                               className="h-7 w-7 p-0 bg-black/50 hover:bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity"
-                              onClick={() =>
-                                openSearchDialog("recommendation", song)
-                              }
-                              title="Replace recommendation"
+                              onClick={() => redirectToRecommendedCollection()}
+                              title="Manage recommendations"
                             >
                               <Edit className="h-3 w-3 text-white" />
                             </Button>
@@ -964,10 +969,8 @@ export default function ProfileMusicSection({
                               variant="ghost"
                               size="sm"
                               className="h-7 w-7 p-0 bg-red-600/80 hover:bg-red-700/90 opacity-0 group-hover:opacity-100 transition-opacity"
-                              onClick={() =>
-                                handleRemoveItem("recommendation", song.id)
-                              }
-                              title="Delete recommendation"
+                              onClick={() => redirectToRecommendedCollection()}
+                              title="Manage recommendations"
                             >
                               <Trash2 className="h-3 w-3 text-white" />
                             </Button>
@@ -999,7 +1002,7 @@ export default function ProfileMusicSection({
                           variant="ghost"
                           size="sm"
                           className="h-12 w-12 p-0 bg-black/70 hover:bg-black/90 text-white rounded-full border-2 border-white/20 shadow-lg"
-                          onClick={() => openSearchDialog("recommendation")}
+                          onClick={() => redirectToRecommendedCollection()}
                         >
                           <Plus className="h-6 w-6" />
                         </Button>
@@ -1019,7 +1022,7 @@ export default function ProfileMusicSection({
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => openSearchDialog("recommendation")}
+                      onClick={() => redirectToRecommendedCollection()}
                       className="bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-600"
                     >
                       <Plus className="h-3 w-3 mr-1" />

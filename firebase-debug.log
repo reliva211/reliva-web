@@ -1,0 +1,41 @@
+[debug] [2025-09-03T04:44:29.434Z] ----------------------------------------------------------------------
+[debug] [2025-09-03T04:44:29.436Z] Command:       C:\Program Files\nodejs\node.exe C:\Users\Srikanth\AppData\Roaming\npm\node_modules\firebase-tools\lib\bin\firebase.js init firestore
+[debug] [2025-09-03T04:44:29.436Z] CLI Version:   14.15.1
+[debug] [2025-09-03T04:44:29.437Z] Platform:      win32
+[debug] [2025-09-03T04:44:29.437Z] Node Version:  v22.11.0
+[debug] [2025-09-03T04:44:29.437Z] Time:          Wed Sep 03 2025 10:14:29 GMT+0530 (India Standard Time)
+[debug] [2025-09-03T04:44:29.437Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2025-09-03T04:44:29.444Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2025-09-03T04:44:29.444Z] > authorizing via signed-in user (srikanthirl211@gmail.com)
+[info] 
+     ######## #### ########  ######## ########     ###     ######  ########
+     ##        ##  ##     ## ##       ##     ##  ##   ##  ##       ##
+     ######    ##  ########  ######   ########  #########  ######  ######
+     ##        ##  ##    ##  ##       ##     ## ##     ##       ## ##
+     ##       #### ##     ## ######## ########  ##     ##  ######  ########
+
+You're about to initialize a Firebase project in this directory:
+
+  C:\Users\Srikanth\OneDrive\Desktop\reliva\reliva-web
+
+[info] 
+=== Project Setup
+[info] 
+[info] First, let's associate this project directory with a Firebase project.
+[info] You can create multiple project aliases by running firebase use --add, 
+[info] but for now we'll just set up a default project.
+[info] 
+[debug] [2025-09-03T04:47:59.221Z] ExitPromptError: User force closed the prompt with SIGINT
+    at Interface.sigint (C:\Users\Srikanth\AppData\Roaming\npm\node_modules\firebase-tools\node_modules\@inquirer\core\dist\commonjs\lib\create-prompt.js:101:37)
+    at Interface.emit (node:events:518:28)
+    at Interface.emit (node:domain:489:12)
+    at [_ttyWrite] [as _ttyWrite] (node:internal/readline/interface:1124:18)
+    at ReadStream.onkeypress (node:internal/readline/interface:263:20)
+    at ReadStream.emit (node:events:530:35)
+    at ReadStream.emit (node:domain:489:12)
+    at emitKeys (node:internal/readline/utils:370:14)
+    at emitKeys.next (<anonymous>)
+    at ReadStream.onData (node:internal/readline/emitKeypressEvents:64:36)
+[error] 
+[error] Error: An unexpected error has occurred.

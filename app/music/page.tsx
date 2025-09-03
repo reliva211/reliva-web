@@ -219,7 +219,7 @@ export default function MusicApp() {
     }
   }, []);
 
-  // Handle URL parameters for search
+  // Handle URL parameters for search and tab
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const searchParam = urlParams.get("search");
@@ -228,6 +228,13 @@ export default function MusicApp() {
       | "song"
       | "album"
       | "artist"
+      | null;
+    const tabParam = urlParams.get("tab") as
+      | "explore"
+      | "artists"
+      | "albums"
+      | "songs"
+      | "recommended"
       | null;
 
     if (searchParam) {
@@ -239,6 +246,11 @@ export default function MusicApp() {
       setTimeout(() => {
         handleSearch();
       }, 100);
+    }
+
+    // Handle tab parameter
+    if (tabParam && ["explore", "artists", "albums", "songs", "recommended"].includes(tabParam)) {
+      setActiveTab(tabParam);
     }
   }, []);
 
