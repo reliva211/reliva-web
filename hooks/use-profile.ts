@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import { db, storage } from "@/lib/firebase";
+import { db } from "@/lib/firebase";
+import { useCloudinaryUpload } from "./use-cloudinary-upload";
 
 export interface UserProfile {
   uid: string;
@@ -32,6 +32,7 @@ export function useProfile(userId: string | undefined) {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const { uploadImage: uploadToCloudinary } = useCloudinaryUpload();
 
   useEffect(() => {
     if (!userId) {
@@ -102,8 +103,9 @@ export function useProfile(userId: string | undefined) {
     type: "avatar" | "cover"
   ): Promise<string> => {
     if (!userId) throw new Error("No user ID");
+
     console.log(
-      "Uploading image:",
+      "Uploading image to Cloudinary:",
       file.name,
       "Type:",
       type,
@@ -112,26 +114,36 @@ export function useProfile(userId: string | undefined) {
     );
 
     try {
-      const fileExtension = file.name.split(".").pop();
-      const fileName = `${type}_${Date.now()}.${fileExtension}`;
-      const storageRef = ref(storage, `profiles/${userId}/${fileName}`);
+      // Upload to Cloudinary with automatic optimization
+      const folder = `reliva-profiles/${userId}`;
+      const imageUrl = await uploadToCloudinary(file, folder);
 
-      console.log("Storage reference created:", storageRef.fullPath);
-
-      const snapshot = await uploadBytes(storageRef, file);
-      console.log("File uploaded successfully:", snapshot.ref.fullPath);
-
-      const downloadURL = await getDownloadURL(snapshot.ref);
-      console.log("Download URL obtained:", downloadURL);
+      console.log("Image uploaded to Cloudinary:", imageUrl);
 
       // Update profile with new image URL
       const updateField = type === "avatar" ? "avatarUrl" : "coverImageUrl";
-      await updateProfile({ [updateField]: downloadURL });
+      await updateProfile({ [updateField]: imageUrl });
       console.log("Profile updated with new image URL");
 
-      return downloadURL;
+      return imageUrl;
     } catch (error) {
-      console.error("Error in uploadImage:", error);
+      console.error("Error uploading image to Cloudinary:", error);
+
+      // Provide specific error messages
+      if (error instanceof Error) {
+        if (error.message.includes("File size must be less than 10MB")) {
+          throw new Error(
+            "File size must be less than 10MB for Cloudinary free tier"
+          );
+        } else if (error.message.includes("Please select an image file")) {
+          throw new Error("Please select a valid image file");
+        } else if (error.message.includes("upload_preset")) {
+          throw new Error(
+            "Cloudinary upload preset not configured. Please check your environment variables."
+          );
+        }
+      }
+
       throw error;
     }
   };

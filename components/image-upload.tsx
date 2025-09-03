@@ -6,6 +6,7 @@ import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Camera, Upload, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useCloudinaryUpload } from "@/hooks/use-cloudinary-upload";
 
 interface ImageUploadProps {
   onUploadAction: (file: File) => Promise<void>;
@@ -20,8 +21,8 @@ export function ImageUpload({
   children,
   accept = "image/*",
 }: ImageUploadProps) {
-  const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { uploading, progress, error } = useCloudinaryUpload();
 
   const handleFileSelect = async (
     event: React.ChangeEvent<HTMLInputElement>
@@ -29,26 +30,12 @@ export function ImageUpload({
     const file = event.target.files?.[0];
     if (!file) return;
 
-    // Validate file size (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      alert("File size must be less than 5MB");
-      return;
-    }
-
-    // Validate file type
-    if (!file.type.startsWith("image/")) {
-      alert("Please select an image file");
-      return;
-    }
-
-    setUploading(true);
     try {
       await onUploadAction(file);
     } catch (error) {
       console.error("Upload error:", error);
-      alert("Failed to upload image. Please try again.");
+      // Error handling is done in the Cloudinary hook
     } finally {
-      setUploading(false);
       if (fileInputRef.current) {
         fileInputRef.current.value = "";
       }
@@ -67,7 +54,10 @@ export function ImageUpload({
           className="bg-white/90 text-black hover:bg-white"
         >
           {uploading ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
+            <div className="flex items-center gap-2">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              <span className="text-xs">{progress}%</span>
+            </div>
           ) : (
             <Camera className="h-4 w-4" />
           )}
@@ -93,8 +83,8 @@ export function CoverImageUpload({
   onUploadAction,
   children,
 }: CoverImageUploadProps) {
-  const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { uploading, progress, error } = useCloudinaryUpload();
 
   const handleFileSelect = async (
     event: React.ChangeEvent<HTMLInputElement>
@@ -102,24 +92,12 @@ export function CoverImageUpload({
     const file = event.target.files?.[0];
     if (!file) return;
 
-    if (file.size > 10 * 1024 * 1024) {
-      alert("File size must be less than 10MB");
-      return;
-    }
-
-    if (!file.type.startsWith("image/")) {
-      alert("Please select an image file");
-      return;
-    }
-
-    setUploading(true);
     try {
       await onUploadAction(file);
     } catch (error) {
       console.error("Upload error:", error);
-      alert("Failed to upload image. Please try again.");
+      // Error handling is done in the Cloudinary hook
     } finally {
-      setUploading(false);
       if (fileInputRef.current) {
         fileInputRef.current.value = "";
       }
@@ -139,7 +117,7 @@ export function CoverImageUpload({
           {uploading ? (
             <>
               <Loader2 className="h-4 w-4 animate-spin mr-2" />
-              Uploading...
+              Uploading... {progress}%
             </>
           ) : (
             <>
