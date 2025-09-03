@@ -1,5 +1,5 @@
 [build]
-  command = "yarn cache clean --force && yarn install --frozen-lockfile && yarn build"
+  command = "yarn cache clean --force && yarn install && yarn build"
   publish = ".next"
 
 [build.environment]
