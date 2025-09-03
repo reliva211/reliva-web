@@ -7,7 +7,8 @@ import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { UserAvatar, OtherUserAvatar } from "@/components/user-avatar";
 import {
   Heart,
   MessageCircle,
@@ -82,6 +83,7 @@ import { toast } from "@/components/ui/use-toast";
 // Component that uses useSearchParams (needs to be wrapped in Suspense)
 function ReviewsPageContent() {
   const { user } = useCurrentUser();
+  const { profile } = useProfile(user?.uid);
   const searchParams = useSearchParams();
 
   // Define the media type interface
@@ -114,7 +116,54 @@ function ReviewsPageContent() {
   const [isReplying, setIsReplying] = useState<{ [key: string]: boolean }>({});
   const [likedPosts, setLikedPosts] = useState<Set<string>>(new Set());
   const [likedReplies, setLikedReplies] = useState<Set<string>>(new Set());
+  const [userProfiles, setUserProfiles] = useState<Map<string, any>>(new Map());
   const wsRef = useRef<WebSocket | null>(null);
+
+  // Function to fetch user profile for a given authorId from Firebase directly
+  const fetchUserProfile = async (authorId: string) => {
+    if (userProfiles.has(authorId)) return userProfiles.get(authorId);
+
+    try {
+      // Import Firebase functions dynamically to avoid SSR issues
+      const { doc, getDoc, collection, query, where, getDocs } = await import(
+        "firebase/firestore"
+      );
+      const { db } = await import("@/lib/firebase");
+
+      // First, map authorId to Firebase UID
+      const usersRef = collection(db, "users");
+      const q = query(usersRef, where("authorId", "==", authorId));
+      const querySnapshot = await getDocs(q);
+
+      if (!querySnapshot.empty) {
+        const userDoc = querySnapshot.docs[0];
+        const firebaseUID = userDoc.id; // The document ID is the Firebase UID
+
+        // Now fetch the user profile using Firebase UID
+        const userProfileRef = doc(db, "userProfiles", firebaseUID);
+        const userProfileSnap = await getDoc(userProfileRef);
+
+        if (userProfileSnap.exists()) {
+          const userData = userProfileSnap.data();
+          const userProfile = {
+            _id: authorId,
+            username:
+              userData.username || userData.displayName || "Unknown User",
+            displayName:
+              userData.displayName || userData.username || "Unknown User",
+            avatarUrl: userData.avatarUrl || null,
+            email: userData.email || null,
+            bio: userData.bio || null,
+          };
+          setUserProfiles((prev) => new Map(prev.set(authorId, userProfile)));
+          return userProfile;
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching user profile from Firebase:", error);
+    }
+    return null;
+  };
 
   // Handle URL parameters for pre-selected media
   useEffect(() => {
@@ -239,6 +288,34 @@ function ReviewsPageContent() {
 
     return () => wsRef.current?.close();
   }, [searchParams, user?.authorId]);
+
+  // Fetch user profiles for posts when posts change
+  useEffect(() => {
+    if (posts && posts.length > 0) {
+      const uniqueAuthorIds = new Set<string>();
+
+      // Collect all unique author IDs from posts and comments
+      posts.forEach((post) => {
+        if (post.authorId?._id) {
+          uniqueAuthorIds.add(post.authorId._id);
+        }
+        if (post.comments) {
+          post.comments.forEach((comment) => {
+            if (comment.authorId?._id) {
+              uniqueAuthorIds.add(comment.authorId._id);
+            }
+          });
+        }
+      });
+
+      // Fetch profiles for all unique authors
+      uniqueAuthorIds.forEach((authorId) => {
+        if (!userProfiles.has(authorId)) {
+          fetchUserProfile(authorId);
+        }
+      });
+    }
+  }, [posts, userProfiles]);
 
   // Auto-search when search query is set manually (not from URL parameters)
   useEffect(() => {
@@ -769,16 +846,20 @@ function ReviewsPageContent() {
         key={comment._id}
         className="flex gap-3 border-l border-[#2a2a2a] ml-2 p-3 bg-[#0a0a0a] rounded-r-lg w-full"
       >
-        <Avatar className="w-6 h-6 ring-1 ring-green-500/20 flex-shrink-0">
-          <AvatarFallback className="bg-gradient-to-br from-green-500 to-emerald-600 text-white font-semibold text-xs">
-            {comment.authorId?.username?.charAt(0)?.toUpperCase() || "U"}
-          </AvatarFallback>
-        </Avatar>
+        <OtherUserAvatar
+          authorId={comment.authorId?._id}
+          username={comment.authorId?.username}
+          displayName={userProfiles.get(comment.authorId?._id)?.displayName}
+          avatarUrl={userProfiles.get(comment.authorId?._id)?.avatarUrl}
+          size="sm"
+          className="flex-shrink-0"
+        />
 
         <div className="flex-1 min-w-0 max-w-full overflow-hidden">
           <div className="flex items-center gap-2 mb-2">
             <span className="font-medium text-sm text-[#f5f5f5]">
-              {comment.authorId?.username}
+              {userProfiles.get(comment.authorId?._id)?.displayName ||
+                comment.authorId?.username}
             </span>
             <span className="text-[#a0a0a0] text-xs bg-[#3a3a3a] px-2 py-0.5 rounded-full">
               {formatTime(comment.timestamp)}
@@ -843,13 +924,14 @@ function ReviewsPageContent() {
             <div className="mt-3 bg-[#0f0f0f] rounded-lg border border-[#2a2a2a] shadow-sm overflow-hidden">
               <div className="p-3">
                 <div className="flex gap-2 mb-3">
-                  <Avatar className="w-6 h-6 ring-1 ring-green-500/20 flex-shrink-0">
-                    <AvatarFallback className="bg-gradient-to-br from-green-500 to-emerald-600 text-white font-semibold text-xs">
-                      {user?.displayName?.charAt(0) ||
-                        user?.email?.charAt(0) ||
-                        "U"}
-                    </AvatarFallback>
-                  </Avatar>
+                  <UserAvatar
+                    userId={user?.uid}
+                    size="sm"
+                    className="flex-shrink-0"
+                    displayName={user?.displayName}
+                    username={user?.email?.split("@")[0]}
+                    clickable={false}
+                  />
                   <div className="flex-1 min-w-0">
                     <Textarea
                       value={replyInputs[`${postId}-${comment._id}`] || ""}
@@ -994,10 +1076,15 @@ function ReviewsPageContent() {
                 <input
                   type="text"
                   placeholder={`Rate and review ${
-                    searchType === "music" ? "songs and albums" : 
-                    searchType === "movie" ? "movies" :
-                    searchType === "tv" ? "TV shows" :
-                    searchType === "book" ? "books" : searchType
+                    searchType === "music"
+                      ? "songs and albums"
+                      : searchType === "movie"
+                      ? "movies"
+                      : searchType === "tv"
+                      ? "TV shows"
+                      : searchType === "book"
+                      ? "books"
+                      : searchType
                   }...`}
                   value={searchQuery}
                   onChange={(e) => {
@@ -1205,13 +1292,14 @@ function ReviewsPageContent() {
             <div className="border-b border-[#1a1a1a] bg-[#0f0f0f]/50">
               <div className="px-1 sm:px-4 py-4">
                 <div className="flex gap-4 w-full">
-                  <Avatar className="w-10 h-10 ring-2 ring-green-500/20">
-                    <AvatarFallback className="bg-gradient-to-br from-green-500 to-emerald-600 text-white font-semibold text-sm">
-                      {user?.displayName?.charAt(0) ||
-                        user?.email?.charAt(0) ||
-                        "U"}
-                    </AvatarFallback>
-                  </Avatar>
+                  <UserAvatar
+                    userId={user?.uid}
+                    size="md"
+                    className="ring-2 ring-green-500/20"
+                    displayName={user?.displayName}
+                    username={user?.email?.split("@")[0]}
+                    clickable={false}
+                  />
                   <div className="flex-1">
                     <div className="bg-[#0a0a0a] rounded-2xl border border-[#1a1a1a] shadow-sm">
                       <Textarea
@@ -1274,17 +1362,24 @@ function ReviewsPageContent() {
                     className="border-b border-[#1a1a1a] px-1 sm:px-4 py-4 bg-[#0f0f0f]"
                   >
                     <div className="flex gap-3 w-full">
-                      <Avatar className="w-10 h-10 ring-1 ring-green-500/20 flex-shrink-0">
-                        <AvatarFallback className="bg-gradient-to-br from-green-500 to-emerald-600 text-white font-semibold text-sm">
-                          {post.authorId?.username?.charAt(0)?.toUpperCase() ||
-                            "U"}
-                        </AvatarFallback>
-                      </Avatar>
+                      <OtherUserAvatar
+                        authorId={post.authorId?._id}
+                        username={post.authorId?.username}
+                        displayName={
+                          userProfiles.get(post.authorId?._id)?.displayName
+                        }
+                        avatarUrl={
+                          userProfiles.get(post.authorId?._id)?.avatarUrl
+                        }
+                        size="md"
+                        className="flex-shrink-0"
+                      />
 
                       <div className="flex-1 min-w-0 max-w-full">
                         <div className="flex items-center gap-2 mb-2">
                           <span className="font-medium text-sm text-[#f5f5f5]">
-                            {post.authorId?.username}
+                            {userProfiles.get(post.authorId?._id)
+                              ?.displayName || post.authorId?.username}
                           </span>
                           <span className="text-[#a0a0a0] text-xs bg-[#3a3a3a] px-2 py-0.5 rounded-full">
                             {formatTime(post.timestamp)}
@@ -1438,13 +1533,14 @@ function ReviewsPageContent() {
                           <div className="mt-3 bg-[#0a0a0a] rounded-lg border border-[#1a1a1a] overflow-hidden">
                             <div className="p-3">
                               <div className="flex gap-2 mb-3">
-                                <Avatar className="w-6 h-6 ring-1 ring-green-500/20 flex-shrink-0">
-                                  <AvatarFallback className="bg-gradient-to-br from-green-500 to-emerald-600 text-white font-semibold text-xs">
-                                    {user?.displayName?.charAt(0) ||
-                                      user?.email?.charAt(0) ||
-                                      "U"}
-                                  </AvatarFallback>
-                                </Avatar>
+                                <UserAvatar
+                                  userId={user?.uid}
+                                  size="sm"
+                                  className="flex-shrink-0"
+                                  displayName={user?.displayName}
+                                  username={user?.email?.split("@")[0]}
+                                  clickable={false}
+                                />
                                 <div className="flex-1 min-w-0">
                                   <Textarea
                                     value={replyInputs[post._id] || ""}

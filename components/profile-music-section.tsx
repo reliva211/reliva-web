@@ -157,7 +157,7 @@ export default function ProfileMusicSection({
     removeRecommendation,
     removeRating,
     searchMusic,
-  } = useMusicProfile(userId);
+  } = useMusicProfile(userId, readOnly);
 
   // Local state
   const [searchQuery, setSearchQuery] = useState("");
@@ -464,7 +464,7 @@ export default function ProfileMusicSection({
 
   // Function to redirect to recommended collection in music section
   const redirectToRecommendedCollection = () => {
-    router.push('/music?tab=recommended');
+    router.push("/music?tab=recommended");
   };
 
   // Safe access to music profile data

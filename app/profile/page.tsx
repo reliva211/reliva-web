@@ -19,6 +19,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { UserAvatar } from "@/components/user-avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   User,
@@ -125,6 +126,18 @@ export default function ProfilePage() {
   const { profile, loading, saving, updateProfile, uploadImage } = useProfile(
     user?.uid
   );
+
+  // Debug logging for profile data
+  useEffect(() => {
+    if (process.env.NODE_ENV === "development" && profile) {
+      console.log("Profile Debug:", {
+        userId: user?.uid,
+        profileAvatarUrl: profile.avatarUrl,
+        profileDisplayName: profile.displayName,
+        currentUserPhotoURL: user?.photoURL,
+      });
+    }
+  }, [profile, user]);
 
   // Auto-select first available tab when sections are hidden
   useEffect(() => {
@@ -788,15 +801,14 @@ export default function ProfilePage() {
           <div className="flex flex-col items-center text-center gap-4 mb-6">
             {/* Profile Picture */}
             <ImageUpload onUploadAction={handleAvatarUpload}>
-              <Avatar className="w-16 h-16 sm:w-20 sm:h-20 border-2 border-border cursor-pointer">
-                <AvatarImage
-                  src={profile?.avatarUrl || "/placeholder.svg"}
-                  alt={profile?.displayName || user?.displayName || "User"}
-                />
-                <AvatarFallback className="text-sm sm:text-lg">
-                  <User className="h-6 w-6 sm:h-8 sm:w-8" />
-                </AvatarFallback>
-              </Avatar>
+              <UserAvatar
+                userId={user?.uid}
+                size="lg"
+                className="w-16 h-16 sm:w-20 sm:h-20 border-2 border-border cursor-pointer"
+                displayName={profile?.displayName || user?.displayName}
+                username={profile?.username || user?.email?.split("@")[0]}
+                clickable={false}
+              />
             </ImageUpload>
 
             {/* User Info */}
@@ -825,7 +837,8 @@ export default function ProfilePage() {
                     navigator.clipboard.writeText(publicUrl);
                     toast({
                       title: "Profile link copied!",
-                      description: "Your profile link has been copied to clipboard.",
+                      description:
+                        "Your profile link has been copied to clipboard.",
                     });
                   }}
                   className="text-xs sm:text-sm h-9 text-white hover:text-gray-200"

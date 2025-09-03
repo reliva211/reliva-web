@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { UserAvatar, OtherUserAvatar } from "@/components/user-avatar";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, MessageCircle, Heart } from "lucide-react";
@@ -66,9 +67,56 @@ export default function ThreadPage() {
   const [replyInput, setReplyInput] = useState("");
   const [isReplying, setIsReplying] = useState(false);
   const [wsConnected, setWsConnected] = useState(false);
+  const [userProfiles, setUserProfiles] = useState<Map<string, any>>(new Map());
 
   // WebSocket reference for real-time communication
   const wsRef = useRef<WebSocket | null>(null);
+
+  // Function to fetch user profile for a given authorId from Firebase directly
+  const fetchUserProfile = async (authorId: string) => {
+    if (userProfiles.has(authorId)) return userProfiles.get(authorId);
+
+    try {
+      // Import Firebase functions dynamically to avoid SSR issues
+      const { doc, getDoc, collection, query, where, getDocs } = await import(
+        "firebase/firestore"
+      );
+      const { db } = await import("@/lib/firebase");
+
+      // First, map authorId to Firebase UID
+      const usersRef = collection(db, "users");
+      const q = query(usersRef, where("authorId", "==", authorId));
+      const querySnapshot = await getDocs(q);
+
+      if (!querySnapshot.empty) {
+        const userDoc = querySnapshot.docs[0];
+        const firebaseUID = userDoc.id; // The document ID is the Firebase UID
+
+        // Now fetch the user profile using Firebase UID
+        const userProfileRef = doc(db, "userProfiles", firebaseUID);
+        const userProfileSnap = await getDoc(userProfileRef);
+
+        if (userProfileSnap.exists()) {
+          const userData = userProfileSnap.data();
+          const userProfile = {
+            _id: authorId,
+            username:
+              userData.username || userData.displayName || "Unknown User",
+            displayName:
+              userData.displayName || userData.username || "Unknown User",
+            avatarUrl: userData.avatarUrl || null,
+            email: userData.email || null,
+            bio: userData.bio || null,
+          };
+          setUserProfiles((prev) => new Map(prev.set(authorId, userProfile)));
+          return userProfile;
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching user profile from Firebase:", error);
+    }
+    return null;
+  };
 
   useEffect(() => {
     const fetchPostAndComment = async () => {
@@ -284,7 +332,35 @@ export default function ThreadPage() {
     };
 
     fetchPostAndComment();
+  }, [reviewId, commentId, user?.authorId]);
 
+  // Fetch user profiles for comments when post and comments change
+  useEffect(() => {
+    if (!post || !parentComment) return;
+
+    const uniqueAuthorIds = new Set<string>();
+
+    // Collect all unique author IDs from parent comment and replies
+    if (parentComment.authorId?._id) {
+      uniqueAuthorIds.add(parentComment.authorId._id);
+    }
+    if (replies) {
+      replies.forEach((reply) => {
+        if (reply.authorId?._id) {
+          uniqueAuthorIds.add(reply.authorId._id);
+        }
+      });
+    }
+
+    // Fetch profiles for all unique authors
+    uniqueAuthorIds.forEach((authorId) => {
+      if (!userProfiles.has(authorId)) {
+        fetchUserProfile(authorId);
+      }
+    });
+  }, [post, parentComment, replies, userProfiles]);
+
+  useEffect(() => {
     // WebSocket for real-time updates
     if (user?.authorId) {
       try {
@@ -367,7 +443,10 @@ export default function ThreadPage() {
 
                 toast({
                   title: "New reply!",
-                  description: `${newReply.authorId.username} replied to the thread.`,
+                  description: `${
+                    userProfiles.get(newReply.authorId._id)?.displayName ||
+                    newReply.authorId.username
+                  } replied to the thread.`,
                   duration: 3000,
                 });
               }
@@ -580,15 +659,19 @@ export default function ThreadPage() {
         >
           <div className="p-4">
             <div className="flex items-start gap-3">
-              <Avatar className="w-8 h-8 ring-1 ring-green-500/20 flex-shrink-0">
-                <AvatarFallback className="bg-gradient-to-br from-green-500 to-emerald-600 text-white font-semibold text-xs">
-                  {reply.authorId?.username?.charAt(0)?.toUpperCase() || "U"}
-                </AvatarFallback>
-              </Avatar>
+              <OtherUserAvatar
+                authorId={reply.authorId?._id}
+                username={reply.authorId?.username}
+                displayName={userProfiles.get(reply.authorId?._id)?.displayName}
+                avatarUrl={userProfiles.get(reply.authorId?._id)?.avatarUrl}
+                size="sm"
+                className="ring-1 ring-green-500/20 flex-shrink-0"
+              />
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-2">
                   <span className="font-medium text-sm text-[#f5f5f5]">
-                    {reply.authorId?.username}
+                    {userProfiles.get(reply.authorId?._id)?.displayName ||
+                      reply.authorId?.username}
                   </span>
                   <span className="text-[#a0a0a0] text-xs bg-[#3a3a3a] px-2 py-0.5 rounded-full">
                     {formatTime(reply.timestamp)}
@@ -633,13 +716,14 @@ export default function ThreadPage() {
         {showNestedReplyInputs[reply._id] && (
           <div className="mt-3 bg-[#0f0f0f]/50 backdrop-blur-sm border border-[#2a2a2a]/50 rounded-lg sm:rounded-xl p-2 sm:p-3 ml-6">
             <div className="flex items-start gap-2 sm:gap-3">
-              <Avatar className="w-6 h-6 sm:w-8 sm:w-8 ring-2 ring-green-500/30 flex-shrink-0 shadow-md">
-                <AvatarFallback className="bg-gradient-to-br from-green-500 to-emerald-600 text-white font-semibold text-xs">
-                  {user?.displayName?.charAt(0) ||
-                    user?.email?.charAt(0) ||
-                    "U"}
-                </AvatarFallback>
-              </Avatar>
+              <UserAvatar
+                userId={user?.uid}
+                size="sm"
+                className="ring-2 ring-green-500/30 flex-shrink-0 shadow-md"
+                displayName={user?.displayName}
+                username={user?.email?.split("@")[0]}
+                clickable={false}
+              />
               <div className="flex-1">
                 <Textarea
                   value={nestedReplyInputs[reply._id] || ""}
@@ -649,7 +733,10 @@ export default function ThreadPage() {
                       [reply._id]: e.target.value,
                     }))
                   }
-                  placeholder={`Reply to ${reply.authorId?.username}...`}
+                  placeholder={`Reply to ${
+                    userProfiles.get(reply.authorId?._id)?.displayName ||
+                    reply.authorId?.username
+                  }...`}
                   className="min-h-[50px] sm:min-h-[60px] border-none resize-none focus-visible:ring-0 bg-black text-white placeholder-[#808080] text-xs sm:text-sm selection:bg-transparent selection:text-white"
                   disabled={isReplyingToNested[reply._id]}
                 />
@@ -998,16 +1085,23 @@ export default function ThreadPage() {
         {/* Main Comment */}
         <div className="mb-6 sm:mb-8 relative">
           <div className="flex items-start gap-3 sm:gap-4">
-            <Avatar className="w-8 h-8 sm:w-10 sm:h-10 ring-2 ring-green-500/40 flex-shrink-0 shadow-md">
-              <AvatarFallback className="bg-gradient-to-br from-green-500 to-emerald-600 text-white font-semibold text-xs sm:text-sm">
-                {parentComment.authorId?.username?.charAt(0)?.toUpperCase() ||
-                  "U"}
-              </AvatarFallback>
-            </Avatar>
+            <OtherUserAvatar
+              authorId={parentComment.authorId?._id}
+              username={parentComment.authorId?.username}
+              displayName={
+                userProfiles.get(parentComment.authorId?._id)?.displayName
+              }
+              avatarUrl={
+                userProfiles.get(parentComment.authorId?._id)?.avatarUrl
+              }
+              size="md"
+              className="ring-2 ring-green-500/40 flex-shrink-0 shadow-md"
+            />
             <div className="flex-1 min-w-0">
               <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 mb-2">
                 <span className="font-semibold text-sm sm:text-base text-[#f0f0f0] truncate">
-                  {parentComment.authorId?.username}
+                  {userProfiles.get(parentComment.authorId?._id)?.displayName ||
+                    parentComment.authorId?.username}
                 </span>
                 <span className="text-[#808080] text-xs sm:text-sm">
                   {formatTime(parentComment.timestamp)}
@@ -1049,16 +1143,23 @@ export default function ThreadPage() {
                   <div className="absolute left-2 sm:left-3 top-4 sm:top-5 w-0.5 h-full bg-gradient-to-b from-green-500/20 to-transparent"></div>
 
                   <div className="flex items-start gap-2 sm:gap-3">
-                    <Avatar className="w-6 h-6 sm:w-8 sm:h-8 ring-2 ring-green-500/30 flex-shrink-0 shadow-md">
-                      <AvatarFallback className="bg-gradient-to-br from-green-500 to-emerald-600 text-white font-semibold text-xs">
-                        {reply.authorId?.username?.charAt(0)?.toUpperCase() ||
-                          "U"}
-                      </AvatarFallback>
-                    </Avatar>
+                    <OtherUserAvatar
+                      authorId={reply.authorId?._id}
+                      username={reply.authorId?.username}
+                      displayName={
+                        userProfiles.get(reply.authorId?._id)?.displayName
+                      }
+                      avatarUrl={
+                        userProfiles.get(reply.authorId?._id)?.avatarUrl
+                      }
+                      size="sm"
+                      className="ring-2 ring-green-500/30 flex-shrink-0 shadow-md"
+                    />
                     <div className="flex-1 min-w-0">
                       <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 mb-1">
                         <span className="font-medium text-xs sm:text-sm text-[#f0f0f0] truncate">
-                          {reply.authorId?.username}
+                          {userProfiles.get(reply.authorId?._id)?.displayName ||
+                            reply.authorId?.username}
                         </span>
                         <span className="text-[#808080] text-xs">
                           {formatTime(reply.timestamp)}
@@ -1098,11 +1199,14 @@ export default function ThreadPage() {
         {/* Reply Input */}
         <div className="relative pl-4 sm:pl-6">
           <div className="flex items-start gap-2 sm:gap-3">
-            <Avatar className="w-6 h-6 sm:w-8 sm:h-8 ring-2 ring-green-500/30 flex-shrink-0 shadow-md">
-              <AvatarFallback className="bg-gradient-to-br from-green-500 to-emerald-600 text-white font-semibold text-xs">
-                {user?.displayName?.charAt(0) || user?.email?.charAt(0) || "U"}
-              </AvatarFallback>
-            </Avatar>
+            <UserAvatar
+              userId={user?.uid}
+              size="sm"
+              className="ring-2 ring-green-500/30 flex-shrink-0 shadow-md"
+              displayName={user?.displayName}
+              username={user?.email?.split("@")[0]}
+              clickable={false}
+            />
             <div className="flex-1">
               <div className="bg-[#0f0f0f]/50 backdrop-blur-sm border border-[#2a2a2a]/50 rounded-lg sm:rounded-xl p-2 sm:p-3">
                 <Textarea

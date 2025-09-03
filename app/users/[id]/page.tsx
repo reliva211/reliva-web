@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+import { mapAuthorIdToFirebaseUID, identifyIdType } from "@/lib/user-mapping";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -48,6 +49,7 @@ export default function PublicProfilePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState("music");
+  const [firebaseUID, setFirebaseUID] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchPublicProfile = async () => {
@@ -58,7 +60,22 @@ export default function PublicProfilePage() {
       }
 
       try {
-        const docRef = doc(db, "userProfiles", userId);
+        let firebaseUID = userId;
+
+        // Check if the provided ID is a MongoDB authorId
+        const idType = identifyIdType(userId);
+        if (idType === "mongodb") {
+          // Map MongoDB authorId to Firebase UID
+          const mappedUID = await mapAuthorIdToFirebaseUID(userId);
+          if (!mappedUID) {
+            setError("User not found");
+            setLoading(false);
+            return;
+          }
+          firebaseUID = mappedUID;
+        }
+
+        const docRef = doc(db, "userProfiles", firebaseUID);
         const docSnap = await getDoc(docRef);
 
         if (!docSnap.exists()) {
@@ -77,6 +94,7 @@ export default function PublicProfilePage() {
         }
 
         setProfile(profileData);
+        setFirebaseUID(firebaseUID);
       } catch (error) {
         console.error("Error fetching profile:", error);
         setError("Failed to load profile");
@@ -233,30 +251,30 @@ export default function PublicProfilePage() {
             </TabsList>
 
             {/* Music Tab */}
-            {profile.visibleSections?.music !== false && (
+            {profile.visibleSections?.music !== false && firebaseUID && (
               <TabsContent value="music" className="mt-6">
-                <ProfileMusicSection userId={userId} readOnly={true} />
+                <ProfileMusicSection userId={firebaseUID} readOnly={true} />
               </TabsContent>
             )}
 
             {/* Movies Tab */}
-            {profile.visibleSections?.movies !== false && (
+            {profile.visibleSections?.movies !== false && firebaseUID && (
               <TabsContent value="movie-profile" className="mt-6">
-                <ProfileMovieSection userId={userId} readOnly={true} />
+                <ProfileMovieSection userId={firebaseUID} readOnly={true} />
               </TabsContent>
             )}
 
             {/* Series Tab */}
-            {profile.visibleSections?.series !== false && (
+            {profile.visibleSections?.series !== false && firebaseUID && (
               <TabsContent value="series" className="mt-6">
-                <ProfileSeriesSection userId={userId} readOnly={true} />
+                <ProfileSeriesSection userId={firebaseUID} readOnly={true} />
               </TabsContent>
             )}
 
             {/* Books Tab */}
-            {profile.visibleSections?.books !== false && (
+            {profile.visibleSections?.books !== false && firebaseUID && (
               <TabsContent value="books" className="mt-6">
-                <ProfileBooksSection userId={userId} readOnly={true} />
+                <ProfileBooksSection userId={firebaseUID} readOnly={true} />
               </TabsContent>
             )}
           </Tabs>

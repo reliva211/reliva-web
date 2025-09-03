@@ -73,7 +73,10 @@ export interface MusicProfile {
   ratings: Array<{ song: SaavnSong; rating: number }>;
 }
 
-export function useMusicProfile(userId: string | undefined) {
+export function useMusicProfile(
+  userId: string | undefined,
+  readOnly: boolean = false
+) {
   const [musicProfile, setMusicProfile] = useState<MusicProfile>({
     currentObsession: null,
     favoriteArtist: null,
@@ -96,12 +99,14 @@ export function useMusicProfile(userId: string | undefined) {
     setError(null);
 
     try {
-      // Check if user is authenticated
-      const auth = getAuth();
-      if (!auth.currentUser) {
-        setError("User not authenticated");
-        setLoading(false);
-        return;
+      // Check if user is authenticated (only required for non-read-only access)
+      if (!readOnly) {
+        const auth = getAuth();
+        if (!auth.currentUser) {
+          setError("User not authenticated");
+          setLoading(false);
+          return;
+        }
       }
 
       // Try to fetch data, but handle permission errors gracefully
@@ -193,30 +198,39 @@ export function useMusicProfile(userId: string | undefined) {
 
       // Fetch recommendations from music collections (discover section)
       try {
-        const recommendationsCollection = collection(db, "users", userId, "musicRecommendations");
-        const recommendationsSnapshot = await getDocs(recommendationsCollection);
-        const recommendationsFromCollections = recommendationsSnapshot.docs.map((doc) => {
-          const data = doc.data();
-          
-          // Handle different types of recommendations (album, song, artist)
-          if (data.type === 'album' || data.type === 'song') {
-            return {
-              id: data.id || doc.id,
-              name: data.name || data.title,
-              primaryArtists: data.primaryArtists || data.artist || "",
-              image: data.image || data.cover || [],
-              album: data.album,
-              duration: data.duration,
-              language: data.language,
-              year: data.year,
-              artists: data.artists,
-              artist: data.artist,
-              featuredArtists: data.featuredArtists,
-              singer: data.singer,
-            } as SaavnSong;
-          }
-          return null;
-        }).filter(Boolean) as SaavnSong[];
+        const recommendationsCollection = collection(
+          db,
+          "users",
+          userId,
+          "musicRecommendations"
+        );
+        const recommendationsSnapshot = await getDocs(
+          recommendationsCollection
+        );
+        const recommendationsFromCollections = recommendationsSnapshot.docs
+          .map((doc) => {
+            const data = doc.data();
+
+            // Handle different types of recommendations (album, song, artist)
+            if (data.type === "album" || data.type === "song") {
+              return {
+                id: data.id || doc.id,
+                name: data.name || data.title,
+                primaryArtists: data.primaryArtists || data.artist || "",
+                image: data.image || data.cover || [],
+                album: data.album,
+                duration: data.duration,
+                language: data.language,
+                year: data.year,
+                artists: data.artists,
+                artist: data.artist,
+                featuredArtists: data.featuredArtists,
+                singer: data.singer,
+              } as SaavnSong;
+            }
+            return null;
+          })
+          .filter(Boolean) as SaavnSong[];
 
         // Merge with existing recommendations
         const mergedRecommendations = [...recommendationsFromCollections];
@@ -227,7 +241,10 @@ export function useMusicProfile(userId: string | undefined) {
         });
         profile.recommendations = mergedRecommendations;
       } catch (recommendationsError) {
-        console.log("Could not fetch music recommendations:", recommendationsError);
+        console.log(
+          "Could not fetch music recommendations:",
+          recommendationsError
+        );
       }
 
       // Fetch ratings from music reviews
@@ -479,10 +496,15 @@ export function useMusicProfile(userId: string | undefined) {
   const addRecommendation = async (song: SaavnSong) => {
     try {
       // Add to music recommendations collection (discover section integration)
-      const recommendationsCollection = collection(db, "users", userId!, "musicRecommendations");
+      const recommendationsCollection = collection(
+        db,
+        "users",
+        userId!,
+        "musicRecommendations"
+      );
       await setDoc(doc(recommendationsCollection, song.id), {
         ...song,
-        type: 'song',
+        type: "song",
         addedAt: new Date(),
       });
 
@@ -510,7 +532,13 @@ export function useMusicProfile(userId: string | undefined) {
   const removeRecommendation = async (songId: string) => {
     try {
       // Remove from music recommendations collection (discover section integration)
-      const recommendationRef = doc(db, "users", userId!, "musicRecommendations", songId);
+      const recommendationRef = doc(
+        db,
+        "users",
+        userId!,
+        "musicRecommendations",
+        songId
+      );
       await deleteDoc(recommendationRef);
 
       // Also update the music profile for backwards compatibility
@@ -528,7 +556,7 @@ export function useMusicProfile(userId: string | undefined) {
     try {
       // Add to reviews collection for music ratings (integrates with reviews system)
       const reviewsCollection = collection(db, "reviews");
-      
+
       // Check if review already exists
       const existingReviewQuery = query(
         reviewsCollection,
@@ -632,7 +660,7 @@ export function useMusicProfile(userId: string | undefined) {
     try {
       // Remove old album first
       await removeFavoriteAlbum(oldId);
-      
+
       // Add new album
       await addFavoriteAlbum(newAlbum);
     } catch (error) {
@@ -653,7 +681,7 @@ export function useMusicProfile(userId: string | undefined) {
     try {
       // Remove old recommendation first
       await removeRecommendation(oldId);
-      
+
       // Add new recommendation
       await addRecommendation(newSong);
     } catch (error) {
@@ -679,7 +707,7 @@ export function useMusicProfile(userId: string | undefined) {
     try {
       // Remove old rating first
       await removeRating(oldId);
-      
+
       // Add new rating
       await addRating(newSong, rating);
     } catch (error) {
