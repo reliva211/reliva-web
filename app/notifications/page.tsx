@@ -59,6 +59,15 @@ export default function NotificationsPage() {
           try {
             const notificationsData = snapshot.docs.map((doc) => {
               const data = doc.data();
+              
+              // Determine the best timestamp to use
+              let bestTimestamp = data.createdAt || data.timestamp;
+              
+              // If no timestamp exists, use document creation time as fallback
+              if (!bestTimestamp) {
+                bestTimestamp = new Date().toISOString();
+              }
+              
               return {
                 id: doc.id,
                 ...data,
@@ -67,18 +76,81 @@ export default function NotificationsPage() {
                 fromUserName: data.fromUserName || "Anonymous",
                 message: data.message || "",
                 type: data.type || "follow",
-                createdAt: data.createdAt || new Date().toISOString(),
+                createdAt: bestTimestamp,
               } as Notification;
             });
 
-            // Sort client-side by createdAt in descending order
+            // Sort client-side by createdAt in descending order (most recent first)
             notificationsData.sort((a, b) => {
-              const dateA = new Date(a.createdAt).getTime();
-              const dateB = new Date(b.createdAt).getTime();
-              return dateB - dateA; // Descending order
+              try {
+                let dateA: Date, dateB: Date;
+                
+                // Handle different timestamp formats for dateA
+                if (a.createdAt?.toDate) {
+                  // Firestore Timestamp
+                  dateA = a.createdAt.toDate();
+                } else if (typeof a.createdAt === "string") {
+                  // ISO string
+                  dateA = new Date(a.createdAt);
+                } else if (a.createdAt instanceof Date) {
+                  // Date object
+                  dateA = a.createdAt;
+                } else {
+                  // Try to parse as number or other format
+                  dateA = new Date(a.createdAt);
+                }
+                
+                // Handle different timestamp formats for dateB
+                if (b.createdAt?.toDate) {
+                  // Firestore Timestamp
+                  dateB = b.createdAt.toDate();
+                } else if (typeof b.createdAt === "string") {
+                  // ISO string
+                  dateB = new Date(b.createdAt);
+                } else if (b.createdAt instanceof Date) {
+                  // Date object
+                  dateB = b.createdAt;
+                } else {
+                  // Try to parse as number or other format
+                  dateB = new Date(b.createdAt);
+                }
+                
+                // Check for invalid dates
+                if (isNaN(dateA.getTime())) {
+                  console.warn("Invalid date for notification A:", a.createdAt);
+                  dateA = new Date(0); // Use epoch as fallback
+                }
+                
+                if (isNaN(dateB.getTime())) {
+                  console.warn("Invalid date for notification B:", b.createdAt);
+                  dateB = new Date(0); // Use epoch as fallback
+                }
+                
+                // Primary sort by timestamp (newest first)
+                const timeDiff = dateB.getTime() - dateA.getTime();
+                if (timeDiff !== 0) {
+                  return timeDiff;
+                }
+                
+                // Secondary sort by notification type for consistent ordering
+                const typeOrder = { follow: 0, like: 1, comment: 2, review: 3 };
+                const typeA = typeOrder[a.type as keyof typeof typeOrder] ?? 4;
+                const typeB = typeOrder[b.type as keyof typeof typeOrder] ?? 4;
+                
+                return typeA - typeB;
+              } catch (error) {
+                console.error("Error sorting notifications:", error);
+                return 0; // Keep original order if sorting fails
+              }
             });
 
             console.log("Notifications fetched:", notificationsData.length, "total notifications");
+            console.log("Notification timestamps:", notificationsData.map(n => ({
+              id: n.id,
+              type: n.type,
+              createdAt: n.createdAt,
+              formatted: formatTimestamp(n.createdAt)
+            })));
             setNotifications(notificationsData);
             setError(null);
           } catch (err) {
@@ -199,18 +271,23 @@ export default function NotificationsPage() {
       }
 
       if (isNaN(date.getTime())) {
+        console.warn("Invalid timestamp for formatting:", timestamp);
         return "Just now";
       }
 
       const now = new Date();
-      const diffInHours = Math.floor(
-        (now.getTime() - date.getTime()) / (1000 * 60 * 60)
-      );
+      const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+      const diffInMinutes = Math.floor(diffInSeconds / 60);
+      const diffInHours = Math.floor(diffInMinutes / 60);
+      const diffInDays = Math.floor(diffInHours / 24);
 
-      if (diffInHours < 1) return "Just now";
+      if (diffInSeconds < 60) return "Just now";
+      if (diffInMinutes < 60) return `${diffInMinutes}m ago`;
       if (diffInHours < 24) return `${diffInHours}h ago`;
-      if (diffInHours < 168) return `${Math.floor(diffInHours / 24)}d ago`;
-      return date.toLocaleDateString();
+      if (diffInDays < 7) return `${diffInDays}d ago`;
+      if (diffInDays < 30) return `${Math.floor(diffInDays / 7)}w ago`;
+      if (diffInDays < 365) return `${Math.floor(diffInDays / 30)}mo ago`;
+      return `${Math.floor(diffInDays / 365)}y ago`;
     } catch (error) {
       console.error("Error formatting timestamp:", error);
       return "Just now";

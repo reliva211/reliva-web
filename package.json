@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "preinstall": "yarn cache clean"
   },
   "dependencies": {
     "@auth/core": "latest",
@@ -43,7 +44,7 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "1.0.4",
-    "date-fns": "4.1.0",
+    "date-fns": "^3.6.0",
     "embla-carousel-react": "8.5.1",
     "firebase": "^11.7.1",
     "firebase-admin": "^13.4.0",
@@ -54,9 +55,9 @@
     "next-themes": "latest",
     "ngrok": "5.0.0-beta.2",
     "nodemailer": "latest",
-    "react": "^19",
+    "react": "^18.2.0",
     "react-day-picker": "8.10.1",
-    "react-dom": "^19",
+    "react-dom": "^18.2.0",
     "react-hook-form": "^7.54.1",
     "react-resizable-panels": "^2.1.7",
     "recharts": "2.15.0",
@@ -64,14 +65,14 @@
     "tailwind-merge": "^2.5.5",
     "tailwindcss-animate": "^1.0.7",
     "unicornstudio-react": "1.4.29-1",
-    "vaul": "^0.9.6",
+    "vaul": "^0.9.9",
     "zod": "^3.24.1",
     "zustand": "^5.0.8"
   },
   "devDependencies": {
     "@types/node": "^22",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
     "eslint": "^9",
     "eslint-config-next": "15.4.5",
     "postcss": "^8",

@@ -1,23 +1,17 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import {
   Mail,
   Instagram,
   Twitter,
-  Linkedin,
-  Github,
   ExternalLink,
   Star,
   MessageSquare,
-  Users,
   Heart,
 } from "lucide-react";
 
@@ -38,36 +32,7 @@ export default function ContactPage() {
     setHoveredRating(0);
   };
 
-  const teamMembers = [
-    {
-      name: "Srikanth Jeeguru",
-      role: "Project Lead",
-      linkedin: "https://www.linkedin.com/in/srikanth-jiguru-43276527b",
-      gmail: "srikanthirl211@gmail.com",
-      avatar: "/placeholder-user.jpg",
-    },
-    {
-      name: "Sushanth Kotamarti",
-      role: "Developer",
-      linkedin: "https://www.linkedin.com/in/sushanth2805",
-      gmail: "sushanth@reliva.com",
-      avatar: "/placeholder-user.jpg",
-    },
-    {
-      name: "Karthik Sriramoju",
-      role: "Developer",
-      linkedin: "https://www.linkedin.com/in/karthik-sriramoju-",
-      gmail: "karthik@reliva.com",
-      avatar: "/placeholder-user.jpg",
-    },
-    {
-      name: "Lokadhitya Matti",
-      role: "Developer",
-      linkedin: "https://www.linkedin.com/in/lokadithya-matti-8b84a926b",
-      gmail: "lokadhitya@reliva.com",
-      avatar: "/placeholder-user.jpg",
-    },
-  ];
+
 
   const socialLinks = [
     {
@@ -138,8 +103,8 @@ export default function ContactPage() {
 
             {/* Right Side - Main Content */}
             <div className="lg:col-span-2">
-              <div className="grid md:grid-cols-2 gap-8">
-                {/* Left Column - Contact Form */}
+              <div className="max-w-2xl">
+                {/* Contact Form */}
                 <div className="space-y-6">
                   {/* Contact Us Section */}
                   <Card className="bg-white/80 dark:bg-gray-800/90 backdrop-blur-sm border border-gray-200 dark:border-gray-700">
@@ -239,98 +204,11 @@ export default function ContactPage() {
                     </CardContent>
                   </Card>
                 </div>
-
-                {/* Right Column - Team */}
-                <div>
-                  <Card className="bg-white/80 dark:bg-gray-800/90 backdrop-blur-sm border border-gray-200 dark:border-gray-700">
-                    <CardHeader>
-                      <CardTitle className="text-xl font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-                        <Users className="h-5 w-5" />
-                        Team
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-6">
-                      {teamMembers.map((member, index) => (
-                        <div key={index} className="space-y-3">
-                          <div className="flex items-start gap-3">
-                            <div className="w-12 h-12 rounded-full bg-gradient-to-r from-emerald-500 to-blue-500 flex items-center justify-center text-white font-semibold text-lg">
-                              {member.name
-                                .split(" ")
-                                .map((n) => n[0])
-                                .join("")}
-                            </div>
-                            <div className="flex-1">
-                              <h3 className="font-semibold text-gray-900 dark:text-white">
-                                {member.name}
-                              </h3>
-                              <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">
-                                {member.role}
-                              </p>
-                              <div className="space-y-1">
-                                <a
-                                  href={member.linkedin}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="flex items-center gap-2 text-sm text-blue-600 dark:text-blue-400 hover:underline"
-                                >
-                                  <Linkedin className="h-3 w-3" />
-                                  <span>LinkedIn</span>
-                                </a>
-                                <a
-                                  href={`mailto:${member.gmail}`}
-                                  className="flex items-center gap-2 text-sm text-red-600 dark:text-red-400 hover:underline"
-                                >
-                                  <Mail className="h-3 w-3" />
-                                  <span>Gmail</span>
-                                </a>
-                              </div>
-                            </div>
-                          </div>
-
-                          {index < teamMembers.length - 1 && (
-                            <Separator className="my-4" />
-                          )}
-                        </div>
-                      ))}
-                    </CardContent>
-                  </Card>
-                </div>
               </div>
             </div>
           </div>
 
-          {/* Footer CTA */}
-          <div className="text-center mt-12">
-            <Card className="bg-gradient-to-r from-emerald-50 to-blue-50 dark:from-emerald-950/20 dark:to-blue-950/20 border border-emerald-200 dark:border-emerald-800">
-              <CardContent className="py-8">
-                <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
-                  Join Our Community
-                </h3>
-                <p className="text-gray-600 dark:text-gray-300 mb-6 max-w-2xl mx-auto">
-                  Be part of a growing community of media enthusiasts. Share
-                  your discoveries, get recommendations, and connect with people
-                  who love what you love.
-                </p>
-                <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                  <Link href="/signup">
-                    <Button
-                      size="lg"
-                      className="bg-gradient-to-r from-emerald-600 to-blue-600 hover:from-emerald-700 hover:to-blue-700 dark:from-emerald-500 dark:to-blue-500 dark:hover:from-emerald-600 dark:hover:to-blue-600"
-                    >
-                      Get Started
-                    </Button>
-                  </Link>
-                  <Button
-                    variant="outline"
-                    size="lg"
-                    className="border-gray-300 dark:border-gray-600"
-                  >
-                    Learn More
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+
         </div>
       </div>
     </div>

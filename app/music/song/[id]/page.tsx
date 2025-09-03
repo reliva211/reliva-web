@@ -18,6 +18,7 @@ import {
   Disc,
   Plus,
   Check,
+  Star,
 } from "lucide-react";
 
 interface Song {
@@ -381,6 +382,22 @@ export default function SongDetailPage({
                     }`}
                   />
                   {isSongLiked(song.id) ? "Liked" : "Like"}
+                </Button>
+                <Button
+                  onClick={() => {
+                    const params = new URLSearchParams({
+                      type: "song",
+                      id: song.id,
+                      title: song.name,
+                      cover: getImageUrl(song.image),
+                    });
+                    router.push(`/reviews?${params.toString()}`);
+                  }}
+                  variant="outline"
+                  className="bg-gray-700 text-white hover:bg-gray-600 border border-gray-600"
+                >
+                  <Star className="w-4 h-4 mr-2" />
+                  Rate
                 </Button>
                 {song.album?.id && (
                   <Button

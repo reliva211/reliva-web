@@ -102,6 +102,7 @@ function ReviewsPageContent() {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<MediaItem[]>([]);
   const [isSearching, setIsSearching] = useState(false);
+  const [showSearchResults, setShowSearchResults] = useState(false);
   const [searchType, setSearchType] = useState("movie"); // movie, series, book, music
   const [posts, setPosts] = useState<Post[]>([]);
   const [newPost, setNewPost] = useState("");
@@ -257,6 +258,7 @@ function ReviewsPageContent() {
     if (!searchQuery.trim()) return;
 
     setIsSearching(true);
+    setShowSearchResults(true);
     try {
       let results: MediaItem[] = [];
 
@@ -391,6 +393,7 @@ function ReviewsPageContent() {
     setSelectedMedia(media);
     setSearchResults([]);
     setSearchQuery("");
+    setShowSearchResults(false);
   };
 
   const submitReview = async () => {
@@ -997,8 +1000,24 @@ function ReviewsPageContent() {
                     searchType === "book" ? "books" : searchType
                   }...`}
                   value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onChange={(e) => {
+                    setSearchQuery(e.target.value);
+                    if (e.target.value.trim()) {
+                      setShowSearchResults(true);
+                    } else {
+                      setShowSearchResults(false);
+                    }
+                  }}
                   onKeyDown={(e) => e.key === "Enter" && searchMedia()}
+                  onBlur={() => {
+                    // Hide results after a short delay to allow clicking on results
+                    setTimeout(() => setShowSearchResults(false), 200);
+                  }}
+                  onFocus={() => {
+                    if (searchResults.length > 0) {
+                      setShowSearchResults(true);
+                    }
+                  }}
                   className="flex-1 px-3 py-2 border border-[#2a2a2a] rounded-lg bg-[#0a0a0a] text-[#c0c0c0] placeholder-[#606060] focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-[#3a3a3a]"
                 />
                 <button
@@ -1011,13 +1030,14 @@ function ReviewsPageContent() {
               </div>
 
               {/* Search Results */}
-              {searchResults.length > 0 && (
+              {searchResults.length > 0 && showSearchResults && (
                 <div className="space-y-2 max-h-60 overflow-y-auto">
                   {searchResults.map((result) => (
                     <div
                       key={`${result.type}-${result.id}`}
                       className="flex items-center gap-3 p-3 border border-[#1a1a1a] rounded-lg cursor-pointer hover:bg-[#0a0a0a] transition-colors"
                       onClick={() => selectMedia(result)}
+                      onMouseDown={(e) => e.preventDefault()}
                     >
                       <Image
                         src={result.cover}

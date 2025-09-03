@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { collection, getDocs, doc, getDoc } from "firebase/firestore";
+import { collection, getDocs, doc, getDoc, onSnapshot } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useCurrentUser } from "@/hooks/use-current-user";
 
@@ -24,82 +24,78 @@ export function useUserConnections() {
     if (!user) {
       setFollowers([]);
       setFollowing([]);
+      setLoading(false);
       return;
     }
 
-    const fetchUserConnections = async () => {
-      setLoading(true);
-      setError(null);
+    setLoading(true);
+    setError(null);
 
-      try {
-        // Fetching user connections
-
-        // Get current user's data
-        const userRef = doc(db, "users", user.uid);
-        const userSnap = await getDoc(userRef);
-
-        if (!userSnap.exists()) {
-          // User document does not exist
-          setFollowers([]);
-          setFollowing([]);
-          return;
-        }
-
-        const userData = userSnap.data();
-        const followersList = userData.followers || [];
-        const followingList = userData.following || [];
-
-        // Followers and following lists retrieved
-
-        // Get all users to fetch details
-        const usersRef = collection(db, "users");
-        const usersSnapshot = await getDocs(usersRef);
-
-        const allUsers: { [key: string]: UserConnection } = {};
-        usersSnapshot.forEach((doc) => {
-          const data = doc.data();
-          allUsers[doc.id] = {
-            uid: doc.id,
-            email: data.email || "",
-            username: data.username || "",
-            fullName: data.fullName || "",
-            avatarUrl: data.avatarUrl || "",
-          };
-        });
-
-        // Filter followers and following
-        const followersData = followersList
-          .map((uid: string) => allUsers[uid])
-          .filter(Boolean);
-
-        const followingData = followingList
-          .map((uid: string) => allUsers[uid])
-          .filter(Boolean);
-
-        // Followers and following data retrieved
-
-        setFollowers(followersData);
-        setFollowing(followingData);
-      } catch (err) {
-        console.error("Error fetching user connections:", err);
-
-        if (err instanceof Error) {
-          if (err.message.includes("permission")) {
-            setError("Permission denied. Please check your account.");
-          } else if (err.message.includes("network")) {
-            setError("Network error. Please check your connection.");
-          } else {
-            setError(`Failed to load connections: ${err.message}`);
+    // Set up real-time listener for user connections
+    const userRef = doc(db, "users", user.uid);
+    const unsubscribe = onSnapshot(
+      userRef,
+      async (userSnap) => {
+        try {
+          if (!userSnap.exists()) {
+            // User document does not exist
+            setFollowers([]);
+            setFollowing([]);
+            setLoading(false);
+            return;
           }
-        } else {
-          setError("Failed to load user connections");
+
+          const userData = userSnap.data();
+          const followersList = userData.followers || [];
+          const followingList = userData.following || [];
+
+          console.log("User connections updated:", { followersList, followingList });
+
+          // Get all users to fetch details
+          const usersRef = collection(db, "users");
+          const usersSnapshot = await getDocs(usersRef);
+
+          const allUsers: { [key: string]: UserConnection } = {};
+          usersSnapshot.forEach((doc) => {
+            const data = doc.data();
+            allUsers[doc.id] = {
+              uid: doc.id,
+              email: data.email || "",
+              username: data.username || "",
+              fullName: data.fullName || "",
+              avatarUrl: data.avatarUrl || "",
+            };
+          });
+
+          // Filter followers and following
+          const followersData = followersList
+            .map((uid: string) => allUsers[uid])
+            .filter(Boolean);
+
+          const followingData = followingList
+            .map((uid: string) => allUsers[uid])
+            .filter(Boolean);
+
+          console.log("Processed connections:", { followersData, followingData });
+
+          setFollowers(followersData);
+          setFollowing(followingData);
+          setError(null);
+        } catch (err) {
+          console.error("Error processing user connections:", err);
+          setError("Failed to process user connections");
+        } finally {
+          setLoading(false);
         }
-      } finally {
+      },
+      (err) => {
+        console.error("Error listening to user connections:", err);
+        setError("Failed to load user connections");
         setLoading(false);
       }
-    };
+    );
 
-    fetchUserConnections();
+    return () => unsubscribe();
   }, [user]);
 
   return { followers, following, loading, error };

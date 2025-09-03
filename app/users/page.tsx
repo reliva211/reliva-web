@@ -12,6 +12,7 @@ import {
   query,
   where,
   addDoc,
+  serverTimestamp,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useCurrentUser } from "@/hooks/use-current-user";
@@ -69,6 +70,9 @@ export default function UsersPage() {
   >({});
   const [hasSearched, setHasSearched] = useState(false);
   const [activeTab, setActiveTab] = useState("discover");
+  const [loadingStates, setLoadingStates] = useState<
+    Record<string, boolean>
+  >({});
 
   // Debounced search function
   useEffect(() => {
@@ -172,7 +176,7 @@ export default function UsersPage() {
         fromUserAvatar: currentUser!.photoURL || "",
         actionUrl: `/users/${currentUser!.uid}`,
         isRead: false,
-        createdAt: new Date().toISOString(),
+        createdAt: serverTimestamp(),
       };
 
       await addDoc(collection(db, "notifications"), notificationData);
@@ -185,6 +189,9 @@ export default function UsersPage() {
   const handleFollowToggle = async (targetUserId: string) => {
     if (!currentUser) return;
 
+    // Set loading state
+    setLoadingStates((prev) => ({ ...prev, [targetUserId]: true }));
+
     try {
       const isFollowing = followingStates[targetUserId];
       const targetUser =
@@ -192,7 +199,12 @@ export default function UsersPage() {
         followers.find((user) => user.uid === targetUserId) ||
         following.find((user) => user.uid === targetUserId);
 
-      if (!targetUser) return;
+      if (!targetUser) {
+        console.error("Target user not found:", targetUserId);
+        return;
+      }
+
+      console.log(`Toggling follow status for ${targetUser.fullName || targetUser.username}: ${isFollowing ? 'unfollowing' : 'following'}`);
 
       // Update target user's followers in users
       const targetUserRef = doc(db, "users", targetUserId);
@@ -215,7 +227,7 @@ export default function UsersPage() {
         await createFollowNotification(targetUser);
       }
 
-      // Update local state
+      // Update local state immediately for better UX
       setFollowingStates((prev) => ({
         ...prev,
         [targetUserId]: !isFollowing,
@@ -235,8 +247,18 @@ export default function UsersPage() {
           return user;
         })
       );
+
+      console.log(`Successfully ${isFollowing ? 'unfollowed' : 'followed'} ${targetUser.fullName || targetUser.username}`);
     } catch (error) {
       console.error("Error updating follow status:", error);
+      // Revert the local state change on error
+      setFollowingStates((prev) => ({
+        ...prev,
+        [targetUserId]: followingStates[targetUserId],
+      }));
+    } finally {
+      // Clear loading state
+      setLoadingStates((prev) => ({ ...prev, [targetUserId]: false }));
     }
   };
 
@@ -415,10 +437,19 @@ export default function UsersPage() {
                             }
                             size="sm"
                             onClick={() => handleFollowToggle(user.uid)}
-                            disabled={!currentUser}
-                            className="w-full h-9 rounded-lg transition-all duration-200"
+                            disabled={!currentUser || loadingStates[user.uid]}
+                            className={`w-full h-9 rounded-lg transition-all duration-200 ${
+                              !followingStates[user.uid] 
+                                ? "bg-emerald-600/80 hover:bg-emerald-700/80 text-white border-emerald-600/80" 
+                                : ""
+                            }`}
                           >
-                            {followingStates[user.uid] ? (
+                            {loadingStates[user.uid] ? (
+                              <>
+                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                {followingStates[user.uid] ? "Unfollowing..." : "Following..."}
+                              </>
+                            ) : followingStates[user.uid] ? (
                               <>
                                 <UserCheck className="h-4 w-4 mr-2" />
                                 Following
@@ -524,11 +555,15 @@ export default function UsersPage() {
                             variant="outline"
                             size="sm"
                             onClick={() => handleFollowToggle(user.uid)}
-                            disabled={!currentUser}
-                            className="flex-1 h-9 rounded-lg transition-all duration-200"
+                            disabled={!currentUser || loadingStates[user.uid]}
+                            className="flex-1 h-9 rounded-lg transition-all duration-200 hover:bg-red-50 hover:border-red-200 hover:text-red-600 dark:hover:bg-red-950/20 dark:hover:border-red-800 dark:hover:text-red-400"
                           >
-                            <UserCheck className="h-4 w-4 mr-2" />
-                            Following
+                            {loadingStates[user.uid] ? (
+                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            ) : (
+                              <UserCheck className="h-4 w-4 mr-2" />
+                            )}
+                            {loadingStates[user.uid] ? "Unfollowing..." : "Unfollow"}
                           </Button>
                         </div>
                       </div>
@@ -623,10 +658,19 @@ export default function UsersPage() {
                             }
                             size="sm"
                             onClick={() => handleFollowToggle(user.uid)}
-                            disabled={!currentUser}
-                            className="flex-1 h-9 rounded-lg transition-all duration-200"
+                            disabled={!currentUser || loadingStates[user.uid]}
+                            className={`flex-1 h-9 rounded-lg transition-all duration-200 ${
+                              !followingStates[user.uid] 
+                                ? "bg-emerald-600/80 hover:bg-emerald-700/80 text-white border-emerald-600/80" 
+                                : ""
+                            }`}
                           >
-                            {followingStates[user.uid] ? (
+                            {loadingStates[user.uid] ? (
+                              <>
+                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                {followingStates[user.uid] ? "Unfollowing..." : "Following..."}
+                              </>
+                            ) : followingStates[user.uid] ? (
                               <>
                                 <UserCheck className="h-4 w-4 mr-2" />
                                 Following

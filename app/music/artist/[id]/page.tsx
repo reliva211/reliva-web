@@ -21,6 +21,7 @@ import {
   MapPin,
   Globe,
   ExternalLink,
+  Star,
 } from "lucide-react";
 import { useMusicCollections } from "@/hooks/use-music-collections";
 import { useToast } from "@/hooks/use-toast";
@@ -517,7 +518,7 @@ export default function ArtistDetailPage({
                   className={`rounded-lg sm:rounded-xl hover:scale-105 transition-all duration-200 text-xs sm:text-sm px-3 sm:px-4 py-1.5 sm:py-2 ${
                     isArtistFollowed(artist.id)
                       ? "bg-black hover:bg-gray-800 text-white"
-                      : "bg-green-600 hover:bg-green-700"
+                      : "bg-emerald-600/80 hover:bg-emerald-700/80 text-white"
                   }`}
                 >
                   {isArtistFollowed(artist.id) ? (
@@ -531,6 +532,22 @@ export default function ArtistDetailPage({
                       Follow
                     </>
                   )}
+                </Button>
+                
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    // Rate functionality for artist
+                    toast({
+                      title: "Feature Coming Soon",
+                      description: "Rating artists will be available soon!",
+                    });
+                  }}
+                  className="rounded-lg sm:rounded-xl hover:scale-105 transition-all duration-200 text-xs sm:text-sm px-3 sm:px-4 py-1.5 sm:py-2 bg-background/60 border-border/50"
+                >
+                  <Star className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                  Rate
                 </Button>
               </div>
             </div>
