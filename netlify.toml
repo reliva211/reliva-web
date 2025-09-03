@@ -1,5 +1,5 @@
 [build]
-  command = "pnpm store prune && pnpm install && pnpm build"
+  command = "pnpm install --frozen-lockfile && pnpm build"
   publish = ".next"
 
 [build.environment]
@@ -7,6 +7,13 @@
   PNPM_VERSION = "8.15.0"
   NPM_FLAGS = "--prefer-offline --no-audit"
 
+# Handle Next.js API routes
+[[redirects]]
+  from = "/api/*"
+  to = "/api/:splat"
+  status = 200
+
+# Handle client-side routing
 [[redirects]]
   from = "/*"
   to = "/index.html"

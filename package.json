@@ -6,8 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
-    "preinstall": "pnpm store prune"
+    "lint": "next lint"
   },
   "dependencies": {
     "@auth/core": "latest",
