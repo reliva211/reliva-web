@@ -764,7 +764,7 @@ export default function ProfileMovieSection({
       {publicCollections.length > 0 && (
         <div className="max-w-3xl mx-auto">
           <div className="flex items-center justify-start mb-4">
-            <p className="text-sm font-medium text-white">public collections</p>
+            <p className="text-base sm:text-lg font-bold text-white">Public Collections</p>
           </div>
           {loadingPublicCollections ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -835,7 +835,7 @@ export default function ProfileMovieSection({
       {/* Recently watched section - horizontal layout */}
       <div className="max-w-3xl mx-auto">
         <div className="flex items-center gap-3 mb-4">
-          <p className="text-sm font-medium text-white">recently watched</p>
+          <p className="text-base sm:text-lg font-bold text-white">Recently Watched</p>
           {!readOnly && (
             <Link href="/movies">
               <Button
@@ -999,7 +999,7 @@ export default function ProfileMovieSection({
         {/* favorite movies - takes first column */}
         <div className="col-span-3">
           <div className="flex items-center justify-start mb-4">
-            <p className="text-sm font-medium text-white">favorite movies</p>
+            <p className="text-base sm:text-lg font-bold text-white">Favorite Movies</p>
           </div>
           <div className="relative">
             <div
@@ -1116,7 +1116,7 @@ export default function ProfileMovieSection({
       {/* watchlist */}
       <div className="mt-12 max-w-3xl mx-auto">
         <div className="flex items-center justify-start mb-4">
-          <p className="text-sm font-medium text-white">watchlist</p>
+          <p className="text-base sm:text-lg font-bold text-white">Watchlist</p>
         </div>
         <div className="relative">
           <div
@@ -1247,7 +1247,7 @@ export default function ProfileMovieSection({
       {/* recommendations */}
       <div className="mt-12 max-w-3xl mx-auto">
         <div className="flex items-center justify-start mb-4">
-          <p className="text-sm font-medium text-white">recommendations</p>
+          <p className="text-base sm:text-lg font-bold text-white">Recommendations</p>
         </div>
         <div className="relative">
           <div
@@ -1382,7 +1382,7 @@ export default function ProfileMovieSection({
       {/* ratings */}
       <div className="mt-12 max-w-3xl mx-auto">
         <div className="flex items-center justify-start mb-4">
-          <p className="text-sm font-medium text-white">ratings</p>
+          <p className="text-base sm:text-lg font-bold text-white">Ratings</p>
         </div>
         <div className="relative">
           <div

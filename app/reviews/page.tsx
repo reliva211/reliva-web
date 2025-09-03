@@ -1313,6 +1313,8 @@ function ReviewsPageContent() {
                                   href={`/${
                                     post.mediaType === "series"
                                       ? "series"
+                                      : post.mediaType === "artist"
+                                      ? "music/artist"
                                       : post.mediaType + "s"
                                   }/${post.mediaId}`}
                                   className="block relative w-full h-full rounded-xl overflow-hidden shadow-lg cursor-pointer"

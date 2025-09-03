@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "preinstall": "yarn cache clean"
+    "preinstall": "pnpm store prune"
   },
   "dependencies": {
     "@auth/core": "latest",

@@ -784,7 +784,7 @@ export default function ProfileSeriesSection({
       {publicCollections.length > 0 && (
         <div className="max-w-3xl mx-auto">
           <div className="flex items-center justify-start mb-4">
-            <p className="text-sm font-medium text-white">public collections</p>
+            <p className="text-base sm:text-lg font-bold text-white">Public Collections</p>
           </div>
           {loadingPublicCollections ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -854,7 +854,7 @@ export default function ProfileSeriesSection({
 
       <div className="max-w-3xl mx-auto">
         <div className="flex items-center gap-3 mb-4">
-          <p className="text-sm font-medium text-white">currently watching</p>
+          <p className="text-base sm:text-lg font-bold text-white">Currently Watching</p>
           {!readOnly && (
             <Link href="/series">
               <Button
@@ -1017,7 +1017,7 @@ export default function ProfileSeriesSection({
       {/* favorite series */}
       <div className="mt-12 max-w-3xl mx-auto">
         <div className="flex items-center justify-start mb-4">
-          <p className="text-sm font-medium text-white">favorite</p>
+                      <p className="text-base sm:text-lg font-bold text-white">Favorite</p>
         </div>
         <div className="relative">
           <div
@@ -1134,7 +1134,7 @@ export default function ProfileSeriesSection({
       {/* watchlist */}
       <div className="mt-12 max-w-3xl mx-auto">
         <div className="flex items-center justify-start mb-4">
-          <p className="text-sm font-medium text-white">watchlist</p>
+          <p className="text-base sm:text-lg font-bold text-white">Watchlist</p>
         </div>
         <div className="relative">
           <div
@@ -1271,7 +1271,7 @@ export default function ProfileSeriesSection({
       {/* recommendations */}
       <div className="mt-12 max-w-3xl mx-auto">
         <div className="flex items-center justify-start mb-4">
-          <p className="text-sm font-medium text-white">recommendation</p>
+          <p className="text-base sm:text-lg font-bold text-white">Recommendation</p>
         </div>
         <div className="relative">
           <div
@@ -1410,7 +1410,7 @@ export default function ProfileSeriesSection({
       {/* rating */}
       <div className="mt-12 max-w-3xl mx-auto">
         <div className="flex items-center justify-start mb-4">
-          <p className="text-sm font-medium text-white">rating</p>
+          <p className="text-base sm:text-lg font-bold text-white">Rating</p>
         </div>
         <div className="relative">
           <div

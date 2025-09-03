@@ -1,10 +1,10 @@
 [build]
-  command = "yarn cache clean --force && yarn install && yarn build"
+  command = "pnpm store prune && pnpm install && pnpm build"
   publish = ".next"
 
 [build.environment]
   NODE_VERSION = "20"
-  YARN_VERSION = "1.22.22"
+  PNPM_VERSION = "8.15.0"
   NPM_FLAGS = "--prefer-offline --no-audit"
 
 [[redirects]]

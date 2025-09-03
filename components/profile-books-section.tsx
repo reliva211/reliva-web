@@ -687,7 +687,7 @@ export default function ProfileBooksSection({
       {publicCollections.length > 0 && (
         <div className="max-w-3xl mx-auto">
           <div className="flex items-center justify-start mb-4">
-            <p className="text-sm font-medium text-white">public collections</p>
+            <p className="text-base sm:text-lg font-bold text-white">Public Collections</p>
           </div>
           {loadingPublicCollections ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -758,7 +758,7 @@ export default function ProfileBooksSection({
       {/* Recently read section - horizontal layout */}
       <div className="max-w-3xl mx-auto">
         <div className="flex items-center gap-3 mb-4">
-          <p className="text-sm font-medium text-white">currently reading</p>
+          <p className="text-base sm:text-lg font-bold text-white">Currently Reading</p>
           {!readOnly && (
             <Link href="/books">
               <Button
@@ -909,7 +909,7 @@ export default function ProfileBooksSection({
         {/* favorite books - takes first column */}
         <div className="col-span-3">
           <div className="flex items-center justify-start mb-4">
-            <p className="text-sm font-medium text-white">favorite books</p>
+            <p className="text-base sm:text-lg font-bold text-white">Favorite Books</p>
           </div>
           <div className="relative">
             <div
@@ -1027,7 +1027,7 @@ export default function ProfileBooksSection({
       {/* reading list */}
       <div className="mt-12 max-w-3xl mx-auto">
         <div className="flex items-center justify-start mb-4">
-          <p className="text-sm font-medium text-white">reading list</p>
+          <p className="text-base sm:text-lg font-bold text-white">Reading List</p>
         </div>
         <div className="relative">
           <div
@@ -1159,7 +1159,7 @@ export default function ProfileBooksSection({
       {/* recommendations */}
       <div className="mt-12 max-w-3xl mx-auto">
         <div className="flex items-center justify-start mb-4">
-          <p className="text-sm font-medium text-white">recommendations</p>
+          <p className="text-base sm:text-lg font-bold text-white">Recommendations</p>
         </div>
         <div className="relative">
           <div
@@ -1295,7 +1295,7 @@ export default function ProfileBooksSection({
       {/* ratings */}
       <div className="mt-12 max-w-3xl mx-auto">
         <div className="flex items-center justify-start mb-4">
-          <p className="text-sm font-medium text-white">ratings</p>
+          <p className="text-base sm:text-lg font-bold text-white">Ratings</p>
         </div>
         <div className="relative">
           <div

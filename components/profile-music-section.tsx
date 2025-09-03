@@ -542,7 +542,7 @@ export default function ProfileMusicSection({
           <div className="flex flex-col w-full sm:w-auto sm:flex-1 sm:max-w-[200px] py-2">
             <h3 className="text-base sm:text-lg font-bold text-white mb-4 flex items-center gap-3 bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent whitespace-nowrap">
               <span className="bg-cyan-400 w-1 h-6 rounded-full block min-w-[4px] flex-shrink-0"></span>
-              current obsession
+              Current Obsession
               {!readOnly && isOwnProfile && (
                 <Button
                   variant="ghost"
@@ -635,7 +635,7 @@ export default function ProfileMusicSection({
           <div className="flex flex-col w-full sm:w-auto sm:flex-1 sm:max-w-[200px] py-2">
             <h3 className="text-base sm:text-lg font-bold text-white mb-4 flex items-center gap-3 bg-gradient-to-r from-emerald-400 to-green-400 bg-clip-text text-transparent">
               <span className="bg-gradient-to-r from-emerald-500 to-green-500 w-1 h-5 rounded-full"></span>
-              favorite artist
+              Favorite Artist
               {!readOnly && isOwnProfile && (
                 <Button
                   variant="ghost"
@@ -716,7 +716,7 @@ export default function ProfileMusicSection({
           <div className="flex flex-col w-full sm:w-auto sm:flex-1 sm:max-w-[200px] py-2">
             <h3 className="text-base sm:text-lg font-bold text-white mb-4 flex items-center gap-3 bg-gradient-to-r from-orange-400 to-red-400 bg-clip-text text-transparent">
               <span className="bg-emerald-400 w-1 h-5 rounded-full"></span>
-              favorite song
+              Favorite Song
               {!readOnly && isOwnProfile && (
                 <Button
                   variant="ghost"
@@ -803,7 +803,7 @@ export default function ProfileMusicSection({
         {/* Favorite Albums Section */}
         <div className="space-y-3">
           <h3 className="text-base sm:text-lg font-semibold text-white">
-            favorite albums
+            Favorite Albums
           </h3>
           <div className="relative">
             <div
@@ -923,7 +923,7 @@ export default function ProfileMusicSection({
         {/* Recommendations Section */}
         <div className="space-y-3">
           <h3 className="text-base sm:text-lg font-semibold text-white">
-            recommendations
+            Recommendations
           </h3>
           <div className="relative">
             <div
@@ -1064,7 +1064,7 @@ export default function ProfileMusicSection({
         {/* Ratings Section */}
         <div className="space-y-3">
           <h3 className="text-base sm:text-lg font-semibold text-white">
-            rated songs
+            Ratings
           </h3>
           <div className="relative">
             <div
@@ -1166,7 +1166,7 @@ export default function ProfileMusicSection({
                   <div className="aspect-square w-32 sm:w-36 md:w-40 bg-transparent rounded-lg border-2 border-gray-600 flex flex-col items-center justify-center mb-4">
                     <p className="text-sm text-gray-400 mb-1">Add</p>
                     <p className="text-xs text-gray-500 text-center">
-                      No rated songs
+                      No ratings
                     </p>
                   </div>
                   {!readOnly && isOwnProfile && (
