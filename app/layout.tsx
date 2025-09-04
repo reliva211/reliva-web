@@ -29,6 +29,7 @@ export default function RootLayout({
           name="viewport"
           content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"
         />
+        <meta name="google-site-verification" content="LWPPCUOVUq2lwKifp4K7Ith4Jqmvzy8eH42omVsmJQo" />
       </head>
       <body className={inter.className}>
         <AuthProvider>

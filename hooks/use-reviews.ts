@@ -16,6 +16,7 @@ import {
   arrayUnion,
   arrayRemove,
   increment,
+  serverTimestamp,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useCurrentUser } from "@/hooks/use-current-user";
@@ -176,6 +177,30 @@ export function useReviews(userId?: string) {
     }
   };
 
+  // Create notification for review like
+  const createLikeNotification = async (review: Review) => {
+    if (!currentUser || review.userId === currentUser.uid) return; // Don't notify if liking own review
+
+    try {
+      const notificationData = {
+        type: "like",
+        message: `liked your review of "${review.mediaTitle}"`,
+        fromUserId: currentUser.uid,
+        toUserId: review.userId,
+        fromUserName:
+          currentUser.displayName || currentUser.email?.split("@")[0] || "Anonymous",
+        fromUserAvatar: currentUser.photoURL || "",
+        actionUrl: `/reviews/${review.id}`,
+        isRead: false,
+        createdAt: serverTimestamp(),
+      };
+
+      await addDoc(collection(db, "notifications"), notificationData);
+    } catch (error) {
+      console.error("Error creating like notification:", error);
+    }
+  };
+
   // Toggle like on a review
   const toggleLike = async (reviewId: string) => {
     if (!currentUser) return;
@@ -197,6 +222,9 @@ export function useReviews(userId?: string) {
           likedBy: arrayUnion(currentUser.uid),
           likes: increment(1),
         });
+        
+        // Create notification only when liking (not unliking)
+        await createLikeNotification(review);
       }
 
       setReviews((prev) =>
