@@ -797,7 +797,7 @@ export default function ProfilePage() {
     <ErrorBoundary>
       <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black">
         {/* Top Profile Section */}
-        <div className="max-w-4xl mx-auto px-2 sm:px-3 py-4 sm:py-6">
+                 <div className="max-w-4xl mx-auto px-2 sm:px-3 pt-8 pb-4 sm:pt-6 sm:pb-6">
           <div className="flex flex-col items-center text-center gap-4 mb-6">
             {/* Profile Picture */}
             <ImageUpload onUploadAction={handleAvatarUpload}>
@@ -805,8 +805,8 @@ export default function ProfilePage() {
                 userId={user?.uid}
                 size="lg"
                 className="w-16 h-16 sm:w-20 sm:h-20 border-2 border-border cursor-pointer"
-                displayName={profile?.displayName || user?.displayName}
-                username={profile?.username || user?.email?.split("@")[0]}
+                displayName={profile?.displayName || user?.displayName || undefined}
+                username={profile?.username || user?.email?.split("@")[0] || undefined}
                 clickable={false}
               />
             </ImageUpload>
@@ -816,10 +816,11 @@ export default function ProfilePage() {
               <h1 className="text-xl sm:text-2xl font-bold mb-1">
                 {profile?.displayName || user?.displayName || "Your Name"}
               </h1>
-              <p className="text-sm text-white mb-3">
-                {profile?.bio ||
-                  "Add your bio to let others know more about you!"}
-              </p>
+              {profile?.bio && (
+                <p className="text-sm text-white mb-3">
+                  {profile.bio}
+                </p>
+              )}
               <div className="flex justify-center gap-2">
                 <Button
                   variant="ghost"

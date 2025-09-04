@@ -254,7 +254,7 @@ export default function ProfileMusicSection({
           {isHalfStar && (
             <div className="absolute inset-0 overflow-hidden">
               <Star
-                className={`h-3 w-3 sm:h-4 sm:w-4 fill-yellow-400 text-yellow-400 ${
+                className={`h-2.5 w-2.5 sm:h-3 sm:w-3 md:h-4 md:w-4 fill-yellow-400 text-yellow-400 ${
                   !readOnly && currentUser?.uid === userId
                     ? "cursor-pointer"
                     : ""
@@ -530,7 +530,7 @@ export default function ProfileMusicSection({
   const limitedRatings = safeMusicProfile.ratings || [];
 
   return (
-    <div className="w-full max-w-7xl mx-auto px-4 py-8 sm:py-12">
+    <div className="profile-music-section w-full max-w-7xl mx-auto px-4 py-8 sm:py-12">
       {/* Background gradient overlay */}
       <div className="absolute inset-0 bg-gradient-to-br from-emerald-900/3 via-transparent to-purple-900/3 pointer-events-none"></div>
 
@@ -619,12 +619,20 @@ export default function ProfileMusicSection({
                   }
                 >
                   <div className="text-center w-full">
-                    <div className="w-16 h-16 bg-gradient-to-br from-emerald-500/20 to-cyan-500/20 rounded-full flex items-center justify-center mb-4 border border-emerald-500/30 mx-auto">
-                      <Plus className="h-8 w-8 text-emerald-400 flex-shrink-0" />
-                    </div>
-                    <p className="text-sm font-medium text-emerald-300">
-                      Add Current Obsession
-                    </p>
+                    {isOwnProfile && !readOnly ? (
+                      <>
+                        <div className="w-16 h-16 bg-gradient-to-br from-emerald-500/20 to-cyan-500/20 rounded-full flex items-center justify-center mb-4 border border-emerald-500/30 mx-auto">
+                          <Plus className="h-8 w-8 text-emerald-400 flex-shrink-0" />
+                        </div>
+                        <p className="text-sm font-medium text-emerald-300">
+                          Add Current Obsession
+                        </p>
+                      </>
+                    ) : (
+                      <p className="text-sm font-medium text-gray-400">
+                        No current obsession
+                      </p>
+                    )}
                   </div>
                 </div>
               )}
@@ -700,12 +708,20 @@ export default function ProfileMusicSection({
                   }
                 >
                   <div className="text-center w-full">
-                    <div className="w-16 h-16 bg-gradient-to-br from-purple-500/20 to-pink-500/20 rounded-full flex items-center justify-center mb-4 border border-purple-500/30 mx-auto">
-                      <Plus className="h-8 w-8 text-purple-400 flex-shrink-0" />
-                    </div>
-                    <p className="text-sm font-medium text-purple-300">
-                      Add Favorite Artist
-                    </p>
+                    {isOwnProfile && !readOnly ? (
+                      <>
+                        <div className="w-16 h-16 bg-gradient-to-br from-purple-500/20 to-pink-500/20 rounded-full flex items-center justify-center mb-4 border border-purple-500/30 mx-auto">
+                          <Plus className="h-8 w-8 text-purple-400 flex-shrink-0" />
+                        </div>
+                        <p className="text-sm font-medium text-purple-300">
+                          Add Favorite Artist
+                        </p>
+                      </>
+                    ) : (
+                      <p className="text-sm font-medium text-gray-400">
+                        No favorite artist
+                      </p>
+                    )}
                   </div>
                 </div>
               )}
@@ -787,12 +803,20 @@ export default function ProfileMusicSection({
                   }
                 >
                   <div className="text-center w-full">
-                    <div className="w-16 h-16 bg-gradient-to-br from-orange-500/20 to-red-500/20 rounded-full flex items-center justify-center mb-4 border border-orange-500/30 mx-auto">
-                      <Plus className="h-8 w-8 text-orange-400 flex-shrink-0" />
-                    </div>
-                    <p className="text-sm font-medium text-orange-300">
-                      Add Favorite Song
-                    </p>
+                    {isOwnProfile && !readOnly ? (
+                      <>
+                        <div className="w-16 h-16 bg-gradient-to-br from-orange-500/20 to-red-500/20 rounded-full flex items-center justify-center mb-4 border border-orange-500/30 mx-auto">
+                          <Plus className="h-8 w-8 text-orange-400 flex-shrink-0" />
+                        </div>
+                        <p className="text-sm font-medium text-orange-300">
+                          Add Favorite Song
+                        </p>
+                      </>
+                    ) : (
+                      <p className="text-sm font-medium text-gray-400">
+                        No favorite song
+                      </p>
+                    )}
                   </div>
                 </div>
               )}
@@ -898,7 +922,9 @@ export default function ProfileMusicSection({
               ) : (
                 <div className="flex flex-col items-start justify-start min-h-[200px] w-full">
                   <div className="aspect-square w-36 sm:w-40 md:w-44 bg-transparent rounded-lg border-2 border-gray-600 flex flex-col items-center justify-center mb-4">
-                    <p className="text-sm text-gray-400 mb-1">Add</p>
+                    {isOwnProfile && !readOnly && (
+                      <p className="text-sm text-gray-400 mb-1">Add</p>
+                    )}
                     <p className="text-xs text-gray-500 text-center">
                       No favorite albums
                     </p>
@@ -1013,7 +1039,9 @@ export default function ProfileMusicSection({
               ) : (
                 <div className="flex flex-col items-start justify-start min-h-[200px] w-full">
                   <div className="aspect-square w-32 sm:w-36 md:w-40 bg-transparent rounded-lg border-2 border-gray-600 flex flex-col items-center justify-center mb-4">
-                    <p className="text-sm text-gray-400 mb-1">Add</p>
+                    {isOwnProfile && !readOnly && (
+                      <p className="text-sm text-gray-400 mb-1">Add</p>
+                    )}
                     <p className="text-xs text-gray-500 text-center">
                       No recommendations
                     </p>
@@ -1122,11 +1150,19 @@ export default function ProfileMusicSection({
                           </div>
                         )}
                       </div>
-                      <div className="mt-3 text-center w-32 sm:w-36 md:w-40">
-                        <p className="text-sm font-semibold text-white leading-tight line-clamp-2">
+                      {/* Rating stars - above the song name */}
+                      <div className="mt-3 flex justify-center gap-1">
+                        {renderInteractiveStars(
+                          rating.song.id,
+                          rating.rating
+                        )}
+                      </div>
+                      {/* Song name and artist display - below the rating */}
+                      <div className="mt-2 text-center w-32 sm:w-36 md:w-40">
+                        <p className="text-sm font-semibold text-white leading-tight px-2 min-h-[1.5rem] truncate">
                           {truncateTitle(getTextContent(rating.song.name))}
                         </p>
-                        <p className="text-xs text-gray-400 leading-tight mt-1 line-clamp-1">
+                        <p className="text-xs text-gray-400 leading-tight mt-0.5 px-2 truncate">
                           {getTextContent(
                             rating.song.primaryArtists ||
                               rating.song.artists?.primary
@@ -1135,12 +1171,6 @@ export default function ProfileMusicSection({
                               "Unknown Artist"
                           )}
                         </p>
-                        <div className="flex justify-center mt-2">
-                          {renderInteractiveStars(
-                            rating.song.id,
-                            rating.rating
-                          )}
-                        </div>
                       </div>
                     </div>
                   ))}
@@ -1164,7 +1194,9 @@ export default function ProfileMusicSection({
               ) : (
                 <div className="flex flex-col items-start justify-start min-h-[200px] w-full">
                   <div className="aspect-square w-32 sm:w-36 md:w-40 bg-transparent rounded-lg border-2 border-gray-600 flex flex-col items-center justify-center mb-4">
-                    <p className="text-sm text-gray-400 mb-1">Add</p>
+                    {isOwnProfile && !readOnly && (
+                      <p className="text-sm text-gray-400 mb-1">Add</p>
+                    )}
                     <p className="text-xs text-gray-500 text-center">
                       No ratings
                     </p>

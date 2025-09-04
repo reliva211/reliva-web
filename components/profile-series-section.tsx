@@ -970,7 +970,11 @@ export default function ProfileSeriesSection({
               <div className="w-48 h-72 bg-muted rounded-md border border-border/30 flex items-center justify-center flex-shrink-0">
                 <div className="text-center">
                   <Video className="h-16 w-16 mx-auto mb-4 text-muted-foreground/50" />
-                  <p className="text-sm text-white">Add Current Watch</p>
+                  {!readOnly ? (
+                    <p className="text-sm text-white">Add Current Watch</p>
+                  ) : (
+                    <p className="text-sm text-gray-400">No currently watching</p>
+                  )}
                 </div>
               </div>
 

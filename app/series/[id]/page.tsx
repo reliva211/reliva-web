@@ -511,18 +511,18 @@ export default function SeriesDetailPage({
                         )}`
                       )
                     }
-                    className="rounded-xl hover:scale-105 transition-all duration-200"
+                    className="rounded-xl hover:bg-muted/50 transition-all duration-200 group bg-background/60 border-border/50"
                   >
-                    <Star className="w-5 h-5 mr-2" />
+                    <Star className="w-5 h-5 mr-2 group-hover:scale-110 transition-transform" />
                     Rate
                   </Button>
                   <Dialog open={addToListOpen} onOpenChange={setAddToListOpen}>
                     <DialogTrigger asChild>
                       <Button
                         size="lg"
-                        className="rounded-xl hover:scale-105 transition-all duration-200"
+                        className="rounded-xl hover:bg-muted/50 transition-all duration-200 group bg-background/60 border-border/50"
                       >
-                        <Plus className="w-5 h-5 mr-2" />
+                        <Plus className="w-5 h-5 mr-2 group-hover:scale-110 transition-transform" />
                         Add to List
                       </Button>
                     </DialogTrigger>
@@ -863,11 +863,11 @@ export default function SeriesDetailPage({
                     <h3 className="text-2xl font-semibold mb-6 bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent">
                       Cast
                     </h3>
-                    <div className="grid grid-cols-5 gap-4">
+                    <div className="grid grid-cols-4 sm:grid-cols-5 gap-2 sm:gap-3">
                       {series.credits.cast.slice(0, 12).map((actor, index) => (
                         <div
                           key={`cast-${actor.id}-${index}`}
-                          className="flex items-center space-x-3 p-4 bg-muted/30 backdrop-blur-sm rounded-xl cursor-pointer hover:bg-muted/50 transition-all duration-200 group border border-border/20"
+                          className="flex flex-col items-center space-y-2 p-2 sm:p-3 bg-muted/30 backdrop-blur-sm rounded-xl cursor-pointer hover:bg-muted/50 transition-all duration-200 group border border-border/20"
                           onClick={() => router.push(`/person/${actor.id}`)}
                         >
                           {actor.profile_path ? (
@@ -883,17 +883,17 @@ export default function SeriesDetailPage({
                               }}
                             />
                           ) : (
-                            <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center group-hover:scale-110 transition-transform duration-200">
+                            <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center group-hover:scale-110 transition-transform duration-200">
                               <span className="text-sm font-medium text-muted-foreground">
                                 {actor.name.charAt(0).toUpperCase()}
                               </span>
                             </div>
                           )}
-                          <div className="flex-1 min-w-0">
-                            <p className="font-medium text-sm truncate group-hover:text-primary transition-colors">
+                          <div className="text-center w-full px-1">
+                            <p className="font-medium text-xs sm:text-sm leading-tight group-hover:text-primary transition-colors line-clamp-2">
                               {actor.name}
                             </p>
-                            <p className="text-xs text-muted-foreground truncate">
+                            <p className="text-xs text-muted-foreground leading-tight line-clamp-2">
                               {actor.character}
                             </p>
                           </div>
@@ -908,7 +908,7 @@ export default function SeriesDetailPage({
                     <h3 className="text-2xl font-semibold mb-6 bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent">
                       Crew
                     </h3>
-                    <div className="grid grid-cols-5 gap-4">
+                    <div className="grid grid-cols-4 sm:grid-cols-5 gap-2 sm:gap-3">
                       {series.credits.crew
                         .filter((person) =>
                           [
@@ -923,7 +923,7 @@ export default function SeriesDetailPage({
                         .map((person, index) => (
                           <div
                             key={`crew-${person.id}-${index}`}
-                            className="flex items-center space-x-3 p-4 bg-muted/30 backdrop-blur-sm rounded-xl cursor-pointer hover:bg-muted/50 transition-all duration-200 group border border-border/20"
+                            className="flex flex-col items-center space-y-2 p-2 sm:p-3 bg-muted/30 backdrop-blur-sm rounded-xl cursor-pointer hover:bg-muted/50 transition-all duration-200 group border border-border/20"
                             onClick={() => router.push(`/person/${person.id}`)}
                           >
                             {person.profile_path ? (
@@ -939,17 +939,17 @@ export default function SeriesDetailPage({
                                 }}
                               />
                             ) : (
-                              <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center group-hover:scale-110 transition-transform duration-200">
+                              <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center group-hover:scale-110 transition-transform duration-200">
                                 <span className="text-sm font-medium text-muted-foreground">
                                   {person.name.charAt(0).toUpperCase()}
                                 </span>
                               </div>
                             )}
-                            <div className="flex-1 min-w-0">
-                              <p className="font-medium text-sm truncate group-hover:text-primary transition-colors">
+                            <div className="text-center w-full px-1">
+                              <p className="font-medium text-xs sm:text-sm leading-tight group-hover:text-primary transition-colors line-clamp-2">
                                 {person.name}
                               </p>
-                              <p className="text-xs text-muted-foreground truncate">
+                              <p className="text-xs text-muted-foreground leading-tight line-clamp-2">
                                 {person.job}
                               </p>
                             </div>

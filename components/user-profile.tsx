@@ -274,9 +274,6 @@ export default function UserProfile({ userId: propUserId }: UserProfileProps) {
           </p>
           <p className="text-muted-foreground text-lg">@username</p>
 
-          <p className="mt-2 max-w-md mx-auto">
-            Add your bio to let others know more about you!
-          </p>
           <div className="flex flex-wrap items-center gap-4 mt-3 text-sm text-muted-foreground justify-center">
             <div className="flex items-center gap-1 opacity-60">
               <LinkIcon className="h-4 w-4" />
@@ -340,7 +337,7 @@ export default function UserProfile({ userId: propUserId }: UserProfileProps) {
       </div>
 
       {/* Profile Info */}
-      <div className="max-w-6xl mx-auto px-4 -mt-16 relative z-10">
+      <div className="max-w-6xl mx-auto px-4 -mt-16 relative z-10 pt-4 sm:pt-0">
         <div className="flex flex-col md:flex-row gap-6 mb-8">
           <ImageUpload onUpload={handleCoverUpload} className="w-32 h-32">
             <Avatar className="w-32 h-32 border-4 border-background shadow-lg">
@@ -367,10 +364,11 @@ export default function UserProfile({ userId: propUserId }: UserProfileProps) {
                   @{profile.username || "username"}
                 </p>
 
-                <p className="mt-2 max-w-md">
-                  {profile.bio ||
-                    "Add your bio to let others know more about you!"}
-                </p>
+                {profile.bio && (
+                  <p className="mt-2 max-w-md">
+                    {profile.bio}
+                  </p>
+                )}
 
                 <div className="flex flex-wrap items-center gap-4 mt-3 text-sm text-muted-foreground">
                   {profile.website ? (

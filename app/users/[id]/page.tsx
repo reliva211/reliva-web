@@ -169,7 +169,7 @@ export default function PublicProfilePage() {
     <ErrorBoundary>
       <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black">
         {/* Top Profile Section */}
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 pt-16 sm:pt-20 pb-6 sm:pb-8">
+                 <div className="max-w-4xl mx-auto px-4 sm:px-6 pt-20 sm:pt-20 pb-6 sm:pb-8">
           <div className="flex flex-col items-center text-center gap-6 mb-8">
             {/* Profile Picture */}
             <Avatar className="w-20 h-20 sm:w-24 sm:h-24 ring-4 ring-emerald-500/20 hover:ring-emerald-500/40 transition-all duration-300 group-hover:scale-105">
@@ -191,19 +191,11 @@ export default function PublicProfilePage() {
               {profile.tagline && (
                 <p className="text-sm text-gray-300 mb-3">{profile.tagline}</p>
               )}
-              <p className="text-sm text-gray-300 mb-4">
-                {profile.bio || "No bio available"}
-              </p>
-              <div className="flex justify-center">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="text-xs sm:text-sm h-9 text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10 rounded-xl"
-                >
-                  <Eye className="h-4 w-4 mr-1" />
-                  Public Profile
-                </Button>
-              </div>
+              {profile.bio && (
+                <p className="text-sm text-gray-300 mb-4">
+                  {profile.bio}
+                </p>
+              )}
             </div>
           </div>
 

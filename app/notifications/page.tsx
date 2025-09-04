@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 
 // Force dynamic rendering to prevent prerender issues
 export const dynamic = "force-dynamic";
 import { useCurrentUser } from "@/hooks/use-current-user";
+import { OtherUserAvatar } from "@/components/user-avatar";
 import { Bell, Check, Heart, MessageCircle, Star, Users } from "lucide-react";
 import {
   collection,
@@ -31,11 +32,55 @@ interface Notification {
   createdAt: string | Timestamp;
 }
 
+interface UserProfile {
+  _id: string;
+  username: string;
+  displayName: string;
+  avatarUrl: string | null;
+  email: string | null;
+  bio: string | null;
+}
+
 export default function NotificationsPage() {
   const { user } = useCurrentUser();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [userProfiles, setUserProfiles] = useState<Map<string, UserProfile>>(new Map());
+
+  // Function to fetch user profile for a given Firebase UID directly
+  const fetchUserProfile = async (firebaseUID: string) => {
+    if (userProfiles.has(firebaseUID)) return userProfiles.get(firebaseUID);
+
+    try {
+      // Import Firebase functions dynamically to avoid SSR issues
+      const { doc, getDoc } = await import("firebase/firestore");
+      const { db } = await import("@/lib/firebase");
+
+      // Fetch the user profile using Firebase UID directly
+      const userProfileRef = doc(db, "userProfiles", firebaseUID);
+      const userProfileSnap = await getDoc(userProfileRef);
+
+      if (userProfileSnap.exists()) {
+        const userData = userProfileSnap.data();
+        const userProfile = {
+          _id: firebaseUID,
+          username:
+            userData.username || userData.displayName || "Unknown User",
+          displayName:
+            userData.displayName || userData.username || "Unknown User",
+          avatarUrl: userData.avatarUrl || null,
+          email: userData.email || null,
+          bio: userData.bio || null,
+        };
+        setUserProfiles((prev) => new Map(prev.set(firebaseUID, userProfile)));
+        return userProfile;
+      }
+    } catch (error) {
+      console.error("Error fetching user profile from Firebase:", error);
+    }
+    return null;
+  };
 
   useEffect(() => {
     if (!user) {
@@ -203,6 +248,21 @@ export default function NotificationsPage() {
 
     markAllAsReadOnVisit();
   }, [user, notifications]);
+
+  // Fetch user profiles when notifications change
+  useEffect(() => {
+    const fetchAllUserProfiles = async () => {
+      const uniqueUserIds = Array.from(new Set(notifications.map(notif => notif.fromUserId)));
+      
+      for (const uid of uniqueUserIds) {
+        await fetchUserProfile(uid);
+      }
+    };
+
+    if (notifications.length > 0) {
+      fetchAllUserProfiles();
+    }
+  }, [notifications]);
 
   const markAsRead = async (notificationId: string) => {
     try {
@@ -392,58 +452,71 @@ export default function NotificationsPage() {
               </p>
             </div>
           ) : (
-            notifications.map((notification) => (
-              <div
-                key={notification.id}
-                className={`bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-6 transition-all duration-300 cursor-pointer hover:shadow-xl ${
-                  !notification.isRead
-                    ? "ring-2 ring-emerald-500/20 bg-emerald-50/50 dark:bg-emerald-900/10"
-                    : ""
-                }`}
-                onClick={() => handleNotificationClick(notification)}
-              >
-                <div className="flex items-start justify-between">
-                  <div className="flex items-start space-x-4 flex-1">
-                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-emerald-500 to-blue-500 flex items-center justify-center text-white font-semibold flex-shrink-0">
-                      {notification.fromUserName?.charAt(0) || "U"}
-                    </div>
+            notifications.map((notification) => {
+              const userProfile = userProfiles.get(notification.fromUserId);
+              const displayName = userProfile?.displayName || notification.fromUserName || "Anonymous";
+              const username = userProfile?.username || notification.fromUserName || "Anonymous";
+              const avatarUrl = userProfile?.avatarUrl || notification.fromUserAvatar;
+              
+              return (
+                <div
+                  key={notification.id}
+                  className={`bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-6 transition-all duration-300 cursor-pointer hover:shadow-xl ${
+                    !notification.isRead
+                      ? "ring-2 ring-emerald-500/20 bg-emerald-50/50 dark:bg-emerald-900/10"
+                      : ""
+                  }`}
+                  onClick={() => handleNotificationClick(notification)}
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-start space-x-4 flex-1">
+                      <OtherUserAvatar
+                        authorId={notification.fromUserId}
+                        username={username}
+                        displayName={displayName}
+                        avatarUrl={avatarUrl}
+                        size="md"
+                        className="flex-shrink-0"
+                        clickable={true}
+                      />
 
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        {getNotificationIcon(notification.type)}
-                        <span className="font-semibold text-gray-900 dark:text-white">
-                          {notification.fromUserName || "Anonymous"}
-                        </span>
-                        {!notification.isRead && (
-                          <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
-                        )}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          {getNotificationIcon(notification.type)}
+                          <span className="font-semibold text-gray-900 dark:text-white">
+                            {displayName}
+                          </span>
+                          {!notification.isRead && (
+                            <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
+                          )}
+                        </div>
+
+                        <p className="text-gray-700 dark:text-gray-300 mb-2">
+                          {notification.message}
+                        </p>
+
+                        <p className="text-sm text-gray-500 dark:text-gray-400">
+                          {formatTimestamp(notification.createdAt)}
+                        </p>
                       </div>
-
-                      <p className="text-gray-700 dark:text-gray-300 mb-2">
-                        {notification.message}
-                      </p>
-
-                      <p className="text-sm text-gray-500 dark:text-gray-400">
-                        {formatTimestamp(notification.createdAt)}
-                      </p>
                     </div>
-                  </div>
 
-                  {!notification.isRead && (
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        markAsRead(notification.id);
-                      }}
-                      className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-all duration-200 hover:scale-110"
-                      title="Mark as read"
-                    >
-                      <Check className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
-                    </button>
-                  )}
+                    {!notification.isRead && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          markAsRead(notification.id);
+                        }}
+                        className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-all duration-200 hover:scale-110"
+                        title="Mark as read"
+                      >
+                        <Check className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                      </button>
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))
+              );
+            })
           )}
         </div>
       </div>

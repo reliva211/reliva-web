@@ -139,9 +139,9 @@ export default function DiscoverSection({
         {showLeftArrow && (
           <button
             onClick={scrollLeft}
-            className="absolute left-0 sm:left-2 top-1/2 transform -translate-y-1/2 z-30 bg-black/90 hover:bg-black text-white rounded-full p-3 sm:p-4 transition-all duration-300 backdrop-blur-md shadow-2xl border border-white/20 hover:scale-110 flex items-center justify-center min-w-[44px] min-h-[44px] discover-nav-arrow"
+            className="absolute left-1 sm:left-0 top-1/2 -translate-y-1/2 z-10 bg-gray-800/80 hover:bg-gray-700/80 text-white border border-gray-600 rounded-full w-10 h-10 p-0 shadow-lg"
           >
-            <ChevronLeft className="h-5 w-5 sm:h-6 sm:w-6" />
+            <ChevronLeft className="w-5 h-5" />
           </button>
         )}
 
@@ -149,9 +149,9 @@ export default function DiscoverSection({
         {showRightArrow && (
           <button
             onClick={scrollRight}
-            className="absolute right-0 sm:right-2 top-1/2 transform -translate-y-1/2 z-30 bg-black/90 hover:bg-black text-white rounded-full p-3 sm:p-4 transition-all duration-300 backdrop-blur-md shadow-2xl border border-white/20 hover:scale-110 flex items-center justify-center min-w-[44px] min-h-[44px] discover-nav-arrow"
+            className="absolute right-1 sm:right-0 top-1/2 -translate-y-1/2 z-10 bg-gray-800/80 hover:bg-gray-700/80 text-white border border-gray-600 rounded-full w-10 h-10 p-0 shadow-lg"
           >
-            <ChevronRight className="h-5 w-5 sm:h-6 sm:w-6" />
+            <ChevronRight className="w-5 h-5" />
           </button>
         )}
 

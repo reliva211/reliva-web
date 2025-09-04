@@ -345,6 +345,17 @@
       max-height: 0.625rem !important;
     }
 
+    /* Ensure stars in music ratings sections are properly sized and aligned */
+    .profile-music-section div[class*="mt-3"] svg[class*="h-2\.5"],
+    .profile-music-section div[class*="mt-3"] svg[class*="w-2\.5"] {
+      width: 0.625rem !important;
+      height: 0.625rem !important;
+      min-width: 0.625rem !important;
+      min-height: 0.625rem !important;
+      max-width: 0.625rem !important;
+      max-height: 0.625rem !important;
+    }
+
     /* Ensure stars in ratings sections are properly sized */
     div[class*="mt-12"] svg[class*="h-2\.5"],
     div[class*="mt-12"] svg[class*="w-2\.5"] {

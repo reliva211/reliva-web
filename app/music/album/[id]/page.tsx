@@ -517,12 +517,12 @@ export default function AlbumDetailPage({
                 {isAlbumInRecommendations(album.id) ? (
                   <>
                     <Check className="w-4 h-4 mr-2" />
-                    In List
+                    Recommended
                   </>
                 ) : (
                   <>
                     <Plus className="w-4 h-4 mr-2" />
-                    Add to List
+                    Recommend
                   </>
                 )}
               </Button>
@@ -545,7 +545,7 @@ export default function AlbumDetailPage({
                 className="rounded-lg hover:scale-105 transition-all duration-200 group bg-background/60 border-border/50 shadow-md h-10"
               >
                 <Star className="w-4 h-4 mr-2 group-hover:scale-110 transition-transform" />
-                Write Review
+                Rate
               </Button>
             </div>
           </div>

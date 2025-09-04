@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { OtherUserAvatar } from "@/components/user-avatar";
 import {
   Film,
   BookOpen,
@@ -37,6 +38,15 @@ interface User {
   displayName: string;
   photoURL?: string;
   email: string;
+}
+
+interface UserProfile {
+  _id: string;
+  username: string;
+  displayName: string;
+  avatarUrl: string | null;
+  email: string | null;
+  bio: string | null;
 }
 
 interface Movie {
@@ -144,9 +154,57 @@ export default function RecommendationsPage() {
   const { toast } = useToast();
   const [activeCategory, setActiveCategory] = useState<CategoryType>("movies");
   const [addingItems, setAddingItems] = useState<Set<string>>(new Set());
+  const [userProfiles, setUserProfiles] = useState<Map<string, UserProfile>>(new Map());
 
   const { recommendations, loading, error } = useRecommendations();
   const musicCollections = useMusicCollections();
+
+  // Function to fetch user profile for a given Firebase UID directly
+  const fetchUserProfile = async (firebaseUID: string) => {
+    if (userProfiles.has(firebaseUID)) return userProfiles.get(firebaseUID);
+
+    try {
+      // Import Firebase functions dynamically to avoid SSR issues
+      const { doc, getDoc } = await import("firebase/firestore");
+      const { db } = await import("@/lib/firebase");
+
+      // Fetch the user profile using Firebase UID directly
+      const userProfileRef = doc(db, "userProfiles", firebaseUID);
+      const userProfileSnap = await getDoc(userProfileRef);
+
+      if (userProfileSnap.exists()) {
+        const userData = userProfileSnap.data();
+        const userProfile = {
+          _id: firebaseUID,
+          username:
+            userData.username || userData.displayName || "Unknown User",
+          displayName:
+            userData.displayName || userData.username || "Unknown User",
+          avatarUrl: userData.avatarUrl || null,
+          email: userData.email || null,
+          bio: userData.bio || null,
+        };
+        setUserProfiles((prev) => new Map(prev.set(firebaseUID, userProfile)));
+        return userProfile;
+      }
+    } catch (error) {
+      console.error("Error fetching user profile from Firebase:", error);
+    }
+    return null;
+  };
+
+  // Fetch user profiles when recommendations change
+  useEffect(() => {
+    if (recommendations && recommendations.length > 0) {
+      recommendations.forEach((userRec) => {
+        // Assuming the user object has an authorId or similar field
+        // You may need to adjust this based on your actual data structure
+        if (userRec.user.uid) {
+          fetchUserProfile(userRec.user.uid);
+        }
+      });
+    }
+  }, [recommendations]);
 
   // Helper functions
   const getUserInitials = (name: string) => {
@@ -271,37 +329,43 @@ export default function RecommendationsPage() {
      user: User;
      itemCount: number;
      category: string;
-   }) => (
-     <div className="flex items-center gap-4 mb-4">
-      <div className="relative">
-        <Avatar
-          className="h-12 w-12 cursor-pointer hover:scale-105 transition-transform duration-200 ring-4 ring-blue-500/20 hover:ring-blue-500/40"
-          onClick={() => router.push(`/users/${user.uid}`)}
-        >
-          <AvatarImage src={user.photoURL} />
-          <AvatarFallback className="bg-gradient-to-br from-blue-500 to-indigo-500 text-white font-semibold text-sm">
-            {getUserInitials(user.displayName)}
-          </AvatarFallback>
-        </Avatar>
-        <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-gradient-to-r from-green-400 to-emerald-500 rounded-full border-2 border-slate-900"></div>
-      </div>
-      <div className="flex-1">
-        <h3
-          className="text-xl font-bold text-white cursor-pointer hover:text-blue-300 transition-colors mb-0"
-          onClick={() => router.push(`/users/${user.uid}`)}
-        >
-          {user.displayName}
-        </h3>
-        <div className="flex items-center gap-2">
-          <TrendingUp className="w-4 h-4 text-blue-400" />
-          <p className="text-sm text-slate-300">
-            {itemCount} {category === "music" ? "music" : category.slice(0, -1)}
-            {itemCount !== 1 ? "s" : ""} recommended
-          </p>
+   }) => {
+     const userProfile = userProfiles.get(user.uid);
+     const displayName = userProfile?.displayName || user.displayName;
+     const avatarUrl = userProfile?.avatarUrl || user.photoURL;
+     
+     return (
+       <div className="flex items-center gap-4 mb-4">
+        <div className="relative">
+          <OtherUserAvatar
+            authorId={user.uid}
+            username={userProfile?.username || user.displayName}
+            displayName={displayName}
+            avatarUrl={avatarUrl}
+            size="md"
+            className="cursor-pointer hover:scale-105 transition-transform duration-200 ring-4 ring-blue-500/20 hover:ring-blue-500/40"
+            clickable={true}
+          />
+          <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-gradient-to-r from-green-400 to-emerald-500 rounded-full border-2 border-slate-900"></div>
+        </div>
+        <div className="flex-1">
+          <h3
+            className="text-xl font-bold text-white cursor-pointer hover:text-blue-300 transition-colors mb-0"
+            onClick={() => router.push(`/users/${user.uid}`)}
+          >
+            {displayName}
+          </h3>
+          <div className="flex items-center gap-2">
+            <TrendingUp className="w-4 h-4 text-blue-400" />
+            <p className="text-sm text-slate-300">
+              {itemCount} {category === "music" ? "music" : category.slice(0, -1)}
+              {itemCount !== 1 ? "s" : ""} recommended
+            </p>
+          </div>
         </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   // Component for item card
   const ItemCard = ({

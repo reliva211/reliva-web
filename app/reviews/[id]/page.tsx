@@ -540,7 +540,10 @@ export default function ReviewDetailPage() {
                   {review.userDisplayName?.charAt(0) || "U"}
                 </div>
                 <div className="flex-1">
-                  <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
+                  <h3 
+                    className="text-xl font-semibold text-gray-900 dark:text-white cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                    onClick={() => router.push(`/users/${review.userId}`)}
+                  >
                     {review.userDisplayName || "Anonymous"}
                   </h3>
                   <p className="text-gray-600 dark:text-gray-400">
@@ -645,8 +648,11 @@ export default function ReviewDetailPage() {
                     {comment.userDisplayName?.charAt(0) || "U"}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="font-medium text-gray-900 dark:text-white">
+                    <div className="flex items-start gap-2 mb-1">
+                      <span 
+                        className="font-medium text-gray-900 dark:text-white cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                        onClick={() => router.push(`/users/${comment.userId}`)}
+                      >
                         {comment.userDisplayName}
                       </span>
                       <span className="text-sm text-gray-500 dark:text-gray-400">

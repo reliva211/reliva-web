@@ -441,7 +441,7 @@ export default function ArtistDetailPage({
           {/* Profile Image */}
           <div className="w-full lg:w-1/4">
             <div className="relative group max-w-xs mx-auto lg:mx-0">
-              <div className="aspect-square rounded-2xl overflow-hidden bg-gradient-to-br from-muted to-muted/50 shadow-2xl group-hover:shadow-3xl transition-all duration-300">
+              <div className="aspect-square rounded-full overflow-hidden bg-gradient-to-br from-muted to-muted/50 shadow-2xl group-hover:shadow-3xl transition-all duration-300">
                 <img
                   src={getImageUrl(artist.image)}
                   alt={artist.name}
@@ -449,7 +449,7 @@ export default function ArtistDetailPage({
                 />
               </div>
               {/* Subtle overlay gradient */}
-              <div className="absolute inset-0 rounded-2xl bg-gradient-to-t from-black/10 via-transparent to-transparent pointer-events-none"></div>
+              <div className="absolute inset-0 rounded-full bg-gradient-to-t from-black/10 via-transparent to-transparent pointer-events-none"></div>
             </div>
           </div>
 

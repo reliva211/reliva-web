@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import {
   collection,
@@ -20,6 +20,7 @@ import { useUserConnections } from "@/hooks/use-user-connections";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { OtherUserAvatar } from "@/components/user-avatar";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
@@ -54,6 +55,15 @@ interface UserData {
   tagline?: string;
 }
 
+interface UserProfile {
+  _id: string;
+  username: string;
+  displayName: string;
+  avatarUrl: string | null;
+  email: string | null;
+  bio: string | null;
+}
+
 export default function UsersPage() {
   const router = useRouter();
   const { user: currentUser, loading: currentUserLoading } = useCurrentUser();
@@ -73,6 +83,41 @@ export default function UsersPage() {
   const [loadingStates, setLoadingStates] = useState<
     Record<string, boolean>
   >({});
+  const [userProfiles, setUserProfiles] = useState<Map<string, UserProfile>>(new Map());
+
+  // Function to fetch user profile for a given Firebase UID directly
+  const fetchUserProfile = async (firebaseUID: string) => {
+    if (userProfiles.has(firebaseUID)) return userProfiles.get(firebaseUID);
+
+    try {
+      // Import Firebase functions dynamically to avoid SSR issues
+      const { doc, getDoc } = await import("firebase/firestore");
+      const { db } = await import("@/lib/firebase");
+
+      // Fetch the user profile using Firebase UID directly
+      const userProfileRef = doc(db, "userProfiles", firebaseUID);
+      const userProfileSnap = await getDoc(userProfileRef);
+
+      if (userProfileSnap.exists()) {
+        const userData = userProfileSnap.data();
+        const userProfile = {
+          _id: firebaseUID,
+          username:
+            userData.username || userData.displayName || "Unknown User",
+          displayName:
+            userData.displayName || userData.username || "Unknown User",
+          avatarUrl: userData.avatarUrl || null,
+          email: userData.email || null,
+          bio: userData.bio || null,
+        };
+        setUserProfiles((prev) => new Map(prev.set(firebaseUID, userProfile)));
+        return userProfile;
+      }
+    } catch (error) {
+      console.error("Error fetching user profile from Firebase:", error);
+    }
+    return null;
+  };
 
   // Debounced search function
   useEffect(() => {
@@ -108,6 +153,22 @@ export default function UsersPage() {
       setFollowingStates((prev) => ({ ...prev, ...followingStatesMap }));
     }
   }, [followers, following]);
+
+  // Fetch user profiles when search results, followers, or following change
+  useEffect(() => {
+    const fetchAllUserProfiles = async () => {
+      const allUsers = [...searchResults, ...followers, ...following];
+      const uniqueUsers = Array.from(new Set(allUsers.map(user => user.uid)));
+      
+      for (const uid of uniqueUsers) {
+        await fetchUserProfile(uid);
+      }
+    };
+
+    if (searchResults.length > 0 || followers.length > 0 || following.length > 0) {
+      fetchAllUserProfiles();
+    }
+  }, [searchResults, followers, following]);
 
   // Perform fuzzy search
   const performSearch = async (query: string) => {
@@ -368,104 +429,106 @@ export default function UsersPage() {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {searchResults.map((user) => (
-                  <Card
-                    key={user.uid}
-                    className="border-0 bg-gradient-to-br from-card to-card/50 backdrop-blur-sm"
-                  >
-                    <CardContent className="p-6">
-                      <div className="flex items-start gap-4">
-                        <Avatar
-                          className="h-16 w-16 cursor-pointer ring-2 ring-primary/20"
-                          onClick={() => router.push(`/users/${user.uid}`)}
-                        >
-                          <AvatarImage
-                            src={user.avatarUrl || ""}
-                            alt={user.fullName || user.username}
+                {searchResults.map((user) => {
+                  const userProfile = userProfiles.get(user.uid);
+                  const displayName = userProfile?.displayName || user.fullName || "No name";
+                  const username = userProfile?.username || user.username;
+                  const avatarUrl = userProfile?.avatarUrl || user.avatarUrl;
+                  
+                  return (
+                    <Card
+                      key={user.uid}
+                      className="border-0 bg-gradient-to-br from-card to-card/50 backdrop-blur-sm"
+                    >
+                      <CardContent className="p-6">
+                        <div className="flex items-start gap-4">
+                          <OtherUserAvatar
+                            authorId={user.uid}
+                            username={username}
+                            displayName={displayName}
+                            avatarUrl={avatarUrl}
+                            size="lg"
+                            className="cursor-pointer ring-2 ring-primary/20 hover:ring-primary/40 transition-all duration-200"
+                            clickable={true}
                           />
-                          <AvatarFallback className="bg-gradient-to-br from-primary/20 to-primary/10 text-primary font-semibold">
-                            {(user.fullName || user.username)
-                              .charAt(0)
-                              .toUpperCase()}
-                          </AvatarFallback>
-                        </Avatar>
 
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-start justify-between mb-2">
-                            <div className="flex-1 min-w-0">
-                              <h3
-                                className="font-semibold text-base truncate cursor-pointer"
-                                onClick={() =>
-                                  router.push(`/users/${user.uid}`)
-                                }
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-start justify-between mb-2">
+                              <div className="flex-1 min-w-0">
+                                <h3
+                                  className="font-semibold text-base truncate cursor-pointer hover:text-primary transition-colors"
+                                  onClick={() =>
+                                    router.push(`/users/${user.uid}`)
+                                  }
+                                >
+                                  {displayName}
+                                </h3>
+                                <p className="text-sm text-muted-foreground truncate">
+                                  @{username}
+                                </p>
+                              </div>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="opacity-0"
                               >
-                                {user.fullName || "No name"}
-                              </h3>
-                              <p className="text-sm text-muted-foreground truncate">
-                                @{user.username}
-                              </p>
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
                             </div>
+
+                            {user.tagline && (
+                              <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
+                                {user.tagline}
+                              </p>
+                            )}
+
+                            <div className="flex items-center gap-4 mb-4 text-xs text-muted-foreground">
+                              <span className="flex items-center gap-1">
+                                <Heart className="h-3 w-3" />
+                                {(user.followers || []).length} followers
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <User className="h-3 w-3" />
+                                {(user.following || []).length} following
+                              </span>
+                            </div>
+
                             <Button
-                              variant="ghost"
+                              variant={
+                                followingStates[user.uid] ? "outline" : "default"
+                              }
                               size="sm"
-                              className="opacity-0"
+                              onClick={() => handleFollowToggle(user.uid)}
+                              disabled={!currentUser || loadingStates[user.uid]}
+                              className={`w-full h-9 rounded-lg transition-all duration-200 ${
+                                !followingStates[user.uid] 
+                                  ? "bg-emerald-600/80 hover:bg-emerald-700/80 text-white border-emerald-600/80" 
+                                  : ""
+                              }`}
                             >
-                              <MoreHorizontal className="h-4 w-4" />
+                              {loadingStates[user.uid] ? (
+                                <>
+                                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                  {followingStates[user.uid] ? "Unfollowing..." : "Following..."}
+                                </>
+                              ) : followingStates[user.uid] ? (
+                                <>
+                                  <UserCheck className="h-4 w-4 mr-2" />
+                                  Following
+                                </>
+                              ) : (
+                                <>
+                                  <UserPlus className="h-4 w-4 mr-2" />
+                                  Follow
+                                </>
+                              )}
                             </Button>
                           </div>
-
-                          {user.tagline && (
-                            <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
-                              {user.tagline}
-                            </p>
-                          )}
-
-                          <div className="flex items-center gap-4 mb-4 text-xs text-muted-foreground">
-                            <span className="flex items-center gap-1">
-                              <Heart className="h-3 w-3" />
-                              {(user.followers || []).length} followers
-                            </span>
-                            <span className="flex items-center gap-1">
-                              <User className="h-3 w-3" />
-                              {(user.following || []).length} following
-                            </span>
-                          </div>
-
-                          <Button
-                            variant={
-                              followingStates[user.uid] ? "outline" : "default"
-                            }
-                            size="sm"
-                            onClick={() => handleFollowToggle(user.uid)}
-                            disabled={!currentUser || loadingStates[user.uid]}
-                            className={`w-full h-9 rounded-lg transition-all duration-200 ${
-                              !followingStates[user.uid] 
-                                ? "bg-emerald-600/80 hover:bg-emerald-700/80 text-white border-emerald-600/80" 
-                                : ""
-                            }`}
-                          >
-                            {loadingStates[user.uid] ? (
-                              <>
-                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                                {followingStates[user.uid] ? "Unfollowing..." : "Following..."}
-                              </>
-                            ) : followingStates[user.uid] ? (
-                              <>
-                                <UserCheck className="h-4 w-4 mr-2" />
-                                Following
-                              </>
-                            ) : (
-                              <>
-                                <UserPlus className="h-4 w-4 mr-2" />
-                                Follow
-                              </>
-                            )}
-                          </Button>
                         </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
+                      </CardContent>
+                    </Card>
+                  );
+                })}
               </div>
             </div>
           )}
@@ -505,72 +568,74 @@ export default function UsersPage() {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {following.map((user) => (
-                <Card
-                  key={user.uid}
-                  className="border-0 bg-gradient-to-br from-card to-card/50 backdrop-blur-sm"
-                >
-                  <CardContent className="p-6">
-                    <div className="flex items-start gap-4">
-                      <Avatar
-                        className="h-16 w-16 cursor-pointer hover:opacity-80 transition-opacity ring-2 ring-primary/20 group-hover:ring-primary/40"
-                        onClick={() => router.push(`/users/${user.uid}`)}
-                      >
-                        <AvatarImage
-                          src={user.avatarUrl || ""}
-                          alt={user.fullName || user.username}
+              {following.map((user) => {
+                const userProfile = userProfiles.get(user.uid);
+                const displayName = userProfile?.displayName || user.fullName || "No name";
+                const username = userProfile?.username || user.username;
+                const avatarUrl = userProfile?.avatarUrl || user.avatarUrl;
+                
+                return (
+                  <Card
+                    key={user.uid}
+                    className="border-0 bg-gradient-to-br from-card to-card/50 backdrop-blur-sm"
+                  >
+                    <CardContent className="p-6">
+                      <div className="flex items-start gap-4">
+                        <OtherUserAvatar
+                          authorId={user.uid}
+                          username={username}
+                          displayName={displayName}
+                          avatarUrl={avatarUrl}
+                          size="lg"
+                          className="cursor-pointer hover:opacity-80 transition-opacity ring-2 ring-primary/20 group-hover:ring-primary/40"
+                          clickable={true}
                         />
-                        <AvatarFallback className="bg-gradient-to-br from-primary/20 to-primary/10 text-primary font-semibold">
-                          {(user.fullName || user.username)
-                            .charAt(0)
-                            .toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
 
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-start justify-between mb-2">
-                          <div className="flex-1 min-w-0">
-                            <h3 className="font-semibold text-base truncate">
-                              {user.fullName || "No name"}
-                            </h3>
-                            <p className="text-sm text-muted-foreground truncate">
-                              @{user.username}
-                            </p>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-start justify-between mb-2">
+                            <div className="flex-1 min-w-0">
+                              <h3 className="font-semibold text-base truncate">
+                                {displayName}
+                              </h3>
+                              <p className="text-sm text-muted-foreground truncate">
+                                @{username}
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="flex gap-2 mt-4">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="flex-1 h-9 rounded-lg transition-all duration-200"
+                              asChild
+                            >
+                              <Link href={`/users/${user.uid}`}>
+                                <UserCheck className="h-4 w-4 mr-2" />
+                                View Profile
+                              </Link>
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleFollowToggle(user.uid)}
+                              disabled={!currentUser || loadingStates[user.uid]}
+                              className="flex-1 h-9 rounded-lg transition-all duration-200 hover:bg-red-50 hover:border-red-200 hover:text-red-600 dark:hover:bg-red-950/20 dark:hover:border-red-800 dark:hover:text-red-400"
+                            >
+                              {loadingStates[user.uid] ? (
+                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                              ) : (
+                                <UserCheck className="h-4 w-4 mr-2" />
+                              )}
+                              {loadingStates[user.uid] ? "Unfollowing..." : "Unfollow"}
+                            </Button>
                           </div>
                         </div>
-
-                        <div className="flex gap-2 mt-4">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="flex-1 h-9 rounded-lg transition-all duration-200"
-                            asChild
-                          >
-                            <Link href={`/users/${user.uid}`}>
-                              <UserCheck className="h-4 w-4 mr-2" />
-                              View Profile
-                            </Link>
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleFollowToggle(user.uid)}
-                            disabled={!currentUser || loadingStates[user.uid]}
-                            className="flex-1 h-9 rounded-lg transition-all duration-200 hover:bg-red-50 hover:border-red-200 hover:text-red-600 dark:hover:bg-red-950/20 dark:hover:border-red-800 dark:hover:text-red-400"
-                          >
-                            {loadingStates[user.uid] ? (
-                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                            ) : (
-                              <UserCheck className="h-4 w-4 mr-2" />
-                            )}
-                            {loadingStates[user.uid] ? "Unfollowing..." : "Unfollow"}
-                          </Button>
-                        </div>
                       </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+                    </CardContent>
+                  </Card>
+                );
+              })}
             </div>
           )}
         </TabsContent>
@@ -606,88 +671,90 @@ export default function UsersPage() {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {followers.map((user) => (
-                <Card
-                  key={user.uid}
-                  className="border-0 bg-gradient-to-br from-card to-card/50 backdrop-blur-sm"
-                >
-                  <CardContent className="p-6">
-                    <div className="flex items-start gap-4">
-                      <Avatar
-                        className="h-16 w-16 cursor-pointer hover:opacity-80 transition-opacity ring-2 ring-primary/20 group-hover:ring-primary/40"
-                        onClick={() => router.push(`/users/${user.uid}`)}
-                      >
-                        <AvatarImage
-                          src={user.avatarUrl || ""}
-                          alt={user.fullName || user.username}
+              {followers.map((user) => {
+                const userProfile = userProfiles.get(user.uid);
+                const displayName = userProfile?.displayName || user.fullName || "No name";
+                const username = userProfile?.username || user.username;
+                const avatarUrl = userProfile?.avatarUrl || user.avatarUrl;
+                
+                return (
+                  <Card
+                    key={user.uid}
+                    className="border-0 bg-gradient-to-br from-card to-card/50 backdrop-blur-sm"
+                  >
+                    <CardContent className="p-6">
+                      <div className="flex items-start gap-4">
+                        <OtherUserAvatar
+                          authorId={user.uid}
+                          username={username}
+                          displayName={displayName}
+                          avatarUrl={avatarUrl}
+                          size="lg"
+                          className="cursor-pointer hover:opacity-80 transition-opacity ring-2 ring-primary/20 group-hover:ring-primary/40"
+                          clickable={true}
                         />
-                        <AvatarFallback className="bg-gradient-to-br from-primary/20 to-primary/10 text-primary font-semibold">
-                          {(user.fullName || user.username)
-                            .charAt(0)
-                            .toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
 
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-start justify-between mb-2">
-                          <div className="flex-1 min-w-0">
-                            <h3 className="font-semibold text-base truncate">
-                              {user.fullName || "No name"}
-                            </h3>
-                            <p className="text-sm text-muted-foreground truncate">
-                              @{user.username}
-                            </p>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-start justify-between mb-2">
+                            <div className="flex-1 min-w-0">
+                              <h3 className="font-semibold text-base truncate">
+                                {displayName}
+                              </h3>
+                              <p className="text-sm text-muted-foreground truncate">
+                                @{username}
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="flex gap-2 mt-4">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="flex-1 h-9 rounded-lg transition-all duration-200"
+                              asChild
+                            >
+                              <Link href={`/users/${user.uid}`}>
+                                <UserCheck className="h-4 w-4 mr-2" />
+                                View Profile
+                              </Link>
+                            </Button>
+                            <Button
+                              variant={
+                                followingStates[user.uid] ? "outline" : "default"
+                              }
+                              size="sm"
+                              onClick={() => handleFollowToggle(user.uid)}
+                              disabled={!currentUser || loadingStates[user.uid]}
+                              className={`flex-1 h-9 rounded-lg transition-all duration-200 ${
+                                !followingStates[user.uid] 
+                                  ? "bg-emerald-600/80 hover:bg-emerald-700/80 text-white border-emerald-600/80" 
+                                  : ""
+                              }`}
+                            >
+                              {loadingStates[user.uid] ? (
+                                <>
+                                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                  {followingStates[user.uid] ? "Unfollowing..." : "Following..."}
+                                </>
+                              ) : followingStates[user.uid] ? (
+                                <>
+                                  <UserCheck className="h-4 w-4 mr-2" />
+                                  Following
+                                </>
+                              ) : (
+                                <>
+                                  <UserPlus className="h-4 w-4 mr-2" />
+                                  Follow Back
+                                </>
+                              )}
+                            </Button>
                           </div>
                         </div>
-
-                        <div className="flex gap-2 mt-4">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="flex-1 h-9 rounded-lg transition-all duration-200"
-                            asChild
-                          >
-                            <Link href={`/users/${user.uid}`}>
-                              <UserCheck className="h-4 w-4 mr-2" />
-                              View Profile
-                            </Link>
-                          </Button>
-                          <Button
-                            variant={
-                              followingStates[user.uid] ? "outline" : "default"
-                            }
-                            size="sm"
-                            onClick={() => handleFollowToggle(user.uid)}
-                            disabled={!currentUser || loadingStates[user.uid]}
-                            className={`flex-1 h-9 rounded-lg transition-all duration-200 ${
-                              !followingStates[user.uid] 
-                                ? "bg-emerald-600/80 hover:bg-emerald-700/80 text-white border-emerald-600/80" 
-                                : ""
-                            }`}
-                          >
-                            {loadingStates[user.uid] ? (
-                              <>
-                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                                {followingStates[user.uid] ? "Unfollowing..." : "Following..."}
-                              </>
-                            ) : followingStates[user.uid] ? (
-                              <>
-                                <UserCheck className="h-4 w-4 mr-2" />
-                                Following
-                              </>
-                            ) : (
-                              <>
-                                <UserPlus className="h-4 w-4 mr-2" />
-                                Follow Back
-                              </>
-                            )}
-                          </Button>
-                        </div>
                       </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+                    </CardContent>
+                  </Card>
+                );
+              })}
             </div>
           )}
         </TabsContent>

@@ -668,8 +668,11 @@ export default function ThreadPage() {
                 className="ring-1 ring-green-500/20 flex-shrink-0"
               />
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="font-medium text-sm text-[#f5f5f5]">
+                <div className="flex items-start gap-2 mb-2">
+                  <span 
+                    className="font-medium text-sm text-[#f5f5f5] cursor-pointer hover:text-blue-300 transition-colors"
+                    onClick={() => router.push(`/users/${reply.authorId?._id}`)}
+                  >
                     {userProfiles.get(reply.authorId?._id)?.displayName ||
                       reply.authorId?.username}
                   </span>
@@ -720,8 +723,8 @@ export default function ThreadPage() {
                 userId={user?.uid}
                 size="sm"
                 className="ring-2 ring-green-500/30 flex-shrink-0 shadow-md"
-                displayName={user?.displayName}
-                username={user?.email?.split("@")[0]}
+                displayName={user?.displayName || undefined}
+                username={user?.email?.split("@")[0] || undefined}
                 clickable={false}
               />
               <div className="flex-1">
@@ -1099,7 +1102,10 @@ export default function ThreadPage() {
             />
             <div className="flex-1 min-w-0">
               <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 mb-2">
-                <span className="font-semibold text-sm sm:text-base text-[#f0f0f0] truncate">
+                <span 
+                  className="font-semibold text-sm sm:text-base text-[#f0f0f0] truncate cursor-pointer hover:text-blue-300 transition-colors"
+                  onClick={() => router.push(`/users/${parentComment.authorId?._id}`)}
+                >
                   {userProfiles.get(parentComment.authorId?._id)?.displayName ||
                     parentComment.authorId?.username}
                 </span>
@@ -1157,7 +1163,10 @@ export default function ThreadPage() {
                     />
                     <div className="flex-1 min-w-0">
                       <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 mb-1">
-                        <span className="font-medium text-xs sm:text-sm text-[#f0f0f0] truncate">
+                        <span 
+                          className="font-medium text-xs sm:text-sm text-[#f0f0f0] truncate cursor-pointer hover:text-blue-300 transition-colors"
+                          onClick={() => router.push(`/users/${reply.authorId?._id}`)}
+                        >
                           {userProfiles.get(reply.authorId?._id)?.displayName ||
                             reply.authorId?.username}
                         </span>
@@ -1203,8 +1212,8 @@ export default function ThreadPage() {
               userId={user?.uid}
               size="sm"
               className="ring-2 ring-green-500/30 flex-shrink-0 shadow-md"
-              displayName={user?.displayName}
-              username={user?.email?.split("@")[0]}
+              displayName={user?.displayName || undefined}
+              username={user?.email?.split("@")[0] || undefined}
               clickable={false}
             />
             <div className="flex-1">

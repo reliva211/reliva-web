@@ -868,7 +868,11 @@ export default function ProfileBooksSection({
               <div className="w-48 h-72 bg-muted rounded-md border border-border/30 flex items-center justify-center flex-shrink-0">
                 <div className="text-center">
                   <BookOpen className="h-12 w-12 mx-auto mb-3 text-muted-foreground/50" />
-                  <p className="text-xs text-white">Add Current Read</p>
+                  {!readOnly ? (
+                    <p className="text-xs text-white">Add Current Read</p>
+                  ) : (
+                    <p className="text-xs text-gray-400">No currently reading</p>
+                  )}
                 </div>
               </div>
 
@@ -999,9 +1003,6 @@ export default function ProfileBooksSection({
                 // Show single Add screen when empty
                 <div className="flex flex-col items-center justify-center min-h-[200px]">
                   <div className="aspect-[2/3] w-32 bg-transparent rounded-md border-2 border-gray-600 flex flex-col items-center justify-center mb-3">
-                    <p className="text-sm text-gray-400 mb-1 text-center">
-                      Add
-                    </p>
                     <p className="text-xs text-gray-500 text-center">
                       No favorite books
                     </p>

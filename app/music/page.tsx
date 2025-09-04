@@ -1156,7 +1156,7 @@ export default function MusicApp() {
 
                         <div
                           ref={artistsScrollRef}
-                          className="flex gap-2 overflow-x-auto scrollbar-hide pb-4 px-2 sm:px-12 horizontal-scroll-container"
+                          className="flex gap-2 overflow-x-auto scrollbar-hide pb-4 px-1 sm:px-12 horizontal-scroll-container"
                         >
                           {artists.map((artist) => (
                             <div
@@ -1253,7 +1253,7 @@ export default function MusicApp() {
 
                         <div
                           ref={albumsScrollRef}
-                          className="flex gap-2 overflow-x-auto scrollbar-hide pb-4 px-2 sm:px-12 horizontal-scroll-container"
+                          className="flex gap-2 overflow-x-auto scrollbar-hide pb-4 px-1 sm:px-12 horizontal-scroll-container"
                         >
                           {albums.map((album) => (
                             <div
@@ -1332,7 +1332,16 @@ export default function MusicApp() {
                                   >
                                     {decodeHtmlEntities(album.name)}
                                   </h4>
-                                  <p className="text-sm text-gray-400 truncate">
+                                  <p 
+                                    className="text-sm text-gray-400 truncate cursor-pointer hover:text-blue-300 transition-colors"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      const primaryArtist = album.artists?.primary?.[0];
+                                      if (primaryArtist?.id) {
+                                        router.push(`/music/artist/${primaryArtist.id}`);
+                                      }
+                                    }}
+                                  >
                                     {album.artists?.primary
                                       ?.map((artist) => artist.name)
                                       .join(", ") || "Unknown Artist"}
@@ -1379,7 +1388,7 @@ export default function MusicApp() {
 
                         <div
                           ref={songsScrollRef}
-                          className="flex gap-2 overflow-x-auto scrollbar-hide pb-4 px-2 sm:px-12 horizontal-scroll-container"
+                          className="flex gap-2 overflow-x-auto scrollbar-hide pb-4 px-1 sm:px-12 horizontal-scroll-container"
                         >
                           {songs.map((song) => (
                             <div
@@ -1499,7 +1508,16 @@ export default function MusicApp() {
                                   >
                                     {song.name}
                                   </h4>
-                                  <p className="text-sm text-gray-400 truncate">
+                                  <p 
+                                    className="text-sm text-gray-400 truncate cursor-pointer hover:text-blue-300 transition-colors"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      const primaryArtist = song.artists?.primary?.[0];
+                                      if (primaryArtist?.id) {
+                                        router.push(`/music/artist/${primaryArtist.id}`);
+                                      }
+                                    }}
+                                  >
                                     {song.artists?.primary
                                       ?.map((artist) => artist.name)
                                       .join(", ") || "Unknown Artist"}
@@ -1671,11 +1689,18 @@ export default function MusicApp() {
                   {likedAlbums.map((album) => (
                     <div key={album.id} className="cursor-pointer group">
                       <div className="relative">
-                        <img
-                          src={getImageUrl(album.image)}
-                          alt={album.name}
-                          className="w-full aspect-square rounded-lg object-cover"
-                        />
+                        <div
+                          className="cursor-pointer"
+                          onClick={() =>
+                            router.push(`/music/album/${album.id}`)
+                          }
+                        >
+                          <img
+                            src={getImageUrl(album.image)}
+                            alt={album.name}
+                            className="w-full aspect-square rounded-lg object-cover"
+                          />
+                        </div>
                         {/* Hover overlay with action buttons */}
                         <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-lg flex items-center justify-center gap-4">
                           <button
@@ -1738,12 +1763,23 @@ export default function MusicApp() {
                       </div>
                       <div className="mt-3">
                         <h3
-                          className="font-semibold text-white truncate text-sm sm:text-base"
+                          className="font-semibold text-white truncate text-sm sm:text-base cursor-pointer hover:text-blue-300 transition-colors"
                           title={decodeHtmlEntities(album.name)}
+                          onClick={() =>
+                            router.push(`/music/album/${album.id}`)
+                          }
                         >
                           {decodeHtmlEntities(album.name)}
                         </h3>
-                        <p className="text-xs text-gray-400 truncate mt-1">
+                        <p 
+                          className="text-xs text-gray-400 truncate mt-1 cursor-pointer hover:text-blue-300 transition-colors"
+                          onClick={() => {
+                            const primaryArtist = album.artists?.primary?.[0];
+                            if (primaryArtist?.id) {
+                              router.push(`/music/artist/${primaryArtist.id}`);
+                            }
+                          }}
+                        >
                           {album.artists?.primary
                             ?.map((artist) => artist.name)
                             .join(", ") || "Unknown Artist"}
@@ -1884,7 +1920,16 @@ export default function MusicApp() {
                             <h4 className="font-semibold text-white truncate">
                               {decodeHtmlEntities(song.name)}
                             </h4>
-                            <p className="text-sm text-gray-400 truncate">
+                            <p 
+                              className="text-sm text-gray-400 truncate cursor-pointer hover:text-blue-300 transition-colors"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                const primaryArtist = song.artists?.primary?.[0];
+                                if (primaryArtist?.id) {
+                                  router.push(`/music/artist/${primaryArtist.id}`);
+                                }
+                              }}
+                            >
                               {song.artists?.primary
                                 ?.map((artist) => artist.name)
                                 .join(", ") || "Unknown Artist"}
@@ -2041,10 +2086,23 @@ export default function MusicApp() {
                             </div>
                           </div>
                           <div className="mt-2 space-y-1">
-                            <h4 className="font-medium text-xs truncate text-white leading-tight">
+                            <h4 
+                              className="font-medium text-xs truncate text-white leading-tight cursor-pointer hover:text-blue-300 transition-colors"
+                              onClick={() =>
+                                router.push(`/music/album/${album.id}`)
+                              }
+                            >
                               {album.name || "Unknown Title"}
                             </h4>
-                            <p className="text-xs text-gray-400 leading-tight">
+                            <p 
+                              className="text-xs text-gray-400 leading-tight cursor-pointer hover:text-blue-300 transition-colors"
+                              onClick={() => {
+                                const primaryArtist = album.artists?.primary?.[0];
+                                if (primaryArtist?.id) {
+                                  router.push(`/music/artist/${primaryArtist.id}`);
+                                }
+                              }}
+                            >
                               {album.artists?.primary
                                 ?.map((artist) => artist.name)
                                 .join(", ") || "Unknown Artist"}

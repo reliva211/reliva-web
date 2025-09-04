@@ -3,7 +3,7 @@
 import React, { useState, useEffect, Suspense } from "react";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { useProfile } from "@/hooks/use-profile";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -85,6 +85,7 @@ function ReviewsPageContent() {
   const { user } = useCurrentUser();
   const { profile } = useProfile(user?.uid);
   const searchParams = useSearchParams();
+  const router = useRouter();
 
   // Define the media type interface
   interface MediaItem {
@@ -856,8 +857,11 @@ function ReviewsPageContent() {
         />
 
         <div className="flex-1 min-w-0 max-w-full overflow-hidden">
-          <div className="flex items-center gap-2 mb-2">
-            <span className="font-medium text-sm text-[#f5f5f5]">
+          <div className="flex items-start gap-2 mb-2">
+            <span 
+              className="font-medium text-sm text-[#f5f5f5] cursor-pointer hover:text-blue-300 transition-colors"
+              onClick={() => router.push(`/users/${comment.authorId?._id}`)}
+            >
               {userProfiles.get(comment.authorId?._id)?.displayName ||
                 comment.authorId?.username}
             </span>
@@ -928,8 +932,8 @@ function ReviewsPageContent() {
                     userId={user?.uid}
                     size="sm"
                     className="flex-shrink-0"
-                    displayName={user?.displayName}
-                    username={user?.email?.split("@")[0]}
+                    displayName={user?.displayName || undefined}
+                    username={user?.email?.split("@")[0] || undefined}
                     clickable={false}
                   />
                   <div className="flex-1 min-w-0">
@@ -1296,8 +1300,8 @@ function ReviewsPageContent() {
                     userId={user?.uid}
                     size="md"
                     className="ring-2 ring-green-500/20"
-                    displayName={user?.displayName}
-                    username={user?.email?.split("@")[0]}
+                    displayName={user?.displayName || undefined}
+                    username={user?.email?.split("@")[0] || undefined}
                     clickable={false}
                   />
                   <div className="flex-1">
@@ -1376,8 +1380,11 @@ function ReviewsPageContent() {
                       />
 
                       <div className="flex-1 min-w-0 max-w-full">
-                        <div className="flex items-center gap-2 mb-2">
-                          <span className="font-medium text-sm text-[#f5f5f5]">
+                        <div className="flex items-start gap-2 mb-2">
+                          <span 
+                            className="font-medium text-sm text-[#f5f5f5] cursor-pointer hover:text-blue-300 transition-colors"
+                            onClick={() => router.push(`/users/${post.authorId?._id}`)}
+                          >
                             {userProfiles.get(post.authorId?._id)
                               ?.displayName || post.authorId?.username}
                           </span>
@@ -1537,8 +1544,8 @@ function ReviewsPageContent() {
                                   userId={user?.uid}
                                   size="sm"
                                   className="flex-shrink-0"
-                                  displayName={user?.displayName}
-                                  username={user?.email?.split("@")[0]}
+                                  displayName={user?.displayName || undefined}
+                                  username={user?.email?.split("@")[0] || undefined}
                                   clickable={false}
                                 />
                                 <div className="flex-1 min-w-0">
