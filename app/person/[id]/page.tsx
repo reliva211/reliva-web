@@ -88,7 +88,7 @@ export default function PersonDetailPage({
         setLoading(true);
         const apiKey = process.env.NEXT_PUBLIC_TMDB_API_KEY;
         const response = await fetch(
-          `https://api.themoviedb.org/3/person/${resolvedParams.id}?api_key=${apiKey}&append_to_response=combined_credits`
+          `/api/tmdb/proxy/person/${resolvedParams.id}?append_to_response=combined_credits`
         );
 
         if (!response.ok) {

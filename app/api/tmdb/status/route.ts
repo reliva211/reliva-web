@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
 
     // Test API connection with a simple request
     const testResponse = await fetch(
-      `https://api.themoviedb.org/3/configuration?api_key=${TMDB_API_KEY}`,
+      `/api/tmdb/proxy/configuration`,
       { method: "GET" }
     );
 

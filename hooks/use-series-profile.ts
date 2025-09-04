@@ -986,7 +986,7 @@ export function useSeriesProfile(userId: string | undefined) {
       }
 
       const response = await fetch(
-        `https://api.themoviedb.org/3/search/tv?api_key=${apiKey}&query=${encodeURIComponent(
+        `/api/tmdb/proxy/search/tv?query=${encodeURIComponent(
           query
         )}&language=en-US&page=1&include_adult=false`
       );
@@ -1042,7 +1042,7 @@ export function useSeriesProfile(userId: string | undefined) {
       }
 
       const response = await fetch(
-        `https://api.themoviedb.org/3/search/person?api_key=${apiKey}&query=${encodeURIComponent(
+        `/api/tmdb/proxy/search/person?query=${encodeURIComponent(
           query
         )}&language=en-US&page=1&include_adult=false`
       );

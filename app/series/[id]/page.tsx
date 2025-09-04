@@ -152,7 +152,7 @@ export default function SeriesDetailPage({
 
         // Fetching series details for ID
         const response = await fetch(
-          `https://api.themoviedb.org/3/tv/${resolvedParams.id}?api_key=${apiKey}&append_to_response=videos,credits`
+          `/api/tmdb/proxy/tv/${resolvedParams.id}?append_to_response=videos,credits`
         );
 
         if (!response.ok) {
@@ -185,7 +185,7 @@ export default function SeriesDetailPage({
         }
 
         const response = await fetch(
-          `https://api.themoviedb.org/3/tv/${resolvedParams.id}/similar?api_key=${apiKey}`
+          `/api/tmdb/proxy/tv/${resolvedParams.id}/similar`
         );
 
         if (!response.ok) {

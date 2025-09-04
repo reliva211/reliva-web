@@ -1,9 +1,10 @@
 // tmdb.ts
-const TMDB_API_KEY = process.env.NEXT_PUBLIC_TMDB_API_KEY || "";
+// Using proxy to avoid ISP blocking issues (e.g., Jio users)
+import { getTMDBUrl, getTMDBImageUrl } from './tmdb-config';
 
 export async function getTrendingSeries(limit: number = 20) {
   const res = await fetch(
-    `https://api.themoviedb.org/3/trending/tv/week?api_key=${TMDB_API_KEY}&limit=${limit}`
+    getTMDBUrl(`trending/tv/week?limit=${limit}`)
   );
   const data = await res.json();
 
@@ -27,7 +28,7 @@ export async function getTrendingSeries(limit: number = 20) {
 
 export async function getTrendingMovies(limit: number = 20) {
   const res = await fetch(
-    `https://api.themoviedb.org/3/trending/movie/week?api_key=${TMDB_API_KEY}&limit=${limit}`
+    getTMDBUrl(`trending/movie/week?limit=${limit}`)
   );
   const data = await res.json();
 
@@ -53,9 +54,7 @@ export async function searchMovies(
   limit: number = 20
 ) {
   const res = await fetch(
-    `https://api.themoviedb.org/3/search/movie?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(
-      query
-    )}&page=${page}&sort_by=popularity.desc&include_adult=false`
+    getTMDBUrl(`search/movie?query=${encodeURIComponent(query)}&page=${page}&sort_by=popularity.desc&include_adult=false`)
   );
   const data = await res.json();
 
@@ -82,9 +81,7 @@ export async function searchSeries(
   limit: number = 20
 ) {
     const res = await fetch(
-      `https://api.themoviedb.org/3/search/tv?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(
-        query
-    )}&page=${page}&sort_by=popularity.desc&include_adult=false`
+      getTMDBUrl(`search/tv?query=${encodeURIComponent(query)}&page=${page}&sort_by=popularity.desc&include_adult=false`)
   );
   const data = await res.json();
 
@@ -109,7 +106,7 @@ export async function searchSeries(
 // Get movie details by ID with comprehensive data
 export async function getMovieDetails(movieId: string | number) {
   const res = await fetch(
-    `https://api.themoviedb.org/3/movie/${movieId}?api_key=${TMDB_API_KEY}&append_to_response=credits,videos,images,similar,recommendations`
+    getTMDBUrl(`movie/${movieId}?append_to_response=credits,videos,images,similar,recommendations`)
   );
   const data = await res.json();
 
@@ -145,7 +142,7 @@ export async function getMovieDetails(movieId: string | number) {
 // Get series details by ID with comprehensive data
 export async function getSeriesDetails(seriesId: string | number) {
   const res = await fetch(
-    `https://api.themoviedb.org/3/tv/${seriesId}?api_key=${TMDB_API_KEY}&append_to_response=credits,videos,images,similar,recommendations`
+    getTMDBUrl(`tv/${seriesId}?append_to_response=credits,videos,images,similar,recommendations`)
   );
   const data = await res.json();
 
@@ -181,7 +178,7 @@ export async function getSeriesDetails(seriesId: string | number) {
 // Get popular movies with pagination
 export async function getPopularMovies(page: number = 1, limit: number = 20) {
   const res = await fetch(
-    `https://api.themoviedb.org/3/movie/popular?api_key=${TMDB_API_KEY}&page=${page}&language=en-US`
+    getTMDBUrl(`movie/popular?page=${page}&language=en-US`)
   );
   const data = await res.json();
 
@@ -204,7 +201,7 @@ export async function getPopularMovies(page: number = 1, limit: number = 20) {
 // Get popular series with pagination
 export async function getPopularSeries(page: number = 1, limit: number = 20) {
   const res = await fetch(
-    `https://api.themoviedb.org/3/tv/popular?api_key=${TMDB_API_KEY}&page=${page}&language=en-US`
+    getTMDBUrl(`tv/popular?page=${page}&language=en-US`)
   );
   const data = await res.json();
 
@@ -229,7 +226,7 @@ export async function getPopularSeries(page: number = 1, limit: number = 20) {
 // Get movies by genre with pagination
 export async function getMoviesByGenre(genreId: number, page: number = 1) {
   const res = await fetch(
-    `https://api.themoviedb.org/3/discover/movie?api_key=${TMDB_API_KEY}&with_genres=${genreId}&page=${page}&sort_by=popularity.desc&include_adult=false`
+    getTMDBUrl(`discover/movie?with_genres=${genreId}&page=${page}&sort_by=popularity.desc&include_adult=false`)
   );
   const data = await res.json();
 
@@ -252,7 +249,7 @@ export async function getMoviesByGenre(genreId: number, page: number = 1) {
 // Get series by genre with pagination
 export async function getSeriesByGenre(genreId: number, page: number = 1) {
   const res = await fetch(
-    `https://api.themoviedb.org/3/discover/tv?api_key=${TMDB_API_KEY}&with_genres=${genreId}&page=${page}&sort_by=popularity.desc&include_adult=false`
+    getTMDBUrl(`discover/tv?with_genres=${genreId}&page=${page}&sort_by=popularity.desc&include_adult=false`)
   );
   const data = await res.json();
 
@@ -277,7 +274,7 @@ export async function getSeriesByGenre(genreId: number, page: number = 1) {
 // Get top rated movies
 export async function getTopRatedMovies(page: number = 1) {
   const res = await fetch(
-    `https://api.themoviedb.org/3/movie/top_rated?api_key=${TMDB_API_KEY}&page=${page}&language=en-US`
+    getTMDBUrl(`movie/top_rated?page=${page}&language=en-US`)
   );
   const data = await res.json();
 
@@ -300,7 +297,7 @@ export async function getTopRatedMovies(page: number = 1) {
 // Get top rated series
 export async function getTopRatedSeries(page: number = 1) {
   const res = await fetch(
-    `https://api.themoviedb.org/3/tv/top_rated?api_key=${TMDB_API_KEY}&page=${page}&language=en-US`
+    getTMDBUrl(`tv/top_rated?page=${page}&language=en-US`)
   );
   const data = await res.json();
 
@@ -325,7 +322,7 @@ export async function getTopRatedSeries(page: number = 1) {
 // Get upcoming movies
 export async function getUpcomingMovies(page: number = 1) {
   const res = await fetch(
-    `https://api.themoviedb.org/3/movie/upcoming?api_key=${TMDB_API_KEY}&page=${page}&language=en-US`
+    getTMDBUrl(`movie/upcoming?page=${page}&language=en-US`)
   );
   const data = await res.json();
 
@@ -348,7 +345,7 @@ export async function getUpcomingMovies(page: number = 1) {
 // Get now playing movies
 export async function getNowPlayingMovies(page: number = 1) {
   const res = await fetch(
-    `https://api.themoviedb.org/3/movie/now_playing?api_key=${TMDB_API_KEY}&page=${page}&language=en-US`
+    getTMDBUrl(`movie/now_playing?page=${page}&language=en-US`)
     );
     const data = await res.json();
 
@@ -371,7 +368,7 @@ export async function getNowPlayingMovies(page: number = 1) {
 // Get airing today series
 export async function getAiringTodaySeries(page: number = 1) {
   const res = await fetch(
-    `https://api.themoviedb.org/3/tv/airing_today?api_key=${TMDB_API_KEY}&page=${page}&language=en-US`
+    getTMDBUrl(`tv/airing_today?page=${page}&language=en-US`)
   );
   const data = await res.json();
 
@@ -396,7 +393,7 @@ export async function getAiringTodaySeries(page: number = 1) {
 // Get on the air series
 export async function getOnTheAirSeries(page: number = 1) {
   const res = await fetch(
-    `https://api.themoviedb.org/3/tv/on_the_air?api_key=${TMDB_API_KEY}&page=${page}&language=en-US`
+    getTMDBUrl(`tv/on_the_air?page=${page}&language=en-US`)
   );
   const data = await res.json();
 

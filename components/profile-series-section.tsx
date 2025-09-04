@@ -581,7 +581,7 @@ export default function ProfileSeriesSection({
     try {
       // Fetch trailers from TMDB API
       const response = await fetch(
-        `https://api.themoviedb.org/3/tv/${series.id}/videos?api_key=${process.env.NEXT_PUBLIC_TMDB_API_KEY}&language=en-US`
+`/api/tmdb/proxy/tv/${series.id}/videos?language=en-US`
       );
 
       if (!response.ok) {

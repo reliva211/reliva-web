@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
 
   try {
     // Test with a simple movie search
-    const testUrl = `https://api.themoviedb.org/3/search/movie?api_key=${TMDB_API_KEY}&query=inception&language=en-US&page=1&include_adult=false`;
+    const testUrl = `/api/tmdb/proxy/search/movie?query=inception&language=en-US&page=1&include_adult=false`;
 
     // Testing TMDB API with URL
 

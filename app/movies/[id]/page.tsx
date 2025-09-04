@@ -150,7 +150,7 @@ export default function MovieDetailPage({
 
         // Fetching movie details for ID
         const response = await fetch(
-          `https://api.themoviedb.org/3/movie/${resolvedParams.id}?api_key=${apiKey}&append_to_response=videos,credits`
+          `/api/tmdb/proxy/movie/${resolvedParams.id}?append_to_response=videos,credits`
         );
 
         if (!response.ok) {
@@ -183,7 +183,7 @@ export default function MovieDetailPage({
         }
 
         const response = await fetch(
-          `https://api.themoviedb.org/3/movie/${resolvedParams.id}/similar?api_key=${apiKey}`
+          `/api/tmdb/proxy/movie/${resolvedParams.id}/similar`
         );
 
         if (!response.ok) {
