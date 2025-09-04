@@ -265,7 +265,6 @@ export default function UsersPage() {
         return;
       }
 
-      console.log(`Toggling follow status for ${targetUser.fullName || targetUser.username}: ${isFollowing ? 'unfollowing' : 'following'}`);
 
       // Update target user's followers in users
       const targetUserRef = doc(db, "users", targetUserId);
@@ -309,7 +308,6 @@ export default function UsersPage() {
         })
       );
 
-      console.log(`Successfully ${isFollowing ? 'unfollowed' : 'followed'} ${targetUser.fullName || targetUser.username}`);
     } catch (error) {
       console.error("Error updating follow status:", error);
       // Revert the local state change on error

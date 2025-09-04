@@ -157,9 +157,7 @@ export default function ReviewDetailPage() {
         createdAt: serverTimestamp(),
       };
 
-      console.log("Creating comment notification:", notificationData);
       const docRef = await addDoc(collection(db, "notifications"), notificationData);
-      console.log("Comment notification created with ID:", docRef.id);
     } catch (error) {
       console.error("Error creating comment notification:", error);
     }
@@ -214,9 +212,7 @@ export default function ReviewDetailPage() {
         createdAt: serverTimestamp(),
       };
 
-      console.log("Creating like notification:", notificationData);
       const docRef = await addDoc(collection(db, "notifications"), notificationData);
-      console.log("Like notification created with ID:", docRef.id);
     } catch (error) {
       console.error("Error creating like notification:", error);
     }
@@ -242,10 +238,7 @@ export default function ReviewDetailPage() {
 
       // Create notification only when liking (not unliking)
       if (!isLiked) {
-        console.log("Creating like notification for review:", review.id, "from user:", user.uid, "to user:", review.userId);
         await createLikeNotification();
-      } else {
-        console.log("User is unliking, no notification created");
       }
 
       // Update local review state

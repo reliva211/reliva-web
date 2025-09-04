@@ -220,6 +220,22 @@ export default function YouTubePlayer() {
 
   return (
     <div className="fixed bottom-4 right-4 z-50 w-[280px] sm:w-[320px] bg-black rounded-lg shadow-2xl border border-gray-700 overflow-hidden youtube-player">
+      {/* Close Button - Outside video container */}
+      <div className="absolute top-2 right-2 z-20">
+        <Button
+          onClick={() => {
+            console.log("Close button clicked");
+            hidePlayer();
+          }}
+          variant="ghost"
+          size="sm"
+          className="h-10 w-10 p-0 bg-black/70 hover:bg-black/90 text-white rounded-full border border-white/20 hover:border-white/40 transition-all duration-200"
+          title="Close Player"
+        >
+          <X className="h-5 w-5" />
+        </Button>
+      </div>
+
       {/* Video Player Container */}
       <div className="relative video-container">
         <div
@@ -258,16 +274,6 @@ export default function YouTubePlayer() {
 
         {/* Control Overlay - Positioned over the video */}
         <div className="absolute inset-0 pointer-events-none">
-          {/* Top Left - Settings Button */}
-          <div className="absolute top-2 left-2 pointer-events-auto">
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-8 w-8 p-0 bg-black/50 hover:bg-black/70 text-white rounded-full"
-            >
-              <span className="text-xs">⚙️</span>
-            </Button>
-          </div>
 
           {/* Center - Play/Pause Button */}
           <div className="absolute inset-0 flex items-center justify-center pointer-events-auto">

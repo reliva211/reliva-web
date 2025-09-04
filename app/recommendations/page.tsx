@@ -377,7 +377,7 @@ export default function RecommendationsPage() {
   }) => (
     <div className="group relative">
       <div className="relative w-[100px] sm:w-[120px] md:w-[140px] lg:w-[160px] xl:w-[180px] h-[150px] sm:h-[180px] md:h-[200px] lg:h-[220px] xl:h-[240px] rounded-xl overflow-hidden bg-gradient-to-br from-gray-800 to-gray-900 border border-gray-700/50 hover:border-emerald-500/50 transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-emerald-500/20">
-        <Link href={`/${category}/${item.id}`}>
+        <Link href={category === "music" ? `/music/album/${item.id}` : `/${category}/${item.id}`}>
           <Image
             src={
               (item as Movie | Book | Series).cover ||

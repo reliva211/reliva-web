@@ -6,6 +6,8 @@ import Footer from "@/components/footer";
 
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { Toaster } from "@/components/ui/toaster";
+import YouTubePlayer from "@/components/youtube-player";
+import VideoPlayer from "@/components/video-player";
 
 interface LayoutWrapperProps {
   children: React.ReactNode;
@@ -30,6 +32,12 @@ export default function LayoutWrapper({ children }: LayoutWrapperProps) {
       </div>
 
       <Toaster />
+      
+      {/* YouTube Player - Persistent across all pages */}
+      <YouTubePlayer />
+      
+      {/* Video Player - Persistent across all pages */}
+      <VideoPlayer />
     </div>
   );
 }

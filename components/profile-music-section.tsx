@@ -934,7 +934,7 @@ export default function ProfileMusicSection({
                       variant="outline"
                       size="sm"
                       onClick={() => openSearchDialog("album")}
-                      className="bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-600"
+                      className="text-xs"
                     >
                       <Plus className="h-3 w-3 mr-1" />
                       Add Album
@@ -1051,7 +1051,7 @@ export default function ProfileMusicSection({
                       variant="outline"
                       size="sm"
                       onClick={() => redirectToRecommendedCollection()}
-                      className="bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-600"
+                      className="text-xs"
                     >
                       <Plus className="h-3 w-3 mr-1" />
                       Add Recommendation
@@ -1123,32 +1123,6 @@ export default function ProfileMusicSection({
                             }}
                           />
                         </Link>
-                        {!readOnly && isOwnProfile && (
-                          <div className="absolute top-2 right-2 flex gap-1">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-7 w-7 p-0 bg-black/50 hover:bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity"
-                              onClick={() =>
-                                openSearchDialog("rating", rating.song)
-                              }
-                              title="Replace rating"
-                            >
-                              <Edit className="h-3 w-3 text-white" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-7 w-7 p-0 bg-red-600/80 hover:bg-red-700/90 opacity-0 group-hover:opacity-100 transition-opacity"
-                              onClick={() =>
-                                handleRemoveItem("rating", rating.song.id)
-                              }
-                              title="Delete rating"
-                            >
-                              <Trash2 className="h-3 w-3 text-white" />
-                            </Button>
-                          </div>
-                        )}
                       </div>
                       {/* Rating stars - above the song name */}
                       <div className="mt-3 flex justify-center gap-1">
@@ -1206,7 +1180,7 @@ export default function ProfileMusicSection({
                       variant="outline"
                       size="sm"
                       onClick={() => openSearchDialog("rating")}
-                      className="bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-600"
+                      className="text-xs"
                     >
                       <Plus className="h-3 w-3 mr-1" />
                       Add Rating

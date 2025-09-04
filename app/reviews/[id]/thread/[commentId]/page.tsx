@@ -138,15 +138,13 @@ export default function ThreadPage() {
           try {
             const posts = JSON.parse(storedPosts);
             realPost = posts.find((post: any) => post._id === reviewId);
-            console.log("Found post in sessionStorage:", realPost);
           } catch (e) {
-            console.log("Could not parse stored posts");
+            // Could not parse stored posts
           }
         }
 
         // If no stored data, fetch from API
         if (!realPost) {
-          console.log("No stored data, fetching from API...");
           try {
             const res = await fetch(
               `${API_BASE}/posts?userId=${user?.authorId || "demo"}`
@@ -165,7 +163,6 @@ export default function ThreadPage() {
               }
             }
           } catch (e) {
-            console.log("Could not fetch from API:", e);
             throw new Error("Failed to fetch post data");
           }
         }
@@ -179,66 +176,27 @@ export default function ThreadPage() {
           comments: Reply[],
           targetId: string
         ): Reply | null => {
-          console.log(
-            `Searching for comment ${targetId} in ${comments.length} comments`
-          );
-
           for (const comment of comments) {
-            console.log(
-              `Checking comment: ${comment._id} - "${comment.content}"`
-            );
             if (comment._id === targetId) {
-              console.log(`Found target comment: ${comment._id}`);
               return comment;
             }
             if (comment.comments && comment.comments.length > 0) {
-              console.log(
-                `Searching in ${comment.comments.length} nested comments of ${comment._id}`
-              );
               const found = findComment(comment.comments, targetId);
               if (found) return found;
             }
           }
-          console.log(`Comment ${targetId} not found in this comment tree`);
           return null;
         };
 
         const foundComment = findComment(realPost.comments || [], commentId);
-        console.log("Found comment:", foundComment);
-        console.log("Looking for comment ID:", commentId);
-        console.log("Available comments in post:", realPost.comments);
-
-        // Log the complete comment tree structure for debugging
-        const logCommentTree = (comments: Reply[], depth: number = 0) => {
-          const indent = "  ".repeat(depth);
-          comments.forEach((comment) => {
-            console.log(
-              `${indent}Comment: ${comment._id} - "${comment.content}"`
-            );
-            if (comment.comments && comment.comments.length > 0) {
-              console.log(`${indent}Has ${comment.comments.length} replies:`);
-              logCommentTree(comment.comments, depth + 1);
-            }
-          });
-        };
-
-        if (realPost.comments && realPost.comments.length > 0) {
-          console.log("=== COMPLETE COMMENT TREE ===");
-          logCommentTree(realPost.comments);
-          console.log("=== END COMMENT TREE ===");
-        } else {
-          console.log("No comments found in post");
-        }
 
         if (!foundComment) {
           // If comment not found, try to fetch it from the API
-          console.log("Comment not found in post, trying to fetch from API...");
           try {
             const commentRes = await fetch(`${API_BASE}/comments/${commentId}`);
             if (commentRes.ok) {
               const commentData = await commentRes.json();
               if (commentData.success && commentData.comment) {
-                console.log("Found comment from API:", commentData.comment);
                 setPost(realPost);
                 setParentComment(commentData.comment);
 
@@ -251,11 +209,10 @@ export default function ThreadPage() {
               }
             }
           } catch (apiError) {
-            console.log("Could not fetch comment from API:", apiError);
+            // Could not fetch comment from API
           }
 
           // If still not found, create a fallback comment
-          console.log("Creating fallback comment for:", commentId);
           const fallbackComment: Reply = {
             _id: commentId,
             postId: reviewId,
@@ -366,7 +323,6 @@ export default function ThreadPage() {
       try {
         const WS_BASE =
           process.env.NEXT_PUBLIC_WS_BASE || "ws://localhost:8080";
-        console.log("Attempting to connect to WebSocket:", WS_BASE);
 
         wsRef.current = new WebSocket(WS_BASE);
 
@@ -494,7 +450,6 @@ export default function ThreadPage() {
         };
 
         wsRef.current.send(JSON.stringify(replyData));
-        console.log("Sent reply via WebSocket:", replyData);
 
         // Clear input immediately for better UX
         setReplyInput("");
@@ -507,7 +462,6 @@ export default function ThreadPage() {
         });
       } else {
         // Fallback to local state update if WebSocket is not available
-        console.log("WebSocket not available, using local state update");
 
         const newReply: Reply = {
           _id: `reply_${Date.now()}`,
@@ -601,7 +555,7 @@ export default function ThreadPage() {
           }
         }
       } catch (e) {
-        console.log("Could not update sessionStorage");
+        // Could not update sessionStorage
       }
 
       // Simulate API delay
@@ -646,7 +600,6 @@ export default function ThreadPage() {
 
   // Helper function to render all replies recursively with proper indentation
   const renderAllReplies = (comment: Reply | null, depth: number) => {
-    console.log("renderAllReplies called with:", comment, "depth:", depth);
     if (!comment || !comment.comments || comment.comments.length === 0)
       return null;
 
@@ -829,12 +782,6 @@ export default function ThreadPage() {
     targetCommentId: string,
     replyContent: string
   ) => {
-    console.log(
-      "Adding reply to comment:",
-      targetCommentId,
-      "Content:",
-      replyContent
-    );
     if (!parentComment || !post) return;
 
     // Send reply via WebSocket for real-time communication
@@ -848,7 +795,6 @@ export default function ThreadPage() {
       };
 
       wsRef.current.send(JSON.stringify(replyData));
-      console.log("Sent nested reply via WebSocket:", replyData);
 
       // Show optimistic success message
       toast({
@@ -858,9 +804,6 @@ export default function ThreadPage() {
       });
     } else {
       // Fallback to local state update if WebSocket is not available
-      console.log(
-        "WebSocket not available, using local state update for nested reply"
-      );
 
       const newReply: Reply = {
         _id: `reply_${Date.now()}`,

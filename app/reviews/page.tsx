@@ -222,7 +222,7 @@ function ReviewsPageContent() {
           try {
             sessionStorage.setItem("reliva_posts", JSON.stringify(data.posts));
           } catch (e) {
-            console.log("Could not store posts in sessionStorage");
+            // Could not store posts in sessionStorage
           }
         }
       } catch (error) {
@@ -258,7 +258,7 @@ function ReviewsPageContent() {
           try {
             sessionStorage.setItem("reliva_posts", JSON.stringify(msg.posts));
           } catch (e) {
-            console.log("Could not store posts in sessionStorage");
+            // Could not store posts in sessionStorage
           }
           //setHasMorePosts(msg.posts.length === POSTS_PER_PAGE);
           //setCurrentPage(0);
@@ -1417,8 +1417,10 @@ function ReviewsPageContent() {
                                       ? "series"
                                       : post.mediaType === "artist"
                                       ? "music/artist"
+                                      : post.mediaType === "music"
+                                      ? "music/album"
                                       : post.mediaType + "s"
-                                  }/${post.mediaId}`}
+                                  }/${post.mediaType === "music" ? post.mediaId.replace("album_", "") : post.mediaId}`}
                                   className="block relative w-full h-full rounded-xl overflow-hidden shadow-lg cursor-pointer"
                                 >
                                   <img

@@ -18,7 +18,6 @@ import {
 } from "lucide-react";
 import { useMusicCollections } from "@/hooks/use-music-collections";
 import { useYouTubePlayer } from "@/hooks/use-youtube-player";
-import YouTubePlayer from "@/components/youtube-player";
 import { useToast } from "@/hooks/use-toast";
 
 interface Song {
@@ -692,8 +691,6 @@ export default function AlbumDetailPage({
         </div>
       </div>
 
-      {/* YouTube Player for music playback */}
-      <YouTubePlayer />
     </div>
   );
 }

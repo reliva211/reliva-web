@@ -13,25 +13,21 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "User ID is required" }, { status: 400 });
     }
 
-    console.log(`Fetching recommendations for user: ${currentUserId}`);
 
     // Get current user's following list
     const currentUserRef = doc(db, "users", currentUserId);
     const currentUserSnap = await getDoc(currentUserRef);
     
     if (!currentUserSnap.exists()) {
-      console.log(`User ${currentUserId} not found`);
       return NextResponse.json({ error: "Current user not found" }, { status: 404 });
     }
 
     const currentUserData = currentUserSnap.data();
     const followingList = currentUserData.following || [];
     
-    console.log(`User ${currentUserId} is following ${followingList.length} users:`, followingList);
 
     // If user is not following anyone, return empty results
     if (followingList.length === 0) {
-      console.log(`User ${currentUserId} is not following anyone`);
       return NextResponse.json({
         results: [],
         total: 0,
@@ -46,7 +42,6 @@ export async function GET(request: NextRequest) {
       .map(doc => ({ uid: doc.id, ...doc.data() }))
       .filter(user => followingList.includes(user.uid));
 
-    console.log(`Found ${followingUsers.length} valid following users out of ${followingList.length} following IDs`);
 
     // Additional validation: ensure all following users are real and not test users
     const validFollowingUsers = followingUsers.filter(user => {
@@ -57,18 +52,16 @@ export async function GET(request: NextRequest) {
                      user.uid !== 'current_user_id';
       
       if (!isValid) {
-        console.log(`Filtering out test user: ${user.uid}`);
+        // Filtering out test user
       }
       return isValid;
     });
 
-    console.log(`After filtering test users: ${validFollowingUsers.length} valid users`);
 
     const recommendations = [];
 
     for (const user of validFollowingUsers) {
       try {
-        console.log(`Fetching music collection for user: ${user.uid}`);
         
         // Fetch user's music collection
         const musicRef = collection(db, "users", user.uid, "music");
@@ -78,7 +71,6 @@ export async function GET(request: NextRequest) {
           ...doc.data()
         }));
 
-        console.log(`User ${user.uid} has ${musicItems.length} music items`);
 
         if (musicItems.length > 0) {
           // Add user's music items to recommendations
@@ -92,7 +84,6 @@ export async function GET(request: NextRequest) {
     // Apply limit if specified
     const finalResults = limitParam ? recommendations.slice(0, parseInt(limitParam)) : recommendations;
 
-    console.log(`Returning ${finalResults.length} recommendations from ${validFollowingUsers.length} followed users`);
 
     return NextResponse.json({
       results: finalResults,

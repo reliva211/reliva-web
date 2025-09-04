@@ -127,17 +127,6 @@ export default function ProfilePage() {
     user?.uid
   );
 
-  // Debug logging for profile data
-  useEffect(() => {
-    if (process.env.NODE_ENV === "development" && profile) {
-      console.log("Profile Debug:", {
-        userId: user?.uid,
-        profileAvatarUrl: profile.avatarUrl,
-        profileDisplayName: profile.displayName,
-        currentUserPhotoURL: user?.photoURL,
-      });
-    }
-  }, [profile, user]);
 
   // Auto-select first available tab when sections are hidden
   useEffect(() => {

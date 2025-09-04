@@ -189,13 +189,6 @@ export default function NotificationsPage() {
               }
             });
 
-            console.log("Notifications fetched:", notificationsData.length, "total notifications");
-            console.log("Notification timestamps:", notificationsData.map(n => ({
-              id: n.id,
-              type: n.type,
-              createdAt: n.createdAt,
-              formatted: formatTimestamp(n.createdAt)
-            })));
             setNotifications(notificationsData);
             setError(null);
           } catch (err) {

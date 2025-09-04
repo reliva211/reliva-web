@@ -1326,32 +1326,6 @@ export default function ProfileBooksSection({
                           }}
                         />
                       </Link>
-                      {!readOnly && (
-                        <div className="absolute top-2 right-2 flex gap-1">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-6 w-6 p-0 bg-black/50 hover:bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity"
-                            onClick={() =>
-                              handlePlusClick("rating", rating.book)
-                            }
-                            title="Replace rating"
-                          >
-                            <Edit className="h-3 w-3 text-white" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-6 w-6 p-0 bg-red-600/80 hover:bg-red-700/90 opacity-0 group-hover:opacity-100 transition-opacity"
-                            onClick={() =>
-                              handleRemoveItem("rating", rating.book.id)
-                            }
-                            title="Delete rating"
-                          >
-                            <Trash2 className="h-3 w-3 text-white" />
-                          </Button>
-                        </div>
-                      )}
                     </div>
                     {/* Rating stars - above the book name */}
                     <div className="mt-3 flex justify-center gap-1">

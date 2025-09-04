@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button";
 import { useMusicCollections } from "@/hooks/use-music-collections";
 import { useToast } from "@/hooks/use-toast";
 import { useYouTubePlayer } from "@/hooks/use-youtube-player";
-import YouTubePlayer from "@/components/youtube-player";
 
 import {
   Music,
@@ -448,8 +447,6 @@ export default function SongDetailPage({
         </div>
       </div>
 
-      {/* YouTube Player for music playback */}
-      <YouTubePlayer />
     </div>
   );
 }

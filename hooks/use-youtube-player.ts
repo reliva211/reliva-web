@@ -238,13 +238,15 @@ export const useYouTubePlayer = create<YouTubePlayerState>((set, get) => ({
       // No previous song available
     }
   },
-  hidePlayer: () =>
+  hidePlayer: () => {
+    console.log("hidePlayer called");
     set({
       isVisible: false,
       currentSong: null,
       queue: [],
       currentIndex: 0,
       isLoading: false,
-    }),
+    });
+  },
   setLoading: (loading: boolean) => set({ isLoading: loading }),
 }));
