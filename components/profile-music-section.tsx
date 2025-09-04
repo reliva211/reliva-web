@@ -156,6 +156,9 @@ export default function ProfileMusicSection({
     removeFavoriteAlbum,
     removeRecommendation,
     removeRating,
+    replaceFavoriteAlbum,
+    replaceRecommendation,
+    replaceRating,
     searchMusic,
   } = useMusicProfile(userId, readOnly);
 
@@ -405,15 +408,33 @@ export default function ProfileMusicSection({
           success = true;
           break;
         case "album":
-          await addFavoriteAlbum(item);
+          if (editingItem) {
+            // Replace existing album
+            await replaceFavoriteAlbum(editingItem.id, item);
+          } else {
+            // Add new album
+            await addFavoriteAlbum(item);
+          }
           success = true;
           break;
         case "recommendation":
-          await addRecommendation(item);
+          if (editingItem) {
+            // Replace existing recommendation
+            await replaceRecommendation(editingItem.id, item);
+          } else {
+            // Add new recommendation
+            await addRecommendation(item);
+          }
           success = true;
           break;
         case "rating":
-          await addRating(item, 5);
+          if (editingItem) {
+            // Replace existing rating
+            await replaceRating(editingItem.id, item, 5);
+          } else {
+            // Add new rating
+            await addRating(item, 5);
+          }
           success = true;
           break;
       }
@@ -462,9 +483,16 @@ export default function ProfileMusicSection({
     }
   };
 
-  // Function to redirect to recommended collection in music section
-  const redirectToRecommendedCollection = () => {
-    router.push("/music?tab=recommended");
+  // Handle plus button clicks for different sections
+  const handlePlusClick = (
+    sectionType: "favoriteArtist" | "favoriteSong" | "album" | "recommendation" | "rating",
+    itemToReplace?: any
+  ) => {
+    setEditingItem(itemToReplace || null);
+    setActiveSearchType(sectionType);
+    setIsSearchDialogOpen(true);
+    setSearchQuery("");
+    setSearchResults([]);
   };
 
   // Safe access to music profile data
@@ -986,8 +1014,8 @@ export default function ProfileMusicSection({
                               variant="ghost"
                               size="sm"
                               className="h-7 w-7 p-0 bg-black/50 hover:bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity"
-                              onClick={() => redirectToRecommendedCollection()}
-                              title="Manage recommendations"
+                              onClick={() => handlePlusClick("recommendation", song)}
+                              title="Replace recommendation"
                             >
                               <Edit className="h-3 w-3 text-white" />
                             </Button>
@@ -995,8 +1023,8 @@ export default function ProfileMusicSection({
                               variant="ghost"
                               size="sm"
                               className="h-7 w-7 p-0 bg-red-600/80 hover:bg-red-700/90 opacity-0 group-hover:opacity-100 transition-opacity"
-                              onClick={() => redirectToRecommendedCollection()}
-                              title="Manage recommendations"
+                              onClick={() => handleRemoveItem("recommendation", song.id)}
+                              title="Delete recommendation"
                             >
                               <Trash2 className="h-3 w-3 text-white" />
                             </Button>
@@ -1028,7 +1056,7 @@ export default function ProfileMusicSection({
                           variant="ghost"
                           size="sm"
                           className="h-12 w-12 p-0 bg-black/70 hover:bg-black/90 text-white rounded-full border-2 border-white/20 shadow-lg"
-                          onClick={() => redirectToRecommendedCollection()}
+                          onClick={() => handlePlusClick("recommendation")}
                         >
                           <Plus className="h-6 w-6" />
                         </Button>
@@ -1050,7 +1078,7 @@ export default function ProfileMusicSection({
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => redirectToRecommendedCollection()}
+                      onClick={() => handlePlusClick("recommendation")}
                       className="text-xs"
                     >
                       <Plus className="h-3 w-3 mr-1" />
@@ -1149,43 +1177,14 @@ export default function ProfileMusicSection({
                     </div>
                   ))}
 
-                  {/* Add button */}
-                  {isOwnProfile && !readOnly && (
-                    <div className="flex-shrink-0">
-                      <div className="aspect-square w-32 sm:w-36 md:w-40 bg-transparent rounded-lg border-2 border-gray-600 flex items-center justify-center">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-12 w-12 p-0 bg-black/70 hover:bg-black/90 text-white rounded-full border-2 border-white/20 shadow-lg"
-                          onClick={() => openSearchDialog("rating")}
-                        >
-                          <Plus className="h-6 w-6" />
-                        </Button>
-                      </div>
-                    </div>
-                  )}
                 </>
               ) : (
                 <div className="flex flex-col items-start justify-start min-h-[200px] w-full">
                   <div className="aspect-square w-32 sm:w-36 md:w-40 bg-transparent rounded-lg border-2 border-gray-600 flex flex-col items-center justify-center mb-4">
-                    {isOwnProfile && !readOnly && (
-                      <p className="text-sm text-gray-400 mb-1">Add</p>
-                    )}
                     <p className="text-xs text-gray-500 text-center">
                       No ratings
                     </p>
                   </div>
-                  {!readOnly && isOwnProfile && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => openSearchDialog("rating")}
-                      className="text-xs"
-                    >
-                      <Plus className="h-3 w-3 mr-1" />
-                      Add Rating
-                    </Button>
-                  )}
                 </div>
               )}
             </div>

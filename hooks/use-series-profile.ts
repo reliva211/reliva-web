@@ -41,6 +41,13 @@ export interface SeriesProfile {
   ratings: Array<{ series: TMDBSeries; rating: number }>;
 }
 
+// Helper function to get full TMDB image URL
+const getFullImageUrl = (posterPath: string): string => {
+  if (!posterPath) return "";
+  if (posterPath.startsWith("http")) return posterPath;
+  return `https://image.tmdb.org/t/p/w500${posterPath}`;
+};
+
 export function useSeriesProfile(userId: string | undefined) {
   const [seriesProfile, setSeriesProfile] = useState<SeriesProfile>({
     recentlyWatched: [],
@@ -268,7 +275,7 @@ export function useSeriesProfile(userId: string | undefined) {
           id: series.id,
           title: series.name,
           year: new Date(series.first_air_date).getFullYear(),
-          cover: series.poster_path,
+          cover: getFullImageUrl(series.poster_path),
           status: "Watching",
           rating: 0, // Don't set rating when adding to collections
           notes: "",
@@ -286,6 +293,57 @@ export function useSeriesProfile(userId: string | undefined) {
       await fetchSeriesProfile();
     } catch (err) {
       console.error("Error updating recently watched:", err);
+      throw err;
+    }
+  };
+
+  // Remove from recently watched series
+  const removeRecentlyWatched = async (seriesId: string) => {
+    if (!userId) return;
+
+    try {
+      // Find the "Watching" collection
+      const collectionsRef = collection(
+        db,
+        "users",
+        userId,
+        "seriesCollections"
+      );
+      const collectionsSnapshot = await getDocs(collectionsRef);
+      const watchingCollection = collectionsSnapshot.docs.find(
+        (doc) => doc.data().name === "Watching"
+      );
+
+      if (!watchingCollection) {
+        throw new Error("Watching collection not found");
+      }
+
+      // Remove series from Watching collection
+      const seriesRef = doc(db, "users", userId, "series", seriesId);
+      const seriesDoc = await getDoc(seriesRef);
+
+      if (seriesDoc.exists()) {
+        const existingData = seriesDoc.data();
+        const updatedCollections =
+          existingData.collections?.filter(
+            (id: string) => id !== watchingCollection.id
+          ) || [];
+
+        if (updatedCollections.length === 0) {
+          // Remove series entirely if no collections left
+          await deleteDoc(seriesRef);
+        } else {
+          // Update series with remaining collections
+          await updateDoc(seriesRef, {
+            collections: updatedCollections,
+          });
+        }
+      }
+
+      // Refresh the profile data
+      await fetchSeriesProfile();
+    } catch (err) {
+      console.error("Error removing from recently watched:", err);
       throw err;
     }
   };
@@ -339,7 +397,7 @@ export function useSeriesProfile(userId: string | undefined) {
           id: series.id,
           title: series.name,
           year: new Date(series.first_air_date).getFullYear(),
-          cover: series.poster_path,
+          cover: getFullImageUrl(series.poster_path),
           status: "Watched",
           rating: 0, // Don't set rating when adding to favorites
           notes: "",
@@ -428,7 +486,7 @@ export function useSeriesProfile(userId: string | undefined) {
           id: series.id,
           title: series.name,
           year: new Date(series.first_air_date).getFullYear(),
-          cover: series.poster_path,
+          cover: getFullImageUrl(series.poster_path),
           status: "Watched",
           rating: 0, // Don't set rating when adding to favorites
           notes: "",
@@ -558,7 +616,7 @@ export function useSeriesProfile(userId: string | undefined) {
           id: series.id,
           title: series.name,
           year: new Date(series.first_air_date).getFullYear(),
-          cover: series.poster_path,
+          cover: getFullImageUrl(series.poster_path),
           status: "Watchlist",
           rating: 0, // Don't set rating when adding to collections
           notes: "",
@@ -678,7 +736,7 @@ export function useSeriesProfile(userId: string | undefined) {
           id: series.id,
           title: series.name,
           year: new Date(series.first_air_date).getFullYear(),
-          cover: series.poster_path,
+          cover: getFullImageUrl(series.poster_path),
           status: "Recommendations",
           rating: 0, // Don't set rating when adding to collections
           notes: "",
@@ -690,6 +748,31 @@ export function useSeriesProfile(userId: string | undefined) {
         };
 
         await setDoc(seriesRef, seriesData);
+      }
+
+      // Also add to the public seriesRecommendations subcollection for other users to see
+      try {
+        const seriesRecommendationsRef = collection(
+          db,
+          "users",
+          userId,
+          "seriesRecommendations"
+        );
+        await setDoc(doc(seriesRecommendationsRef, String(series.id)), {
+          id: series.id,
+          title: series.name,
+          year: new Date(series.first_air_date).getFullYear(),
+          cover: getFullImageUrl(series.poster_path),
+          overview: series.overview,
+          first_air_date: series.first_air_date,
+          number_of_seasons: series.number_of_seasons,
+          number_of_episodes: series.number_of_episodes,
+          addedAt: new Date(),
+          isPublic: true,
+        });
+      } catch (subcollectionError) {
+        console.error("Error adding to seriesRecommendations subcollection:", subcollectionError);
+        // Don't throw here, as the main recommendation was added successfully
       }
 
       // Refresh the profile data
@@ -741,6 +824,20 @@ export function useSeriesProfile(userId: string | undefined) {
             collections: updatedCollections,
           });
         }
+      }
+
+      // Also remove from the public seriesRecommendations subcollection
+      try {
+        const seriesRecommendationsRef = collection(
+          db,
+          "users",
+          userId,
+          "seriesRecommendations"
+        );
+        await deleteDoc(doc(seriesRecommendationsRef, String(seriesId)));
+      } catch (subcollectionError) {
+        console.error("Error removing from seriesRecommendations subcollection:", subcollectionError);
+        // Don't throw here, as the main recommendation was removed successfully
       }
 
       // Refresh the profile data
@@ -801,7 +898,7 @@ export function useSeriesProfile(userId: string | undefined) {
           id: series.id,
           title: series.name,
           year: new Date(series.first_air_date).getFullYear(),
-          cover: series.poster_path,
+          cover: getFullImageUrl(series.poster_path),
           status: "Watched",
           rating: rating,
           notes: "",
@@ -1221,6 +1318,7 @@ export function useSeriesProfile(userId: string | undefined) {
     loading,
     error,
     updateRecentlyWatched,
+    removeRecentlyWatched,
     updateFavoriteSeries,
     updateFavoriteCreator,
     addFavoriteSeries,

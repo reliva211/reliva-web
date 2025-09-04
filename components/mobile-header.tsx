@@ -69,21 +69,21 @@ export default function MobileHeader({ onMenuClick }: MobileHeaderProps) {
   ];
 
   return (
-    <div className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800">
+    <div className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-gray-900 dark:bg-black border-b border-gray-700 dark:border-gray-800">
       {/* Header */}
       <div className="flex items-center gap-4 px-4 py-3">
         {/* Hamburger Menu */}
         <button
           onClick={onMenuClick}
-          className="p-2 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors duration-200"
+          className="p-2 rounded-lg bg-gray-900 dark:bg-black hover:bg-gray-800 dark:hover:bg-gray-900 transition-colors duration-200"
         >
-          <Menu className="h-5 w-5 text-gray-700 dark:text-gray-300" />
+          <Menu className="h-5 w-5 text-white dark:text-white" />
         </button>
 
         {/* App Title */}
-        <h1 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+        <h1 className="text-lg font-semibold text-white dark:text-white flex items-center gap-2">
           Reliva
-          <span className="text-xs text-gray-900 dark:text-white px-2 py-0.5 rounded-full border border-gray-900 dark:border-white font-medium">
+          <span className="text-xs text-white dark:text-white px-2 py-0.5 rounded-full border border-white dark:border-white font-medium">
             BETA
           </span>
         </h1>
@@ -96,9 +96,9 @@ export default function MobileHeader({ onMenuClick }: MobileHeaderProps) {
           {/* Notifications */}
           <button
             onClick={() => router.push("/notifications")}
-            className="relative p-2 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors duration-200"
+            className="relative p-2 rounded-lg bg-gray-900 dark:bg-black hover:bg-gray-800 dark:hover:bg-gray-900 transition-colors duration-200"
           >
-            <Bell className="h-5 w-5 text-gray-700 dark:text-gray-300" />
+            <Bell className="h-5 w-5 text-white dark:text-white" />
             {unreadCount > 0 && (
               <span className="absolute -top-1 -right-1 h-4 w-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
                 {unreadCount > 9 ? "9+" : unreadCount}
@@ -109,9 +109,9 @@ export default function MobileHeader({ onMenuClick }: MobileHeaderProps) {
           {/* User Profile */}
           <button
             onClick={() => router.push("/users")}
-            className="p-2 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors duration-200"
+            className="p-2 rounded-lg bg-gray-900 dark:bg-black hover:bg-gray-800 dark:hover:bg-gray-900 transition-colors duration-200"
           >
-            <Users className="h-5 w-5 text-gray-700 dark:text-gray-300" />
+            <Users className="h-5 w-5 text-white dark:text-white" />
           </button>
         </div>
       </div>
@@ -119,7 +119,7 @@ export default function MobileHeader({ onMenuClick }: MobileHeaderProps) {
       {/* Navigation Bar */}
       <div
         ref={dropdownRef}
-        className="flex justify-evenly bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 relative"
+        className="flex justify-evenly bg-gray-900 dark:bg-black border-b border-gray-700 dark:border-gray-800 relative"
       >
         {navItems.map((item) => (
           <div key={item.href} className="relative">
@@ -130,8 +130,8 @@ export default function MobileHeader({ onMenuClick }: MobileHeaderProps) {
                   className={cn(
                     "py-3 px-3 text-base font-medium transition-colors duration-200 text-center flex items-center justify-center gap-1",
                     item.isActive
-                      ? "text-gray-900 dark:text-white"
-                      : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
+                      ? "text-white dark:text-white"
+                      : "text-gray-300 dark:text-gray-400 hover:text-white dark:hover:text-white"
                   )}
                 >
                   {item.label}
@@ -140,13 +140,13 @@ export default function MobileHeader({ onMenuClick }: MobileHeaderProps) {
 
                 {/* Discover Dropdown */}
                 {showDiscoverDropdown && (
-                  <div className="absolute top-full left-0 right-0 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-50">
+                  <div className="absolute top-full left-0 right-0 bg-gray-800 dark:bg-gray-900 border border-gray-700 dark:border-gray-600 rounded-lg shadow-lg z-50">
                     {discoverOptions.map((option) => (
                       <Link
                         key={option.href}
                         href={option.href}
                         onClick={() => setShowDiscoverDropdown(false)}
-                        className="block py-2 px-3 text-base text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200 first:rounded-t-lg last:rounded-b-lg text-center"
+                        className="block py-2 px-3 text-base text-white dark:text-white hover:bg-gray-800 dark:hover:bg-gray-700 transition-colors duration-200 first:rounded-t-lg last:rounded-b-lg text-center"
                       >
                         {option.label}
                       </Link>
@@ -160,8 +160,8 @@ export default function MobileHeader({ onMenuClick }: MobileHeaderProps) {
                 className={cn(
                   "block py-3 px-3 text-base font-medium transition-colors duration-200 text-center",
                   item.isActive
-                    ? "text-gray-900 dark:text-white"
-                    : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
+                    ? "text-white dark:text-white"
+                    : "text-gray-300 dark:text-gray-400 hover:text-white dark:hover:text-white"
                 )}
               >
                 {item.label}

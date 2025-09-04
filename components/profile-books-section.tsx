@@ -238,6 +238,7 @@ export default function ProfileBooksSection({
     loading,
     error,
     updateRecentlyRead,
+    removeRecentlyRead,
     addFavoriteBook,
     removeFavoriteBook,
     addToReadingList,
@@ -563,31 +564,8 @@ export default function ProfileBooksSection({
 
   // Function to handle plus button clicks
   const handlePlusClick = (sectionType: string, itemToReplace?: any) => {
-    // For favorite sections, open search dialog
-    if (sectionType === "favoriteBooks") {
-      openSearchDialog(sectionType, itemToReplace);
-    } else {
-      // For all other sections, redirect to discover page with specific section
-      let section = "";
-      switch (sectionType) {
-        case "recentlyRead":
-          section = "currently-reading";
-          break;
-        case "readingList":
-          section = "reading-list";
-          break;
-        case "recommendations":
-          section = "recommendations";
-          break;
-        case "ratings":
-          section = "ratings";
-          break;
-        default:
-          section = "";
-      }
-      const url = section ? `/books?section=${section}` : `/books`;
-      router.push(url);
-    }
+    // For all sections, open search dialog (like favorites)
+    openSearchDialog(sectionType, itemToReplace);
   };
 
   const openSearchDialog = (searchType: any, itemToReplace?: any) => {
@@ -760,16 +738,15 @@ export default function ProfileBooksSection({
         <div className="flex items-center gap-3 mb-4">
           <p className="text-base sm:text-lg font-bold text-white">Currently Reading</p>
           {!readOnly && (
-            <Link href="/books">
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-7 px-3 text-xs text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10 rounded-full transition-all duration-200"
-              >
-                <Plus className="h-3 w-3 mr-1" />
-                add
-              </Button>
-            </Link>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 px-3 text-xs text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10 rounded-full transition-all duration-200"
+              onClick={() => handlePlusClick("recentlyRead")}
+            >
+              <Plus className="h-3 w-3 mr-1" />
+              add
+            </Button>
           )}
         </div>
 
@@ -800,10 +777,10 @@ export default function ProfileBooksSection({
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="h-6 w-6 p-0 bg-white/20 hover:bg-white/30 text-white"
-                        onClick={() => handlePlusClick("recentlyRead")}
+                        className="h-6 w-6 p-0 bg-red-500/20 hover:bg-red-500/30 text-white"
+                        onClick={() => removeRecentlyRead(currentRecentlyRead.id)}
                       >
-                        <Edit className="h-3 w-3" />
+                        <Trash2 className="h-3 w-3" />
                       </Button>
                     </div>
                   )}
@@ -1344,41 +1321,15 @@ export default function ProfileBooksSection({
                   </div>
                 ))}
 
-                {/* Add button for subsequent items - only show when not read-only */}
-                {!readOnly && (
-                  <div className="flex-shrink-0">
-                    <div className="aspect-[2/3] w-32 bg-transparent rounded-md border-2 border-gray-600 flex items-center justify-center overflow-visible">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-12 w-12 p-0 bg-black/70 hover:bg-black/90 text-white rounded-full border-2 border-white/20 shadow-lg"
-                        onClick={() => handlePlusClick("ratings")}
-                      >
-                        <Plus className="h-6 w-6" />
-                      </Button>
-                    </div>
-                  </div>
-                )}
               </>
             ) : (
-              // Show single Add screen when empty
+              // Show single empty screen when no ratings
               <div className="flex flex-col items-center justify-center min-h-[200px]">
                 <div className="aspect-[2/3] w-32 bg-transparent rounded-md border-2 border-gray-600 flex flex-col items-center justify-center mb-3">
                   <p className="text-xs text-gray-500 text-center">
                     No rated books
                   </p>
                 </div>
-                {!readOnly && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="text-xs"
-                    onClick={() => handlePlusClick("ratings")}
-                  >
-                    <Plus className="h-3 w-3 mr-1" />
-                    Add Rating
-                  </Button>
-                )}
               </div>
             )}
           </div>

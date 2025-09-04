@@ -21,6 +21,8 @@ import {
   MoreHorizontal,
   ChevronLeft,
   ChevronRight,
+  ArrowLeft,
+  ArrowRight,
 } from "lucide-react";
 import {
   Dialog,
@@ -161,6 +163,11 @@ export default function BooksPage() {
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [showDiscover, setShowDiscover] = useState(true);
+
+  // Carousel arrows state
+  const [scrollContainer, setScrollContainer] = useState<HTMLDivElement | null>(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
 
   // Use optimized trending books hook
   const {
@@ -329,15 +336,27 @@ export default function BooksPage() {
     setIsGenreSearching(false);
   };
 
+  // Get collection info
+  const getCollectionInfo = (collectionId: string) => {
+    return collections.find((col) => col.id === collectionId);
+  };
+
   // Filter and sort books
   const filteredAndSortedBooks = useMemo(() => {
     let filtered = savedBooks;
 
-    // Filter by collection - only show books if a collection is selected
+    // Filter by collection - show all books if "All Books" collection is selected
     if (selectedCollection && selectedCollection !== "") {
-      filtered = savedBooks.filter((book) =>
-        book.collections?.includes(selectedCollection)
-      );
+      const selectedCollectionInfo = getCollectionInfo(selectedCollection);
+      if (selectedCollectionInfo?.name === "All Books") {
+        // Show all books for "All Books" collection
+        filtered = savedBooks;
+      } else {
+        // Show books from specific collection
+        filtered = savedBooks.filter((book) =>
+          book.collections?.includes(selectedCollection)
+        );
+      }
     } else {
       // If no collection is selected, show no books
       filtered = [];
@@ -375,12 +394,40 @@ export default function BooksPage() {
     });
 
     return filtered;
-  }, [savedBooks, selectedCollection, sortBy, sortOrder]);
+  }, [savedBooks, selectedCollection, sortBy, sortOrder, collections]);
 
-  // Get collection info
-  const getCollectionInfo = (collectionId: string) => {
-    return collections.find((col) => col.id === collectionId);
+  // Carousel arrow functions
+  const scrollLeft = () => {
+    if (scrollContainer) {
+      scrollContainer.scrollBy({ left: -200, behavior: 'smooth' });
+    }
   };
+
+  const scrollRight = () => {
+    if (scrollContainer) {
+      scrollContainer.scrollBy({ left: 200, behavior: 'smooth' });
+    }
+  };
+
+  const updateScrollButtons = () => {
+    if (scrollContainer) {
+      const { scrollLeft, scrollWidth, clientWidth } = scrollContainer;
+      setCanScrollLeft(scrollLeft > 0);
+      setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 1);
+    }
+  };
+
+  // Update scroll buttons when collections change or container is set
+  useEffect(() => {
+    updateScrollButtons();
+  }, [collections, scrollContainer]);
+
+  // Handle window resize
+  useEffect(() => {
+    const handleResize = () => updateScrollButtons();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // Add book to collection
   const addBookToCollection = async (
@@ -555,7 +602,34 @@ export default function BooksPage() {
           </div>
 
           {/* Collections Tabs */}
-          <div className="flex items-center gap-1 sm:gap-2 overflow-x-auto pb-3 sm:pb-4 scrollbar-hide w-full horizontal-scroll-container px-1 sm:px-0">
+          <div className="w-full max-w-full overflow-hidden relative">
+            {/* Left Arrow */}
+            {canScrollLeft && (
+              <button
+                onClick={scrollLeft}
+                className="absolute left-2 top-1/2 -translate-y-1/2 z-10 w-8 h-8 bg-gray-800 hover:bg-gray-700 text-white rounded-full shadow-md hover:shadow-lg transition-all duration-200 flex items-center justify-center"
+                aria-label="Scroll left"
+              >
+                <ArrowLeft className="h-4 w-4" />
+              </button>
+            )}
+
+            {/* Right Arrow */}
+            {canScrollRight && (
+              <button
+                onClick={scrollRight}
+                className="absolute right-2 top-1/2 -translate-y-1/2 z-10 w-8 h-8 bg-gray-800 hover:bg-gray-700 text-white rounded-full shadow-md hover:shadow-lg transition-all duration-200 flex items-center justify-center"
+                aria-label="Scroll right"
+              >
+                <ArrowRight className="h-4 w-4" />
+              </button>
+            )}
+
+            <div 
+              ref={setScrollContainer}
+              onScroll={updateScrollButtons}
+              className="flex items-center gap-1 sm:gap-2 overflow-x-auto pb-3 sm:pb-4 scrollbar-hide w-full horizontal-scroll-container px-10"
+            >
             {/* Trending Tab */}
             <button
               onClick={() => {
@@ -575,6 +649,36 @@ export default function BooksPage() {
               const bookCount = savedBooks.filter((book) =>
                 book.collections?.includes(collection.id)
               ).length;
+
+              // Special handling for "All Books" collection
+              if (collection.name === "All Books") {
+                return (
+                  <button
+                    key={collection.id}
+                    onClick={() => {
+                      handleCollectionSelect(collection.id);
+                      setShowDiscover(false);
+                    }}
+                    className={`flex items-center gap-1 sm:gap-2 px-3 sm:px-4 py-2 sm:py-3 rounded-xl transition-all duration-300 whitespace-nowrap font-medium text-sm sm:text-base flex-shrink-0 ${
+                      selectedCollection === collection.id
+                        ? "bg-gradient-to-r from-gray-800 to-gray-700 text-white shadow-lg border border-gray-600"
+                        : "hover:bg-gray-800/50 text-gray-300 hover:text-white"
+                    }`}
+                  >
+                    <span className="whitespace-nowrap">{collection.name}</span>
+                    <Badge
+                      variant="secondary"
+                      className={`ml-1 text-xs ${
+                        selectedCollection === collection.id
+                          ? "bg-white/20 text-white"
+                          : "bg-gray-700 text-gray-300"
+                      }`}
+                    >
+                      {savedBooks.length}
+                    </Badge>
+                  </button>
+                );
+              }
 
               return (
                 <button
@@ -663,6 +767,7 @@ export default function BooksPage() {
                 </DialogFooter>
               </DialogContent>
             </Dialog>
+            </div>
           </div>
         </div>
 
@@ -753,38 +858,101 @@ export default function BooksPage() {
             </div>
           ) : filteredAndSortedBooks.length > 0 ? (
             <div>
-              <div className="flex items-center justify-between mb-6">
+              {getCollectionInfo(selectedCollection)?.name === "All Books" ? (
+                // Display all books grouped by collection
                 <div>
-                  <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-white">
-                    {getCollectionInfo(selectedCollection)?.name || "Books"} (
-                    {filteredAndSortedBooks.length})
-                  </h2>
-                  <p className="text-gray-400 mt-1 sm:mt-2 text-sm sm:text-base">
-                    Your{" "}
-                    {getCollectionInfo(
-                      selectedCollection
-                    )?.name?.toLowerCase() || "books"}{" "}
-                    collection
-                  </p>
+                  <div className="flex items-center justify-between mb-6">
+                    <div>
+                      <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-white">
+                        All Books ({filteredAndSortedBooks.length})
+                      </h2>
+                      <p className="text-gray-400 mt-1 sm:mt-2 text-sm sm:text-base">
+                        Books from all your collections
+                      </p>
+                    </div>
+                  </div>
+                  
+                  {collections.map((collection) => {
+                    const collectionBooks = filteredAndSortedBooks.filter((book) =>
+                      book.collections?.includes(collection.id)
+                    );
+                    
+                    if (collectionBooks.length === 0) return null;
+                    
+                    return (
+                      <div key={collection.id} className="mb-8">
+                        <div className="flex items-center gap-3 mb-4">
+                          <button
+                            onClick={() => {
+                              handleCollectionSelect(collection.id);
+                              setShowDiscover(false);
+                            }}
+                            className="text-xl font-semibold text-white hover:text-blue-400 transition-colors duration-200 cursor-pointer"
+                          >
+                            {collection.name}
+                          </button>
+                          <Badge variant="secondary" className="bg-gray-700 text-gray-300">
+                            {collectionBooks.length}
+                          </Badge>
+                        </div>
+                        <div
+                          className={
+                            viewMode === "grid"
+                              ? "grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10 gap-2 sm:gap-3 w-full max-w-full"
+                              : "space-y-3 sm:space-y-4"
+                          }
+                        >
+                          {collectionBooks.slice(0, 20).map((book) => (
+                            <SavedBookCard
+                              key={book.id}
+                              book={book}
+                              collections={collections}
+                              onRemoveFromCollection={removeBookFromCollection}
+                              viewMode={viewMode}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
-              </div>
-              <div
-                className={
-                  viewMode === "grid"
-                    ? "grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10 gap-2 sm:gap-3 w-full max-w-full"
-                    : "space-y-3 sm:space-y-4"
-                }
-              >
-                {filteredAndSortedBooks.slice(0, 20).map((book) => (
-                  <SavedBookCard
-                    key={book.id}
-                    book={book}
-                    collections={collections}
-                    onRemoveFromCollection={removeBookFromCollection}
-                    viewMode={viewMode}
-                  />
-                ))}
-              </div>
+              ) : (
+                // Display books from specific collection
+                <div>
+                  <div className="flex items-center justify-between mb-6">
+                    <div>
+                      <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-white">
+                        {getCollectionInfo(selectedCollection)?.name || "Books"} (
+                        {filteredAndSortedBooks.length})
+                      </h2>
+                      <p className="text-gray-400 mt-1 sm:mt-2 text-sm sm:text-base">
+                        Your{" "}
+                        {getCollectionInfo(
+                          selectedCollection
+                        )?.name?.toLowerCase() || "books"}{" "}
+                        collection
+                      </p>
+                    </div>
+                  </div>
+                  <div
+                    className={
+                      viewMode === "grid"
+                        ? "grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10 gap-2 sm:gap-3 w-full max-w-full"
+                        : "space-y-3 sm:space-y-4"
+                    }
+                  >
+                    {filteredAndSortedBooks.slice(0, 20).map((book) => (
+                      <SavedBookCard
+                        key={book.id}
+                        book={book}
+                        collections={collections}
+                        onRemoveFromCollection={removeBookFromCollection}
+                        viewMode={viewMode}
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           ) : null}
         </div>

@@ -26,6 +26,8 @@ import {
   RefreshCw,
   ChevronLeft,
   ChevronRight,
+  ArrowLeft,
+  ArrowRight,
 } from "lucide-react";
 import {
   Dialog,
@@ -122,6 +124,9 @@ export default function MoviesPage() {
   const [trendingMovies, setTrendingMovies] = useState<SearchResult[]>([]);
   const [isLoadingTrending, setIsLoadingTrending] = useState(false);
   const [showDiscover, setShowDiscover] = useState(true);
+  const [scrollContainer, setScrollContainer] = useState<HTMLDivElement | null>(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
 
   // Default collections for movies
   const defaultCollections = [
@@ -510,15 +515,70 @@ export default function MoviesPage() {
     }
   };
 
+  // Get collection info
+  const getCollectionInfo = (collectionId: string) => {
+    return collections.find((col) => col.id === collectionId);
+  };
+
+  // Carousel scroll functions
+  const scrollLeft = () => {
+    if (scrollContainer) {
+      scrollContainer.scrollBy({
+        left: -200,
+        behavior: 'smooth'
+      });
+    }
+  };
+
+  const scrollRight = () => {
+    if (scrollContainer) {
+      scrollContainer.scrollBy({
+        left: 200,
+        behavior: 'smooth'
+      });
+    }
+  };
+
+  const updateScrollButtons = () => {
+    if (scrollContainer) {
+      const { scrollLeft, scrollWidth, clientWidth } = scrollContainer;
+      setCanScrollLeft(scrollLeft > 0);
+      setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 1);
+    }
+  };
+
+  // Update scroll buttons when collections change
+  useEffect(() => {
+    updateScrollButtons();
+  }, [collections, scrollContainer]);
+
+  // Update scroll buttons on window resize
+  useEffect(() => {
+    const handleResize = () => {
+      updateScrollButtons();
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [scrollContainer]);
+
   // Filter and sort movies
   const filteredAndSortedMovies = useMemo(() => {
     let filtered = savedMovies;
 
-    // Filter by collection - only show movies if a collection is selected
+    // Filter by collection - show movies based on selection
     if (selectedCollection && selectedCollection !== "") {
-      filtered = savedMovies.filter((movie) =>
-        movie.collections?.includes(selectedCollection)
-      );
+      const selectedCollectionInfo = getCollectionInfo(selectedCollection);
+      
+      if (selectedCollectionInfo?.name === "All Movies") {
+        // Show all movies from all collections
+        filtered = savedMovies;
+      } else {
+        // Show movies from specific collection
+        filtered = savedMovies.filter((movie) =>
+          movie.collections?.includes(selectedCollection)
+        );
+      }
     } else {
       // If no collection is selected, show no movies
       filtered = [];
@@ -556,12 +616,7 @@ export default function MoviesPage() {
     });
 
     return filtered;
-  }, [savedMovies, selectedCollection, sortBy, sortOrder]);
-
-  // Get collection info
-  const getCollectionInfo = (collectionId: string) => {
-    return collections.find((col) => col.id === collectionId);
-  };
+  }, [savedMovies, selectedCollection, sortBy, sortOrder, collections]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black w-full overflow-x-hidden">
@@ -621,14 +676,41 @@ export default function MoviesPage() {
           </div>
 
           {/* Collections Tabs */}
-          <div className="flex items-center gap-2 sm:gap-3 overflow-x-auto pb-4 scrollbar-hide w-full horizontal-scroll-container">
+          <div className="w-full max-w-full overflow-hidden relative">
+            {/* Left Arrow */}
+            {canScrollLeft && (
+              <button
+                onClick={scrollLeft}
+                className="absolute left-2 top-1/2 -translate-y-1/2 z-10 w-8 h-8 bg-gray-800 hover:bg-gray-700 text-white rounded-full shadow-md hover:shadow-lg transition-all duration-200 flex items-center justify-center"
+                aria-label="Scroll left"
+              >
+                <ArrowLeft className="h-4 w-4" />
+              </button>
+            )}
+
+            {/* Right Arrow */}
+            {canScrollRight && (
+              <button
+                onClick={scrollRight}
+                className="absolute right-2 top-1/2 -translate-y-1/2 z-10 w-8 h-8 bg-gray-800 hover:bg-gray-700 text-white rounded-full shadow-md hover:shadow-lg transition-all duration-200 flex items-center justify-center"
+                aria-label="Scroll right"
+              >
+                <ArrowRight className="h-4 w-4" />
+              </button>
+            )}
+
+            <div 
+              ref={setScrollContainer}
+              onScroll={updateScrollButtons}
+              className="flex items-center gap-2 sm:gap-3 overflow-x-auto pb-4 scrollbar-hide horizontal-scroll-container px-10"
+            >
             {/* Trending Tab */}
             <button
               onClick={() => {
                 setShowDiscover(true);
                 setSelectedCollection("");
               }}
-              className={`flex items-center gap-3 px-6 py-3 rounded-xl transition-all duration-300 whitespace-nowrap font-medium ${
+              className={`flex items-center gap-2 px-3 py-2 sm:px-4 sm:py-3 rounded-xl transition-all duration-300 whitespace-nowrap font-medium text-sm sm:text-base flex-shrink-0 ${
                 showDiscover
                   ? "bg-gradient-to-r from-gray-800 to-gray-700 text-white shadow-lg border border-gray-600"
                   : "hover:bg-gray-800/50 text-gray-300 hover:text-white"
@@ -637,10 +719,41 @@ export default function MoviesPage() {
               <span>Trending</span>
             </button>
 
+
             {collections.map((collection) => {
               const movieCount = savedMovies.filter((movie) =>
                 movie.collections?.includes(collection.id)
               ).length;
+
+              // Special handling for "All Movies" collection
+              if (collection.name === "All Movies") {
+                return (
+                  <button
+                    key={collection.id}
+                    onClick={() => {
+                      handleCollectionSelect(collection.id);
+                      setShowDiscover(false);
+                    }}
+                    className={`flex items-center gap-2 px-3 py-2 sm:px-4 sm:py-3 rounded-xl transition-all duration-300 whitespace-nowrap font-medium text-sm sm:text-base flex-shrink-0 ${
+                      selectedCollection === collection.id
+                        ? "bg-gradient-to-r from-gray-800 to-gray-700 text-white shadow-lg border border-gray-600"
+                        : "hover:bg-gray-800/50 text-gray-300 hover:text-white"
+                    }`}
+                  >
+                    <span>{collection.name}</span>
+                    <Badge
+                      variant="secondary"
+                      className={`ml-1 ${
+                        selectedCollection === collection.id
+                          ? "bg-white/20 text-white"
+                          : "bg-gray-700 text-gray-300"
+                      }`}
+                    >
+                      {savedMovies.length}
+                    </Badge>
+                  </button>
+                );
+              }
 
               return (
                 <button
@@ -649,7 +762,7 @@ export default function MoviesPage() {
                     handleCollectionSelect(collection.id);
                     setShowDiscover(false);
                   }}
-                  className={`flex items-center gap-3 px-6 py-3 rounded-xl transition-all duration-300 whitespace-nowrap font-medium ${
+                  className={`flex items-center gap-2 px-3 py-2 sm:px-4 sm:py-3 rounded-xl transition-all duration-300 whitespace-nowrap font-medium text-sm sm:text-base flex-shrink-0 ${
                     selectedCollection === collection.id
                       ? "bg-gradient-to-r from-gray-800 to-gray-700 text-white shadow-lg border border-gray-600"
                       : "hover:bg-gray-800/50 text-gray-300 hover:text-white"
@@ -729,6 +842,7 @@ export default function MoviesPage() {
                 </DialogFooter>
               </DialogContent>
             </Dialog>
+            </div>
           </div>
         </div>
 
@@ -801,39 +915,103 @@ export default function MoviesPage() {
             </div>
           ) : filteredAndSortedMovies.length > 0 ? (
             <div>
-              <div className="flex items-center justify-between mb-6">
+              {getCollectionInfo(selectedCollection)?.name === "All Movies" ? (
+                // Display all movies grouped by collection
                 <div>
-                  <h2 className="text-3xl font-bold text-white">
-                    {getCollectionInfo(selectedCollection)?.name || "Movies"} (
-                    {filteredAndSortedMovies.length})
-                  </h2>
-                  <p className="text-gray-400 mt-2">
-                    Your{" "}
-                    {getCollectionInfo(
-                      selectedCollection
-                    )?.name?.toLowerCase() || "movies"}{" "}
-                    collection
-                  </p>
+                  <div className="flex items-center justify-between mb-6">
+                    <div>
+                      <h2 className="text-3xl font-bold text-white">
+                        All Movies ({filteredAndSortedMovies.length})
+                      </h2>
+                      <p className="text-gray-400 mt-2">
+                        Movies from all your collections
+                      </p>
+                    </div>
+                  </div>
+                  
+                  {collections.map((collection) => {
+                    const collectionMovies = filteredAndSortedMovies.filter((movie) =>
+                      movie.collections?.includes(collection.id)
+                    );
+                    
+                    if (collectionMovies.length === 0) return null;
+                    
+                    return (
+                      <div key={collection.id} className="mb-8">
+                        <div className="flex items-center gap-3 mb-4">
+                          <button
+                            onClick={() => {
+                              handleCollectionSelect(collection.id);
+                              setShowDiscover(false);
+                            }}
+                            className="text-xl font-semibold text-white hover:text-blue-400 transition-colors duration-200 cursor-pointer"
+                          >
+                            {collection.name}
+                          </button>
+                          <Badge variant="secondary" className="bg-gray-700 text-gray-300">
+                            {collectionMovies.length}
+                          </Badge>
+                        </div>
+                        <div
+                          className={
+                            viewMode === "grid"
+                              ? "grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10 gap-2 sm:gap-3 w-full max-w-full"
+                              : "space-y-4"
+                          }
+                        >
+                          {collectionMovies.slice(0, 20).map((movie) => (
+                            <SavedMovieCard
+                              key={movie.id}
+                              movie={movie}
+                              collections={collections}
+                              onRemoveFromCollection={removeMovieFromCollection}
+                              viewMode={viewMode}
+                              allMovies={filteredAndSortedMovies}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
-              </div>
-              <div
-                className={
-                  viewMode === "grid"
-                    ? "grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10 gap-2 sm:gap-3 w-full max-w-full"
-                    : "space-y-4"
-                }
-              >
-                {filteredAndSortedMovies.slice(0, 20).map((movie) => (
-                  <SavedMovieCard
-                    key={movie.id}
-                    movie={movie}
-                    collections={collections}
-                    onRemoveFromCollection={removeMovieFromCollection}
-                    viewMode={viewMode}
-                    allMovies={filteredAndSortedMovies}
-                  />
-                ))}
-              </div>
+              ) : (
+                // Display movies from specific collection
+                <div>
+                  <div className="flex items-center justify-between mb-6">
+                    <div>
+                      <h2 className="text-3xl font-bold text-white">
+                        {getCollectionInfo(selectedCollection)?.name || "Movies"} (
+                        {filteredAndSortedMovies.length})
+                      </h2>
+                      <p className="text-gray-400 mt-2">
+                        Your{" "}
+                        {getCollectionInfo(
+                          selectedCollection
+                        )?.name?.toLowerCase() || "movies"}{" "}
+                        collection
+                      </p>
+                    </div>
+                  </div>
+                  <div
+                    className={
+                      viewMode === "grid"
+                        ? "grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10 gap-2 sm:gap-3 w-full max-w-full"
+                        : "space-y-4"
+                    }
+                  >
+                    {filteredAndSortedMovies.slice(0, 20).map((movie) => (
+                      <SavedMovieCard
+                        key={movie.id}
+                        movie={movie}
+                        collections={collections}
+                        onRemoveFromCollection={removeMovieFromCollection}
+                        viewMode={viewMode}
+                        allMovies={filteredAndSortedMovies}
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           ) : null}
         </div>

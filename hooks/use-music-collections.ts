@@ -13,6 +13,21 @@ import {
 import { db } from "@/lib/firebase";
 import { useCurrentUser } from "./use-current-user";
 
+// Helper function to remove undefined values from objects before saving to Firebase
+const cleanObjectForFirebase = (obj: any): any => {
+  if (obj === null || obj === undefined) return null;
+  if (typeof obj !== 'object') return obj;
+  if (Array.isArray(obj)) return obj.map(cleanObjectForFirebase);
+  
+  const cleaned: any = {};
+  for (const [key, value] of Object.entries(obj)) {
+    if (value !== undefined) {
+      cleaned[key] = cleanObjectForFirebase(value);
+    }
+  }
+  return cleaned;
+};
+
 export interface MusicArtist {
   id: string;
   name: string;
@@ -163,7 +178,7 @@ export function useMusicCollections() {
       };
 
       const artistRef = doc(db, "users", user.id, "musicArtists", artist.id);
-      await setDoc(artistRef, artistData);
+      await setDoc(artistRef, cleanObjectForFirebase(artistData));
 
       setFollowedArtists((prev) => {
         const existing = prev.find((a) => a.id === artist.id);
@@ -215,7 +230,7 @@ export function useMusicCollections() {
       const songRef = doc(db, "users", user.id, "musicSongs", song.id);
       console.log("Song reference:", songRef.path);
       
-      await setDoc(songRef, songData);
+      await setDoc(songRef, cleanObjectForFirebase(songData));
       console.log("Song saved successfully");
 
       setLikedSongs((prev) => {
@@ -271,7 +286,7 @@ export function useMusicCollections() {
       };
 
       const albumRef = doc(db, "users", user.id, "musicAlbums", album.id);
-      await setDoc(albumRef, albumData);
+      await setDoc(albumRef, cleanObjectForFirebase(albumData));
 
       setLikedAlbums((prev) => {
         const existing = prev.find((a) => a.id === album.id);
@@ -315,7 +330,7 @@ export function useMusicCollections() {
       };
 
       const recommendationRef = doc(db, "users", user.id, "musicRecommendations", album.id);
-      await setDoc(recommendationRef, albumData);
+      await setDoc(recommendationRef, cleanObjectForFirebase(albumData));
 
       setMusicRecommendations((prev) => {
         const existing = prev.find((a) => a.id === album.id);

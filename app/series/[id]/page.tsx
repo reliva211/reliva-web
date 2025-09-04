@@ -18,6 +18,7 @@ import {
   Clock,
   Users,
   Tv,
+  Check,
 } from "lucide-react";
 import {
   Dialog,
@@ -37,6 +38,7 @@ import {
   where,
   doc,
   setDoc,
+  getDoc,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 
@@ -113,6 +115,8 @@ export default function SeriesDetailPage({
   const [selectedListIds, setSelectedListIds] = useState<string[]>([]);
   const [addToListOpen, setAddToListOpen] = useState(false);
   const [isSavingToList, setIsSavingToList] = useState(false);
+  const [existingCollections, setExistingCollections] = useState<string[]>([]);
+  const [originalCollections, setOriginalCollections] = useState<string[]>([]);
   const [activeTab, setActiveTab] = useState("overview");
   const [trailerOpen, setTrailerOpen] = useState(false);
   const [selectedTrailer, setSelectedTrailer] = useState<Video | null>(null);
@@ -236,14 +240,67 @@ export default function SeriesDetailPage({
     fetchSeriesDetails();
     fetchSimilarSeries();
     fetchUserLists();
+    checkExistingCollections();
   }, [resolvedParams.id, user]);
 
+  // Initialize selectedListIds when dialog opens
+  useEffect(() => {
+    if (addToListOpen) {
+      setSelectedListIds(existingCollections);
+    }
+  }, [addToListOpen, existingCollections]);
+
+  // Check if there are changes to save
+  const hasChanges = () => {
+    const sortedSelected = [...selectedListIds].sort();
+    const sortedOriginal = [...originalCollections].sort();
+    return JSON.stringify(sortedSelected) !== JSON.stringify(sortedOriginal);
+  };
+
+  // Handle cancel button
+  const handleCancel = () => {
+    setSelectedListIds(originalCollections);
+    setAddToListOpen(false);
+  };
+
+  const checkExistingCollections = async () => {
+    if (!user?.uid || !resolvedParams.id) return;
+    try {
+      const seriesRef = doc(db, "users", user.uid, "series", String(resolvedParams.id));
+      const seriesDoc = await getDoc(seriesRef);
+      
+      if (seriesDoc.exists()) {
+        const seriesData = seriesDoc.data();
+        const collections = seriesData.collections || [];
+        setExistingCollections(collections);
+        setOriginalCollections(collections);
+      } else {
+        setExistingCollections([]);
+        setOriginalCollections([]);
+      }
+    } catch (err) {
+      console.error("Error checking existing collections:", err);
+      setExistingCollections([]);
+      setOriginalCollections([]);
+    }
+  };
+
   const handleAddToList = async () => {
-    if (!user?.uid || selectedListIds.length === 0 || !series) return;
+    if (!user?.uid || !series) return;
 
     setIsSavingToList(true);
     try {
-      // Add series to the main series collection
+      // Get current collections and determine what to add/remove
+      const currentCollections = existingCollections;
+      const newCollections = selectedListIds;
+      
+      // Find collections to add (newly selected)
+      const collectionsToAdd = newCollections.filter(id => !currentCollections.includes(id));
+      
+      // Find collections to remove (previously existing but now unchecked)
+      const collectionsToRemove = currentCollections.filter(id => !newCollections.includes(id));
+      
+      // Update the series document with new collections
       const seriesData = {
         id: series.id,
         title: series.name,
@@ -254,7 +311,7 @@ export default function SeriesDetailPage({
         rating: series.vote_average,
         notes: "",
         status: "Watchlist",
-        collections: selectedListIds,
+        collections: newCollections,
         overview: series.overview || "",
         first_air_date: series.first_air_date || "",
         number_of_seasons: series.number_of_seasons || 1,
@@ -266,9 +323,9 @@ export default function SeriesDetailPage({
         seriesData
       );
 
-      // If adding to Recommendations collection, also add to the recommendations subcollection
+      // Handle Recommendations collection
       const selectedCollections = userLists.filter((list) =>
-        selectedListIds.includes(list.id)
+        newCollections.includes(list.id)
       );
       const recommendationsCollection = selectedCollections.find(
         (list) => list.name === "Recommendations"
@@ -304,11 +361,38 @@ export default function SeriesDetailPage({
         }
       }
 
+      // Remove from collections that were unchecked
+      for (const collectionId of collectionsToRemove) {
+        const collection = userLists.find(list => list.id === collectionId);
+        if (collection) {
+          try {
+            // Remove from the specific collection
+            const collectionRef = doc(db, "users", user.uid, "seriesCollections", collectionId);
+            const collectionDoc = await getDoc(collectionRef);
+            
+            if (collectionDoc.exists()) {
+              const collectionData = collectionDoc.data();
+              const updatedSeries = collectionData.series?.filter((s: any) => s.id !== series.id) || [];
+              
+              await setDoc(collectionRef, {
+                ...collectionData,
+                series: updatedSeries
+              });
+            }
+          } catch (error) {
+            console.error(`Error removing from collection ${collection.name}:`, error);
+          }
+        }
+      }
+
       setAddToListOpen(false);
       setSelectedListIds([]);
+      setOriginalCollections(selectedListIds);
+      // Refresh existing collections after changes
+      checkExistingCollections();
     } catch (err) {
-      console.error("Error adding series to list:", err);
-      alert("Failed to add series to list. Please try again.");
+      console.error("Error updating series lists:", err);
+      alert("Failed to update series lists. Please try again.");
     } finally {
       setIsSavingToList(false);
     }
@@ -526,44 +610,49 @@ export default function SeriesDetailPage({
                         Add to List
                       </Button>
                     </DialogTrigger>
-                    <DialogContent className="rounded-2xl">
+                    <DialogContent className="rounded-2xl bg-gray-900 border-gray-700 text-white">
                       <DialogHeader>
-                        <DialogTitle>Add to List</DialogTitle>
-                        <DialogDescription>
+                        <DialogTitle className="text-white text-xl font-semibold">Add to List</DialogTitle>
+                        <DialogDescription className="text-gray-300">
                           Choose one or more lists to add "{series.name}" to.
                         </DialogDescription>
                       </DialogHeader>
                       <div className="space-y-4">
-                        {userLists.length > 0 ? (
+                        {userLists.filter(list => list.name !== "All Series").length > 0 ? (
                           <div className="space-y-2">
-                            {userLists.map((list) => (
-                              <label
-                                key={list.id}
-                                className="flex items-center gap-3 cursor-pointer p-3 rounded-xl hover:bg-muted/50 transition-colors"
-                              >
-                                <input
-                                  type="checkbox"
-                                  value={list.id}
-                                  checked={selectedListIds.includes(list.id)}
-                                  onChange={(e) => {
-                                    if (e.target.checked) {
-                                      setSelectedListIds([
-                                        ...selectedListIds,
-                                        list.id,
-                                      ]);
-                                    } else {
-                                      setSelectedListIds(
-                                        selectedListIds.filter(
-                                          (id) => id !== list.id
-                                        )
-                                      );
-                                    }
-                                  }}
-                                  className="text-primary rounded"
-                                />
-                                <span className="font-medium">{list.name}</span>
-                              </label>
-                            ))}
+                            {userLists.filter(list => list.name !== "All Series").map((list) => {
+                              const isAlreadyInCollection = existingCollections.includes(list.id);
+                              const isChecked = selectedListIds.includes(list.id);
+                              
+                              return (
+                                <label
+                                  key={list.id}
+                                  className="flex items-center gap-3 cursor-pointer p-3 rounded-xl hover:bg-gray-800 transition-colors"
+                                >
+                                  <input
+                                    type="checkbox"
+                                    value={list.id}
+                                    checked={isChecked}
+                                    onChange={(e) => {
+                                      if (e.target.checked) {
+                                        setSelectedListIds([
+                                          ...selectedListIds,
+                                          list.id,
+                                        ]);
+                                      } else {
+                                        setSelectedListIds(
+                                          selectedListIds.filter(
+                                            (id) => id !== list.id
+                                          )
+                                        );
+                                      }
+                                    }}
+                                    className="w-4 h-4 text-green-600 bg-gray-700 border-gray-600 rounded focus:ring-green-500 focus:ring-2"
+                                  />
+                                  <span className="font-medium text-white">{list.name}</span>
+                                </label>
+                              );
+                            })}
                           </div>
                         ) : (
                           <p className="text-muted-foreground text-sm">
@@ -573,19 +662,18 @@ export default function SeriesDetailPage({
                       </div>
                       <div className="flex justify-end gap-2">
                         <Button
-                          onClick={handleAddToList}
-                          disabled={
-                            isSavingToList || selectedListIds.length === 0
-                          }
-                          className="rounded-xl"
+                          onClick={handleCancel}
+                          variant="outline"
+                          className="rounded-xl border-gray-600 text-gray-300 hover:bg-gray-800 font-medium px-6 py-2"
                         >
-                          {isSavingToList
-                            ? "Saving..."
-                            : `Add to ${
-                                selectedListIds.length > 1
-                                  ? `${selectedListIds.length} Lists`
-                                  : "List"
-                              }`}
+                          Cancel
+                        </Button>
+                        <Button
+                          onClick={handleAddToList}
+                          disabled={isSavingToList || !hasChanges()}
+                          className="rounded-xl bg-green-600 hover:bg-green-700 text-white font-medium px-6 py-2 disabled:bg-gray-600 disabled:cursor-not-allowed"
+                        >
+                          {isSavingToList ? "Saving..." : "Save"}
                         </Button>
                       </div>
                     </DialogContent>

@@ -23,6 +23,8 @@ import {
   RefreshCw,
   ChevronLeft,
   ChevronRight,
+  ArrowLeft,
+  ArrowRight,
 } from "lucide-react";
 import {
   Dialog,
@@ -123,6 +125,11 @@ export default function SeriesPage() {
   const [trendingSeries, setTrendingSeries] = useState<SearchResult[]>([]);
   const [isLoadingTrending, setIsLoadingTrending] = useState(false);
   const [showDiscover, setShowDiscover] = useState(true);
+
+  // Carousel arrows state
+  const [scrollContainer, setScrollContainer] = useState<HTMLDivElement | null>(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
 
   // Default collections for series
   const defaultCollections = [
@@ -472,15 +479,27 @@ export default function SeriesPage() {
     }
   };
 
+  // Get collection info
+  const getCollectionInfo = (collectionId: string) => {
+    return collections.find((col) => col.id === collectionId);
+  };
+
   // Filter and sort series
   const filteredAndSortedSeries = useMemo(() => {
     let filtered = savedSeries;
 
-    // Filter by collection - only show series if a collection is selected
+    // Filter by collection - show all series if "All Series" collection is selected
     if (selectedCollection && selectedCollection !== "") {
-      filtered = savedSeries.filter((series) =>
-        series.collections?.includes(selectedCollection)
-      );
+      const selectedCollectionInfo = getCollectionInfo(selectedCollection);
+      if (selectedCollectionInfo?.name === "All Series") {
+        // Show all series for "All Series" collection
+        filtered = savedSeries;
+      } else {
+        // Show series from specific collection
+        filtered = savedSeries.filter((series) =>
+          series.collections?.includes(selectedCollection)
+        );
+      }
     } else {
       // If no collection is selected, show no series
       filtered = [];
@@ -518,12 +537,40 @@ export default function SeriesPage() {
     });
 
     return filtered;
-  }, [savedSeries, selectedCollection, sortBy, sortOrder]);
+  }, [savedSeries, selectedCollection, sortBy, sortOrder, collections]);
 
-  // Get collection info
-  const getCollectionInfo = (collectionId: string) => {
-    return collections.find((col) => col.id === collectionId);
+  // Carousel arrow functions
+  const scrollLeft = () => {
+    if (scrollContainer) {
+      scrollContainer.scrollBy({ left: -200, behavior: 'smooth' });
+    }
   };
+
+  const scrollRight = () => {
+    if (scrollContainer) {
+      scrollContainer.scrollBy({ left: 200, behavior: 'smooth' });
+    }
+  };
+
+  const updateScrollButtons = () => {
+    if (scrollContainer) {
+      const { scrollLeft, scrollWidth, clientWidth } = scrollContainer;
+      setCanScrollLeft(scrollLeft > 0);
+      setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 1);
+    }
+  };
+
+  // Update scroll buttons when collections change or container is set
+  useEffect(() => {
+    updateScrollButtons();
+  }, [collections, scrollContainer]);
+
+  // Handle window resize
+  useEffect(() => {
+    const handleResize = () => updateScrollButtons();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // Fetch trending series
   const fetchTrendingSeries = async () => {
@@ -604,14 +651,41 @@ export default function SeriesPage() {
           </div>
 
           {/* Collections Tabs */}
-          <div className="flex items-center gap-2 sm:gap-3 overflow-x-auto pb-4 scrollbar-hide w-full horizontal-scroll-container">
+          <div className="w-full max-w-full overflow-hidden relative">
+            {/* Left Arrow */}
+            {canScrollLeft && (
+              <button
+                onClick={scrollLeft}
+                className="absolute left-2 top-1/2 -translate-y-1/2 z-10 w-8 h-8 bg-gray-800 hover:bg-gray-700 text-white rounded-full shadow-md hover:shadow-lg transition-all duration-200 flex items-center justify-center"
+                aria-label="Scroll left"
+              >
+                <ArrowLeft className="h-4 w-4" />
+              </button>
+            )}
+
+            {/* Right Arrow */}
+            {canScrollRight && (
+              <button
+                onClick={scrollRight}
+                className="absolute right-2 top-1/2 -translate-y-1/2 z-10 w-8 h-8 bg-gray-800 hover:bg-gray-700 text-white rounded-full shadow-md hover:shadow-lg transition-all duration-200 flex items-center justify-center"
+                aria-label="Scroll right"
+              >
+                <ArrowRight className="h-4 w-4" />
+              </button>
+            )}
+
+            <div 
+              ref={setScrollContainer}
+              onScroll={updateScrollButtons}
+              className="flex items-center gap-2 sm:gap-3 overflow-x-auto pb-4 scrollbar-hide horizontal-scroll-container px-10"
+            >
             {/* Trending Tab */}
             <button
               onClick={() => {
                 setShowDiscover(true);
                 setSelectedCollection("");
               }}
-              className={`flex items-center gap-3 px-6 py-3 rounded-xl transition-all duration-300 whitespace-nowrap font-medium ${
+              className={`flex items-center gap-2 px-3 py-2 sm:px-4 sm:py-3 rounded-xl transition-all duration-300 whitespace-nowrap font-medium text-sm sm:text-base flex-shrink-0 ${
                 showDiscover && !selectedCollection
                   ? "bg-gradient-to-r from-gray-800 to-gray-700 text-white shadow-lg border border-gray-600"
                   : "hover:bg-gray-800/50 text-gray-300 hover:text-white"
@@ -625,6 +699,36 @@ export default function SeriesPage() {
                 series.collections?.includes(collection.id)
               ).length;
 
+              // Special handling for "All Series" collection
+              if (collection.name === "All Series") {
+                return (
+                  <button
+                    key={collection.id}
+                    onClick={() => {
+                      handleCollectionSelect(collection.id);
+                      setShowDiscover(false);
+                    }}
+                    className={`flex items-center gap-2 px-3 py-2 sm:px-4 sm:py-3 rounded-xl transition-all duration-300 whitespace-nowrap font-medium text-sm sm:text-base flex-shrink-0 ${
+                      selectedCollection === collection.id
+                        ? "bg-gradient-to-r from-gray-800 to-gray-700 text-white shadow-lg border border-gray-600"
+                        : "hover:bg-gray-800/50 text-gray-300 hover:text-white"
+                    }`}
+                  >
+                    <span>{collection.name}</span>
+                    <Badge
+                      variant="secondary"
+                      className={`ml-1 ${
+                        selectedCollection === collection.id
+                          ? "bg-white/20 text-white"
+                          : "bg-gray-700 text-gray-300"
+                      }`}
+                    >
+                      {savedSeries.length}
+                    </Badge>
+                  </button>
+                );
+              }
+
               return (
                 <button
                   key={collection.id}
@@ -632,7 +736,7 @@ export default function SeriesPage() {
                     handleCollectionSelect(collection.id);
                     setShowDiscover(false);
                   }}
-                  className={`flex items-center gap-3 px-6 py-3 rounded-xl transition-all duration-300 whitespace-nowrap font-medium ${
+                  className={`flex items-center gap-2 px-3 py-2 sm:px-4 sm:py-3 rounded-xl transition-all duration-300 whitespace-nowrap font-medium text-sm sm:text-base flex-shrink-0 ${
                     selectedCollection === collection.id
                       ? "bg-gradient-to-r from-gray-800 to-gray-700 text-white shadow-lg border border-gray-600"
                       : "hover:bg-gray-800/50 text-gray-300 hover:text-white"
@@ -712,6 +816,7 @@ export default function SeriesPage() {
                 </DialogFooter>
               </DialogContent>
             </Dialog>
+            </div>
           </div>
         </div>
 
@@ -786,39 +891,103 @@ export default function SeriesPage() {
             </div>
           ) : filteredAndSortedSeries.length > 0 ? (
             <div>
-              <div className="flex items-center justify-between mb-6">
+              {getCollectionInfo(selectedCollection)?.name === "All Series" ? (
+                // Display all series grouped by collection
                 <div>
-                  <h2 className="text-3xl font-bold text-white">
-                    {getCollectionInfo(selectedCollection)?.name || "Series"} (
-                    {filteredAndSortedSeries.length})
-                  </h2>
-                  <p className="text-gray-400 mt-2">
-                    Your{" "}
-                    {getCollectionInfo(
-                      selectedCollection
-                    )?.name?.toLowerCase() || "series"}{" "}
-                    collection
-                  </p>
+                  <div className="flex items-center justify-between mb-6">
+                    <div>
+                      <h2 className="text-3xl font-bold text-white">
+                        All Series ({filteredAndSortedSeries.length})
+                      </h2>
+                      <p className="text-gray-400 mt-2">
+                        Series from all your collections
+                      </p>
+                    </div>
+                  </div>
+                  
+                  {collections.map((collection) => {
+                    const collectionSeries = filteredAndSortedSeries.filter((series) =>
+                      series.collections?.includes(collection.id)
+                    );
+                    
+                    if (collectionSeries.length === 0) return null;
+                    
+                    return (
+                      <div key={collection.id} className="mb-8">
+                        <div className="flex items-center gap-3 mb-4">
+                          <button
+                            onClick={() => {
+                              handleCollectionSelect(collection.id);
+                              setShowDiscover(false);
+                            }}
+                            className="text-xl font-semibold text-white hover:text-blue-400 transition-colors duration-200 cursor-pointer"
+                          >
+                            {collection.name}
+                          </button>
+                          <Badge variant="secondary" className="bg-gray-700 text-gray-300">
+                            {collectionSeries.length}
+                          </Badge>
+                        </div>
+                        <div
+                          className={
+                            viewMode === "grid"
+                              ? "grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10 gap-2 sm:gap-3 w-full max-w-full"
+                              : "space-y-4"
+                          }
+                        >
+                          {collectionSeries.slice(0, 20).map((series) => (
+                            <SavedSeriesCard
+                              key={series.id}
+                              series={series}
+                              collections={collections}
+                              onRemoveFromCollection={removeSeriesFromCollection}
+                              viewMode={viewMode}
+                              allSeries={filteredAndSortedSeries}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
-              </div>
-              <div
-                className={
-                  viewMode === "grid"
-                    ? "grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10 gap-2 sm:gap-3 w-full max-w-full"
-                    : "space-y-4"
-                }
-              >
-                {filteredAndSortedSeries.slice(0, 20).map((series) => (
-                  <SavedSeriesCard
-                    key={series.id}
-                    series={series}
-                    collections={collections}
-                    onRemoveFromCollection={removeSeriesFromCollection}
-                    viewMode={viewMode}
-                    allSeries={filteredAndSortedSeries}
-                  />
-                ))}
-              </div>
+              ) : (
+                // Display series from specific collection
+                <div>
+                  <div className="flex items-center justify-between mb-6">
+                    <div>
+                      <h2 className="text-3xl font-bold text-white">
+                        {getCollectionInfo(selectedCollection)?.name || "Series"} (
+                        {filteredAndSortedSeries.length})
+                      </h2>
+                      <p className="text-gray-400 mt-2">
+                        Your{" "}
+                        {getCollectionInfo(
+                          selectedCollection
+                        )?.name?.toLowerCase() || "series"}{" "}
+                        collection
+                      </p>
+                    </div>
+                  </div>
+                  <div
+                    className={
+                      viewMode === "grid"
+                        ? "grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10 gap-2 sm:gap-3 w-full max-w-full"
+                        : "space-y-4"
+                    }
+                  >
+                    {filteredAndSortedSeries.slice(0, 20).map((series) => (
+                      <SavedSeriesCard
+                        key={series.id}
+                        series={series}
+                        collections={collections}
+                        onRemoveFromCollection={removeSeriesFromCollection}
+                        viewMode={viewMode}
+                        allSeries={filteredAndSortedSeries}
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           ) : null}
         </div>

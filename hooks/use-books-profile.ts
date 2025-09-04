@@ -4,6 +4,7 @@ import {
   getDoc,
   setDoc,
   updateDoc,
+  deleteDoc,
   collection,
   getDocs,
   query,
@@ -267,6 +268,52 @@ export const useBooksProfile = (userId: string) => {
     }
   };
 
+  // Remove from recently read books
+  const removeRecentlyRead = async (bookId: string) => {
+    if (!userId) return;
+
+    try {
+      // Find the "Reading" collection
+      const collectionsRef = collection(db, "users", userId, "bookCollections");
+      const collectionsSnapshot = await getDocs(collectionsRef);
+      const readingCollection = collectionsSnapshot.docs.find(
+        (doc) => doc.data().name === "Reading"
+      );
+
+      if (!readingCollection) {
+        throw new Error("Reading collection not found");
+      }
+
+      // Remove book from Reading collection
+      const bookRef = doc(db, "users", userId, "books", bookId);
+      const bookDoc = await getDoc(bookRef);
+
+      if (bookDoc.exists()) {
+        const existingData = bookDoc.data();
+        const updatedCollections =
+          existingData.collections?.filter(
+            (id: string) => id !== readingCollection.id
+          ) || [];
+
+        if (updatedCollections.length === 0) {
+          // Remove book entirely if no collections left
+          await deleteDoc(bookRef);
+        } else {
+          // Update book with remaining collections
+          await updateDoc(bookRef, {
+            collections: updatedCollections,
+          });
+        }
+      }
+
+      // Refresh the profile data
+      await fetchBooksProfile();
+    } catch (err) {
+      console.error("Error removing from recently read:", err);
+      throw err;
+    }
+  };
+
   const addToReadingList = async (book: GoogleBookItem) => {
     if (!userId) return;
 
@@ -420,6 +467,33 @@ export const useBooksProfile = (userId: string) => {
         await setDoc(bookRef, bookData);
       }
 
+      // Also add to the public bookRecommendations subcollection for other users to see
+      try {
+        const bookRecommendationsRef = collection(
+          db,
+          "users",
+          userId,
+          "bookRecommendations"
+        );
+        await setDoc(doc(bookRecommendationsRef, book.id), {
+          id: book.id,
+          title: book.title,
+          author: book.authors?.join(", ") || "Unknown Author",
+          year: book.publishedDate
+            ? new Date(book.publishedDate).getFullYear()
+            : new Date().getFullYear(),
+          cover: book.cover || "",
+          overview: book.description || "",
+          publishedDate: book.publishedDate || "",
+          pageCount: book.pageCount || 0,
+          addedAt: new Date(),
+          isPublic: true,
+        });
+      } catch (subcollectionError) {
+        console.error("Error adding to bookRecommendations subcollection:", subcollectionError);
+        // Don't throw here, as the main recommendation was added successfully
+      }
+
       // Refresh the profile data
       await fetchBooksProfile();
     } catch (err) {
@@ -458,6 +532,20 @@ export const useBooksProfile = (userId: string) => {
         await updateDoc(bookRef, {
           collections: updatedCollections,
         });
+      }
+
+      // Also remove from the public bookRecommendations subcollection
+      try {
+        const bookRecommendationsRef = collection(
+          db,
+          "users",
+          userId,
+          "bookRecommendations"
+        );
+        await deleteDoc(doc(bookRecommendationsRef, bookId));
+      } catch (subcollectionError) {
+        console.error("Error removing from bookRecommendations subcollection:", subcollectionError);
+        // Don't throw here, as the main recommendation was removed successfully
       }
 
       // Refresh the profile data
@@ -890,6 +978,7 @@ export const useBooksProfile = (userId: string) => {
     error,
     fetchBooksProfile,
     updateRecentlyRead,
+    removeRecentlyRead,
     addFavoriteBook,
     removeFavoriteBook,
     replaceFavoriteBook,

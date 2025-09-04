@@ -282,7 +282,7 @@ export function useMovieProfile(userId: string | undefined) {
     }
 
     try {
-      // Find the "Watching" collection (for currently watching)
+      // Find the "Watched" collection (for recently watched)
       const collectionsRef = collection(
         db,
         "users",
@@ -290,12 +290,12 @@ export function useMovieProfile(userId: string | undefined) {
         "movieCollections"
       );
       const collectionsSnapshot = await getDocs(collectionsRef);
-      const watchingCollection = collectionsSnapshot.docs.find(
-        (doc) => doc.data().name === "Watching"
+      const watchedCollection = collectionsSnapshot.docs.find(
+        (doc) => doc.data().name === "Watched"
       );
 
-      if (!watchingCollection) {
-        throw new Error("Watching collection not found");
+      if (!watchedCollection) {
+        throw new Error("Watched collection not found");
       }
 
       // Check if movie already exists
@@ -303,28 +303,28 @@ export function useMovieProfile(userId: string | undefined) {
       const movieDoc = await getDoc(movieRef);
 
       if (movieDoc.exists()) {
-        // Update existing movie with Watching collection
+        // Update existing movie with Watched collection
         const existingData = movieDoc.data();
         const updatedCollections = existingData.collections?.includes(
-          watchingCollection.id
+          watchedCollection.id
         )
           ? existingData.collections
-          : [...(existingData.collections || []), watchingCollection.id];
+          : [...(existingData.collections || []), watchedCollection.id];
 
         await updateDoc(movieRef, {
           collections: updatedCollections,
         });
       } else {
-        // Create new movie with Watching collection
+        // Create new movie with Watched collection
         const movieData = {
           id: movie.id,
           title: movie.title,
           year: movie.year,
           cover: movie.cover,
-          status: "Watching",
+          status: "Watched",
           rating: 0, // Don't set rating for recently watched movies
           notes: "",
-          collections: [watchingCollection.id],
+          collections: [watchedCollection.id],
           overview: movie.overview,
           release_date: movie.release_date,
           vote_average: movie.vote_average,
@@ -342,6 +342,57 @@ export function useMovieProfile(userId: string | undefined) {
       await fetchMovieProfile();
     } catch (err) {
       console.error("Error updating recently watched:", err);
+      throw err;
+    }
+  };
+
+  // Remove from recently watched movies
+  const removeRecentlyWatched = async (movieId: string) => {
+    if (!userId) return;
+
+    try {
+      // Find the "Watched" collection
+      const collectionsRef = collection(
+        db,
+        "users",
+        userId,
+        "movieCollections"
+      );
+      const collectionsSnapshot = await getDocs(collectionsRef);
+      const watchedCollection = collectionsSnapshot.docs.find(
+        (doc) => doc.data().name === "Watched"
+      );
+
+      if (!watchedCollection) {
+        throw new Error("Watched collection not found");
+      }
+
+      // Remove movie from Watched collection
+      const movieRef = doc(db, "users", userId, "movies", movieId);
+      const movieDoc = await getDoc(movieRef);
+
+      if (movieDoc.exists()) {
+        const existingData = movieDoc.data();
+        const updatedCollections =
+          existingData.collections?.filter(
+            (id: string) => id !== watchedCollection.id
+          ) || [];
+
+        if (updatedCollections.length === 0) {
+          // Remove movie entirely if no collections left
+          await deleteDoc(movieRef);
+        } else {
+          // Update movie with remaining collections
+          await updateDoc(movieRef, {
+            collections: updatedCollections,
+          });
+        }
+      }
+
+      // Refresh the profile data
+      await fetchMovieProfile();
+    } catch (err) {
+      console.error("Error removing from recently watched:", err);
       throw err;
     }
   };
@@ -753,6 +804,35 @@ export function useMovieProfile(userId: string | undefined) {
         await setDoc(movieRef, movieData);
       }
 
+      // Also add to the public movieRecommendations subcollection for other users to see
+      try {
+        const movieRecommendationsRef = collection(
+          db,
+          "users",
+          userId,
+          "movieRecommendations"
+        );
+        await setDoc(doc(movieRecommendationsRef, String(movie.id)), {
+          id: movie.id,
+          title: movie.title,
+          year: movie.year,
+          cover: movie.cover,
+          overview: movie.overview,
+          release_date: movie.release_date,
+          vote_average: movie.vote_average,
+          vote_count: movie.vote_count,
+          genre_ids: movie.genre_ids,
+          genres: movie.genres,
+          director: movie.director,
+          cast: movie.cast,
+          addedAt: new Date(),
+          isPublic: true,
+        });
+      } catch (subcollectionError) {
+        console.error("Error adding to movieRecommendations subcollection:", subcollectionError);
+        // Don't throw here, as the main recommendation was added successfully
+      }
+
       // Refresh the profile data
       await fetchMovieProfile();
     } catch (err) {
@@ -802,6 +882,20 @@ export function useMovieProfile(userId: string | undefined) {
             collections: updatedCollections,
           });
         }
+      }
+
+      // Also remove from the public movieRecommendations subcollection
+      try {
+        const movieRecommendationsRef = collection(
+          db,
+          "users",
+          userId,
+          "movieRecommendations"
+        );
+        await deleteDoc(doc(movieRecommendationsRef, String(movieId)));
+      } catch (subcollectionError) {
+        console.error("Error removing from movieRecommendations subcollection:", subcollectionError);
+        // Don't throw here, as the main recommendation was removed successfully
       }
 
       // Refresh the profile data
@@ -1105,6 +1199,7 @@ export function useMovieProfile(userId: string | undefined) {
     loading,
     error,
     updateRecentlyWatched,
+    removeRecentlyWatched,
     updateFavoriteMovie,
     updateFavoriteDirector,
     addFavoriteMovie,
