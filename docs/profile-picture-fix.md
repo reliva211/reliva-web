@@ -53,3 +53,4 @@ Updated the `AvatarImage` component in `components/ui/avatar.tsx` to use `object
 ## Result
 
 Profile pictures now display naturally without compression, showing users' actual photos as they intended them to look.
+

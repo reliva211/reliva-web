@@ -8,7 +8,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { UserAvatar, OtherUserAvatar } from "@/components/user-avatar";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, MessageCircle, Heart } from "lucide-react";
+import { ArrowLeft, MessageCircle, Heart, Trash2 } from "lucide-react";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import Link from "next/link";
 import { toast } from "@/hooks/use-toast";
@@ -622,7 +622,7 @@ export default function ThreadPage() {
               />
               <div className="flex-1 min-w-0">
                 <div className="flex items-start gap-2 mb-2">
-                  <span 
+                  <span
                     className="font-medium text-sm text-[#f5f5f5] cursor-pointer hover:text-blue-300 transition-colors"
                     onClick={() => router.push(`/users/${reply.authorId?._id}`)}
                   >
@@ -1010,8 +1010,8 @@ export default function ThreadPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a]">
-      <div className="container mx-auto px-3 sm:px-4 md:px-6 py-2 sm:py-4 max-w-4xl">
+    <div className="min-h-screen bg-[#0a0a0a] overflow-hidden">
+      <div className="container mx-auto px-3 sm:px-4 md:px-6 py-2 sm:py-4 max-w-7xl overflow-hidden">
         {/* Top Spacing for Navigation */}
         <div className="h-12 sm:h-16"></div>
 
@@ -1029,8 +1029,8 @@ export default function ThreadPage() {
         </div>
 
         {/* Main Comment */}
-        <div className="mb-6 sm:mb-8 relative">
-          <div className="flex items-start gap-3 sm:gap-4">
+        <div className="mb-6 sm:mb-8 relative overflow-hidden">
+          <div className="flex items-start gap-3 sm:gap-4 min-w-0">
             <OtherUserAvatar
               authorId={parentComment.authorId?._id}
               username={parentComment.authorId?.username}
@@ -1043,20 +1043,30 @@ export default function ThreadPage() {
               size="md"
               className="ring-2 ring-green-500/40 flex-shrink-0 shadow-md"
             />
-            <div className="flex-1 min-w-0">
-              <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 mb-2">
-                <span 
-                  className="font-semibold text-sm sm:text-base text-[#f0f0f0] truncate cursor-pointer hover:text-blue-300 transition-colors"
-                  onClick={() => router.push(`/users/${parentComment.authorId?._id}`)}
+            <div className="flex-1 min-w-0 overflow-hidden">
+              <div className="flex items-start gap-2 mb-2">
+                <span
+                  className="font-semibold text-sm sm:text-base text-[#f0f0f0] cursor-pointer hover:text-blue-300 transition-colors"
+                  onClick={() =>
+                    router.push(`/users/${parentComment.authorId?._id}`)
+                  }
                 >
                   {userProfiles.get(parentComment.authorId?._id)?.displayName ||
                     parentComment.authorId?.username}
                 </span>
-                <span className="text-[#808080] text-xs sm:text-sm">
+                <span className="text-[#a0a0a0] text-xs bg-[#3a3a3a] px-2 py-0.5 rounded-full">
                   {formatTime(parentComment.timestamp)}
                 </span>
+                {user?.uid === parentComment.authorId?._id && (
+                  <button
+                    className="ml-auto p-1 hover:bg-red-500/20 rounded-full transition-colors group"
+                    title="Delete comment"
+                  >
+                    <Trash2 className="w-3 h-3 text-[#808080] group-hover:text-red-400" />
+                  </button>
+                )}
               </div>
-              <p className="text-[#e0e0e0] text-sm leading-relaxed break-words">
+              <p className="text-[#e0e0e0] text-base sm:text-lg leading-relaxed break-words">
                 {parentComment.content}
               </p>
             </div>
@@ -1066,7 +1076,7 @@ export default function ThreadPage() {
         </div>
 
         {/* Replies Section */}
-        <div className="mb-6 sm:mb-8">
+        <div className="mb-6 sm:mb-8 overflow-hidden">
           <h3 className="text-base sm:text-lg font-semibold text-[#e0e0e0] mb-4 sm:mb-6 flex items-center gap-2 sm:gap-3">
             <div className="w-1 h-4 sm:h-5 bg-gradient-to-b from-green-500 to-emerald-500 rounded-full"></div>
             Replies ({replies.length})
@@ -1085,13 +1095,16 @@ export default function ThreadPage() {
               </p>
             </div>
           ) : (
-            <div className="space-y-4 sm:space-y-6">
+            <div className="space-y-4 sm:space-y-6 overflow-hidden">
               {replies.map((reply, index) => (
-                <div key={reply._id} className="relative pl-4 sm:pl-6">
+                <div
+                  key={reply._id}
+                  className="relative pl-4 sm:pl-6 overflow-hidden"
+                >
                   {/* Reply line connector */}
                   <div className="absolute left-2 sm:left-3 top-4 sm:top-5 w-0.5 h-full bg-gradient-to-b from-green-500/20 to-transparent"></div>
 
-                  <div className="flex items-start gap-2 sm:gap-3">
+                  <div className="flex items-start gap-2 sm:gap-3 min-w-0">
                     <OtherUserAvatar
                       authorId={reply.authorId?._id}
                       username={reply.authorId?.username}
@@ -1104,24 +1117,34 @@ export default function ThreadPage() {
                       size="sm"
                       className="ring-2 ring-green-500/30 flex-shrink-0 shadow-md"
                     />
-                    <div className="flex-1 min-w-0">
-                      <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 mb-1">
-                        <span 
-                          className="font-medium text-xs sm:text-sm text-[#f0f0f0] truncate cursor-pointer hover:text-blue-300 transition-colors"
-                          onClick={() => router.push(`/users/${reply.authorId?._id}`)}
+                    <div className="flex-1 min-w-0 overflow-hidden">
+                      <div className="flex items-start gap-2 mb-2">
+                        <span
+                          className="font-medium text-sm sm:text-base text-[#f0f0f0] cursor-pointer hover:text-blue-300 transition-colors"
+                          onClick={() =>
+                            router.push(`/users/${reply.authorId?._id}`)
+                          }
                         >
                           {userProfiles.get(reply.authorId?._id)?.displayName ||
                             reply.authorId?.username}
                         </span>
-                        <span className="text-[#808080] text-xs">
+                        <span className="text-[#a0a0a0] text-xs bg-[#3a3a3a] px-2 py-0.5 rounded-full">
                           {formatTime(reply.timestamp)}
                         </span>
+                        {user?.uid === reply.authorId?._id && (
+                          <button
+                            className="ml-auto p-1 hover:bg-red-500/20 rounded-full transition-colors group"
+                            title="Delete reply"
+                          >
+                            <Trash2 className="w-3 h-3 text-[#808080] group-hover:text-red-400" />
+                          </button>
+                        )}
                       </div>
-                      <p className="text-[#e0e0e0] text-xs sm:text-sm leading-relaxed mb-2 sm:mb-3 break-words">
+                      <p className="text-[#e0e0e0] text-base sm:text-lg leading-relaxed mb-3 break-words">
                         {reply.content}
                       </p>
 
-                      <div className="flex items-center gap-3 sm:gap-4">
+                      <div className="flex items-center gap-2 sm:gap-4 overflow-hidden">
                         {/* See Replies Button */}
                         <Link
                           href={`/reviews/${reviewId}/thread/${reply._id}`}

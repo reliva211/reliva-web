@@ -16,6 +16,7 @@ import {
   Share,
   User,
   CheckCircle,
+  Trash2,
 } from "lucide-react";
 import { useRef } from "react";
 import { Card } from "@/components/ui/card";
@@ -845,7 +846,7 @@ function ReviewsPageContent() {
     return sortedComments.map((comment) => (
       <div
         key={comment._id}
-        className="flex gap-3 border-l border-[#2a2a2a] ml-2 p-3 bg-[#0a0a0a] rounded-r-lg w-full"
+        className="flex gap-3 border-l border-[#2a2a2a] ml-2 p-3 bg-[#0a0a0a] rounded-r-lg w-full min-w-0 overflow-hidden"
       >
         <OtherUserAvatar
           authorId={comment.authorId?._id}
@@ -858,7 +859,7 @@ function ReviewsPageContent() {
 
         <div className="flex-1 min-w-0 max-w-full overflow-hidden">
           <div className="flex items-start gap-2 mb-2">
-            <span 
+            <span
               className="font-medium text-sm text-[#f5f5f5] cursor-pointer hover:text-blue-300 transition-colors"
               onClick={() => router.push(`/users/${comment.authorId?._id}`)}
             >
@@ -868,6 +869,14 @@ function ReviewsPageContent() {
             <span className="text-[#a0a0a0] text-xs bg-[#3a3a3a] px-2 py-0.5 rounded-full">
               {formatTime(comment.timestamp)}
             </span>
+            {user?.uid === comment.authorId?._id && (
+              <button
+                className="ml-auto p-1 hover:bg-red-500/20 rounded-full transition-colors group"
+                title="Delete comment"
+              >
+                <Trash2 className="w-3 h-3 text-[#808080] group-hover:text-red-400" />
+              </button>
+            )}
           </div>
           <p
             className="text-sm text-[#f0f0f0] whitespace-pre-wrap mb-3 leading-relaxed break-all word-break-break-all overflow-wrap-anywhere hyphens-auto"
@@ -882,7 +891,7 @@ function ReviewsPageContent() {
             {comment.content}
           </p>
 
-          <div className="flex items-center gap-4 text-[#a0a0a0]">
+          <div className="flex items-center gap-2 sm:gap-4 text-[#a0a0a0] overflow-hidden">
             <button
               onClick={() => toggleReplyInput(`${postId}-${comment._id}`)}
               className="flex items-center gap-1.5 hover:text-blue-400 transition-all duration-200 group"
@@ -927,7 +936,7 @@ function ReviewsPageContent() {
           {showReplyInput[`${postId}-${comment._id}`] && (
             <div className="mt-3 bg-[#0f0f0f] rounded-lg border border-[#2a2a2a] shadow-sm overflow-hidden">
               <div className="p-3">
-                <div className="flex gap-2 mb-3">
+                <div className="flex gap-2 mb-3 min-w-0">
                   <UserAvatar
                     userId={user?.uid}
                     size="sm"
@@ -1044,7 +1053,7 @@ function ReviewsPageContent() {
 
   return (
     <div className="min-h-screen bg-[#0a0a0a]">
-      <div className="container mx-auto px-1 sm:px-4 py-8 max-w-4xl">
+      <div className="container mx-auto px-1 sm:px-4 py-8 max-w-7xl">
         {/* Search Section */}
         {!selectedMedia && (
           <div className="bg-[#0f0f0f] rounded-lg shadow-lg mb-6 border border-[#1a1a1a]">
@@ -1284,7 +1293,7 @@ function ReviewsPageContent() {
         )}
 
         <div className="min-h-screen bg-[#0a0a0a]">
-          <div className="max-w-6xl mx-auto border border-[#2a2a2a] min-h-screen rounded-lg">
+          <div className="max-w-7xl mx-auto border border-[#2a2a2a] min-h-screen rounded-lg">
             {/* Enhanced Header */}
             <div className="sticky top-0 bg-[#0a0a0a]/95 backdrop-blur-xl border-b border-[#1a1a1a] z-10">
               <div className="px-1 sm:px-4 py-3">
@@ -1363,9 +1372,9 @@ function ReviewsPageContent() {
                 posts.map((post) => (
                   <div
                     key={post._id}
-                    className="border-b border-[#1a1a1a] px-1 sm:px-4 py-4 bg-[#0f0f0f]"
+                    className="border-b border-[#1a1a1a] px-1 sm:px-4 py-4 bg-[#0f0f0f] overflow-hidden"
                   >
-                    <div className="flex gap-3 w-full">
+                    <div className="flex gap-3 w-full min-w-0">
                       <OtherUserAvatar
                         authorId={post.authorId?._id}
                         username={post.authorId?.username}
@@ -1379,11 +1388,13 @@ function ReviewsPageContent() {
                         className="flex-shrink-0"
                       />
 
-                      <div className="flex-1 min-w-0 max-w-full">
+                      <div className="flex-1 min-w-0 max-w-full overflow-hidden">
                         <div className="flex items-start gap-2 mb-2">
-                          <span 
-                            className="font-medium text-sm text-[#f5f5f5] cursor-pointer hover:text-blue-300 transition-colors"
-                            onClick={() => router.push(`/users/${post.authorId?._id}`)}
+                          <span
+                            className="font-medium text-sm text-[#f5f5f0] cursor-pointer hover:text-blue-300 transition-colors"
+                            onClick={() =>
+                              router.push(`/users/${post.authorId?._id}`)
+                            }
                           >
                             {userProfiles.get(post.authorId?._id)
                               ?.displayName || post.authorId?.username}
@@ -1391,6 +1402,14 @@ function ReviewsPageContent() {
                           <span className="text-[#a0a0a0] text-xs bg-[#3a3a3a] px-2 py-0.5 rounded-full">
                             {formatTime(post.timestamp)}
                           </span>
+                          {user?.uid === post.authorId?._id && (
+                            <button
+                              className="ml-auto p-1 hover:bg-red-500/20 rounded-full transition-colors group"
+                              title="Delete post"
+                            >
+                              <Trash2 className="w-3 h-3 text-[#808080] group-hover:text-red-400" />
+                            </button>
+                          )}
                         </div>
 
                         <p
@@ -1409,8 +1428,8 @@ function ReviewsPageContent() {
                         {/* Compact Media Display Section */}
                         {post.mediaId && (
                           <Card className="mb-4 overflow-hidden border border-[#2a2a2a] bg-[#0f0f0f]">
-                            <div className="flex">
-                              <div className="w-36 h-44 flex-shrink-0 relative p-3">
+                            <div className="flex min-w-0">
+                              <div className="w-24 sm:w-36 h-32 sm:h-44 flex-shrink-0 relative p-2 sm:p-3">
                                 <Link
                                   href={`/${
                                     post.mediaType === "series"
@@ -1420,7 +1439,11 @@ function ReviewsPageContent() {
                                       : post.mediaType === "music"
                                       ? "music/album"
                                       : post.mediaType + "s"
-                                  }/${post.mediaType === "music" ? post.mediaId.replace("album_", "") : post.mediaId}`}
+                                  }/${
+                                    post.mediaType === "music"
+                                      ? post.mediaId.replace("album_", "")
+                                      : post.mediaId
+                                  }`}
                                   className="block relative w-full h-full rounded-xl overflow-hidden shadow-lg cursor-pointer"
                                 >
                                   <img
@@ -1430,10 +1453,10 @@ function ReviewsPageContent() {
                                   />
                                 </Link>
                               </div>
-                              <div className="flex-1 p-4">
+                              <div className="flex-1 p-2 sm:p-4 min-w-0 overflow-hidden">
                                 <div className="flex items-start gap-2 mb-2">
                                   <div className="flex-1">
-                                    <h3 className="font-semibold text-base text-[#f0f0f0] line-clamp-2 mb-2 leading-tight">
+                                    <h3 className="font-semibold text-sm sm:text-base text-[#f0f0f0] line-clamp-2 mb-2 leading-tight break-words">
                                       {post.mediaTitle}
                                     </h3>
                                     <div className="flex items-center gap-2 mb-3">
@@ -1455,32 +1478,32 @@ function ReviewsPageContent() {
                                   </div>
                                 </div>
 
-                                <div className="space-y-2.5 text-sm text-[#b0b0b0] mb-4">
+                                <div className="space-y-2 text-xs sm:text-sm text-[#b0b0b0] mb-4">
                                   {post.mediaAuthor && (
-                                    <div className="flex items-center gap-3">
-                                      <span className="font-semibold text-[#d0d0d0] min-w-[60px]">
+                                    <div className="flex items-start gap-2 min-w-0">
+                                      <span className="font-semibold text-[#d0d0d0] flex-shrink-0">
                                         Director:
                                       </span>
-                                      <span className="text-[#e0e0e0]">
+                                      <span className="text-[#e0e0e0] break-words min-w-0">
                                         {post.mediaAuthor}
                                       </span>
                                     </div>
                                   )}
                                   {post.mediaArtist && (
-                                    <div className="flex items-center gap-3">
-                                      <span className="font-semibold text-[#d0d0d0] min-w-[60px]">
+                                    <div className="flex items-start gap-2 min-w-0">
+                                      <span className="font-semibold text-[#d0d0d0] flex-shrink-0">
                                         Artist:
                                       </span>
-                                      <span className="text-[#e0e0e0]">
+                                      <span className="text-[#e0e0e0] break-words min-w-0">
                                         {post.mediaArtist}
                                       </span>
                                     </div>
                                   )}
-                                  <div className="flex items-center gap-3">
-                                    <span className="font-semibold text-[#d0d0d0] min-w-[60px]">
+                                  <div className="flex items-start gap-2 min-w-0">
+                                    <span className="font-semibold text-[#d0d0d0] flex-shrink-0">
                                       Year:
                                     </span>
-                                    <span className="text-[#e0e0e0]">
+                                    <span className="text-[#e0e0e0] break-words min-w-0">
                                       {post.mediaYear}
                                     </span>
                                   </div>
@@ -1497,7 +1520,7 @@ function ReviewsPageContent() {
                         )}
 
                         {/* Compact Post Actions */}
-                        <div className="flex items-center gap-6 text-[#a0a0a0] pt-2 w-full">
+                        <div className="flex items-center gap-3 sm:gap-6 text-[#a0a0a0] pt-2 w-full overflow-hidden">
                           <button
                             onClick={() => toggleReplyInput(post._id)}
                             className="flex items-center gap-1.5 hover:text-blue-400 transition-all duration-200 group"
@@ -1541,13 +1564,15 @@ function ReviewsPageContent() {
                         {showReplyInput[post._id] && (
                           <div className="mt-3 bg-[#0a0a0a] rounded-lg border border-[#1a1a1a] overflow-hidden">
                             <div className="p-3">
-                              <div className="flex gap-2 mb-3">
+                              <div className="flex gap-2 mb-3 min-w-0">
                                 <UserAvatar
                                   userId={user?.uid}
                                   size="sm"
                                   className="flex-shrink-0"
                                   displayName={user?.displayName || undefined}
-                                  username={user?.email?.split("@")[0] || undefined}
+                                  username={
+                                    user?.email?.split("@")[0] || undefined
+                                  }
                                   clickable={false}
                                 />
                                 <div className="flex-1 min-w-0">
@@ -1599,7 +1624,7 @@ function ReviewsPageContent() {
                         )}
 
                         {post.comments && post.comments.length > 0 && (
-                          <div className="mt-3 space-y-2 w-full">
+                          <div className="mt-3 space-y-2 w-full overflow-hidden">
                             {renderTopLevelComments(
                               buildCommentTree(post.comments),
                               post._id
@@ -1622,7 +1647,7 @@ function ReviewsPageContent() {
 function ReviewsPageLoading() {
   return (
     <div className="min-h-screen bg-[#0a0a0a]">
-      <div className="max-w-4xl mx-auto px-4 py-8">
+      <div className="max-w-7xl mx-auto px-4 py-8">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
           <p className="text-[#808080]">Loading review form...</p>

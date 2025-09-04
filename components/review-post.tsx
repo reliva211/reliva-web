@@ -5,7 +5,16 @@ import Image from "next/image";
 import Link from "next/link";
 import { Star, Heart, MoreHorizontal, Trash2 } from "lucide-react";
 import { useCurrentUser } from "@/hooks/use-current-user";
-import { doc, updateDoc, arrayUnion, arrayRemove, deleteDoc, addDoc, collection, serverTimestamp } from "firebase/firestore";
+import {
+  doc,
+  updateDoc,
+  arrayUnion,
+  arrayRemove,
+  deleteDoc,
+  addDoc,
+  collection,
+  serverTimestamp,
+} from "firebase/firestore";
 import { db } from "@/lib/firebase";
 
 interface ReviewPostProps {
@@ -27,17 +36,21 @@ interface ReviewPostProps {
   onDelete?: () => void;
 }
 
-export default function ReviewPost({ review, onLikeToggle, onDelete }: ReviewPostProps) {
+export default function ReviewPost({
+  review,
+  onLikeToggle,
+  onDelete,
+}: ReviewPostProps) {
   const { user } = useCurrentUser();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [localLikes, setLocalLikes] = useState<string[]>(review.likes || []);
-  
+
   // Sync local likes state when review prop changes
   useEffect(() => {
     setLocalLikes(review.likes || []);
   }, [review.likes, review.id]);
-  
+
   const isLiked = user ? localLikes.includes(user.uid) : false;
   const likeCount = localLikes.length;
   const isOwnReview = user && review.userId === user.uid;
@@ -52,7 +65,8 @@ export default function ReviewPost({ review, onLikeToggle, onDelete }: ReviewPos
         message: `liked your review of "${review.mediaTitle}"`,
         fromUserId: user.uid,
         toUserId: review.userId,
-        fromUserName: user.displayName || user.email?.split("@")[0] || "Anonymous",
+        fromUserName:
+          user.displayName || user.email?.split("@")[0] || "Anonymous",
         fromUserAvatar: user.photoURL || "",
         actionUrl: `/reviews/${review.id}`,
         isRead: false,
@@ -60,7 +74,10 @@ export default function ReviewPost({ review, onLikeToggle, onDelete }: ReviewPos
       };
 
       console.log("Creating like notification:", notificationData);
-      const docRef = await addDoc(collection(db, "notifications"), notificationData);
+      const docRef = await addDoc(
+        collection(db, "notifications"),
+        notificationData
+      );
       console.log("Like notification created with ID:", docRef.id);
     } catch (error) {
       console.error("Error creating like notification:", error);
@@ -71,39 +88,44 @@ export default function ReviewPost({ review, onLikeToggle, onDelete }: ReviewPos
     if (!user) return;
 
     // Optimistic update - update local state immediately
-    const newLikes = isLiked 
-      ? localLikes.filter(id => id !== user.uid)
+    const newLikes = isLiked
+      ? localLikes.filter((id) => id !== user.uid)
       : [...localLikes, user.uid];
-    
+
     setLocalLikes(newLikes);
 
     try {
       const reviewRef = doc(db, "reviews", review.id);
       await updateDoc(reviewRef, {
-        likes: isLiked 
-          ? arrayRemove(user.uid)
-          : arrayUnion(user.uid)
+        likes: isLiked ? arrayRemove(user.uid) : arrayUnion(user.uid),
       });
-      
+
       // Create notification only when liking (not unliking)
       if (!isLiked) {
-        console.log("Creating like notification for review:", review.id, "from user:", user.uid, "to user:", review.userId);
+        console.log(
+          "Creating like notification for review:",
+          review.id,
+          "from user:",
+          user.uid,
+          "to user:",
+          review.userId
+        );
         await createLikeNotification();
       } else {
         console.log("User is unliking, no notification created");
       }
-      
+
       // Call the callback with the updated review data
       if (onLikeToggle) {
         const updatedReview = {
           ...review,
-          likes: newLikes
+          likes: newLikes,
         };
         onLikeToggle(updatedReview);
       }
     } catch (error) {
       console.error("Error toggling like:", error);
-      
+
       // Revert optimistic update on error
       setLocalLikes(review.likes || []);
     }
@@ -115,7 +137,7 @@ export default function ReviewPost({ review, onLikeToggle, onDelete }: ReviewPos
     setIsDeleting(true);
     try {
       await deleteDoc(doc(db, "reviews", review.id));
-      
+
       if (onDelete) {
         onDelete();
       }
@@ -129,11 +151,13 @@ export default function ReviewPost({ review, onLikeToggle, onDelete }: ReviewPos
 
   const formatTimestamp = (timestamp: any) => {
     if (!timestamp) return "Just now";
-    
+
     const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
     const now = new Date();
-    const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
-    
+    const diffInHours = Math.floor(
+      (now.getTime() - date.getTime()) / (1000 * 60 * 60)
+    );
+
     if (diffInHours < 1) return "Just now";
     if (diffInHours < 24) return `${diffInHours}h ago`;
     if (diffInHours < 168) return `${Math.floor(diffInHours / 24)}d ago`;
@@ -188,7 +212,7 @@ export default function ReviewPost({ review, onLikeToggle, onDelete }: ReviewPos
           </div>
           <div className="flex-1 min-w-0">
             <h4 className="font-bold text-white text-sm sm:text-base line-clamp-2 mb-2">
-              <Link 
+              <Link
                 href={`/reviews/${review.id}`}
                 className="hover:text-emerald-400 transition-colors duration-200 cursor-pointer"
               >
@@ -197,7 +221,10 @@ export default function ReviewPost({ review, onLikeToggle, onDelete }: ReviewPos
             </h4>
             <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-3">
               <span className="inline-block px-2 py-1 text-xs font-medium bg-emerald-900/30 text-emerald-400 rounded-full border border-emerald-800">
-                {review.mediaType.toUpperCase()}{review.mediaSubType ? ` - ${review.mediaSubType.toUpperCase()}` : ''}
+                {review.mediaType.toUpperCase()}
+                {review.mediaSubType
+                  ? ` - ${review.mediaSubType.toUpperCase()}`
+                  : ""}
               </span>
               <div className="flex items-center space-x-1">
                 {[...Array(5)].map((_, i) => (
@@ -223,8 +250,6 @@ export default function ReviewPost({ review, onLikeToggle, onDelete }: ReviewPos
         </div>
       </div>
 
-
-
       {/* Actions */}
       <div>
         <div className="flex items-center justify-between">
@@ -237,12 +262,14 @@ export default function ReviewPost({ review, onLikeToggle, onDelete }: ReviewPos
                   : "text-gray-400 hover:bg-gray-700 hover:text-gray-200"
               }`}
             >
-              <Heart className={`h-4 w-4 sm:h-5 sm:w-5 ${isLiked ? "fill-current" : ""}`} />
+              <Heart
+                className={`h-4 w-4 sm:h-5 sm:w-5 ${
+                  isLiked ? "fill-current" : ""
+                }`}
+              />
               <span className="font-medium">{likeCount}</span>
             </button>
           </div>
-          
-
         </div>
       </div>
 
@@ -254,7 +281,8 @@ export default function ReviewPost({ review, onLikeToggle, onDelete }: ReviewPos
               Delete Review
             </h3>
             <p className="text-gray-300 mb-6">
-              Are you sure you want to delete your review for "{review.mediaTitle}"? This action cannot be undone.
+              Are you sure you want to delete your review for "
+              {review.mediaTitle}"? This action cannot be undone.
             </p>
             <div className="flex gap-3">
               <button
@@ -277,4 +305,4 @@ export default function ReviewPost({ review, onLikeToggle, onDelete }: ReviewPos
       )}
     </div>
   );
-} 
+}

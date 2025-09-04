@@ -25,3 +25,4 @@ describe("identifyIdType", () => {
     expect(identifyIdType("1234567890123456789012345678")).toBe("firebase");
   });
 });
+

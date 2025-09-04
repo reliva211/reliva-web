@@ -37,7 +37,7 @@ export default function TestThreadPage() {
 
   return (
     <div className="min-h-screen bg-[#0a0a0a]">
-      <div className="container mx-auto px-4 py-8 max-w-4xl">
+      <div className="container mx-auto px-4 py-8 max-w-7xl">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-[#e0e0e0] mb-4">
             Thread Navigation Test
@@ -200,5 +200,3 @@ export default function TestThreadPage() {
     </div>
   );
 }
-
-

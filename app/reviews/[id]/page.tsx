@@ -147,17 +147,23 @@ export default function ReviewDetailPage() {
     try {
       const notificationData = {
         type: "comment",
-        message: `commented on your review of "${review.mediaTitle}": "${comment.substring(0, 50)}${comment.length > 50 ? "..." : ""}"`,
+        message: `commented on your review of "${
+          review.mediaTitle
+        }": "${comment.substring(0, 50)}${comment.length > 50 ? "..." : ""}"`,
         fromUserId: user.uid,
         toUserId: review.userId,
-        fromUserName: user.displayName || user.email?.split("@")[0] || "Anonymous",
+        fromUserName:
+          user.displayName || user.email?.split("@")[0] || "Anonymous",
         fromUserAvatar: user.photoURL || "",
         actionUrl: `/reviews/${review.id}`,
         isRead: false,
         createdAt: serverTimestamp(),
       };
 
-      const docRef = await addDoc(collection(db, "notifications"), notificationData);
+      const docRef = await addDoc(
+        collection(db, "notifications"),
+        notificationData
+      );
     } catch (error) {
       console.error("Error creating comment notification:", error);
     }
@@ -172,17 +178,18 @@ export default function ReviewDetailPage() {
       const commentData = {
         reviewId: review.id,
         userId: user.uid,
-        userDisplayName: user.displayName || user.email?.split("@")[0] || "Anonymous",
+        userDisplayName:
+          user.displayName || user.email?.split("@")[0] || "Anonymous",
         userPhotoURL: user.photoURL || "",
         content: newComment.trim(),
         createdAt: serverTimestamp(),
       };
 
       await addDoc(collection(db, "comments"), commentData);
-      
+
       // Create notification
       await createCommentNotification(newComment.trim());
-      
+
       setNewComment("");
     } catch (error) {
       console.error("Error adding comment:", error);
@@ -205,14 +212,18 @@ export default function ReviewDetailPage() {
         message: `liked your review of "${review.mediaTitle}"`,
         fromUserId: user.uid,
         toUserId: review.userId,
-        fromUserName: user.displayName || user.email?.split("@")[0] || "Anonymous",
+        fromUserName:
+          user.displayName || user.email?.split("@")[0] || "Anonymous",
         fromUserAvatar: user.photoURL || "",
         actionUrl: `/reviews/${review.id}`,
         isRead: false,
         createdAt: serverTimestamp(),
       };
 
-      const docRef = await addDoc(collection(db, "notifications"), notificationData);
+      const docRef = await addDoc(
+        collection(db, "notifications"),
+        notificationData
+      );
     } catch (error) {
       console.error("Error creating like notification:", error);
     }
@@ -324,7 +335,7 @@ export default function ReviewDetailPage() {
   if (error || !review) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 dark:from-gray-900 dark:via-black dark:to-gray-900">
-        <div className="max-w-4xl mx-auto px-4 py-16">
+        <div className="max-w-7xl mx-auto px-4 py-16">
           <div className="text-center">
             <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">
               {error || "Review Not Found"}
@@ -348,7 +359,7 @@ export default function ReviewDetailPage() {
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 dark:from-gray-900 dark:via-black dark:to-gray-900">
       {/* Header */}
       <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border-b border-gray-200 dark:border-gray-700 sticky top-0 z-40">
-        <div className="max-w-6xl mx-auto px-4 py-4">
+        <div className="max-w-7xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <Link href="/reviews">
               <Button
@@ -386,11 +397,11 @@ export default function ReviewDetailPage() {
       </div>
 
       {/* Main Content */}
-      <div className="max-w-6xl mx-auto px-4 py-8">
-        <div className="grid lg:grid-cols-3 gap-8">
+      <div className="max-w-7xl mx-auto px-4 py-8 overflow-hidden">
+        <div className="grid lg:grid-cols-3 gap-8 min-w-0">
           {/* Left Column - Media Info */}
-          <div className="lg:col-span-1">
-            <div className="sticky top-24">
+          <div className="lg:col-span-1 min-w-0">
+            <div className="sticky top-24 overflow-hidden">
               {/* Media Cover */}
               <div className="relative w-full aspect-[2/3] rounded-2xl overflow-hidden shadow-2xl mb-6">
                 <Image
@@ -412,8 +423,8 @@ export default function ReviewDetailPage() {
               </div>
 
               {/* Media Details */}
-              <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg border border-gray-200 dark:border-gray-700">
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4 line-clamp-3">
+              <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+                <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white mb-4 line-clamp-3 break-words">
                   {review.mediaTitle}
                 </h2>
 
@@ -439,65 +450,83 @@ export default function ReviewDetailPage() {
                 {/* Media Metadata */}
                 <div className="space-y-3 text-sm text-gray-600 dark:text-gray-400">
                   {review.mediaYear && (
-                    <div className="flex items-center space-x-2">
-                      <Calendar className="h-4 w-4" />
-                      <span>{review.mediaYear}</span>
+                    <div className="flex items-start space-x-2 min-w-0">
+                      <Calendar className="h-4 w-4 flex-shrink-0 mt-0.5" />
+                      <span className="break-words min-w-0">
+                        {review.mediaYear}
+                      </span>
                     </div>
                   )}
 
                   {review.mediaAuthor && (
-                    <div className="flex items-center space-x-2">
-                      <User className="h-4 w-4" />
-                      <span>{review.mediaAuthor}</span>
+                    <div className="flex items-start space-x-2 min-w-0">
+                      <User className="h-4 w-4 flex-shrink-0 mt-0.5" />
+                      <span className="break-words min-w-0">
+                        {review.mediaAuthor}
+                      </span>
                     </div>
                   )}
 
                   {review.mediaDirector && (
-                    <div className="flex items-center space-x-2">
-                      <User className="h-4 w-4" />
-                      <span>Director: {review.mediaDirector}</span>
+                    <div className="flex items-start space-x-2 min-w-0">
+                      <User className="h-4 w-4 flex-shrink-0 mt-0.5" />
+                      <span className="break-words min-w-0">
+                        Director: {review.mediaDirector}
+                      </span>
                     </div>
                   )}
 
                   {review.mediaArtist && (
-                    <div className="flex items-center space-x-2">
-                      <User className="h-4 w-4" />
-                      <span>Artist: {review.mediaArtist}</span>
+                    <div className="flex items-start space-x-2 min-w-0">
+                      <User className="h-4 w-4 flex-shrink-0 mt-0.5" />
+                      <span className="break-words min-w-0">
+                        Artist: {review.mediaArtist}
+                      </span>
                     </div>
                   )}
 
                   {review.mediaAlbum && (
-                    <div className="flex items-center space-x-2">
-                      <span className="text-lg">💿</span>
-                      <span>{review.mediaAlbum}</span>
+                    <div className="flex items-start space-x-2 min-w-0">
+                      <span className="text-lg flex-shrink-0">💿</span>
+                      <span className="break-words min-w-0">
+                        {review.mediaAlbum}
+                      </span>
                     </div>
                   )}
 
                   {review.mediaGenre && (
-                    <div className="flex items-center space-x-2">
-                      <span className="text-lg">🏷️</span>
-                      <span>{review.mediaGenre}</span>
+                    <div className="flex items-start space-x-2 min-w-0">
+                      <span className="text-lg flex-shrink-0">🏷️</span>
+                      <span className="break-words min-w-0">
+                        {review.mediaGenre}
+                      </span>
                     </div>
                   )}
 
                   {review.mediaDuration && (
-                    <div className="flex items-center space-x-2">
-                      <Clock className="h-4 w-4" />
-                      <span>{review.mediaDuration}</span>
+                    <div className="flex items-start space-x-2 min-w-0">
+                      <Clock className="h-4 w-4 flex-shrink-0 mt-0.5" />
+                      <span className="break-words min-w-0">
+                        {review.mediaDuration}
+                      </span>
                     </div>
                   )}
 
                   {review.mediaPages && (
-                    <div className="flex items-center space-x-2">
-                      <span className="text-lg">📄</span>
-                      <span>{review.mediaPages} pages</span>
+                    <div className="flex items-start space-x-2 min-w-0">
+                      <span className="text-lg flex-shrink-0">📄</span>
+                      <span className="break-words min-w-0">
+                        {review.mediaPages} pages
+                      </span>
                     </div>
                   )}
 
                   {review.mediaPublisher && (
-                    <div className="flex items-center space-x-2">
-                      <span className="text-lg">🏢</span>
-                      <span>{review.mediaPublisher}</span>
+                    <div className="flex items-start space-x-2 min-w-0">
+                      <span className="text-lg flex-shrink-0">🏢</span>
+                      <span className="break-words min-w-0">
+                        {review.mediaPublisher}
+                      </span>
                     </div>
                   )}
                 </div>
@@ -525,21 +554,21 @@ export default function ReviewDetailPage() {
           </div>
 
           {/* Right Column - Review Content */}
-          <div className="lg:col-span-2">
+          <div className="lg:col-span-2 min-w-0 overflow-hidden">
             {/* Author Info */}
-            <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg border border-gray-200 dark:border-gray-700 mb-6">
-              <div className="flex items-center space-x-4">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg border border-gray-200 dark:border-gray-700 mb-6 overflow-hidden">
+              <div className="flex items-center space-x-4 min-w-0">
                 <div className="w-16 h-16 rounded-full bg-gradient-to-br from-emerald-500 to-blue-500 flex items-center justify-center text-white font-bold text-xl">
                   {review.userDisplayName?.charAt(0) || "U"}
                 </div>
-                <div className="flex-1">
-                  <h3 
-                    className="text-xl font-semibold text-gray-900 dark:text-white cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                <div className="flex-1 min-w-0">
+                  <h3
+                    className="text-xl font-semibold text-gray-900 dark:text-white cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors break-words"
                     onClick={() => router.push(`/users/${review.userId}`)}
                   >
                     {review.userDisplayName || "Anonymous"}
                   </h3>
-                  <p className="text-gray-600 dark:text-gray-400">
+                  <p className="text-gray-600 dark:text-gray-400 break-words">
                     {formatTimestamp(review.timestamp)}
                   </p>
                 </div>
@@ -566,7 +595,7 @@ export default function ReviewDetailPage() {
             </div>
 
             {/* Review Content */}
-            <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg border border-gray-200 dark:border-gray-700 mb-6">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg border border-gray-200 dark:border-gray-700 mb-6 overflow-hidden">
               {review.spoilerWarning && (
                 <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4 mb-6">
                   <div className="flex items-center space-x-2">
@@ -581,8 +610,8 @@ export default function ReviewDetailPage() {
                 </div>
               )}
 
-              <div className="prose prose-lg dark:prose-invert max-w-none">
-                <p className="text-gray-800 dark:text-gray-200 leading-relaxed text-lg whitespace-pre-wrap">
+              <div className="prose prose-lg dark:prose-invert max-w-none overflow-hidden">
+                <p className="text-gray-800 dark:text-gray-200 leading-relaxed text-lg whitespace-pre-wrap break-words">
                   {review.reviewText}
                 </p>
               </div>
@@ -592,8 +621,8 @@ export default function ReviewDetailPage() {
       </div>
 
       {/* Comments Section */}
-      <div className="container mx-auto px-4 pb-8 max-w-4xl">
-        <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg border border-gray-200 dark:border-gray-700">
+      <div className="container mx-auto px-4 pb-8 max-w-7xl overflow-hidden">
+        <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
           <div className="flex items-center gap-2 mb-6">
             <MessageCircle className="h-5 w-5 text-gray-600 dark:text-gray-400" />
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
@@ -642,7 +671,7 @@ export default function ReviewDetailPage() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start gap-2 mb-1">
-                      <span 
+                      <span
                         className="font-medium text-gray-900 dark:text-white cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
                         onClick={() => router.push(`/users/${comment.userId}`)}
                       >
