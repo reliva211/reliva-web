@@ -188,7 +188,9 @@ export function useReviews(userId?: string) {
         fromUserId: currentUser.uid,
         toUserId: review.userId,
         fromUserName:
-          currentUser.displayName || currentUser.email?.split("@")[0] || "Anonymous",
+          currentUser.displayName ||
+          currentUser.email?.split("@")[0] ||
+          "Anonymous",
         fromUserAvatar: currentUser.photoURL || "",
         actionUrl: `/reviews/${review.id}`,
         isRead: false,
@@ -222,7 +224,7 @@ export function useReviews(userId?: string) {
           likedBy: arrayUnion(currentUser.uid),
           likes: increment(1),
         });
-        
+
         // Create notification only when liking (not unliking)
         await createLikeNotification(review);
       }

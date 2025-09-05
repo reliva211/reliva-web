@@ -16,10 +16,12 @@ interface LayoutWrapperProps {
 export default function LayoutWrapper({ children }: LayoutWrapperProps) {
   const pathname = usePathname();
   const isLandingPage = pathname === "/";
+  const isLoginPage = pathname === "/login";
+  const isSignupPage = pathname === "/signup";
   const { user } = useCurrentUser();
 
-  // Don't show footer for authenticated users
-  const shouldShowFooter = !user;
+  // Don't show footer for authenticated users, login, or signup pages
+  const shouldShowFooter = !user && !isLoginPage && !isSignupPage;
 
   return (
     <div className="flex min-h-screen w-full overflow-x-hidden">
@@ -32,10 +34,10 @@ export default function LayoutWrapper({ children }: LayoutWrapperProps) {
       </div>
 
       <Toaster />
-      
+
       {/* YouTube Player - Persistent across all pages */}
       <YouTubePlayer />
-      
+
       {/* Video Player - Persistent across all pages */}
       <VideoPlayer />
     </div>

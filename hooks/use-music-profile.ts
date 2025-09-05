@@ -38,9 +38,9 @@ export interface SaavnSong {
 // Helper function to remove undefined values from objects before saving to Firebase
 const cleanObjectForFirebase = (obj: any): any => {
   if (obj === null || obj === undefined) return null;
-  if (typeof obj !== 'object') return obj;
+  if (typeof obj !== "object") return obj;
   if (Array.isArray(obj)) return obj.map(cleanObjectForFirebase);
-  
+
   const cleaned: any = {};
   for (const [key, value] of Object.entries(obj)) {
     if (value !== undefined) {
@@ -312,14 +312,17 @@ export function useMusicProfile(
       // Create default music profile document if none exists
       if (musicSnapshot.empty) {
         try {
-          await addDoc(musicCollection, cleanObjectForFirebase({
-            currentObsession: null,
-            favoriteArtist: null,
-            favoriteSong: null,
-            favoriteAlbums: [],
-            recommendations: [],
-            ratings: [],
-          }));
+          await addDoc(
+            musicCollection,
+            cleanObjectForFirebase({
+              currentObsession: null,
+              favoriteArtist: null,
+              favoriteSong: null,
+              favoriteAlbums: [],
+              recommendations: [],
+              ratings: [],
+            })
+          );
         } catch (createErr) {
           console.warn(
             "Could not create music profile, using local state:",
@@ -397,7 +400,9 @@ export function useMusicProfile(
           "music",
           musicSnapshot.docs[0].id
         );
-        await setDoc(docRef, cleanObjectForFirebase(updatedProfile), { merge: true });
+        await setDoc(docRef, cleanObjectForFirebase(updatedProfile), {
+          merge: true,
+        });
       }
 
       setMusicProfile(updatedProfile);
@@ -467,10 +472,13 @@ export function useMusicProfile(
     try {
       // Add to music collections (discover section integration)
       const albumsCollection = collection(db, "users", userId!, "musicAlbums");
-      await setDoc(doc(albumsCollection, album.id), cleanObjectForFirebase({
-        ...album,
-        addedAt: new Date(),
-      }));
+      await setDoc(
+        doc(albumsCollection, album.id),
+        cleanObjectForFirebase({
+          ...album,
+          addedAt: new Date(),
+        })
+      );
 
       // Also update the music profile for backwards compatibility
       const updatedAlbums = [...musicProfile.favoriteAlbums];
@@ -517,11 +525,14 @@ export function useMusicProfile(
         userId!,
         "musicRecommendations"
       );
-      await setDoc(doc(recommendationsCollection, song.id), cleanObjectForFirebase({
-        ...song,
-        type: "song",
-        addedAt: new Date(),
-      }));
+      await setDoc(
+        doc(recommendationsCollection, song.id),
+        cleanObjectForFirebase({
+          ...song,
+          type: "song",
+          addedAt: new Date(),
+        })
+      );
 
       // Also update the music profile for backwards compatibility
       const updatedRecommendations = [...musicProfile.recommendations];

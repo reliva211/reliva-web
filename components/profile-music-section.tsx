@@ -137,6 +137,43 @@ const truncateTitle = (title: string, maxLength: number = 25): string => {
   return title.substring(0, maxLength).trim() + "...";
 };
 
+// Helper function to truncate title to first few words (matching other sections)
+const truncateTitleToWords = (title: string, maxWords: number = 2): string => {
+  if (!title) return "Unknown Song";
+  const cleanTitle = cleanTextContent(title);
+  const words = cleanTitle.split(" ");
+  if (words.length <= maxWords) return cleanTitle;
+  return words.slice(0, maxWords).join(" ") + "...";
+};
+
+// Specific truncation for music ratings section - chutta.. format
+const truncateForRatings = (text: string, maxLength: number = 10): string => {
+  if (!text || text.trim() === "") return "Unknown";
+
+  // Clean the text first
+  let cleanText = text.toString().trim();
+
+  // Remove HTML tags if any
+  cleanText = cleanText.replace(/<[^>]*>/g, "");
+
+  // If text is already short enough, return as is
+  if (cleanText.length <= maxLength) {
+    return cleanText;
+  }
+
+  // Truncate and add double dots
+  return cleanText.substring(0, maxLength) + "..";
+};
+
+// Helper function to extract artist names
+const getArtistNames = (song: any): string => {
+  return (
+    song.primaryArtists ||
+    song.artists?.primary?.map((artist: any) => artist.name).join(", ") ||
+    "Unknown Artist"
+  );
+};
+
 export default function ProfileMusicSection({
   userId,
   readOnly = false,
@@ -452,19 +489,13 @@ export default function ProfileMusicSection({
 
   const handleRemoveItem = async (type: string, itemId: string) => {
     try {
-      switch (type) {
-        case "album":
-          await removeFavoriteAlbum(itemId);
-          break;
-        case "recommendation":
-          await removeRecommendation(itemId);
-          break;
-        case "rating":
-          await removeRating(itemId);
-          break;
-        default:
-          console.warn("Unknown item type:", type);
-      }
+      const actions = {
+        album: () => removeFavoriteAlbum(itemId),
+        recommendation: () => removeRecommendation(itemId),
+        rating: () => removeRating(itemId),
+      };
+      (await actions[type as keyof typeof actions]?.()) ||
+        console.warn("Unknown item type:", type);
     } catch (error) {
       console.error("Error removing item:", error);
     }
@@ -475,9 +506,7 @@ export default function ProfileMusicSection({
       const song = musicProfile?.ratings?.find(
         (r) => r.song.id === songId
       )?.song;
-      if (song) {
-        await addRating(song, rating);
-      }
+      if (song) await addRating(song, rating);
     } catch (error) {
       console.error("Error updating rating:", error);
     }
@@ -485,7 +514,12 @@ export default function ProfileMusicSection({
 
   // Handle plus button clicks for different sections
   const handlePlusClick = (
-    sectionType: "favoriteArtist" | "favoriteSong" | "album" | "recommendation" | "rating",
+    sectionType:
+      | "favoriteArtist"
+      | "favoriteSong"
+      | "album"
+      | "recommendation"
+      | "rating",
     itemToReplace?: any
   ) => {
     setEditingItem(itemToReplace || null);
@@ -623,10 +657,7 @@ export default function ProfileMusicSection({
                     </p>
                     <p className="text-sm text-white leading-tight mt-2 line-clamp-1 font-medium">
                       {getTextContent(
-                        safeMusicProfile.currentObsession.primaryArtists ||
-                          safeMusicProfile.currentObsession.artists?.primary
-                            ?.map((artist: any) => artist.name)
-                            .join(", ")
+                        getArtistNames(safeMusicProfile.currentObsession)
                       )}
                     </p>
                   </div>
@@ -809,10 +840,7 @@ export default function ProfileMusicSection({
                     </p>
                     <p className="text-sm text-white leading-tight mt-2 line-clamp-1 font-medium">
                       {getTextContent(
-                        safeMusicProfile.favoriteSong.primaryArtists ||
-                          safeMusicProfile.favoriteSong.artists?.primary
-                            ?.map((artist: any) => artist.name)
-                            .join(", ")
+                        getArtistNames(safeMusicProfile.favoriteSong)
                       )}
                     </p>
                   </div>
@@ -911,7 +939,7 @@ export default function ProfileMusicSection({
                           </div>
                         )}
                       </div>
-                      <div className="mt-3 text-center w-36 sm:w-40 md:w-44">
+                      <div className="mt-1 text-center w-36 sm:w-40 md:w-44">
                         <p className="text-sm font-semibold text-white leading-tight line-clamp-2">
                           {truncateTitle(getTextContent(album.name))}
                         </p>
@@ -989,9 +1017,9 @@ export default function ProfileMusicSection({
                   {limitedRecommendations.map((song, idx) => (
                     <div
                       key={song.id || idx}
-                      className="relative group flex-shrink-0"
+                      className="relative group flex-shrink-0 w-32"
                     >
-                      <div className="aspect-square w-32 sm:w-36 md:w-40 bg-muted rounded-lg overflow-hidden shadow-lg">
+                      <div className="aspect-square w-full bg-muted rounded-lg overflow-hidden shadow-lg">
                         <Link href={`/music/album/${song.id}`}>
                           <Image
                             src={
@@ -1014,7 +1042,9 @@ export default function ProfileMusicSection({
                               variant="ghost"
                               size="sm"
                               className="h-7 w-7 p-0 bg-black/50 hover:bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity"
-                              onClick={() => handlePlusClick("recommendation", song)}
+                              onClick={() =>
+                                handlePlusClick("recommendation", song)
+                              }
                               title="Replace recommendation"
                             >
                               <Edit className="h-3 w-3 text-white" />
@@ -1023,7 +1053,9 @@ export default function ProfileMusicSection({
                               variant="ghost"
                               size="sm"
                               className="h-7 w-7 p-0 bg-red-600/80 hover:bg-red-700/90 opacity-0 group-hover:opacity-100 transition-opacity"
-                              onClick={() => handleRemoveItem("recommendation", song.id)}
+                              onClick={() =>
+                                handleRemoveItem("recommendation", song.id)
+                              }
                               title="Delete recommendation"
                             >
                               <Trash2 className="h-3 w-3 text-white" />
@@ -1031,18 +1063,12 @@ export default function ProfileMusicSection({
                           </div>
                         )}
                       </div>
-                      <div className="mt-3 text-center w-32 sm:w-36 md:w-40">
-                        <p className="text-sm font-semibold text-white leading-tight line-clamp-2">
+                      <div className="mt-1 text-center w-full">
+                        <p className="text-sm font-semibold text-white leading-tight px-2 min-h-[1.5rem] truncate">
                           {truncateTitle(getTextContent(song.name))}
                         </p>
-                        <p className="text-xs text-gray-400 leading-tight mt-1 line-clamp-1">
-                          {getTextContent(
-                            song.primaryArtists ||
-                              song.artists?.primary
-                                ?.map((artist: any) => artist.name)
-                                .join(", ") ||
-                              "Unknown Artist"
-                          )}
+                        <p className="text-xs text-gray-400 leading-tight mt-0.5 px-2 truncate">
+                          {getTextContent(getArtistNames(song))}
                         </p>
                       </div>
                     </div>
@@ -1050,8 +1076,8 @@ export default function ProfileMusicSection({
 
                   {/* Add button */}
                   {isOwnProfile && !readOnly && (
-                    <div className="flex-shrink-0">
-                      <div className="aspect-square w-32 sm:w-36 md:w-40 bg-transparent rounded-lg border-2 border-gray-600 flex items-center justify-center">
+                    <div className="flex-shrink-0 w-32">
+                      <div className="aspect-square w-full bg-transparent rounded-lg border-2 border-gray-600 flex items-center justify-center">
                         <Button
                           variant="ghost"
                           size="sm"
@@ -1065,11 +1091,8 @@ export default function ProfileMusicSection({
                   )}
                 </>
               ) : (
-                <div className="flex flex-col items-start justify-start min-h-[200px] w-full">
-                  <div className="aspect-square w-32 sm:w-36 md:w-40 bg-transparent rounded-lg border-2 border-gray-600 flex flex-col items-center justify-center mb-4">
-                    {isOwnProfile && !readOnly && (
-                      <p className="text-sm text-gray-400 mb-1">Add</p>
-                    )}
+                <div className="flex flex-col items-center justify-center min-h-[200px]">
+                  <div className="aspect-square w-32 bg-transparent rounded-lg border-2 border-gray-600 flex flex-col items-center justify-center mb-3">
                     <p className="text-xs text-gray-500 text-center">
                       No recommendations
                     </p>
@@ -1118,23 +1141,23 @@ export default function ProfileMusicSection({
         </div>
 
         {/* Ratings Section */}
-        <div className="space-y-3">
-          <h3 className="text-base sm:text-lg font-semibold text-white">
-            Ratings
-          </h3>
+        <div className="mt-12 max-w-3xl mx-auto">
+          <div className="flex items-center justify-start mb-4">
+            <p className="text-base sm:text-lg font-bold text-white">Ratings</p>
+          </div>
           <div className="relative">
             <div
               ref={scrollContainerRefs.ratings}
-              className="flex gap-4 sm:gap-6 overflow-x-auto scrollbar-hide pb-4 horizontal-scroll-container"
+              className="flex justify-start gap-6 overflow-x-auto scrollbar-hide pb-4 horizontal-scroll-container"
             >
               {limitedRatings.length > 0 ? (
                 <>
                   {limitedRatings.map((rating, idx) => (
                     <div
-                      key={rating.song.id || idx}
-                      className="relative group flex-shrink-0"
+                      key={`rating-${rating.song.id}-${idx}`}
+                      className="relative group flex-shrink-0 w-32"
                     >
-                      <div className="aspect-square w-32 sm:w-36 md:w-40 bg-muted rounded-lg overflow-hidden shadow-lg">
+                      <div className="aspect-[2/3] w-32 bg-muted rounded-md overflow-hidden">
                         <Link href={`/music/song/${rating.song.id}`}>
                           <Image
                             src={
@@ -1142,8 +1165,8 @@ export default function ProfileMusicSection({
                               PLACEHOLDER.ratings[0].cover
                             }
                             alt={rating.song.name || "Song"}
-                            width={160}
-                            height={160}
+                            width={128}
+                            height={192}
                             className="w-full h-full object-cover cursor-pointer"
                             onError={(e) => {
                               const target = e.target as HTMLImageElement;
@@ -1154,33 +1177,25 @@ export default function ProfileMusicSection({
                       </div>
                       {/* Rating stars - above the song name */}
                       <div className="mt-3 flex justify-center gap-1">
-                        {renderInteractiveStars(
-                          rating.song.id,
-                          rating.rating
-                        )}
+                        {renderInteractiveStars(rating.song.id, rating.rating)}
                       </div>
                       {/* Song name and artist display - below the rating */}
-                      <div className="mt-2 text-center w-32 sm:w-36 md:w-40">
-                        <p className="text-sm font-semibold text-white leading-tight px-2 min-h-[1.5rem] truncate">
-                          {truncateTitle(getTextContent(rating.song.name))}
-                        </p>
-                        <p className="text-xs text-gray-400 leading-tight mt-0.5 px-2 truncate">
-                          {getTextContent(
-                            rating.song.primaryArtists ||
-                              rating.song.artists?.primary
-                                ?.map((artist: any) => artist.name)
-                                .join(", ") ||
-                              "Unknown Artist"
+                      <div className="mt-2 text-center w-full px-1">
+                        <p className="text-sm font-semibold text-white leading-tight min-h-[1.5rem] flex items-center justify-center">
+                          {truncateForRatings(
+                            rating.song.name || "Unknown Song"
                           )}
+                        </p>
+                        <p className="text-xs text-gray-400 leading-tight mt-0.5 flex items-center justify-center">
+                          {truncateForRatings(getArtistNames(rating.song))}
                         </p>
                       </div>
                     </div>
                   ))}
-
                 </>
               ) : (
-                <div className="flex flex-col items-start justify-start min-h-[200px] w-full">
-                  <div className="aspect-square w-32 sm:w-36 md:w-40 bg-transparent rounded-lg border-2 border-gray-600 flex flex-col items-center justify-center mb-4">
+                <div className="flex flex-col items-center justify-center min-h-[200px]">
+                  <div className="aspect-square w-32 bg-transparent rounded-lg border-2 border-gray-600 flex flex-col items-center justify-center mb-3">
                     <p className="text-xs text-gray-500 text-center">
                       No ratings
                     </p>

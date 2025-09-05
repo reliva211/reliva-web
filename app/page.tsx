@@ -4,6 +4,8 @@ import { useCurrentUser } from "@/hooks/use-current-user";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Play, Zap } from "lucide-react";
+import { MarqueeDemo } from "@/components/marquee-demo-vertical";
+import { CometCard } from "@/components/ui/comet-card";
 
 export default function LandingPage() {
   const { user, loading } = useCurrentUser();
@@ -36,7 +38,7 @@ export default function LandingPage() {
       {/* Hero Section */}
       <section className="relative z-10 min-h-screen flex items-center px-4">
         <div className="max-w-7xl mx-auto w-full">
-          <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
+          <div className="grid lg:grid-cols-2 gap-16 lg:gap-20 items-center">
             {/* Left Side - Title */}
             <div className="text-left">
               <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl xl:text-9xl font-light tracking-tight leading-none mb-8 text-gray-900 dark:text-white">
@@ -76,102 +78,12 @@ export default function LandingPage() {
             </div>
 
             {/* Right Side - Preview */}
-            <div className="relative">
-              <div className="bg-white/80 dark:bg-gray-800/90 backdrop-blur-sm rounded-3xl p-4 sm:p-6 lg:p-8 border border-gray-200 dark:border-gray-700 shadow-2xl">
-                <div className="space-y-6">
-                  {/* Header */}
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-3 h-3 bg-emerald-500 dark:bg-emerald-400 rounded-full animate-pulse"></div>
-                      <span className="text-sm text-gray-600 dark:text-gray-400 font-medium">
-                        Live Feed
-                      </span>
-                    </div>
-                    <div className="text-xs text-gray-500 dark:text-gray-400">
-                      reliva
-                    </div>
-                  </div>
-
-                  {/* Activity Feed */}
-                  <div className="space-y-4">
-                    <div className="flex items-start space-x-3 p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
-                      <div className="w-10 h-10 bg-emerald-500 rounded-full flex items-center justify-center flex-shrink-0">
-                        <span className="text-white font-bold text-sm">S</span>
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-900 dark:text-white">
-                          Sarah Chen
-                        </p>
-                        <p className="text-sm text-gray-600 dark:text-gray-300">
-                          Just finished "The Seven Husbands of Evelyn Hugo" and
-                          I'm absolutely speechless! The storytelling is
-                          phenomenal ✨
-                        </p>
-                        <div className="flex items-center space-x-4 mt-2">
-                          <span className="text-xs text-gray-500 dark:text-gray-400">
-                            📚 BOOK
-                          </span>
-                          <span className="text-xs text-gray-500 dark:text-gray-400">
-                            2h ago
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="flex items-start space-x-3 p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
-                      <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0">
-                        <span className="text-white font-bold text-sm">M</span>
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-900 dark:text-white">
-                          Marcus Johnson
-                        </p>
-                        <p className="text-sm text-gray-600 dark:text-gray-300">
-                          Discovered this incredible indie band called 'Lunar
-                          Echoes' today. Their album 'Midnight Reverie' is pure
-                          magic 🎵
-                        </p>
-                        <div className="flex items-center space-x-4 mt-2">
-                          <span className="text-xs text-gray-500 dark:text-gray-400">
-                            🎵 MUSIC
-                          </span>
-                          <span className="text-xs text-gray-500 dark:text-gray-400">
-                            4h ago
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="flex items-start space-x-3 p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
-                      <div className="w-10 h-10 bg-purple-500 rounded-full flex items-center justify-center flex-shrink-0">
-                        <span className="text-white font-bold text-sm">E</span>
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-900 dark:text-white">
-                          Emma Rodriguez
-                        </p>
-                        <p className="text-sm text-gray-600 dark:text-gray-300">
-                          Rewatched 'Parasite' last night and noticed so many
-                          details I missed the first time. Bong Joon-ho's
-                          direction is masterful 🎬
-                        </p>
-                        <div className="flex items-center space-x-4 mt-2">
-                          <span className="text-xs text-gray-500 dark:text-gray-400">
-                            🎬 MOVIE
-                          </span>
-                          <span className="text-xs text-gray-500 dark:text-gray-400">
-                            6h ago
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Floating Elements */}
-              <div className="absolute -top-4 -right-4 w-8 h-8 bg-emerald-500 rounded-full animate-bounce"></div>
-              <div className="absolute -bottom-4 -left-4 w-6 h-6 bg-blue-500 rounded-full animate-pulse"></div>
+            <div className="relative mt-8 lg:mt-0">
+              <img
+                src="/login-left.png"
+                alt="Reliva Preview"
+                className="w-full max-w-4xl h-auto"
+              />
             </div>
           </div>
         </div>
@@ -180,76 +92,125 @@ export default function LandingPage() {
       {/* What is Reliva Section */}
       <section className="relative z-10 py-20 px-4">
         <div className="max-w-6xl mx-auto">
-          <div className="flex flex-col lg:flex-row items-center justify-between gap-12">
+          <div className="flex flex-col lg:flex-row items-center justify-between gap-8">
             {/* Left Side - Visual Design */}
             <div className="flex-1 flex justify-center lg:justify-start">
-              <div className="relative w-full max-w-lg lg:max-w-xl">
-                <div className="relative overflow-hidden rounded-2xl shadow-2xl bg-gradient-to-br from-indigo-500 via-cyan-500 to-teal-500 p-8">
-                  {/* Background pattern */}
-                  <div className="absolute inset-0 opacity-10">
-                    <div className="absolute top-4 left-4 w-32 h-32 border-2 border-white/20 rounded-full"></div>
-                    <div className="absolute bottom-8 right-8 w-24 h-24 border-2 border-white/20 rounded-full"></div>
-                    <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-16 h-16 border-2 border-white/20 rounded-full"></div>
-                  </div>
-
-                  {/* Main content */}
-                  <div className="relative z-10 text-center">
-                    <div className="mb-8">
-                      <div className="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4 backdrop-blur-sm">
-                        <span className="text-4xl">💝</span>
-                      </div>
-                      <h3 className="text-2xl font-bold text-white mb-2">
-                        Share What You Love
+              <div className="relative w-full max-w-sm">
+                <CometCard>
+                  <div className="relative overflow-hidden rounded-2xl bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-6">
+                    {/* Main content */}
+                    <div className="text-center mb-6">
+                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                        Share what you love
                       </h3>
-                      <p className="text-white/90 text-sm">
-                        No gatekeeping, just pure passion
+                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                        discover what your friends love
                       </p>
                     </div>
 
-                    {/* Social icons grid */}
-                    <div className="grid grid-cols-2 gap-6">
-                      <div className="text-center">
-                        <div className="w-16 h-16 bg-white/90 rounded-full flex items-center justify-center mx-auto mb-2 shadow-lg">
-                          <span className="text-2xl">👥</span>
+                    {/* Feature sections */}
+                    <div className="space-y-4">
+                      <div className="flex items-start space-x-3">
+                        <div className="w-8 h-8 bg-gray-300 dark:bg-gray-600 rounded-full flex-shrink-0 flex items-center justify-center">
+                          <svg
+                            className="w-4 h-4 text-yellow-500"
+                            fill="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                          </svg>
                         </div>
-                        <span className="text-white font-semibold text-sm">
-                          Friends
-                        </span>
-                      </div>
-                      <div className="text-center">
-                        <div className="w-16 h-16 bg-white/90 rounded-full flex items-center justify-center mx-auto mb-2 shadow-lg">
-                          <span className="text-2xl">❤️</span>
+                        <div className="flex-1">
+                          <h4 className="text-sm font-medium text-gray-900 dark:text-white">
+                            Rate
+                          </h4>
+                          <p className="text-xs text-gray-600 dark:text-gray-400">
+                            rate from 1-5 stars
+                          </p>
                         </div>
-                        <span className="text-white font-semibold text-sm">
-                          Lovers
-                        </span>
                       </div>
-                      <div className="text-center">
-                        <div className="w-16 h-16 bg-white/90 rounded-full flex items-center justify-center mx-auto mb-2 shadow-lg">
-                          <span className="text-2xl">⭐</span>
-                        </div>
-                        <span className="text-white font-semibold text-sm">
-                          Rate
-                        </span>
-                      </div>
-                      <div className="text-center">
-                        <div className="w-16 h-16 bg-white/90 rounded-full flex items-center justify-center mx-auto mb-2 shadow-lg">
-                          <span className="text-2xl">💬</span>
-                        </div>
-                        <span className="text-white font-semibold text-sm">
-                          Review
-                        </span>
-                      </div>
-                    </div>
 
-                    {/* Bottom accent */}
-                    <div className="mt-6 pt-4 border-t border-white/20">
-                      <p className="text-white/80 text-xs font-medium">
-                        Built for sharing
-                      </p>
+                      <div className="flex items-start space-x-3">
+                        <div className="w-8 h-8 bg-gray-300 dark:bg-gray-600 rounded-full flex-shrink-0 flex items-center justify-center">
+                          <svg
+                            className="w-4 h-4 text-blue-500"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                            />
+                          </svg>
+                        </div>
+                        <div className="flex-1">
+                          <h4 className="text-sm font-medium text-gray-900 dark:text-white">
+                            Review
+                          </h4>
+                          <p className="text-xs text-gray-600 dark:text-gray-400">
+                            write what you feel
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-start space-x-3">
+                        <div className="w-8 h-8 bg-gray-300 dark:bg-gray-600 rounded-full flex-shrink-0 flex items-center justify-center">
+                          <svg
+                            className="w-4 h-4 text-red-500"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+                              />
+                            </svg>
+                          </div>
+                        <div className="flex-1">
+                          <h4 className="text-sm font-medium text-gray-900 dark:text-white">
+                            Recommend
+                          </h4>
+                          <p className="text-xs text-gray-600 dark:text-gray-400">
+                            recommend movies, tvshows, music and books to your
+                            friends
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-start space-x-3">
+                        <div className="w-8 h-8 bg-gray-300 dark:bg-gray-600 rounded-full flex-shrink-0 flex items-center justify-center">
+                          <svg
+                            className="w-4 h-4 text-purple-500"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                              d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
+                              />
+                            </svg>
+                        </div>
+                        <div className="flex-1">
+                          <h4 className="text-sm font-medium text-gray-900 dark:text-white">
+                            Get recommendations
+                          </h4>
+                          <p className="text-xs text-gray-600 dark:text-gray-400">
+                            get recommendations from your friends
+                          </p>
+                        </div>
+                      </div>
                     </div>
                   </div>
-                </div>
+                </CometCard>
               </div>
             </div>
 
@@ -275,8 +236,35 @@ export default function LandingPage() {
                   Rate and review to tell how much you like or how much you
                   hate.
                 </p>
+                <p>
+                  Recommend what you like with your friends and get their
+                  recommendations
+                </p>
               </div>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* User Reviews Section */}
+      <section className="relative z-10 py-20 px-4 bg-gray-50 dark:bg-black/20">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-12">
+            <h2 className="text-4xl md:text-5xl font-light mb-4 text-gray-900 dark:text-white">
+              What our users are
+              <br />
+              <span className="bg-gradient-to-r from-emerald-600 to-blue-600 dark:from-emerald-400 dark:to-blue-400 bg-clip-text text-transparent">
+                saying
+              </span>
+            </h2>
+            <p className="text-lg md:text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
+              Join thousands of users who are already sharing their favorite
+              media and discovering new ones
+            </p>
+          </div>
+
+          <div className="relative">
+            <MarqueeDemo />
           </div>
         </div>
       </section>
@@ -284,171 +272,148 @@ export default function LandingPage() {
       {/* Key Differentiators Section */}
       <section className="relative z-10 py-20 px-4 bg-gray-50 dark:bg-black/20">
         <div className="max-w-6xl mx-auto">
-          <div className="flex flex-col lg:flex-row items-center justify-between gap-12">
+          <div className="flex flex-col lg:flex-row items-center justify-between gap-8">
             {/* Left Side - Text Content */}
             <div className="max-w-md lg:max-w-lg">
-              <h2 className="text-4xl md:text-5xl font-light mb-8 text-left text-gray-900 dark:text-white">
-                What sets us apart from
-                <br />
+              <h2 className="text-4xl md:text-5xl font-light mb-8 text-left">
                 <span className="bg-gradient-to-r from-emerald-600 to-blue-600 dark:from-emerald-400 dark:to-blue-400 bg-clip-text text-transparent">
-                  competition:
+                  Why us?
                 </span>
               </h2>
-              <p className="text-2xl md:text-3xl font-semibold text-emerald-600 dark:text-emerald-400 mb-8 text-left">
-                All your media in one place!
-              </p>
-              <div className="space-y-4 text-lg md:text-xl leading-relaxed text-gray-600 dark:text-gray-300 text-left">
+              <div className="space-y-6 text-lg md:text-xl leading-relaxed text-gray-600 dark:text-gray-300 text-left">
                 <p>
-                  You don't have to go to Letterboxd for
-                  <br />
-                  movies, IMDb/Serialized for shows,
-                  <br />
-                  Goodreads for books, Musicboard for
-                  <br />
-                  music
+                  Share all your media in one place. You dont have to go to
+                  multiple apps to rate and review.
                 </p>
+                <p>All the recommendations from your friends in one place.</p>
+                <p>Shareable profile for adding to you social media bio.</p>
               </div>
-              <p className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-emerald-600 to-blue-600 dark:from-emerald-400 dark:to-blue-400 bg-clip-text text-transparent mt-8 text-left">
-                WE GOT YOU COVERED
-              </p>
             </div>
 
             {/* Right Side - Visual Design */}
             <div className="flex-1 flex justify-center lg:justify-end">
-              <div className="relative w-full max-w-lg lg:max-w-xl">
-                <div className="relative overflow-hidden rounded-2xl shadow-2xl bg-gradient-to-br from-emerald-500 via-blue-500 to-purple-600 p-8">
-                  {/* Background pattern */}
-                  <div className="absolute inset-0 opacity-10">
-                    <div className="absolute top-4 left-4 w-32 h-32 border-2 border-white/20 rounded-full"></div>
-                    <div className="absolute bottom-8 right-8 w-24 h-24 border-2 border-white/20 rounded-full"></div>
-                    <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-16 h-16 border-2 border-white/20 rounded-full"></div>
-                  </div>
-
-                  {/* Main content */}
-                  <div className="relative z-10 text-center">
-                    <div className="mb-8">
-                      <div className="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4 backdrop-blur-sm">
-                        <span className="text-4xl">🎯</span>
-                      </div>
-                      <h3 className="text-2xl font-bold text-white mb-2">
-                        Unified Platform
+              <div className="relative w-full max-w-sm">
+                <CometCard>
+                  <div className="relative overflow-hidden rounded-2xl bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-6">
+                    {/* Main content */}
+                    <div className="text-center mb-6">
+                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                        We got you covered
                       </h3>
-                      <p className="text-white/90 text-sm">
-                        Everything you need in one place
+                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                        music, movies, TV shows, books
                       </p>
                     </div>
 
-                    {/* Media icons grid */}
-                    <div className="grid grid-cols-2 gap-6">
-                      <div className="text-center">
-                        <div className="w-16 h-16 bg-white/90 rounded-full flex items-center justify-center mx-auto mb-2 shadow-lg">
-                          <span className="text-2xl">🎬</span>
+                    {/* Media categories */}
+                    <div className="space-y-4">
+                      <div className="flex items-start space-x-3">
+                        <div className="w-8 h-8 bg-gray-300 dark:bg-gray-600 rounded-full flex-shrink-0 flex items-center justify-center">
+                          <svg
+                            className="w-4 h-4 text-purple-500"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"
+                            />
+                          </svg>
                         </div>
-                        <span className="text-white font-semibold text-sm">
-                          Movies
-                        </span>
-                      </div>
-                      <div className="text-center">
-                        <div className="w-16 h-16 bg-white/90 rounded-full flex items-center justify-center mx-auto mb-2 shadow-lg">
-                          <span className="text-2xl">📚</span>
+                        <div className="flex-1">
+                          <h4 className="text-sm font-medium text-gray-900 dark:text-white">
+                            Music
+                          </h4>
+                          <p className="text-xs text-gray-600 dark:text-gray-400">
+                            20million+ songs, millions of albums, artists
+                          </p>
                         </div>
-                        <span className="text-white font-semibold text-sm">
-                          Books
-                        </span>
                       </div>
-                      <div className="text-center">
-                        <div className="w-16 h-16 bg-white/90 rounded-full flex items-center justify-center mx-auto mb-2 shadow-lg">
-                          <span className="text-2xl">🎵</span>
-                        </div>
-                        <span className="text-white font-semibold text-sm">
-                          Music
-                        </span>
-                      </div>
-                      <div className="text-center">
-                        <div className="w-16 h-16 bg-white/90 rounded-full flex items-center justify-center mx-auto mb-2 shadow-lg">
-                          <span className="text-2xl">📺</span>
-                        </div>
-                        <span className="text-white font-semibold text-sm">
-                          TV Shows
-                        </span>
-                      </div>
-                    </div>
 
-                    {/* Bottom accent */}
-                    <div className="mt-6 pt-4 border-t border-white/20">
-                      <p className="text-white/80 text-xs font-medium">
-                        Powered by Reliva
-                      </p>
+                      <div className="flex items-start space-x-3">
+                        <div className="w-8 h-8 bg-gray-300 dark:bg-gray-600 rounded-full flex-shrink-0 flex items-center justify-center">
+                          <svg
+                            className="w-4 h-4 text-red-500"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"
+                              />
+                            </svg>
+                          </div>
+                        <div className="flex-1">
+                          <h4 className="text-sm font-medium text-gray-900 dark:text-white">
+                            Movies
+                          </h4>
+                          <p className="text-xs text-gray-600 dark:text-gray-400">
+                            500k+ movies
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-start space-x-3">
+                        <div className="w-8 h-8 bg-gray-300 dark:bg-gray-600 rounded-full flex-shrink-0 flex items-center justify-center">
+                          <svg
+                            className="w-4 h-4 text-cyan-500"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                              d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                              />
+                            </svg>
+                          </div>
+                        <div className="flex-1">
+                          <h4 className="text-sm font-medium text-gray-900 dark:text-white">
+                            TV shows/ Anime
+                          </h4>
+                          <p className="text-xs text-gray-600 dark:text-gray-400">
+                            300k+ TV shows, 100k+ anime
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-start space-x-3">
+                        <div className="w-8 h-8 bg-gray-300 dark:bg-gray-600 rounded-full flex-shrink-0 flex items-center justify-center">
+                          <svg
+                            className="w-4 h-4 text-green-500"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                              d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
+                              />
+                            </svg>
+                        </div>
+                        <div className="flex-1">
+                          <h4 className="text-sm font-medium text-gray-900 dark:text-white">
+                            Books
+                          </h4>
+                          <p className="text-xs text-gray-600 dark:text-gray-400">
+                            5 million+ books
+                          </p>
+                        </div>
+                      </div>
                     </div>
                   </div>
-                </div>
+                </CometCard>
               </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Search Capabilities Section */}
-      <section className="relative z-10 py-20 px-4">
-        <div className="max-w-6xl mx-auto text-center">
-          <h2 className="text-4xl md:text-5xl font-light mb-8 text-gray-900 dark:text-white">
-            Search through
-            <br />
-            <span className="bg-gradient-to-r from-emerald-600 to-blue-600 dark:from-emerald-400 dark:to-blue-400 bg-clip-text text-transparent">
-              millions
-            </span>
-          </h2>
-
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 mb-12">
-            <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700 shadow-lg">
-              <div className="text-3xl font-bold text-emerald-600 dark:text-emerald-400 mb-2">
-                20M+
-              </div>
-              <div className="text-gray-500 dark:text-gray-400">Songs</div>
-            </div>
-            <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700 shadow-lg">
-              <div className="text-3xl font-bold text-blue-600 dark:text-blue-400 mb-2">
-                Millions
-              </div>
-              <div className="text-gray-500 dark:text-gray-400">Movies</div>
-            </div>
-            <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700 shadow-lg">
-              <div className="text-3xl font-bold text-purple-600 dark:text-purple-400 mb-2">
-                Hundreds
-              </div>
-              <div className="text-gray-500 dark:text-gray-400">of Shows</div>
-            </div>
-            <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700 shadow-lg">
-              <div className="text-3xl font-bold text-green-600 dark:text-green-400 mb-2">
-                Thousands
-              </div>
-              <div className="text-gray-500 dark:text-gray-400">of Books</div>
-            </div>
-          </div>
-
-          <div className="space-y-6">
-            <p className="text-2xl md:text-3xl font-semibold text-gray-900 dark:text-white">
-              Get started today
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-              <Link href="/login">
-                <Button
-                  variant="outline"
-                  size="lg"
-                  className="border-gray-300 dark:border-gray-600 text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-800 transition-all duration-300 text-lg px-8 py-4 shadow-lg transform hover:scale-105"
-                >
-                  Log In
-                </Button>
-              </Link>
-              <Link href="/signup">
-                <Button
-                  size="lg"
-                  className="bg-gradient-to-r from-emerald-600 to-blue-600 hover:from-emerald-700 hover:to-blue-700 dark:from-emerald-500 dark:to-blue-500 dark:hover:from-emerald-600 dark:hover:to-blue-600 text-white text-lg px-8 py-4 shadow-lg transition-all duration-300 ease-in-out transform hover:scale-105"
-                >
-                  <Zap className="mr-2 h-5 w-5 transition-transform duration-300 group-hover:rotate-12" />
-                  Sign Up
-                </Button>
-              </Link>
             </div>
           </div>
         </div>
@@ -458,11 +423,8 @@ export default function LandingPage() {
       <footer className="relative z-10 py-12 px-4 border-t border-gray-200 dark:border-gray-800 bg-white/50 dark:bg-gray-900/50 backdrop-blur-sm">
         <div className="max-w-6xl mx-auto text-center">
           <div className="text-2xl font-bold bg-gradient-to-r from-emerald-600 to-blue-600 dark:from-emerald-400 dark:to-blue-400 bg-clip-text text-transparent mb-4">
-            Reliva
+            What is your Reliva?
           </div>
-          <p className="text-gray-600 dark:text-gray-400">
-            Share what you love. Discover what others love.
-          </p>
         </div>
       </footer>
     </>

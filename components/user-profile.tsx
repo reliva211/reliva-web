@@ -364,11 +364,7 @@ export default function UserProfile({ userId: propUserId }: UserProfileProps) {
                   @{profile.username || "username"}
                 </p>
 
-                {profile.bio && (
-                  <p className="mt-2 max-w-md">
-                    {profile.bio}
-                  </p>
-                )}
+                {profile.bio && <p className="mt-2 max-w-md">{profile.bio}</p>}
 
                 <div className="flex flex-wrap items-center gap-4 mt-3 text-sm text-muted-foreground">
                   {profile.website ? (

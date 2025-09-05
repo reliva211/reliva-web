@@ -28,7 +28,10 @@ export default function ReviewDetailLoading() {
                 <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded-lg animate-pulse mb-4"></div>
                 <div className="space-y-3">
                   {[...Array(6)].map((_, i) => (
-                    <div key={i} className="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+                    <div
+                      key={i}
+                      className="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"
+                    ></div>
                   ))}
                 </div>
               </div>
@@ -53,7 +56,10 @@ export default function ReviewDetailLoading() {
             <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg border border-gray-200 dark:border-gray-700 mb-6">
               <div className="space-y-4">
                 {[...Array(8)].map((_, i) => (
-                  <div key={i} className="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+                  <div
+                    key={i}
+                    className="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"
+                  ></div>
                 ))}
               </div>
             </div>
