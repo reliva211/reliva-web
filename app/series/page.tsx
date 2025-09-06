@@ -127,7 +127,9 @@ export default function SeriesPage() {
   const [showDiscover, setShowDiscover] = useState(true);
 
   // Carousel arrows state
-  const [scrollContainer, setScrollContainer] = useState<HTMLDivElement | null>(null);
+  const [scrollContainer, setScrollContainer] = useState<HTMLDivElement | null>(
+    null
+  );
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
 
@@ -542,13 +544,13 @@ export default function SeriesPage() {
   // Carousel arrow functions
   const scrollLeft = () => {
     if (scrollContainer) {
-      scrollContainer.scrollBy({ left: -200, behavior: 'smooth' });
+      scrollContainer.scrollBy({ left: -200, behavior: "smooth" });
     }
   };
 
   const scrollRight = () => {
     if (scrollContainer) {
-      scrollContainer.scrollBy({ left: 200, behavior: 'smooth' });
+      scrollContainer.scrollBy({ left: 200, behavior: "smooth" });
     }
   };
 
@@ -568,8 +570,8 @@ export default function SeriesPage() {
   // Handle window resize
   useEffect(() => {
     const handleResize = () => updateScrollButtons();
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
   }, []);
 
   // Fetch trending series
@@ -611,7 +613,7 @@ export default function SeriesPage() {
         </div>
       </div>
 
-      <div className="container mx-auto px-1 sm:px-6 py-6 sm:py-8 max-w-full overflow-x-hidden">
+      <div className="container mx-auto px-0 sm:px-0 py-6 sm:py-8 max-w-full overflow-x-hidden">
         {/* Search and Filters */}
         <div className="mb-8 sm:mb-10 w-full">
           <div className="flex flex-col gap-4 sm:gap-6 mb-6 sm:mb-8 w-full">
@@ -674,33 +676,61 @@ export default function SeriesPage() {
               </button>
             )}
 
-            <div 
+            <div
               ref={setScrollContainer}
               onScroll={updateScrollButtons}
               className="flex items-center gap-2 sm:gap-3 overflow-x-auto pb-4 scrollbar-hide horizontal-scroll-container px-10"
             >
-            {/* Trending Tab */}
-            <button
-              onClick={() => {
-                setShowDiscover(true);
-                setSelectedCollection("");
-              }}
-              className={`flex items-center gap-2 px-3 py-2 sm:px-4 sm:py-3 rounded-xl transition-all duration-300 whitespace-nowrap font-medium text-sm sm:text-base flex-shrink-0 ${
-                showDiscover && !selectedCollection
-                  ? "bg-gradient-to-r from-gray-800 to-gray-700 text-white shadow-lg border border-gray-600"
-                  : "hover:bg-gray-800/50 text-gray-300 hover:text-white"
-              }`}
-            >
-              <span>Trending</span>
-            </button>
+              {/* Trending Tab */}
+              <button
+                onClick={() => {
+                  setShowDiscover(true);
+                  setSelectedCollection("");
+                }}
+                className={`flex items-center gap-2 px-3 py-2 sm:px-4 sm:py-3 rounded-xl transition-all duration-300 whitespace-nowrap font-medium text-sm sm:text-base flex-shrink-0 ${
+                  showDiscover && !selectedCollection
+                    ? "bg-gradient-to-r from-gray-800 to-gray-700 text-white shadow-lg border border-gray-600"
+                    : "hover:bg-gray-800/50 text-gray-300 hover:text-white"
+                }`}
+              >
+                <span>Trending</span>
+              </button>
 
-            {collections.map((collection) => {
-              const seriesCount = savedSeries.filter((series) =>
-                series.collections?.includes(collection.id)
-              ).length;
+              {collections.map((collection) => {
+                const seriesCount = savedSeries.filter((series) =>
+                  series.collections?.includes(collection.id)
+                ).length;
 
-              // Special handling for "All Series" collection
-              if (collection.name === "All Series") {
+                // Special handling for "All Series" collection
+                if (collection.name === "All Series") {
+                  return (
+                    <button
+                      key={collection.id}
+                      onClick={() => {
+                        handleCollectionSelect(collection.id);
+                        setShowDiscover(false);
+                      }}
+                      className={`flex items-center gap-2 px-3 py-2 sm:px-4 sm:py-3 rounded-xl transition-all duration-300 whitespace-nowrap font-medium text-sm sm:text-base flex-shrink-0 ${
+                        selectedCollection === collection.id
+                          ? "bg-gradient-to-r from-gray-800 to-gray-700 text-white shadow-lg border border-gray-600"
+                          : "hover:bg-gray-800/50 text-gray-300 hover:text-white"
+                      }`}
+                    >
+                      <span>{collection.name}</span>
+                      <Badge
+                        variant="secondary"
+                        className={`ml-1 ${
+                          selectedCollection === collection.id
+                            ? "bg-white/20 text-white"
+                            : "bg-gray-700 text-gray-300"
+                        }`}
+                      >
+                        {savedSeries.length}
+                      </Badge>
+                    </button>
+                  );
+                }
+
                 return (
                   <button
                     key={collection.id}
@@ -723,99 +753,71 @@ export default function SeriesPage() {
                           : "bg-gray-700 text-gray-300"
                       }`}
                     >
-                      {savedSeries.length}
+                      {seriesCount}
                     </Badge>
                   </button>
                 );
-              }
+              })}
 
-              return (
-                <button
-                  key={collection.id}
-                  onClick={() => {
-                    handleCollectionSelect(collection.id);
-                    setShowDiscover(false);
-                  }}
-                  className={`flex items-center gap-2 px-3 py-2 sm:px-4 sm:py-3 rounded-xl transition-all duration-300 whitespace-nowrap font-medium text-sm sm:text-base flex-shrink-0 ${
-                    selectedCollection === collection.id
-                      ? "bg-gradient-to-r from-gray-800 to-gray-700 text-white shadow-lg border border-gray-600"
-                      : "hover:bg-gray-800/50 text-gray-300 hover:text-white"
-                  }`}
-                >
-                  <span>{collection.name}</span>
-                  <Badge
-                    variant="secondary"
-                    className={`ml-1 ${
-                      selectedCollection === collection.id
-                        ? "bg-white/20 text-white"
-                        : "bg-gray-700 text-gray-300"
-                    }`}
-                  >
-                    {seriesCount}
-                  </Badge>
-                </button>
-              );
-            })}
-
-            <Dialog
-              open={isCreateCollectionOpen}
-              onOpenChange={setCreateCollectionOpen}
-            >
-              <DialogTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="h-10 w-10 border-gray-700 hover:bg-gray-800 rounded-xl"
-                >
-                  <Plus className="h-4 w-4" />
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="bg-gray-800 border-gray-700">
-                <DialogHeader>
-                  <DialogTitle className="text-white">
-                    Create New Collection
-                  </DialogTitle>
-                  <DialogDescription className="text-gray-400">
-                    Create a new collection to organize your series.
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="space-y-4">
-                  <div>
-                    <Label htmlFor="name" className="text-gray-300">
-                      Collection Name
-                    </Label>
-                    <Input
-                      id="name"
-                      value={newCollectionName}
-                      onChange={(e) => setNewCollectionName(e.target.value)}
-                      placeholder="Enter collection name..."
-                      className="bg-gray-700 border-gray-600 text-white placeholder:text-gray-400"
-                    />
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="public"
-                      checked={newCollectionIsPublic}
-                      onCheckedChange={(checked) =>
-                        setNewCollectionIsPublic(!!checked)
-                      }
-                    />
-                    <Label htmlFor="public" className="text-gray-300">
-                      Make collection public
-                    </Label>
-                  </div>
-                </div>
-                <DialogFooter>
+              <Dialog
+                open={isCreateCollectionOpen}
+                onOpenChange={setCreateCollectionOpen}
+              >
+                <DialogTrigger asChild>
                   <Button
-                    onClick={createCollection}
-                    disabled={!newCollectionName.trim()}
-                    className="bg-gradient-to-r from-green-600 to-green-500 hover:from-green-500 hover:to-green-400"
+                    variant="outline"
+                    size="sm"
+                    className="h-10 w-10 border-gray-700 hover:bg-gray-800 rounded-xl"
                   >
-                    Create Collection
+                    <Plus className="h-4 w-4" />
                   </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
+                </DialogTrigger>
+                <DialogContent className="bg-gray-800 border-gray-700">
+                  <DialogHeader>
+                    <DialogTitle className="text-white">
+                      Create New Collection
+                    </DialogTitle>
+                    <DialogDescription className="text-gray-400">
+                      Create a new collection to organize your series.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <div>
+                      <Label htmlFor="name" className="text-gray-300">
+                        Collection Name
+                      </Label>
+                      <Input
+                        id="name"
+                        value={newCollectionName}
+                        onChange={(e) => setNewCollectionName(e.target.value)}
+                        placeholder="Enter collection name..."
+                        className="bg-gray-700 border-gray-600 text-white placeholder:text-gray-400"
+                      />
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="public"
+                        checked={newCollectionIsPublic}
+                        onCheckedChange={(checked) =>
+                          setNewCollectionIsPublic(!!checked)
+                        }
+                      />
+                      <Label htmlFor="public" className="text-gray-300">
+                        Make collection public
+                      </Label>
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button
+                      onClick={createCollection}
+                      disabled={!newCollectionName.trim()}
+                      className="bg-gradient-to-r from-green-600 to-green-500 hover:from-green-500 hover:to-green-400"
+                    >
+                      Create Collection
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
             </div>
           </div>
         </div>
@@ -904,14 +906,14 @@ export default function SeriesPage() {
                       </p>
                     </div>
                   </div>
-                  
+
                   {collections.map((collection) => {
-                    const collectionSeries = filteredAndSortedSeries.filter((series) =>
-                      series.collections?.includes(collection.id)
+                    const collectionSeries = filteredAndSortedSeries.filter(
+                      (series) => series.collections?.includes(collection.id)
                     );
-                    
+
                     if (collectionSeries.length === 0) return null;
-                    
+
                     return (
                       <div key={collection.id} className="mb-8">
                         <div className="flex items-center gap-3 mb-4">
@@ -924,7 +926,10 @@ export default function SeriesPage() {
                           >
                             {collection.name}
                           </button>
-                          <Badge variant="secondary" className="bg-gray-700 text-gray-300">
+                          <Badge
+                            variant="secondary"
+                            className="bg-gray-700 text-gray-300"
+                          >
                             {collectionSeries.length}
                           </Badge>
                         </div>
@@ -940,7 +945,9 @@ export default function SeriesPage() {
                               key={series.id}
                               series={series}
                               collections={collections}
-                              onRemoveFromCollection={removeSeriesFromCollection}
+                              onRemoveFromCollection={
+                                removeSeriesFromCollection
+                              }
                               viewMode={viewMode}
                               allSeries={filteredAndSortedSeries}
                             />
@@ -956,8 +963,9 @@ export default function SeriesPage() {
                   <div className="flex items-center justify-between mb-6">
                     <div>
                       <h2 className="text-3xl font-bold text-white">
-                        {getCollectionInfo(selectedCollection)?.name || "Series"} (
-                        {filteredAndSortedSeries.length})
+                        {getCollectionInfo(selectedCollection)?.name ||
+                          "Series"}{" "}
+                        ({filteredAndSortedSeries.length})
                       </h2>
                       <p className="text-gray-400 mt-2">
                         Your{" "}

@@ -277,8 +277,7 @@ export default function ProfileBooksSection({
   } | null>(null);
   const [editingItem, setEditingItem] = useState<any>(null);
 
-  // Recently read navigation state
-  const [currentRecentlyReadIndex, setCurrentRecentlyReadIndex] = useState(0);
+  // No navigation needed since we only show the latest item
 
   // Scroll container refs
   const scrollContainerRefs = {
@@ -298,8 +297,8 @@ export default function ProfileBooksSection({
     favoriteAuthors: [],
   };
 
-  // Recently read list
-  const recentlyReadList = safeBooksProfile.recentlyRead || [];
+  // Get the latest currently reading book (only one item now)
+  const currentRecentlyRead = safeBooksProfile.recentlyRead?.[0] || null;
 
   // Limited lists for display
   const limitedRatings = safeBooksProfile.ratings || [];
@@ -583,27 +582,6 @@ export default function ProfileBooksSection({
     }
   };
 
-  // Navigation functions for recently read
-  const navigateRecentlyReadLeft = () => {
-    if (recentlyReadList.length > 1) {
-      setCurrentRecentlyReadIndex((prev) =>
-        prev === recentlyReadList.length - 1 ? 0 : prev + 1
-      );
-    }
-  };
-
-  const navigateRecentlyReadRight = () => {
-    if (recentlyReadList.length > 1) {
-      setCurrentRecentlyReadIndex((prev) =>
-        prev === 0 ? recentlyReadList.length - 1 : prev - 1
-      );
-    }
-  };
-
-  // Get current recently read book
-  const currentRecentlyRead =
-    recentlyReadList[currentRecentlyReadIndex] || null;
-
   // Handle like click
   const handleLikeClick = (book: GoogleBookItem) => {
     // Add to favorites if not already there
@@ -665,7 +643,9 @@ export default function ProfileBooksSection({
       {publicCollections.length > 0 && (
         <div className="max-w-3xl mx-auto">
           <div className="flex items-center justify-start mb-4">
-            <p className="text-base sm:text-lg font-bold text-white">Public Collections</p>
+            <p className="text-base sm:text-lg font-bold text-white">
+              Public Collections
+            </p>
           </div>
           {loadingPublicCollections ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -736,7 +716,9 @@ export default function ProfileBooksSection({
       {/* Recently read section - horizontal layout */}
       <div className="max-w-3xl mx-auto">
         <div className="flex items-center gap-3 mb-4">
-          <p className="text-base sm:text-lg font-bold text-white">Currently Reading</p>
+          <p className="text-base sm:text-lg font-bold text-white">
+            Currently Reading
+          </p>
           {!readOnly && (
             <Button
               variant="ghost"
@@ -778,7 +760,9 @@ export default function ProfileBooksSection({
                         variant="ghost"
                         size="sm"
                         className="h-6 w-6 p-0 bg-red-500/20 hover:bg-red-500/30 text-white"
-                        onClick={() => removeRecentlyRead(currentRecentlyRead.id)}
+                        onClick={() =>
+                          removeRecentlyRead(currentRecentlyRead.id)
+                        }
                       >
                         <Trash2 className="h-3 w-3" />
                       </Button>
@@ -807,37 +791,11 @@ export default function ProfileBooksSection({
                     : "No description available"}
                 </p>
 
-                {/* Action buttons and navigation */}
+                {/* Action buttons */}
                 <div className="flex items-center gap-4">
-                  {/* Navigation dots */}
-                  {recentlyReadList.length > 1 && (
-                    <div className="flex gap-1">
-                      {recentlyReadList.map((_, index) => (
-                        <div
-                          key={index}
-                          className={`w-2 h-2 rounded-full transition-colors ${
-                            index === currentRecentlyReadIndex
-                              ? "bg-primary"
-                              : "bg-muted-foreground/30"
-                          }`}
-                        />
-                      ))}
-                    </div>
-                  )}
+                  {/* No navigation needed for single item */}
                 </div>
               </div>
-
-              {/* Navigation arrow */}
-              {recentlyReadList.length > 1 && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-10 w-10 p-0 bg-black/80 hover:bg-black backdrop-blur-md border border-white/10 rounded-full flex-shrink-0 shadow-2xl hover:scale-110 transition-all duration-300 z-30"
-                  onClick={navigateRecentlyReadRight}
-                >
-                  <ChevronRight className="h-5 w-5 text-white" />
-                </Button>
-              )}
             </div>
           ) : (
             <div className="flex gap-4 items-start">
@@ -848,7 +806,9 @@ export default function ProfileBooksSection({
                   {!readOnly ? (
                     <p className="text-xs text-white">Add Current Read</p>
                   ) : (
-                    <p className="text-xs text-gray-400">No currently reading</p>
+                    <p className="text-xs text-gray-400">
+                      No currently reading
+                    </p>
                   )}
                 </div>
               </div>
@@ -890,7 +850,9 @@ export default function ProfileBooksSection({
         {/* favorite books - takes first column */}
         <div className="col-span-3">
           <div className="flex items-center justify-start mb-4">
-            <p className="text-base sm:text-lg font-bold text-white">Favorite Books</p>
+            <p className="text-base sm:text-lg font-bold text-white">
+              Favorite Books
+            </p>
           </div>
           <div className="relative">
             <div
@@ -1005,7 +967,9 @@ export default function ProfileBooksSection({
       {/* reading list */}
       <div className="mt-12 max-w-3xl mx-auto">
         <div className="flex items-center justify-start mb-4">
-          <p className="text-base sm:text-lg font-bold text-white">Reading List</p>
+          <p className="text-base sm:text-lg font-bold text-white">
+            Reading List
+          </p>
         </div>
         <div className="relative">
           <div
@@ -1137,7 +1101,9 @@ export default function ProfileBooksSection({
       {/* recommendations */}
       <div className="mt-12 max-w-3xl mx-auto">
         <div className="flex items-center justify-start mb-4">
-          <p className="text-base sm:text-lg font-bold text-white">Recommendations</p>
+          <p className="text-base sm:text-lg font-bold text-white">
+            Recommendations
+          </p>
         </div>
         <div className="relative">
           <div
@@ -1320,7 +1286,6 @@ export default function ProfileBooksSection({
                     </div>
                   </div>
                 ))}
-
               </>
             ) : (
               // Show single empty screen when no ratings

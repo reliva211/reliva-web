@@ -74,7 +74,16 @@ const API_BASE =
 // Force dynamic rendering to prevent prerender issues
 export const dynamic = "force-dynamic";
 
-import { Star, Search, Film, Tv, BookOpen, XCircle, Music } from "lucide-react";
+import {
+  Star,
+  Search,
+  Film,
+  Tv,
+  BookOpen,
+  XCircle,
+  Music,
+  ChevronRight,
+} from "lucide-react";
 import Image from "next/image";
 import { searchService } from "@/lib/search-service";
 import { db } from "@/lib/firebase";
@@ -119,7 +128,9 @@ function ReviewsPageContent() {
   const [likedPosts, setLikedPosts] = useState<Set<string>>(new Set());
   const [likedReplies, setLikedReplies] = useState<Set<string>>(new Set());
   const [userProfiles, setUserProfiles] = useState<Map<string, any>>(new Map());
-  const [expandedComments, setExpandedComments] = useState<Set<string>>(new Set());
+  const [expandedComments, setExpandedComments] = useState<Set<string>>(
+    new Set()
+  );
   const wsRef = useRef<WebSocket | null>(null);
 
   // Function to fetch user profile for a given authorId from Firebase directly
@@ -858,170 +869,174 @@ function ReviewsPageContent() {
     const sortedComments = sortReplies(topLevelComments);
 
     // Apply limit if specified
-    const commentsToShow = limit ? sortedComments.slice(0, limit) : sortedComments;
+    const commentsToShow = limit
+      ? sortedComments.slice(0, limit)
+      : sortedComments;
     const hasMoreComments = limit && sortedComments.length > limit;
 
     return (
       <>
         {commentsToShow.map((comment) => (
-      <div
-        key={comment._id}
-        className="flex gap-3 border-l border-[#2a2a2a] ml-2 p-3 bg-[#0a0a0a] rounded-r-lg w-full min-w-0 overflow-hidden"
-      >
-        <OtherUserAvatar
-          authorId={comment.authorId?._id}
-          username={comment.authorId?.username}
-          displayName={userProfiles.get(comment.authorId?._id)?.displayName}
-          avatarUrl={userProfiles.get(comment.authorId?._id)?.avatarUrl}
-          size="sm"
-          className="flex-shrink-0"
-        />
-
-        <div className="flex-1 min-w-0 max-w-full overflow-hidden">
-          <div className="flex items-start gap-2 mb-2">
-            <span
-              className="font-medium text-sm text-[#f5f5f5] cursor-pointer hover:text-blue-300 transition-colors"
-              onClick={() => router.push(`/users/${comment.authorId?._id}`)}
-            >
-              {userProfiles.get(comment.authorId?._id)?.displayName ||
-                comment.authorId?.username}
-            </span>
-            <span className="text-[#a0a0a0] text-xs">
-              {formatTime(comment.timestamp)}
-            </span>
-            {user?.uid === comment.authorId?._id && (
-              <button
-                className="ml-auto p-1 hover:bg-red-500/20 rounded-full transition-colors group"
-                title="Delete comment"
-              >
-                <Trash2 className="w-3 h-3 text-[#808080] group-hover:text-red-400" />
-              </button>
-            )}
-          </div>
-          <p
-            className="text-sm text-[#f0f0f0] whitespace-pre-wrap mb-3 leading-relaxed break-all word-break-break-all overflow-wrap-anywhere hyphens-auto"
-            style={{
-              wordWrap: "break-word",
-              overflowWrap: "anywhere",
-              wordBreak: "break-all",
-              maxWidth: "100%",
-              width: "100%",
-            }}
+          <div
+            key={comment._id}
+            className="flex gap-3 border-l border-[#2a2a2a] ml-2 p-3 bg-[#0a0a0a] rounded-r-lg w-full min-w-0 overflow-hidden"
           >
-            {comment.content}
-          </p>
+            <OtherUserAvatar
+              authorId={comment.authorId?._id}
+              username={comment.authorId?.username}
+              displayName={userProfiles.get(comment.authorId?._id)?.displayName}
+              avatarUrl={userProfiles.get(comment.authorId?._id)?.avatarUrl}
+              size="sm"
+              className="flex-shrink-0"
+            />
 
-          <div className="flex items-center gap-2 sm:gap-4 text-[#a0a0a0] overflow-hidden">
-            <button
-              onClick={() => toggleReplyInput(`${postId}-${comment._id}`)}
-              className="flex items-center gap-1.5 hover:text-blue-400 transition-all duration-200 group"
-            >
-              <div className="p-1.5 rounded-full group-hover:bg-blue-600/20 transition-colors">
-                <MessageCircle className="w-4 h-4" />
-              </div>
-              <span className="text-xs font-medium">
-                Reply
-                {comment.comments && comment.comments.length > 0 && (
-                  <span className="ml-1 text-[#808080]">
-                    ({comment.comments.length})
-                  </span>
-                )}
-              </span>
-            </button>
-
-            <button
-              onClick={() => toggleReplyLike(postId, comment._id)}
-              className="flex items-center gap-1.5 hover:text-rose-400 transition-all duration-200 group"
-            >
-              <div className="p-1.5 rounded-full group-hover:bg-rose-600/20 transition-colors">
-                <Heart
-                  className={`w-4 h-4 ${
-                    comment.isLiked ? "fill-current text-rose-400" : ""
-                  }`}
-                />
-              </div>
-              <span className="text-xs font-medium">{comment.likeCount}</span>
-            </button>
-
-            {/* Thread Navigation - Show "See Replies" for comments with responses */}
-            {comment.comments && comment.comments.length > 0 && (
-              <Link
-                href={`/reviews/${postId}/thread/${comment._id}`}
-                className="flex items-center gap-1.5 hover:text-green-400 transition-all duration-200 group"
-              >
-                <div className="p-1.5 rounded-full group-hover:bg-green-600/20 transition-colors">
-                  <MessageCircle className="w-4 h-4" />
-                </div>
-                <span className="text-xs font-medium">
-                  See Replies
+            <div className="flex-1 min-w-0 max-w-full overflow-hidden">
+              <div className="flex items-start gap-2 mb-2">
+                <span
+                  className="font-medium text-sm text-[#f5f5f5] cursor-pointer hover:text-blue-300 transition-colors"
+                  onClick={() => router.push(`/users/${comment.authorId?._id}`)}
+                >
+                  {userProfiles.get(comment.authorId?._id)?.displayName ||
+                    comment.authorId?.username}
                 </span>
-              </Link>
-            )}
-          </div>
+                <span className="text-[#a0a0a0] text-xs">
+                  {formatTime(comment.timestamp)}
+                </span>
+                {user?.uid === comment.authorId?._id && (
+                  <button
+                    className="ml-auto p-1 hover:bg-red-500/20 rounded-full transition-colors group"
+                    title="Delete comment"
+                  >
+                    <Trash2 className="w-3 h-3 text-[#808080] group-hover:text-red-400" />
+                  </button>
+                )}
+              </div>
+              <p
+                className="text-sm text-[#f0f0f0] whitespace-pre-wrap mb-3 leading-relaxed break-all word-break-break-all overflow-wrap-anywhere hyphens-auto"
+                style={{
+                  wordWrap: "break-word",
+                  overflowWrap: "anywhere",
+                  wordBreak: "break-all",
+                  maxWidth: "100%",
+                  width: "100%",
+                }}
+              >
+                {comment.content}
+              </p>
 
-          {/* Reply Input for top-level comments */}
-          {showReplyInput[`${postId}-${comment._id}`] && (
-            <div className="mt-3 bg-[#0f0f0f] rounded-lg border border-[#2a2a2a] shadow-sm overflow-hidden">
-              <div className="p-3">
-                <div className="flex gap-2 mb-3 min-w-0">
-                  <UserAvatar
-                    userId={user?.uid}
-                    size="sm"
-                    className="flex-shrink-0"
-                    displayName={user?.displayName || undefined}
-                    username={user?.email?.split("@")[0] || undefined}
-                    clickable={false}
-                  />
-                  <div className="flex-1 min-w-0">
-                    <Textarea
-                      value={replyInputs[`${postId}-${comment._id}`] || ""}
-                      onChange={(e) =>
-                        setReplyInputs((prev) => ({
-                          ...prev,
-                          [`${postId}-${comment._id}`]: e.target.value,
-                        }))
-                      }
-                      placeholder="Write a reply..."
-                      className="min-h-[35px] max-h-[80px] text-sm border-none resize-none focus-visible:ring-0 bg-black px-2 py-1 rounded-lg text-white placeholder-[#606060] selection:bg-transparent selection:text-white"
-                      disabled={isReplying[`${postId}-${comment._id}`]}
+              <div className="flex items-center gap-2 sm:gap-4 text-[#a0a0a0] overflow-hidden">
+                <button
+                  onClick={() => toggleReplyInput(`${postId}-${comment._id}`)}
+                  className="flex items-center gap-1.5 hover:text-blue-400 transition-all duration-200 group"
+                >
+                  <div className="p-1.5 rounded-full group-hover:bg-blue-600/20 transition-colors">
+                    <MessageCircle className="w-4 h-4" />
+                  </div>
+                  <span className="text-xs font-medium">
+                    Reply
+                    {comment.comments && comment.comments.length > 0 && (
+                      <span className="ml-1 text-[#808080]">
+                        ({comment.comments.length})
+                      </span>
+                    )}
+                  </span>
+                </button>
+
+                <button
+                  onClick={() => toggleReplyLike(postId, comment._id)}
+                  className="flex items-center gap-1.5 hover:text-rose-400 transition-all duration-200 group"
+                >
+                  <div className="p-1.5 rounded-full group-hover:bg-rose-600/20 transition-colors">
+                    <Heart
+                      className={`w-4 h-4 ${
+                        comment.isLiked ? "fill-current text-rose-400" : ""
+                      }`}
                     />
                   </div>
-                </div>
-                <div className="flex gap-2 pt-2 border-t border-[#2a2a2a]">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => toggleReplyInput(`${postId}-${comment._id}`)}
-                    disabled={isReplying[`${postId}-${comment._id}`]}
-                    className="text-[#808080] hover:text-[#a0a0a0] text-xs px-1.5 py-0.5 h-5 bg-[#1a1a1a] border border-[#2a2a2a]"
+                  <span className="text-xs font-medium">
+                    {comment.likeCount}
+                  </span>
+                </button>
+
+                {/* Thread Navigation - Show "See Replies" for comments with responses */}
+                {comment.comments && comment.comments.length > 0 && (
+                  <Link
+                    href={`/reviews/${postId}/thread/${comment._id}`}
+                    className="flex items-center gap-1.5 hover:text-green-400 transition-all duration-200 group"
                   >
-                    Cancel
-                  </Button>
-                  <Button
-                    size="sm"
-                    onClick={() => handleReply(postId, comment._id)}
-                    disabled={
-                      !replyInputs[`${postId}-${comment._id}`]?.trim() ||
-                      isReplying[`${postId}-${comment._id}`]
-                    }
-                    className="bg-blue-600/80 hover:bg-blue-700/80 text-white font-medium rounded-md px-1.5 py-0.5 text-xs shadow-sm hover:shadow-md transition-all duration-200 h-5"
-                  >
-                    {isReplying[`${postId}-${comment._id}`] ? (
-                      <div className="flex items-center gap-1">
-                        <div className="w-2 h-2 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                        <span>Replying...</span>
-                      </div>
-                    ) : (
-                      "Reply"
-                    )}
-                  </Button>
-                </div>
+                    <div className="p-1.5 rounded-full group-hover:bg-green-600/20 transition-colors">
+                      <ChevronRight className="w-4 h-4" />
+                    </div>
+                    <span className="text-xs font-medium">See Replies</span>
+                  </Link>
+                )}
               </div>
+
+              {/* Reply Input for top-level comments */}
+              {showReplyInput[`${postId}-${comment._id}`] && (
+                <div className="mt-3 bg-[#0f0f0f] rounded-lg border border-[#2a2a2a] shadow-sm overflow-hidden">
+                  <div className="p-3">
+                    <div className="flex gap-2 mb-3 min-w-0">
+                      <UserAvatar
+                        userId={user?.uid}
+                        size="sm"
+                        className="flex-shrink-0"
+                        displayName={user?.displayName || undefined}
+                        username={user?.email?.split("@")[0] || undefined}
+                        clickable={false}
+                      />
+                      <div className="flex-1 min-w-0">
+                        <Textarea
+                          value={replyInputs[`${postId}-${comment._id}`] || ""}
+                          onChange={(e) =>
+                            setReplyInputs((prev) => ({
+                              ...prev,
+                              [`${postId}-${comment._id}`]: e.target.value,
+                            }))
+                          }
+                          placeholder="Write a reply..."
+                          className="min-h-[35px] max-h-[80px] text-sm border-none resize-none focus-visible:ring-0 bg-black px-2 py-1 rounded-lg text-white placeholder-[#606060] selection:bg-transparent selection:text-white"
+                          disabled={isReplying[`${postId}-${comment._id}`]}
+                        />
+                      </div>
+                    </div>
+                    <div className="flex gap-2 pt-2 border-t border-[#2a2a2a]">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() =>
+                          toggleReplyInput(`${postId}-${comment._id}`)
+                        }
+                        disabled={isReplying[`${postId}-${comment._id}`]}
+                        className="text-[#808080] hover:text-[#a0a0a0] text-xs px-1.5 py-0.5 h-5 bg-[#1a1a1a] border border-[#2a2a2a]"
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        size="sm"
+                        onClick={() => handleReply(postId, comment._id)}
+                        disabled={
+                          !replyInputs[`${postId}-${comment._id}`]?.trim() ||
+                          isReplying[`${postId}-${comment._id}`]
+                        }
+                        className="bg-blue-600/80 hover:bg-blue-700/80 text-white font-medium rounded-md px-1.5 py-0.5 text-xs shadow-sm hover:shadow-md transition-all duration-200 h-5"
+                      >
+                        {isReplying[`${postId}-${comment._id}`] ? (
+                          <div className="flex items-center gap-1">
+                            <div className="w-2 h-2 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                            <span>Replying...</span>
+                          </div>
+                        ) : (
+                          "Reply"
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
-          )}
-        </div>
-      </div>
-    ))}
+          </div>
+        ))}
         {hasMoreComments && (
           <div className="flex justify-center mt-3">
             <button
@@ -1029,11 +1044,13 @@ function ReviewsPageContent() {
               className="view-more-comments-btn flex items-center gap-2 px-4 py-2 text-sm text-[#a0a0a0] hover:text-[#d0d0d0] hover:bg-[#1a1a1a] rounded-lg transition-all duration-200 group"
             >
               <span className="font-medium">
-                View {expandedComments.has(postId) ? 'Less' : 'More'} Replies
+                View {expandedComments.has(postId) ? "Less" : "More"} Replies
               </span>
-              <div className={`w-4 h-4 transition-transform duration-200 ${
-                expandedComments.has(postId) ? 'rotate-180' : ''
-              }`}>
+              <div
+                className={`w-4 h-4 transition-transform duration-200 ${
+                  expandedComments.has(postId) ? "rotate-180" : ""
+                }`}
+              >
                 <svg
                   className="w-full h-full"
                   fill="none"

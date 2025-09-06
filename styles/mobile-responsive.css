@@ -240,13 +240,13 @@
 
   /* Better spacing for mobile */
   .discover-section {
-    padding: 0 16px;
+    padding: 0 0px;
     margin-bottom: 24px;
   }
 
   .discover-header {
     margin-bottom: 16px;
-    padding: 0 8px;
+    padding: 0 0px;
   }
 
   /* Ensure proper card spacing */

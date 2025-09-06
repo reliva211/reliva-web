@@ -245,9 +245,7 @@ export default function ProfileSeriesSection({
     ratings: useRef<HTMLDivElement>(null),
   };
 
-  // Recently watched navigation state
-  const [currentRecentlyWatchedIndex, setCurrentRecentlyWatchedIndex] =
-    useState(0);
+  // No navigation needed since we only show the latest item
 
   // Trailer state
   const [trailerOpen, setTrailerOpen] = useState(false);
@@ -581,7 +579,7 @@ export default function ProfileSeriesSection({
     try {
       // Fetch trailers from TMDB API
       const response = await fetch(
-`/api/tmdb/proxy/tv/${series.id}/videos?language=en-US`
+        `/api/tmdb/proxy/tv/${series.id}/videos?language=en-US`
       );
 
       if (!response.ok) {
@@ -721,29 +719,8 @@ export default function ProfileSeriesSection({
     ratings: [],
   };
 
-  // Recently watched list
-  const recentlyWatchedList = safeSeriesProfile.recentlyWatched || [];
-
-  // Navigation functions for recently watched
-  const navigateRecentlyWatchedLeft = () => {
-    if (recentlyWatchedList.length > 1) {
-      setCurrentRecentlyWatchedIndex((prev) =>
-        prev === 0 ? recentlyWatchedList.length - 1 : prev - 1
-      );
-    }
-  };
-
-  const navigateRecentlyWatchedRight = () => {
-    if (recentlyWatchedList.length > 1) {
-      setCurrentRecentlyWatchedIndex((prev) =>
-        prev === recentlyWatchedList.length - 1 ? 0 : prev + 1
-      );
-    }
-  };
-
-  // Get current recently watched series
-  const currentRecentlyWatched =
-    recentlyWatchedList[currentRecentlyWatchedIndex] || null;
+  // Get the latest currently watching series (only one item now)
+  const currentRecentlyWatched = safeSeriesProfile.recentlyWatched?.[0] || null;
 
   // Limit items to specified limits per section
   const limitedFavoriteSeriesList =
@@ -759,7 +736,9 @@ export default function ProfileSeriesSection({
       {publicCollections.length > 0 && (
         <div className="max-w-3xl mx-auto">
           <div className="flex items-center justify-start mb-4">
-            <p className="text-base sm:text-lg font-bold text-white">Public Collections</p>
+            <p className="text-base sm:text-lg font-bold text-white">
+              Public Collections
+            </p>
           </div>
           {loadingPublicCollections ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -829,7 +808,9 @@ export default function ProfileSeriesSection({
 
       <div className="max-w-3xl mx-auto">
         <div className="flex items-center gap-3 mb-4">
-          <p className="text-base sm:text-lg font-bold text-white">Currently Watching</p>
+          <p className="text-base sm:text-lg font-bold text-white">
+            Currently Watching
+          </p>
           {!readOnly && (
             <Button
               variant="ghost"
@@ -874,7 +855,11 @@ export default function ProfileSeriesSection({
                         variant="ghost"
                         size="sm"
                         className="h-8 w-8 p-0 bg-red-500/20 hover:bg-red-500/30 text-white"
-                        onClick={() => removeRecentlyWatched(currentRecentlyWatched.id)}
+                        onClick={() =>
+                          removeRecentlyWatched(
+                            currentRecentlyWatched.id.toString()
+                          )
+                        }
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
@@ -895,24 +880,8 @@ export default function ProfileSeriesSection({
                     : "No description available"}
                 </p>
 
-                {/* Action buttons and navigation */}
+                {/* Action buttons */}
                 <div className="flex items-center gap-4">
-                  {/* Navigation dots */}
-                  {recentlyWatchedList.length > 1 && (
-                    <div className="flex gap-1">
-                      {recentlyWatchedList.map((_, index) => (
-                        <div
-                          key={index}
-                          className={`w-2 h-2 rounded-full transition-colors ${
-                            index === currentRecentlyWatchedIndex
-                              ? "bg-primary"
-                              : "bg-muted-foreground/30"
-                          }`}
-                        />
-                      ))}
-                    </div>
-                  )}
-
                   {/* Trailer button */}
                   <Button
                     variant="outline"
@@ -925,18 +894,6 @@ export default function ProfileSeriesSection({
                   </Button>
                 </div>
               </div>
-
-              {/* Navigation arrow */}
-              {recentlyWatchedList.length > 1 && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-10 w-10 p-0 bg-black/80 hover:bg-black backdrop-blur-md border border-white/10 rounded-full flex-shrink-0 shadow-2xl hover:scale-110 transition-all duration-300 z-30"
-                  onClick={navigateRecentlyWatchedRight}
-                >
-                  <ChevronRight className="h-5 w-5 text-white" />
-                </Button>
-              )}
             </div>
           ) : (
             <div className="flex gap-6 items-start">
@@ -947,7 +904,9 @@ export default function ProfileSeriesSection({
                   {!readOnly ? (
                     <p className="text-sm text-white">Add Current Watch</p>
                   ) : (
-                    <p className="text-sm text-gray-400">No currently watching</p>
+                    <p className="text-sm text-gray-400">
+                      No currently watching
+                    </p>
                   )}
                 </div>
               </div>
@@ -995,7 +954,7 @@ export default function ProfileSeriesSection({
       {/* favorite series */}
       <div className="mt-12 max-w-3xl mx-auto">
         <div className="flex items-center justify-start mb-4">
-                      <p className="text-base sm:text-lg font-bold text-white">Favorite</p>
+          <p className="text-base sm:text-lg font-bold text-white">Favorite</p>
         </div>
         <div className="relative">
           <div
@@ -1249,7 +1208,9 @@ export default function ProfileSeriesSection({
       {/* recommendations */}
       <div className="mt-12 max-w-3xl mx-auto">
         <div className="flex items-center justify-start mb-4">
-          <p className="text-base sm:text-lg font-bold text-white">Recommendation</p>
+          <p className="text-base sm:text-lg font-bold text-white">
+            Recommendation
+          </p>
         </div>
         <div className="relative">
           <div
@@ -1440,7 +1401,6 @@ export default function ProfileSeriesSection({
                     </div>
                   </div>
                 ))}
-
               </>
             ) : (
               // Show single empty screen when no ratings

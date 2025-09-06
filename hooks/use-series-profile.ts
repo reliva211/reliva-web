@@ -112,6 +112,13 @@ export function useSeriesProfile(userId: string | undefined) {
         })
       );
 
+      // Sort by date added (most recent first) and get only the latest item
+      const sortedWatchingSeries = watchingSeries.sort((a, b) => {
+        const dateA = new Date(a.dateAdded || a.createdAt || 0);
+        const dateB = new Date(b.dateAdded || b.createdAt || 0);
+        return dateB.getTime() - dateA.getTime();
+      });
+
       const watchlistSeries = seriesData.filter((series) =>
         series.collections?.some((collectionId: string) => {
           const collection = collectionsData.find(
@@ -148,7 +155,10 @@ export function useSeriesProfile(userId: string | undefined) {
 
       // Create series profile from the fetched data
       const profile: SeriesProfile = {
-        recentlyWatched: watchingSeries.slice(0, 10).map(convertToTMDBSeries), // Use watching for currently watching
+        recentlyWatched:
+          sortedWatchingSeries.length > 0
+            ? [convertToTMDBSeries(sortedWatchingSeries[0])]
+            : [], // Only the latest watching series
         favoriteSeries:
           watchedSeries.length > 0
             ? convertToTMDBSeries(watchedSeries[0])
@@ -514,7 +524,7 @@ export function useSeriesProfile(userId: string | undefined) {
 
     // Ensure seriesId is a string for Firebase document reference
     const seriesIdStr = String(seriesId);
-    
+
     if (!seriesIdStr || seriesIdStr.trim() === "") {
       console.error("Invalid series ID for removal:", seriesId);
       return;
@@ -771,7 +781,10 @@ export function useSeriesProfile(userId: string | undefined) {
           isPublic: true,
         });
       } catch (subcollectionError) {
-        console.error("Error adding to seriesRecommendations subcollection:", subcollectionError);
+        console.error(
+          "Error adding to seriesRecommendations subcollection:",
+          subcollectionError
+        );
         // Don't throw here, as the main recommendation was added successfully
       }
 
@@ -836,7 +849,10 @@ export function useSeriesProfile(userId: string | undefined) {
         );
         await deleteDoc(doc(seriesRecommendationsRef, String(seriesId)));
       } catch (subcollectionError) {
-        console.error("Error removing from seriesRecommendations subcollection:", subcollectionError);
+        console.error(
+          "Error removing from seriesRecommendations subcollection:",
+          subcollectionError
+        );
         // Don't throw here, as the main recommendation was removed successfully
       }
 

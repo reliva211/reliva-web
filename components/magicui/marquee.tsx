@@ -98,3 +98,4 @@ const Marquee = forwardRef<HTMLDivElement, MarqueeProps>(
 Marquee.displayName = "Marquee";
 
 export { Marquee, marqueeVariants };
+

@@ -8,7 +8,13 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { UserAvatar, OtherUserAvatar } from "@/components/user-avatar";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, MessageCircle, Heart, Trash2 } from "lucide-react";
+import {
+  ArrowLeft,
+  MessageCircle,
+  Heart,
+  Trash2,
+  ChevronRight,
+} from "lucide-react";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import Link from "next/link";
 import { toast } from "@/hooks/use-toast";
@@ -644,7 +650,7 @@ export default function ThreadPage() {
                       className="flex items-center gap-1.5 hover:text-green-400 transition-all duration-200 group"
                     >
                       <div className="p-1.5 rounded-full group-hover:bg-green-600/20 transition-colors">
-                        <MessageCircle className="w-4 h-4" />
+                        <ChevronRight className="w-4 h-4" />
                       </div>
                       <span className="text-xs font-medium">
                         See Replies ({reply.comments.length})

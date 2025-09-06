@@ -144,6 +144,19 @@ export function useMovieProfile(userId: string | undefined) {
         })
       );
 
+      // Sort by date added (most recent first) and get only the latest item
+      const sortedWatchedMovies = watchedMovies.sort((a, b) => {
+        const dateA = new Date(a.dateAdded || a.createdAt || 0);
+        const dateB = new Date(b.dateAdded || b.createdAt || 0);
+        return dateB.getTime() - dateA.getTime();
+      });
+
+      const sortedWatchingMovies = watchingMovies.sort((a, b) => {
+        const dateA = new Date(a.dateAdded || a.createdAt || 0);
+        const dateB = new Date(b.dateAdded || b.createdAt || 0);
+        return dateB.getTime() - dateA.getTime();
+      });
+
       const watchlistMovies = moviesData.filter((movie) =>
         movie.collections?.some((collectionId: string) => {
           const collection = collectionsData.find(
@@ -200,7 +213,10 @@ export function useMovieProfile(userId: string | undefined) {
 
       // Create movie profile from the fetched data
       const profile: MovieProfile = {
-        recentlyWatched: watchedMovies.slice(0, 10).map(convertToTMDBMovie), // Use watched for recently watched
+        recentlyWatched:
+          sortedWatchedMovies.length > 0
+            ? [convertToTMDBMovie(sortedWatchedMovies[0])]
+            : [], // Only the latest watched movie
         favoriteMovie:
           favoritesMovies.length > 0
             ? convertToTMDBMovie(favoritesMovies[0])
@@ -829,7 +845,10 @@ export function useMovieProfile(userId: string | undefined) {
           isPublic: true,
         });
       } catch (subcollectionError) {
-        console.error("Error adding to movieRecommendations subcollection:", subcollectionError);
+        console.error(
+          "Error adding to movieRecommendations subcollection:",
+          subcollectionError
+        );
         // Don't throw here, as the main recommendation was added successfully
       }
 
@@ -894,7 +913,10 @@ export function useMovieProfile(userId: string | undefined) {
         );
         await deleteDoc(doc(movieRecommendationsRef, String(movieId)));
       } catch (subcollectionError) {
-        console.error("Error removing from movieRecommendations subcollection:", subcollectionError);
+        console.error(
+          "Error removing from movieRecommendations subcollection:",
+          subcollectionError
+        );
         // Don't throw here, as the main recommendation was removed successfully
       }
 

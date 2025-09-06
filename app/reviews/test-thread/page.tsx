@@ -4,7 +4,7 @@ import React from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { MessageCircle, ArrowRight } from "lucide-react";
+import { MessageCircle, ArrowRight, ChevronRight } from "lucide-react";
 
 export default function TestThreadPage() {
   // Mock data for testing
@@ -111,7 +111,7 @@ export default function TestThreadPage() {
                           className="flex items-center gap-1.5 hover:text-green-400 transition-all duration-200 group"
                         >
                           <div className="p-1.5 rounded-full group-hover:bg-green-600/20 transition-colors">
-                            <MessageCircle className="w-4 h-4" />
+                            <ChevronRight className="w-4 h-4" />
                           </div>
                           <span className="text-xs font-medium">
                             💬 {comment.replies} replies

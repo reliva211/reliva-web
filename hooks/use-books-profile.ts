@@ -85,6 +85,13 @@ export const useBooksProfile = (userId: string) => {
         })
       );
 
+      // Sort by date added (most recent first) and get only the latest item
+      const sortedReadingBooks = readingBooks.sort((a, b) => {
+        const dateA = new Date(a.dateAdded || a.createdAt || 0);
+        const dateB = new Date(b.dateAdded || b.createdAt || 0);
+        return dateB.getTime() - dateA.getTime();
+      });
+
       const toReadBooks = booksData.filter((book) =>
         book.collections?.some((collectionId: string) => {
           const collection = collectionsData.find(
@@ -133,7 +140,10 @@ export const useBooksProfile = (userId: string) => {
 
       // Create books profile from the fetched data
       const profile: BooksProfile = {
-        recentlyRead: readingBooks.slice(0, 10).map(convertToGoogleBookItem), // Use reading for currently reading
+        recentlyRead:
+          sortedReadingBooks.length > 0
+            ? [convertToGoogleBookItem(sortedReadingBooks[0])]
+            : [], // Only the latest reading book
         favoriteBooks: favoriteBooks.map(convertToGoogleBookItem), // Load from Favorites collection
         readingList: toReadBooks.map(convertToGoogleBookItem),
         recommendations: recommendationsBooks.map(convertToGoogleBookItem),
@@ -490,7 +500,10 @@ export const useBooksProfile = (userId: string) => {
           isPublic: true,
         });
       } catch (subcollectionError) {
-        console.error("Error adding to bookRecommendations subcollection:", subcollectionError);
+        console.error(
+          "Error adding to bookRecommendations subcollection:",
+          subcollectionError
+        );
         // Don't throw here, as the main recommendation was added successfully
       }
 
@@ -544,7 +557,10 @@ export const useBooksProfile = (userId: string) => {
         );
         await deleteDoc(doc(bookRecommendationsRef, bookId));
       } catch (subcollectionError) {
-        console.error("Error removing from bookRecommendations subcollection:", subcollectionError);
+        console.error(
+          "Error removing from bookRecommendations subcollection:",
+          subcollectionError
+        );
         // Don't throw here, as the main recommendation was removed successfully
       }
 

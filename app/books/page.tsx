@@ -165,7 +165,9 @@ export default function BooksPage() {
   const [showDiscover, setShowDiscover] = useState(true);
 
   // Carousel arrows state
-  const [scrollContainer, setScrollContainer] = useState<HTMLDivElement | null>(null);
+  const [scrollContainer, setScrollContainer] = useState<HTMLDivElement | null>(
+    null
+  );
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
 
@@ -399,13 +401,13 @@ export default function BooksPage() {
   // Carousel arrow functions
   const scrollLeft = () => {
     if (scrollContainer) {
-      scrollContainer.scrollBy({ left: -200, behavior: 'smooth' });
+      scrollContainer.scrollBy({ left: -200, behavior: "smooth" });
     }
   };
 
   const scrollRight = () => {
     if (scrollContainer) {
-      scrollContainer.scrollBy({ left: 200, behavior: 'smooth' });
+      scrollContainer.scrollBy({ left: 200, behavior: "smooth" });
     }
   };
 
@@ -425,8 +427,8 @@ export default function BooksPage() {
   // Handle window resize
   useEffect(() => {
     const handleResize = () => updateScrollButtons();
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
   }, []);
 
   // Add book to collection
@@ -562,7 +564,7 @@ export default function BooksPage() {
         </div>
       </div>
 
-      <div className="container mx-auto px-1 sm:px-4 md:px-6 py-4 sm:py-6 md:py-8 max-w-full">
+      <div className="container mx-auto px-0 sm:px-0 md:px-0 py-4 sm:py-6 md:py-8 max-w-full">
         {/* Search and Filters */}
         <div className="mb-6 sm:mb-8 w-full">
           <div className="flex flex-col gap-2 sm:gap-3 mb-4 sm:mb-6 w-full">
@@ -625,33 +627,63 @@ export default function BooksPage() {
               </button>
             )}
 
-            <div 
+            <div
               ref={setScrollContainer}
               onScroll={updateScrollButtons}
               className="flex items-center gap-1 sm:gap-2 overflow-x-auto pb-3 sm:pb-4 scrollbar-hide w-full horizontal-scroll-container px-10"
             >
-            {/* Trending Tab */}
-            <button
-              onClick={() => {
-                setShowDiscover(true);
-                setSelectedCollection("");
-              }}
-              className={`flex items-center gap-1 sm:gap-2 px-3 sm:px-4 py-2 sm:py-3 rounded-xl transition-all duration-300 whitespace-nowrap font-medium text-sm sm:text-base flex-shrink-0 ${
-                showDiscover
-                  ? "bg-gradient-to-r from-gray-800 to-gray-700 text-white shadow-lg border border-gray-600"
-                  : "hover:bg-gray-800/50 text-gray-300 hover:text-white"
-              }`}
-            >
-              <span>Trending Books</span>
-            </button>
+              {/* Trending Tab */}
+              <button
+                onClick={() => {
+                  setShowDiscover(true);
+                  setSelectedCollection("");
+                }}
+                className={`flex items-center gap-1 sm:gap-2 px-3 sm:px-4 py-2 sm:py-3 rounded-xl transition-all duration-300 whitespace-nowrap font-medium text-sm sm:text-base flex-shrink-0 ${
+                  showDiscover
+                    ? "bg-gradient-to-r from-gray-800 to-gray-700 text-white shadow-lg border border-gray-600"
+                    : "hover:bg-gray-800/50 text-gray-300 hover:text-white"
+                }`}
+              >
+                <span>Trending Books</span>
+              </button>
 
-            {collections.map((collection) => {
-              const bookCount = savedBooks.filter((book) =>
-                book.collections?.includes(collection.id)
-              ).length;
+              {collections.map((collection) => {
+                const bookCount = savedBooks.filter((book) =>
+                  book.collections?.includes(collection.id)
+                ).length;
 
-              // Special handling for "All Books" collection
-              if (collection.name === "All Books") {
+                // Special handling for "All Books" collection
+                if (collection.name === "All Books") {
+                  return (
+                    <button
+                      key={collection.id}
+                      onClick={() => {
+                        handleCollectionSelect(collection.id);
+                        setShowDiscover(false);
+                      }}
+                      className={`flex items-center gap-1 sm:gap-2 px-3 sm:px-4 py-2 sm:py-3 rounded-xl transition-all duration-300 whitespace-nowrap font-medium text-sm sm:text-base flex-shrink-0 ${
+                        selectedCollection === collection.id
+                          ? "bg-gradient-to-r from-gray-800 to-gray-700 text-white shadow-lg border border-gray-600"
+                          : "hover:bg-gray-800/50 text-gray-300 hover:text-white"
+                      }`}
+                    >
+                      <span className="whitespace-nowrap">
+                        {collection.name}
+                      </span>
+                      <Badge
+                        variant="secondary"
+                        className={`ml-1 text-xs ${
+                          selectedCollection === collection.id
+                            ? "bg-white/20 text-white"
+                            : "bg-gray-700 text-gray-300"
+                        }`}
+                      >
+                        {savedBooks.length}
+                      </Badge>
+                    </button>
+                  );
+                }
+
                 return (
                   <button
                     key={collection.id}
@@ -674,99 +706,71 @@ export default function BooksPage() {
                           : "bg-gray-700 text-gray-300"
                       }`}
                     >
-                      {savedBooks.length}
+                      {bookCount}
                     </Badge>
                   </button>
                 );
-              }
+              })}
 
-              return (
-                <button
-                  key={collection.id}
-                  onClick={() => {
-                    handleCollectionSelect(collection.id);
-                    setShowDiscover(false);
-                  }}
-                  className={`flex items-center gap-1 sm:gap-2 px-3 sm:px-4 py-2 sm:py-3 rounded-xl transition-all duration-300 whitespace-nowrap font-medium text-sm sm:text-base flex-shrink-0 ${
-                    selectedCollection === collection.id
-                      ? "bg-gradient-to-r from-gray-800 to-gray-700 text-white shadow-lg border border-gray-600"
-                      : "hover:bg-gray-800/50 text-gray-300 hover:text-white"
-                  }`}
-                >
-                  <span className="whitespace-nowrap">{collection.name}</span>
-                  <Badge
-                    variant="secondary"
-                    className={`ml-1 text-xs ${
-                      selectedCollection === collection.id
-                        ? "bg-white/20 text-white"
-                        : "bg-gray-700 text-gray-300"
-                    }`}
-                  >
-                    {bookCount}
-                  </Badge>
-                </button>
-              );
-            })}
-
-            <Dialog
-              open={isCreateCollectionOpen}
-              onOpenChange={setCreateCollectionOpen}
-            >
-              <DialogTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="h-10 w-10 border-gray-700 hover:bg-gray-800 rounded-xl"
-                >
-                  <Plus className="h-4 w-4" />
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="bg-gray-800 border-gray-700">
-                <DialogHeader>
-                  <DialogTitle className="text-white">
-                    Create New Collection
-                  </DialogTitle>
-                  <DialogDescription className="text-gray-400">
-                    Create a new collection to organize your books.
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="space-y-4">
-                  <div>
-                    <Label htmlFor="name" className="text-gray-300">
-                      Collection Name
-                    </Label>
-                    <Input
-                      id="name"
-                      value={newCollectionName}
-                      onChange={(e) => setNewCollectionName(e.target.value)}
-                      placeholder="Enter collection name..."
-                      className="bg-gray-700 border-gray-600 text-white placeholder:text-gray-400"
-                    />
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="public"
-                      checked={newCollectionIsPublic}
-                      onCheckedChange={(checked) =>
-                        setNewCollectionIsPublic(!!checked)
-                      }
-                    />
-                    <Label htmlFor="public" className="text-gray-300">
-                      Make collection public
-                    </Label>
-                  </div>
-                </div>
-                <DialogFooter>
+              <Dialog
+                open={isCreateCollectionOpen}
+                onOpenChange={setCreateCollectionOpen}
+              >
+                <DialogTrigger asChild>
                   <Button
-                    onClick={createCollection}
-                    disabled={!newCollectionName.trim()}
-                    className="bg-gradient-to-r from-green-600 to-green-500 hover:from-green-500 hover:to-green-400"
+                    variant="outline"
+                    size="sm"
+                    className="h-10 w-10 border-gray-700 hover:bg-gray-800 rounded-xl"
                   >
-                    Create Collection
+                    <Plus className="h-4 w-4" />
                   </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
+                </DialogTrigger>
+                <DialogContent className="bg-gray-800 border-gray-700">
+                  <DialogHeader>
+                    <DialogTitle className="text-white">
+                      Create New Collection
+                    </DialogTitle>
+                    <DialogDescription className="text-gray-400">
+                      Create a new collection to organize your books.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <div>
+                      <Label htmlFor="name" className="text-gray-300">
+                        Collection Name
+                      </Label>
+                      <Input
+                        id="name"
+                        value={newCollectionName}
+                        onChange={(e) => setNewCollectionName(e.target.value)}
+                        placeholder="Enter collection name..."
+                        className="bg-gray-700 border-gray-600 text-white placeholder:text-gray-400"
+                      />
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="public"
+                        checked={newCollectionIsPublic}
+                        onCheckedChange={(checked) =>
+                          setNewCollectionIsPublic(!!checked)
+                        }
+                      />
+                      <Label htmlFor="public" className="text-gray-300">
+                        Make collection public
+                      </Label>
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button
+                      onClick={createCollection}
+                      disabled={!newCollectionName.trim()}
+                      className="bg-gradient-to-r from-green-600 to-green-500 hover:from-green-500 hover:to-green-400"
+                    >
+                      Create Collection
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
             </div>
           </div>
         </div>
@@ -871,14 +875,14 @@ export default function BooksPage() {
                       </p>
                     </div>
                   </div>
-                  
+
                   {collections.map((collection) => {
-                    const collectionBooks = filteredAndSortedBooks.filter((book) =>
-                      book.collections?.includes(collection.id)
+                    const collectionBooks = filteredAndSortedBooks.filter(
+                      (book) => book.collections?.includes(collection.id)
                     );
-                    
+
                     if (collectionBooks.length === 0) return null;
-                    
+
                     return (
                       <div key={collection.id} className="mb-8">
                         <div className="flex items-center gap-3 mb-4">
@@ -891,7 +895,10 @@ export default function BooksPage() {
                           >
                             {collection.name}
                           </button>
-                          <Badge variant="secondary" className="bg-gray-700 text-gray-300">
+                          <Badge
+                            variant="secondary"
+                            className="bg-gray-700 text-gray-300"
+                          >
                             {collectionBooks.length}
                           </Badge>
                         </div>
@@ -922,8 +929,8 @@ export default function BooksPage() {
                   <div className="flex items-center justify-between mb-6">
                     <div>
                       <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-white">
-                        {getCollectionInfo(selectedCollection)?.name || "Books"} (
-                        {filteredAndSortedBooks.length})
+                        {getCollectionInfo(selectedCollection)?.name || "Books"}{" "}
+                        ({filteredAndSortedBooks.length})
                       </h2>
                       <p className="text-gray-400 mt-1 sm:mt-2 text-sm sm:text-base">
                         Your{" "}
