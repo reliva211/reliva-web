@@ -246,7 +246,13 @@
 
   .discover-header {
     margin-bottom: 16px;
-    padding: 0 0px;
+    padding: 0 16px !important;
+  }
+
+  /* Ensure proper mobile padding for trending sections */
+  .discover-section .horizontal-scroll-container {
+    padding-left: 16px !important;
+    padding-right: 16px !important;
   }
 
   /* Ensure proper card spacing */
@@ -1687,13 +1693,19 @@
   .horizontal-scroll-container {
     -webkit-overflow-scrolling: touch;
     scroll-behavior: smooth;
-    padding-left: 16px;
-    padding-right: 16px;
+    padding-left: 16px !important;
+    padding-right: 16px !important;
   }
 
   /* Improve touch scrolling performance */
   .horizontal-scroll-container {
     overscroll-behavior-x: contain;
+  }
+
+  /* Ensure discover section containers have balanced padding */
+  .discover-section .horizontal-scroll-container {
+    padding-left: 16px !important;
+    padding-right: 16px !important;
   }
 }
 

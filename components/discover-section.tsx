@@ -125,7 +125,7 @@ export default function DiscoverSection({
 
   return (
     <div className="w-full discover-section">
-      <div className="mb-3 sm:mb-4 px-0 sm:px-0 discover-header">
+      <div className="mb-3 sm:mb-4 px-4 sm:px-6 md:px-8 discover-header">
         <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-white leading-tight discover-title">
           {title}
         </h2>
@@ -158,7 +158,7 @@ export default function DiscoverSection({
         {/* Items Container */}
         <div
           id={containerId}
-          className={`flex gap-2 sm:gap-4 md:gap-6 overflow-x-auto px-0 sm:px-0 md:px-0 py-3 sm:py-4 md:py-6 scrollbar-hide horizontal-scroll-container ${
+          className={`flex gap-2 sm:gap-4 md:gap-6 overflow-x-auto px-4 sm:px-6 md:px-8 py-3 sm:py-4 md:py-6 scrollbar-hide horizontal-scroll-container ${
             itemType === "book" ? "books-horizontal-container" : "w-full"
           }`}
           style={{
