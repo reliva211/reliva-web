@@ -871,6 +871,96 @@
     padding: 1rem !important;
   }
 
+  /* Mobile poster size optimizations for reviews */
+  .w-32 {
+    width: 8rem !important; /* 128px */
+  }
+
+  .h-40 {
+    height: 10rem !important; /* 160px */
+  }
+
+  /* Ensure poster images maintain aspect ratio on mobile */
+  .w-32.h-40 img {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover !important;
+  }
+
+  /* Improve poster container spacing on mobile */
+  .w-32.h-40.flex-shrink-0 {
+    margin-right: 0.75rem !important;
+  }
+
+  /* Ensure poster cards have proper spacing on mobile */
+  .w-32.h-40.flex-shrink-0.relative {
+    border-radius: 0.75rem !important;
+    overflow: hidden !important;
+  }
+
+  /* Improve poster hover effects on mobile */
+  .w-32.h-40 img:hover {
+    transform: scale(1.02) !important;
+    transition: transform 0.2s ease-in-out !important;
+  }
+
+  /* Ensure poster links are properly sized on mobile */
+  .w-32.h-40 a {
+    display: block !important;
+    width: 100% !important;
+    height: 100% !important;
+  }
+
+  /* View More Comments button mobile optimization */
+  .view-more-comments-btn {
+    padding: 0.5rem 1rem !important;
+    font-size: 0.875rem !important;
+    min-height: 44px !important;
+    touch-action: manipulation !important;
+  }
+
+  .view-more-comments-btn svg {
+    width: 1rem !important;
+    height: 1rem !important;
+  }
+
+  /* Timestamp styling - clean without fill */
+  .text-\[#a0a0a0\].text-xs {
+    font-size: 0.75rem !important;
+    line-height: 1rem !important;
+    color: #a0a0a0 !important;
+    margin-left: 0.5rem !important;
+  }
+
+  /* App Store buttons mobile optimization */
+  .group.cursor-pointer {
+    width: 100% !important;
+    max-width: 280px !important;
+  }
+
+  .group.cursor-pointer .bg-gray-800 {
+    padding: 1rem !important;
+    min-height: 60px !important;
+  }
+
+  .group.cursor-pointer .w-12.h-12 {
+    width: 3rem !important;
+    height: 3rem !important;
+  }
+
+  .group.cursor-pointer .w-8.h-8 {
+    width: 2rem !important;
+    height: 2rem !important;
+  }
+
+  .group.cursor-pointer .text-lg {
+    font-size: 1rem !important;
+  }
+
+  .group.cursor-pointer .text-xs {
+    font-size: 0.6875rem !important;
+  }
+
   /* Notifications page optimizations */
   .notifications-list {
     padding: 1rem !important;
@@ -1402,6 +1492,22 @@
   .dashboard-grid {
     grid-template-columns: repeat(2, 1fr) !important;
     gap: 1.5rem !important;
+  }
+
+  /* Tablet poster size optimizations for reviews */
+  .w-40 {
+    width: 10rem !important; /* 160px */
+  }
+
+  .h-48 {
+    height: 12rem !important; /* 192px */
+  }
+
+  /* Ensure poster images maintain aspect ratio on tablet */
+  .w-40.h-48 img {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover !important;
   }
 }
 

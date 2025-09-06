@@ -255,6 +255,10 @@ export default function ProfileMovieSection({
   const [currentRecentlyWatchedIndex, setCurrentRecentlyWatchedIndex] =
     useState(0);
 
+  // Trailer state
+  const [trailerOpen, setTrailerOpen] = useState(false);
+  const [selectedTrailer, setSelectedTrailer] = useState<any>(null);
+
   const scrollLeft = (containerRef: React.RefObject<HTMLDivElement | null>) => {
     if (containerRef.current) {
       const scrollDistance = Math.min(
@@ -580,17 +584,47 @@ export default function ProfileMovieSection({
   };
 
   // Handle trailer click
-  const handleTrailerClick = (movie: TMDBMovie) => {
+  const handleTrailerClick = async (movie: TMDBMovie) => {
     const movieTitle = getTextContent(movie.title);
 
-    // Try to find trailer on YouTube
-    const searchQuery = `${movieTitle} official trailer`;
-    const youtubeUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(
-      searchQuery
-    )}`;
+    try {
+      // Fetch trailers from TMDB API
+      const response = await fetch(
+        `/api/tmdb/proxy/movie/${movie.id}/videos?language=en-US`
+      );
 
-    // Open in new tab
-    window.open(youtubeUrl, "_blank");
+      if (!response.ok) {
+        throw new Error("Failed to fetch trailers");
+      }
+
+      const data = await response.json();
+      const trailers = data.results || [];
+
+      if (trailers.length === 0) {
+        // Fallback to YouTube search if no trailers found
+        const searchQuery = `${movieTitle} official trailer`;
+        const youtubeUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(
+          searchQuery
+        )}`;
+        window.open(youtubeUrl, "_blank");
+        return;
+      }
+
+      // Prefer official trailers, then the first one
+      const officialTrailer = trailers.find((trailer: any) => trailer.official);
+      const selectedTrailer = officialTrailer || trailers[0];
+
+      setSelectedTrailer(selectedTrailer);
+      setTrailerOpen(true);
+    } catch (error) {
+      console.error("Error fetching trailers:", error);
+      // Fallback to YouTube search
+      const searchQuery = `${movieTitle} official trailer`;
+      const youtubeUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(
+        searchQuery
+      )}`;
+      window.open(youtubeUrl, "_blank");
+    }
   };
 
   // Handle like click
@@ -1558,6 +1592,28 @@ export default function ProfileMovieSection({
               </div>
             )}
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Trailer Dialog */}
+      <Dialog open={trailerOpen} onOpenChange={setTrailerOpen}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-hidden">
+          <DialogHeader>
+            <DialogTitle>
+              {selectedTrailer?.name || "Movie Trailer"}
+            </DialogTitle>
+          </DialogHeader>
+          {selectedTrailer && (
+            <div className="relative w-full aspect-video">
+              <iframe
+                src={`https://www.youtube.com/embed/${selectedTrailer.key}?autoplay=1`}
+                title={selectedTrailer.name}
+                className="w-full h-full rounded-lg"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+              />
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>

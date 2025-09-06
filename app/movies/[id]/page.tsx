@@ -607,9 +607,9 @@ export default function MovieDetailPage({
                         </DialogDescription>
                       </DialogHeader>
                       <div className="space-y-4">
-                        {userLists.filter(list => list.name !== "All Movies").length > 0 ? (
+                        {userLists.filter(list => list.name !== "All Movies" && list.name !== "Favorites").length > 0 ? (
                           <div className="space-y-2">
-                            {userLists.filter(list => list.name !== "All Movies").map((list) => {
+                            {userLists.filter(list => list.name !== "All Movies" && list.name !== "Favorites").map((list) => {
                               const isAlreadyInCollection = existingCollections.includes(list.id);
                               const isChecked = selectedListIds.includes(list.id);
                               

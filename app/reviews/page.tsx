@@ -119,6 +119,7 @@ function ReviewsPageContent() {
   const [likedPosts, setLikedPosts] = useState<Set<string>>(new Set());
   const [likedReplies, setLikedReplies] = useState<Set<string>>(new Set());
   const [userProfiles, setUserProfiles] = useState<Map<string, any>>(new Map());
+  const [expandedComments, setExpandedComments] = useState<Set<string>>(new Set());
   const wsRef = useRef<WebSocket | null>(null);
 
   // Function to fetch user profile for a given authorId from Firebase directly
@@ -710,6 +711,18 @@ function ReviewsPageContent() {
     }));
   };
 
+  const toggleCommentsExpansion = (postId: string) => {
+    setExpandedComments((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(postId)) {
+        newSet.delete(postId);
+      } else {
+        newSet.add(postId);
+      }
+      return newSet;
+    });
+  };
+
   function buildCommentTree(comments: Reply[] | undefined): Reply[] {
     if (!comments || !Array.isArray(comments)) {
       return [];
@@ -831,7 +844,8 @@ function ReviewsPageContent() {
   };
   const renderTopLevelComments = (
     comments: Reply[] | undefined,
-    postId: string
+    postId: string,
+    limit?: number
   ) => {
     if (!comments || !Array.isArray(comments)) {
       return null;
@@ -843,7 +857,13 @@ function ReviewsPageContent() {
     );
     const sortedComments = sortReplies(topLevelComments);
 
-    return sortedComments.map((comment) => (
+    // Apply limit if specified
+    const commentsToShow = limit ? sortedComments.slice(0, limit) : sortedComments;
+    const hasMoreComments = limit && sortedComments.length > limit;
+
+    return (
+      <>
+        {commentsToShow.map((comment) => (
       <div
         key={comment._id}
         className="flex gap-3 border-l border-[#2a2a2a] ml-2 p-3 bg-[#0a0a0a] rounded-r-lg w-full min-w-0 overflow-hidden"
@@ -866,7 +886,7 @@ function ReviewsPageContent() {
               {userProfiles.get(comment.authorId?._id)?.displayName ||
                 comment.authorId?.username}
             </span>
-            <span className="text-[#a0a0a0] text-xs bg-[#3a3a3a] px-2 py-0.5 rounded-full">
+            <span className="text-[#a0a0a0] text-xs">
               {formatTime(comment.timestamp)}
             </span>
             {user?.uid === comment.authorId?._id && (
@@ -899,7 +919,14 @@ function ReviewsPageContent() {
               <div className="p-1.5 rounded-full group-hover:bg-blue-600/20 transition-colors">
                 <MessageCircle className="w-4 h-4" />
               </div>
-              <span className="text-xs font-medium">Reply</span>
+              <span className="text-xs font-medium">
+                Reply
+                {comment.comments && comment.comments.length > 0 && (
+                  <span className="ml-1 text-[#808080]">
+                    ({comment.comments.length})
+                  </span>
+                )}
+              </span>
             </button>
 
             <button
@@ -926,7 +953,7 @@ function ReviewsPageContent() {
                   <MessageCircle className="w-4 h-4" />
                 </div>
                 <span className="text-xs font-medium">
-                  💬 {comment.comments.length} replies
+                  See Replies
                 </span>
               </Link>
             )}
@@ -994,7 +1021,38 @@ function ReviewsPageContent() {
           )}
         </div>
       </div>
-    ));
+    ))}
+        {hasMoreComments && (
+          <div className="flex justify-center mt-3">
+            <button
+              onClick={() => toggleCommentsExpansion(postId)}
+              className="view-more-comments-btn flex items-center gap-2 px-4 py-2 text-sm text-[#a0a0a0] hover:text-[#d0d0d0] hover:bg-[#1a1a1a] rounded-lg transition-all duration-200 group"
+            >
+              <span className="font-medium">
+                View {expandedComments.has(postId) ? 'Less' : 'More'} Replies
+              </span>
+              <div className={`w-4 h-4 transition-transform duration-200 ${
+                expandedComments.has(postId) ? 'rotate-180' : ''
+              }`}>
+                <svg
+                  className="w-full h-full"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M19 9l-7 7-7-7"
+                  />
+                </svg>
+              </div>
+            </button>
+          </div>
+        )}
+      </>
+    );
   };
 
   // if (!user) {
@@ -1399,7 +1457,7 @@ function ReviewsPageContent() {
                             {userProfiles.get(post.authorId?._id)
                               ?.displayName || post.authorId?.username}
                           </span>
-                          <span className="text-[#a0a0a0] text-xs bg-[#3a3a3a] px-2 py-0.5 rounded-full">
+                          <span className="text-[#a0a0a0] text-xs">
                             {formatTime(post.timestamp)}
                           </span>
                           {user?.uid === post.authorId?._id && (
@@ -1429,7 +1487,7 @@ function ReviewsPageContent() {
                         {post.mediaId && (
                           <Card className="mb-4 overflow-hidden border border-[#2a2a2a] bg-[#0f0f0f]">
                             <div className="flex min-w-0">
-                              <div className="w-24 sm:w-36 h-32 sm:h-44 flex-shrink-0 relative p-2 sm:p-3">
+                              <div className="w-32 sm:w-40 h-40 sm:h-48 flex-shrink-0 relative p-2 sm:p-3">
                                 <Link
                                   href={`/${
                                     post.mediaType === "series"
@@ -1528,7 +1586,14 @@ function ReviewsPageContent() {
                             <div className="p-1.5 rounded-full group-hover:bg-blue-600/20 transition-colors">
                               <MessageCircle className="w-4 h-4" />
                             </div>
-                            <span className="text-xs font-medium">Reply</span>
+                            <span className="text-xs font-medium">
+                              Reply
+                              {post.comments && post.comments.length > 0 && (
+                                <span className="ml-1 text-[#808080]">
+                                  ({post.comments.length})
+                                </span>
+                              )}
+                            </span>
                           </button>
 
                           <button
@@ -1548,16 +1613,6 @@ function ReviewsPageContent() {
                               {post.likeCount}
                             </span>
                           </button>
-
-                          {post.comments && post.comments.length > 0 && (
-                            <div className="flex items-center gap-1.5 text-[#808080]">
-                              <MessageCircle className="w-4 h-4" />
-                              <span className="text-xs font-medium">
-                                {post.comments.length} comment
-                                {post.comments.length !== 1 ? "s" : ""}
-                              </span>
-                            </div>
-                          )}
                         </div>
 
                         {/* Compact Reply Input Section */}
@@ -1627,7 +1682,8 @@ function ReviewsPageContent() {
                           <div className="mt-3 space-y-2 w-full overflow-hidden">
                             {renderTopLevelComments(
                               buildCommentTree(post.comments),
-                              post._id
+                              post._id,
+                              expandedComments.has(post._id) ? undefined : 3
                             )}
                           </div>
                         )}

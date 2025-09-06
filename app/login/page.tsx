@@ -62,14 +62,10 @@ export default function LoginPage() {
         />
       </div>
 
-      <div className="min-h-screen flex flex-col lg:flex-row relative z-10">
-        {/* Left Side - Empty for image display */}
-        <div className="hidden lg:flex lg:w-1/2 relative"></div>
-
-        {/* Right Side - Transparent Login Form */}
-        <div className="w-full lg:w-1/2 flex items-center justify-center px-4 sm:px-6 lg:px-8">
-          <div className="w-full max-w-sm">
-            <div className="bg-black/80 backdrop-blur-sm border border-white/10 rounded-2xl p-4 sm:p-6 shadow-2xl">
+      <div className="min-h-screen flex items-center justify-center relative z-10">
+        {/* Centered Login Form */}
+        <div className="w-full max-w-md px-4 sm:px-6 lg:px-8">
+            <div className="bg-black/80 backdrop-blur-sm border border-white/10 rounded-2xl p-6 sm:p-8 shadow-2xl">
               <div className="space-y-1 text-center pb-4">
                 <div className="mx-auto w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-r from-purple-600 to-violet-600 rounded-xl flex items-center justify-center mb-2">
                   <Sparkles className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
@@ -82,7 +78,7 @@ export default function LoginPage() {
                 </p>
               </div>
 
-              <div className="space-y-3 sm:space-y-4">
+              <div className="space-y-4 sm:space-y-5">
                 {/* Google Sign In */}
                 <Button
                   variant="outline"
@@ -122,7 +118,7 @@ export default function LoginPage() {
                   </div>
                 </div>
 
-                <form onSubmit={handleEmailLogin} className="space-y-3">
+                <form onSubmit={handleEmailLogin} className="space-y-4">
                   <div className="space-y-1">
                     <Label
                       htmlFor="email"
@@ -219,6 +215,5 @@ export default function LoginPage() {
           </div>
         </div>
       </div>
-    </div>
   );
 }

@@ -567,9 +567,9 @@ export default function BookDetailPage({
                         </DialogDescription>
                       </DialogHeader>
                       <div className="space-y-4">
-                        {userLists.filter(list => list.name !== "All Books").length > 0 ? (
+                        {userLists.filter(list => list.name !== "All Books" && list.name !== "Favorites").length > 0 ? (
                           <div className="space-y-2">
-                            {userLists.filter(list => list.name !== "All Books").map((list) => {
+                            {userLists.filter(list => list.name !== "All Books" && list.name !== "Favorites").map((list) => {
                               const isAlreadyInCollection = existingCollections.includes(list.id);
                               const isChecked = selectedListIds.includes(list.id);
                               

@@ -618,9 +618,9 @@ export default function SeriesDetailPage({
                         </DialogDescription>
                       </DialogHeader>
                       <div className="space-y-4">
-                        {userLists.filter(list => list.name !== "All Series").length > 0 ? (
+                        {userLists.filter(list => list.name !== "All Series" && list.name !== "Favorites").length > 0 ? (
                           <div className="space-y-2">
-                            {userLists.filter(list => list.name !== "All Series").map((list) => {
+                            {userLists.filter(list => list.name !== "All Series" && list.name !== "Favorites").map((list) => {
                               const isAlreadyInCollection = existingCollections.includes(list.id);
                               const isChecked = selectedListIds.includes(list.id);
                               
