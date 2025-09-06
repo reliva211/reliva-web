@@ -36,12 +36,12 @@ export default function LandingPage() {
       </div>
 
       {/* Hero Section */}
-      <section className="relative z-10 min-h-screen flex items-center px-4">
+      <section className="relative z-10 min-h-screen flex items-center px-4 py-8 landing-hero">
         <div className="max-w-7xl mx-auto w-full">
-          <div className="grid lg:grid-cols-2 gap-16 lg:gap-20 items-center">
+          <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
             {/* Left Side - Title */}
             <div className="text-left">
-              <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl xl:text-9xl font-light tracking-tight leading-none mb-8 text-gray-900 dark:text-white">
+              <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-light tracking-tight leading-tight mb-6 text-gray-900 dark:text-white">
                 What's
                 <br />
                 <span className="bg-gradient-to-r from-emerald-600 via-blue-600 to-purple-600 dark:from-emerald-400 dark:via-blue-400 dark:to-purple-400 bg-clip-text text-transparent">
@@ -50,26 +50,26 @@ export default function LandingPage() {
                 <br />
                 Reliva?
               </h1>
-              <p className="text-lg sm:text-xl md:text-2xl text-gray-600 dark:text-gray-300 max-w-lg leading-relaxed mb-8">
+              <p className="text-base sm:text-lg md:text-xl text-gray-600 dark:text-gray-300 max-w-lg leading-relaxed mb-6">
                 The ultimate platform for sharing what you love. No gatekeeping.
               </p>
-              <div className="flex flex-col sm:flex-row gap-4">
+              <div className="flex flex-col sm:flex-row gap-3">
                 <Link href="/signup">
                   <Button
                     size="lg"
-                    className="bg-gradient-to-r from-emerald-600 to-blue-600 hover:from-emerald-700 hover:to-blue-700 dark:from-emerald-500 dark:to-blue-500 dark:hover:from-emerald-600 dark:hover:to-blue-600 text-white text-lg px-8 py-4 shadow-lg transition-all duration-300 ease-in-out transform hover:scale-105"
+                    className="bg-gradient-to-r from-emerald-600 to-blue-600 hover:from-emerald-700 hover:to-blue-700 dark:from-emerald-500 dark:to-blue-500 dark:hover:from-emerald-600 dark:hover:to-blue-600 text-white text-base px-6 py-3 shadow-lg transition-all duration-300 ease-in-out transform hover:scale-105"
                   >
                     Sign up
-                    <ArrowRight className="ml-2 h-5 w-5 transition-transform duration-300 group-hover:translate-x-1" />
+                    <ArrowRight className="ml-2 h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
                   </Button>
                 </Link>
                 <Link href="login">
                   <Button
                     variant="outline"
                     size="lg"
-                    className="border-gray-300 dark:border-gray-600 text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-800 text-lg px-8 py-4 transition-all duration-300 ease-in-out transform hover:scale-105"
+                    className="border-gray-300 dark:border-gray-600 text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-800 text-base px-6 py-3 transition-all duration-300 ease-in-out transform hover:scale-105"
                   >
-                    <Play className="mr-2 h-5 w-5 transition-transform duration-300 group-hover:translate-x-1" />
+                    <Play className="mr-2 h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
                     Login
                   </Button>
                 </Link>
@@ -77,11 +77,11 @@ export default function LandingPage() {
             </div>
 
             {/* Right Side - Preview */}
-            <div className="relative mt-8 lg:mt-0">
+            <div className="relative mt-8 lg:mt-0 flex justify-center lg:justify-end">
               <img
                 src="/login-left.png"
                 alt="Reliva Preview"
-                className="w-full max-w-4xl h-auto"
+                className="w-full max-w-sm sm:max-w-md lg:max-w-lg xl:max-w-xl h-auto rounded-lg shadow-2xl"
               />
             </div>
           </div>
@@ -89,12 +89,12 @@ export default function LandingPage() {
       </section>
 
       {/* What is Reliva Section */}
-      <section className="relative z-10 py-20 px-4">
+      <section className="relative z-10 py-12 px-4 landing-section">
         <div className="max-w-6xl mx-auto">
           <div className="flex flex-col lg:flex-row items-center justify-between gap-8">
             {/* Left Side - Visual Design */}
-            <div className="flex-1 flex justify-center lg:justify-start">
-              <div className="relative w-full max-w-sm">
+            <div className="flex-1 flex justify-center lg:justify-start order-2 lg:order-1">
+              <div className="relative w-full max-w-sm comet-card">
                 <CometCard>
                   <div className="relative overflow-hidden rounded-2xl bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-6">
                     {/* Main content */}
@@ -159,18 +159,18 @@ export default function LandingPage() {
                         <div className="w-8 h-8 bg-gray-300 dark:bg-gray-600 rounded-full flex-shrink-0 flex items-center justify-center">
                           <svg
                             className="w-4 h-4 text-red-500"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
-                              />
-                            </svg>
-                          </div>
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+                            />
+                          </svg>
+                        </div>
                         <div className="flex-1">
                           <h4 className="text-sm font-medium text-gray-900 dark:text-white">
                             Recommend
@@ -186,17 +186,17 @@ export default function LandingPage() {
                         <div className="w-8 h-8 bg-gray-300 dark:bg-gray-600 rounded-full flex-shrink-0 flex items-center justify-center">
                           <svg
                             className="w-4 h-4 text-purple-500"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
                               d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
-                              />
-                            </svg>
+                            />
+                          </svg>
                         </div>
                         <div className="flex-1">
                           <h4 className="text-sm font-medium text-gray-900 dark:text-white">
@@ -214,15 +214,15 @@ export default function LandingPage() {
             </div>
 
             {/* Right Side - Text Content */}
-            <div className="max-w-md lg:max-w-lg text-left">
-              <h2 className="text-4xl md:text-5xl font-light mb-8 text-gray-900 dark:text-white">
+            <div className="max-w-md lg:max-w-lg text-left order-1 lg:order-2">
+              <h2 className="text-3xl md:text-4xl font-light mb-6 text-gray-900 dark:text-white">
                 But what is
                 <br />
                 <span className="bg-gradient-to-r from-emerald-600 to-blue-600 dark:from-emerald-400 dark:to-blue-400 bg-clip-text text-transparent">
                   Reliva?
                 </span>
               </h2>
-              <div className="space-y-6 text-lg md:text-xl leading-relaxed text-gray-600 dark:text-gray-300 mb-8">
+              <div className="space-y-4 text-base md:text-lg leading-relaxed text-gray-600 dark:text-gray-300 mb-6">
                 <p>
                   Reliva is sharing what you love. A platform where you can't
                   gatekeep.
@@ -246,17 +246,17 @@ export default function LandingPage() {
       </section>
 
       {/* User Reviews Section */}
-      <section className="relative z-10 py-20 px-4 bg-gray-50 dark:bg-black/20">
+      <section className="relative z-10 py-12 px-4 bg-gray-50 dark:bg-black/20 landing-section">
         <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-12">
-            <h2 className="text-4xl md:text-5xl font-light mb-4 text-gray-900 dark:text-white">
+          <div className="text-center mb-8">
+            <h2 className="text-3xl md:text-4xl font-light mb-4 text-gray-900 dark:text-white">
               What our users are
               <br />
               <span className="bg-gradient-to-r from-emerald-600 to-blue-600 dark:from-emerald-400 dark:to-blue-400 bg-clip-text text-transparent">
                 saying
               </span>
             </h2>
-            <p className="text-lg md:text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
+            <p className="text-base md:text-lg text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
               Join thousands of users who are already sharing their favorite
               media and discovering new ones
             </p>
@@ -269,17 +269,17 @@ export default function LandingPage() {
       </section>
 
       {/* Key Differentiators Section */}
-      <section className="relative z-10 py-20 px-4 bg-gray-50 dark:bg-black/20">
+      <section className="relative z-10 py-12 px-4 bg-gray-50 dark:bg-black/20 landing-section">
         <div className="max-w-6xl mx-auto">
           <div className="flex flex-col lg:flex-row items-center justify-between gap-8">
             {/* Left Side - Text Content */}
-            <div className="max-w-md lg:max-w-lg">
-              <h2 className="text-4xl md:text-5xl font-light mb-8 text-left">
+            <div className="max-w-md lg:max-w-lg order-1 lg:order-1">
+              <h2 className="text-3xl md:text-4xl font-light mb-6 text-left">
                 <span className="bg-gradient-to-r from-emerald-600 to-blue-600 dark:from-emerald-400 dark:to-blue-400 bg-clip-text text-transparent">
                   Why us?
                 </span>
               </h2>
-              <div className="space-y-6 text-lg md:text-xl leading-relaxed text-gray-600 dark:text-gray-300 text-left">
+              <div className="space-y-4 text-base md:text-lg leading-relaxed text-gray-600 dark:text-gray-300 text-left">
                 <p>
                   Share all your media in one place. You dont have to go to
                   multiple apps to rate and review.
@@ -290,8 +290,8 @@ export default function LandingPage() {
             </div>
 
             {/* Right Side - Visual Design */}
-            <div className="flex-1 flex justify-center lg:justify-end">
-              <div className="relative w-full max-w-sm">
+            <div className="flex-1 flex justify-center lg:justify-end order-2 lg:order-2">
+              <div className="relative w-full max-w-sm comet-card">
                 <CometCard>
                   <div className="relative overflow-hidden rounded-2xl bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-6">
                     {/* Main content */}
@@ -336,18 +336,18 @@ export default function LandingPage() {
                         <div className="w-8 h-8 bg-gray-300 dark:bg-gray-600 rounded-full flex-shrink-0 flex items-center justify-center">
                           <svg
                             className="w-4 h-4 text-red-500"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"
-                              />
-                            </svg>
-                          </div>
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"
+                            />
+                          </svg>
+                        </div>
                         <div className="flex-1">
                           <h4 className="text-sm font-medium text-gray-900 dark:text-white">
                             Movies
@@ -362,18 +362,18 @@ export default function LandingPage() {
                         <div className="w-8 h-8 bg-gray-300 dark:bg-gray-600 rounded-full flex-shrink-0 flex items-center justify-center">
                           <svg
                             className="w-4 h-4 text-cyan-500"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
                               d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-                              />
-                            </svg>
-                          </div>
+                            />
+                          </svg>
+                        </div>
                         <div className="flex-1">
                           <h4 className="text-sm font-medium text-gray-900 dark:text-white">
                             TV shows/ Anime
@@ -388,17 +388,17 @@ export default function LandingPage() {
                         <div className="w-8 h-8 bg-gray-300 dark:bg-gray-600 rounded-full flex-shrink-0 flex items-center justify-center">
                           <svg
                             className="w-4 h-4 text-green-500"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
                               d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
-                              />
-                            </svg>
+                            />
+                          </svg>
                         </div>
                         <div className="flex-1">
                           <h4 className="text-sm font-medium text-gray-900 dark:text-white">
@@ -419,14 +419,14 @@ export default function LandingPage() {
       </section>
 
       {/* Coming Soon On Section */}
-      <section className="relative z-10 py-16 px-4 bg-gradient-to-br from-gray-50 via-white to-gray-100 dark:from-gray-900 dark:via-black dark:to-gray-900">
+      <section className="relative z-10 py-12 px-4 bg-gradient-to-br from-gray-50 via-white to-gray-100 dark:from-gray-900 dark:via-black dark:to-gray-900 landing-section">
         <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-3xl md:text-4xl font-light mb-8 text-gray-900 dark:text-white">
+          <h2 className="text-2xl md:text-3xl font-light mb-6 text-gray-900 dark:text-white">
             Coming Soon On
           </h2>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-6 sm:gap-8">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6">
             {/* Google Play Store */}
-            <div className="group cursor-pointer">
+            <div className="group cursor-pointer app-store-button">
               <div className="bg-gray-800 dark:bg-gray-200 rounded-xl p-4 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105">
                 <div className="flex items-center gap-3">
                   <div className="w-12 h-12 bg-gray-700 dark:bg-gray-300 rounded-lg flex items-center justify-center">
@@ -468,7 +468,7 @@ export default function LandingPage() {
             </div>
 
             {/* Apple App Store */}
-            <div className="group cursor-pointer">
+            <div className="group cursor-pointer app-store-button">
               <div className="bg-gray-800 dark:bg-gray-200 rounded-xl p-4 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105">
                 <div className="flex items-center gap-3">
                   <div className="w-12 h-12 bg-gray-700 dark:bg-gray-300 rounded-lg flex items-center justify-center">
@@ -504,12 +504,12 @@ export default function LandingPage() {
       </section>
 
       {/* Footer */}
-      <footer className="relative z-10 py-12 px-4 border-t border-gray-200 dark:border-gray-800 bg-white/50 dark:bg-gray-900/50 backdrop-blur-sm">
+      <footer className="relative z-10 py-8 px-4 border-t border-gray-200 dark:border-gray-800 bg-white/50 dark:bg-gray-900/50 backdrop-blur-sm">
         <div className="max-w-6xl mx-auto text-center">
-          <div className="text-2xl font-bold bg-gradient-to-r from-emerald-600 to-blue-600 dark:from-emerald-400 dark:to-blue-400 bg-clip-text text-transparent mb-6">
+          <div className="text-xl font-bold bg-gradient-to-r from-emerald-600 to-blue-600 dark:from-emerald-400 dark:to-blue-400 bg-clip-text text-transparent mb-4">
             What is your Reliva?
           </div>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-6">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-4">
             <Link href="/signup">
               <Button
                 size="lg"

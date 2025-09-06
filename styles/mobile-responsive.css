@@ -772,6 +772,120 @@
 
   /* ===== PAGE-SPECIFIC MOBILE OPTIMIZATIONS ===== */
 
+  /* Landing page specific mobile optimizations */
+  .landing-hero {
+    min-height: 100vh !important;
+    padding: 1rem !important;
+  }
+
+  .landing-hero h1 {
+    font-size: 2.5rem !important;
+    line-height: 1.1 !important;
+    margin-bottom: 1.5rem !important;
+  }
+
+  .landing-hero p {
+    font-size: 1rem !important;
+    line-height: 1.5rem !important;
+    margin-bottom: 1.5rem !important;
+  }
+
+  .landing-hero .flex {
+    gap: 0.75rem !important;
+  }
+
+  .landing-hero button {
+    padding: 0.75rem 1.5rem !important;
+    font-size: 0.875rem !important;
+    min-height: 44px !important;
+  }
+
+  .landing-hero img {
+    max-width: 280px !important;
+    margin: 0 auto !important;
+  }
+
+  /* Landing page sections mobile optimization */
+  .landing-section {
+    padding: 2rem 1rem !important;
+  }
+
+  .landing-section h2 {
+    font-size: 2rem !important;
+    line-height: 1.2 !important;
+    margin-bottom: 1.5rem !important;
+  }
+
+  .landing-section p {
+    font-size: 0.875rem !important;
+    line-height: 1.4rem !important;
+    margin-bottom: 1rem !important;
+  }
+
+  /* CometCard mobile optimization */
+  .comet-card {
+    max-width: 320px !important;
+    margin: 0 auto !important;
+  }
+
+  .comet-card .p-6 {
+    padding: 1rem !important;
+  }
+
+  .comet-card h3 {
+    font-size: 1rem !important;
+    margin-bottom: 0.5rem !important;
+  }
+
+  .comet-card p {
+    font-size: 0.75rem !important;
+    line-height: 1.2rem !important;
+  }
+
+  .comet-card .space-y-4 > * + * {
+    margin-top: 0.75rem !important;
+  }
+
+  .comet-card .w-8.h-8 {
+    width: 1.5rem !important;
+    height: 1.5rem !important;
+  }
+
+  .comet-card .w-4.h-4 {
+    width: 0.875rem !important;
+    height: 0.875rem !important;
+  }
+
+  /* App store buttons mobile optimization */
+  .app-store-button {
+    width: 100% !important;
+    max-width: 280px !important;
+    margin: 0 auto !important;
+  }
+
+  .app-store-button .bg-gray-800 {
+    padding: 0.75rem !important;
+    min-height: 60px !important;
+  }
+
+  .app-store-button .w-12.h-12 {
+    width: 2.5rem !important;
+    height: 2.5rem !important;
+  }
+
+  .app-store-button .w-8.h-8 {
+    width: 1.5rem !important;
+    height: 1.5rem !important;
+  }
+
+  .app-store-button .text-lg {
+    font-size: 0.875rem !important;
+  }
+
+  .app-store-button .text-xs {
+    font-size: 0.625rem !important;
+  }
+
   /* Home page optimizations */
   .hero-section {
     padding: 2rem 1rem;
