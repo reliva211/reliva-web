@@ -873,6 +873,7 @@ function ReviewsPageContent() {
       ? sortedComments.slice(0, limit)
       : sortedComments;
     const hasMoreComments = limit && sortedComments.length > limit;
+    const shouldShowToggleButton = sortedComments.length > 3; // Always show button if more than 3 comments
 
     return (
       <>
@@ -925,22 +926,17 @@ function ReviewsPageContent() {
               </p>
 
               <div className="flex items-center gap-2 sm:gap-4 text-[#a0a0a0] overflow-hidden">
-                <button
-                  onClick={() => toggleReplyInput(`${postId}-${comment._id}`)}
-                  className="flex items-center gap-1.5 hover:text-blue-400 transition-all duration-200 group"
-                >
-                  <div className="p-1.5 rounded-full group-hover:bg-blue-600/20 transition-colors">
-                    <MessageCircle className="w-4 h-4" />
-                  </div>
-                  <span className="text-xs font-medium">
-                    Reply
-                    {comment.comments && comment.comments.length > 0 && (
-                      <span className="ml-1 text-[#808080]">
-                        ({comment.comments.length})
-                      </span>
-                    )}
-                  </span>
-                </button>
+                 <button
+                   onClick={() => toggleReplyInput(`${postId}-${comment._id}`)}
+                   className="flex items-center gap-1.5 hover:text-blue-400 transition-all duration-200 group"
+                 >
+                   <div className="p-1.5 rounded-full group-hover:bg-blue-600/20 transition-colors">
+                     <MessageCircle className="w-4 h-4" />
+                   </div>
+                   <span className="text-xs font-medium">
+                     Reply
+                   </span>
+                 </button>
 
                 <button
                   onClick={() => toggleReplyLike(postId, comment._id)}
@@ -958,18 +954,20 @@ function ReviewsPageContent() {
                   </span>
                 </button>
 
-                {/* Thread Navigation - Show "See Replies" for comments with responses */}
-                {comment.comments && comment.comments.length > 0 && (
-                  <Link
-                    href={`/reviews/${postId}/thread/${comment._id}`}
-                    className="flex items-center gap-1.5 hover:text-green-400 transition-all duration-200 group"
-                  >
-                    <div className="p-1.5 rounded-full group-hover:bg-green-600/20 transition-colors">
-                      <ChevronRight className="w-4 h-4" />
-                    </div>
-                    <span className="text-xs font-medium">See Replies</span>
-                  </Link>
-                )}
+                 {/* Thread Navigation - Show "See Replies" for comments with responses */}
+                 {comment.comments && comment.comments.length > 0 && (
+                   <Link
+                     href={`/reviews/${postId}/thread/${comment._id}`}
+                     className="flex items-center gap-1.5 hover:text-green-400 transition-all duration-200 group"
+                   >
+                     <span className="text-xs font-medium">
+                       See Replies
+                     </span>
+                     <span className="text-xs text-[#808080]">
+                       {comment.comments.length}
+                     </span>
+                   </Link>
+                 )}
               </div>
 
               {/* Reply Input for top-level comments */}
@@ -1037,17 +1035,17 @@ function ReviewsPageContent() {
             </div>
           </div>
         ))}
-        {hasMoreComments && (
-          <div className="flex justify-center mt-3">
+        {shouldShowToggleButton && (
+          <div className="flex justify-center mt-2">
             <button
               onClick={() => toggleCommentsExpansion(postId)}
-              className="view-more-comments-btn flex items-center gap-2 px-4 py-2 text-sm text-[#a0a0a0] hover:text-[#d0d0d0] hover:bg-[#1a1a1a] rounded-lg transition-all duration-200 group"
+              className="view-more-comments-btn flex items-center gap-1.5 px-2 py-1 text-xs text-[#a0a0a0] hover:text-[#d0d0d0] hover:bg-[#1a1a1a] rounded-md transition-all duration-200 group"
             >
               <span className="font-medium">
-                View {expandedComments.has(postId) ? "Less" : "More"} Replies
+                {expandedComments.has(postId) ? "View Less" : "View More"} Replies
               </span>
               <div
-                className={`w-4 h-4 transition-transform duration-200 ${
+                className={`w-3 h-3 transition-transform duration-200 ${
                   expandedComments.has(postId) ? "rotate-180" : ""
                 }`}
               >

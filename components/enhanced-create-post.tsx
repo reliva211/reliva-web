@@ -133,23 +133,64 @@ export function EnhancedCreatePost({
     <>
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogTrigger asChild>{children}</DialogTrigger>
-        <DialogContent className="sm:max-w-[600px]">
+        <DialogContent className="w-[95vw] max-w-[95vw] sm:max-w-[600px] mx-auto">
           <DialogHeader>
             <DialogTitle>Create a post</DialogTitle>
           </DialogHeader>
 
-          <div className="flex space-x-3">
-            <Avatar className="h-10 w-10">
-              <AvatarImage
-                src="/placeholder.svg?height=40&width=40"
-                alt="You"
-              />
-              <AvatarFallback>You</AvatarFallback>
-            </Avatar>
+          <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3">
+            <div className="flex items-center space-x-3 sm:block">
+              <Avatar className="h-10 w-10">
+                <AvatarImage
+                  src="/placeholder.svg?height=40&width=40"
+                  alt="You"
+                />
+                <AvatarFallback>You</AvatarFallback>
+              </Avatar>
+              
+              {/* Category Selection - Mobile Layout */}
+              <div className="flex items-center space-x-2 sm:hidden">
+                <span className="text-sm font-medium">Category:</span>
+                <Select
+                  value={category}
+                  onValueChange={(value: "book" | "music" | "movie") =>
+                    setCategory(value)
+                  }
+                >
+                  <SelectTrigger className="w-32">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="book">
+                      <div className="flex items-center space-x-2">
+                        <Book className="w-4 h-4" />
+                        <span>Book</span>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="music">
+                      <div className="flex items-center space-x-2">
+                        <Music className="w-4 h-4" />
+                        <span>Music</span>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="movie">
+                      <div className="flex items-center space-x-2">
+                        <Film className="w-4 h-4" />
+                        <span>Movie</span>
+                      </div>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+                <Badge variant="secondary">
+                  <CategoryIcon className="w-3 h-3 mr-1" />
+                  {category.toUpperCase()}
+                </Badge>
+              </div>
+            </div>
 
             <div className="flex-1 space-y-4">
-              {/* Category Selection */}
-              <div className="flex items-center space-x-2">
+              {/* Category Selection - Desktop Layout */}
+              <div className="hidden sm:flex items-center space-x-2">
                 <span className="text-sm font-medium">Category:</span>
                 <Select
                   value={category}
@@ -215,7 +256,7 @@ export function EnhancedCreatePost({
               <ImageUploadPreview images={images} onRemove={removeImage} />
 
               {/* Actions */}
-              <div className="flex items-center justify-between pt-4 border-t">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between pt-4 border-t space-y-3 sm:space-y-0">
                 <div className="flex items-center space-x-2">
                   <input
                     type="file"
@@ -247,7 +288,7 @@ export function EnhancedCreatePost({
                   disabled={
                     !content.trim() || content.length > 280 || isSubmitting
                   }
-                  className="px-6"
+                  className="w-full sm:w-auto px-6"
                 >
                   {isSubmitting ? (
                     <>

@@ -120,86 +120,70 @@ export function EditProfileDialog({
             <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">
               Profile Sections
             </Label>
-            <div className="grid grid-cols-2 gap-3">
-              <button
-                type="button"
-                onClick={() =>
-                  updateVisibleSection("music", !formData.visibleSections.music)
-                }
-                className={`relative flex items-center justify-center px-4 py-3 rounded-xl border-2 transition-all duration-200 font-medium text-sm ${
-                  formData.visibleSections.music
-                    ? "border-emerald-500 bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300 dark:border-emerald-400"
-                    : "border-gray-200 bg-white text-gray-600 hover:border-gray-300 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:border-gray-600 dark:hover:bg-gray-750"
-                }`}
-              >
-                {formData.visibleSections.music && (
-                  <div className="absolute top-2 right-2 w-2 h-2 bg-emerald-500 rounded-full"></div>
-                )}
-                <span className="flex items-center gap-2">
-                  <span className="text-lg">🎵</span>
-                  Music
-                </span>
-              </button>
-              
-              <button
-                type="button"
-                onClick={() =>
-                  updateVisibleSection("movies", !formData.visibleSections.movies)
-                }
-                className={`relative flex items-center justify-center px-4 py-3 rounded-xl border-2 transition-all duration-200 font-medium text-sm ${
-                  formData.visibleSections.movies
-                    ? "border-emerald-500 bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300 dark:border-emerald-400"
-                    : "border-gray-200 bg-white text-gray-600 hover:border-gray-300 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:border-gray-600 dark:hover:bg-gray-750"
-                }`}
-              >
-                {formData.visibleSections.movies && (
-                  <div className="absolute top-2 right-2 w-2 h-2 bg-emerald-500 rounded-full"></div>
-                )}
-                <span className="flex items-center gap-2">
-                  <span className="text-lg">🎬</span>
-                  Movies
-                </span>
-              </button>
-              
-              <button
-                type="button"
-                onClick={() =>
-                  updateVisibleSection("series", !formData.visibleSections.series)
-                }
-                className={`relative flex items-center justify-center px-4 py-3 rounded-xl border-2 transition-all duration-200 font-medium text-sm ${
-                  formData.visibleSections.series
-                    ? "border-emerald-500 bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300 dark:border-emerald-400"
-                    : "border-gray-200 bg-white text-gray-600 hover:border-gray-300 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:border-gray-600 dark:hover:bg-gray-750"
-                }`}
-              >
-                {formData.visibleSections.series && (
-                  <div className="absolute top-2 right-2 w-2 h-2 bg-emerald-500 rounded-full"></div>
-                )}
-                <span className="flex items-center gap-2">
-                  <span className="text-lg">📺</span>
-                  Series
-                </span>
-              </button>
-              
-              <button
-                type="button"
-                onClick={() =>
-                  updateVisibleSection("books", !formData.visibleSections.books)
-                }
-                className={`relative flex items-center justify-center px-4 py-3 rounded-xl border-2 transition-all duration-200 font-medium text-sm ${
-                  formData.visibleSections.books
-                    ? "border-emerald-500 bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300 dark:border-emerald-400"
-                    : "border-gray-200 bg-white text-gray-600 hover:border-gray-300 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:border-gray-600 dark:hover:bg-gray-750"
-                }`}
-              >
-                {formData.visibleSections.books && (
-                  <div className="absolute top-2 right-2 w-2 h-2 bg-emerald-500 rounded-full"></div>
-                )}
-                <span className="flex items-center gap-2">
-                  <span className="text-lg">📚</span>
-                  Books
-                </span>
-              </button>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between py-3 px-4 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+                <div className="flex items-center gap-3">
+                  <div className="w-6 h-6 flex items-center justify-center">
+                    <span className="text-lg">🎵</span>
+                  </div>
+                  <div>
+                    <span className="font-medium text-gray-900 dark:text-gray-100">Music</span>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Share your music</p>
+                  </div>
+                </div>
+                <Switch
+                  checked={formData.visibleSections.music}
+                  onCheckedChange={(checked) => updateVisibleSection("music", checked)}
+                />
+              </div>
+
+              <div className="flex items-center justify-between py-3 px-4 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+                <div className="flex items-center gap-3">
+                  <div className="w-6 h-6 flex items-center justify-center">
+                    <span className="text-lg">🎬</span>
+                  </div>
+                  <div>
+                    <span className="font-medium text-gray-900 dark:text-gray-100">Movies</span>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Share your movies</p>
+                  </div>
+                </div>
+                <Switch
+                  checked={formData.visibleSections.movies}
+                  onCheckedChange={(checked) => updateVisibleSection("movies", checked)}
+                />
+              </div>
+
+              <div className="flex items-center justify-between py-3 px-4 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+                <div className="flex items-center gap-3">
+                  <div className="w-6 h-6 flex items-center justify-center">
+                    <span className="text-lg">📺</span>
+                  </div>
+                  <div>
+                    <span className="font-medium text-gray-900 dark:text-gray-100">Series</span>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Share your series</p>
+                  </div>
+                </div>
+                <Switch
+                  checked={formData.visibleSections.series}
+                  onCheckedChange={(checked) => updateVisibleSection("series", checked)}
+                />
+              </div>
+
+              <div className="flex items-center justify-between py-3 px-4 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+                <div className="flex items-center gap-3">
+                  <div className="w-6 h-6 flex items-center justify-center">
+                    <span className="text-lg">📚</span>
+                  </div>
+                  <div>
+                    <span className="font-medium text-gray-900 dark:text-gray-100">Books</span>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Share your books</p>
+                  </div>
+                </div>
+                <Switch
+                  checked={formData.visibleSections.books}
+                  onCheckedChange={(checked) => updateVisibleSection("books", checked)}
+                />
+              </div>
             </div>
           </div>
 

@@ -1003,23 +1003,23 @@ export default function ProfileMusicSection({
         </div>
 
         {/* Recommendations Section */}
-        <div className="space-y-3">
-          <h3 className="text-base sm:text-lg font-semibold text-white">
+        <div className="space-y-4">
+          <h3 className="text-lg sm:text-xl font-semibold text-white">
             Recommendations
           </h3>
           <div className="relative">
             <div
               ref={scrollContainerRefs.recommendations}
-              className="flex gap-4 sm:gap-6 overflow-x-auto scrollbar-hide pb-4 horizontal-scroll-container"
+              className="flex gap-6 sm:gap-8 overflow-x-auto scrollbar-hide pb-4 horizontal-scroll-container"
             >
               {limitedRecommendations.length > 0 ? (
                 <>
                   {limitedRecommendations.map((song, idx) => (
                     <div
                       key={song.id || idx}
-                      className="relative group flex-shrink-0 w-32"
+                      className="relative group flex-shrink-0 w-40 max-w-40"
                     >
-                      <div className="aspect-square w-full bg-muted rounded-lg overflow-hidden shadow-lg">
+                      <div className="aspect-square w-full bg-muted rounded-xl overflow-hidden shadow-xl">
                         <Link href={`/music/album/${song.id}`}>
                           <Image
                             src={
@@ -1027,8 +1027,8 @@ export default function ProfileMusicSection({
                               PLACEHOLDER.recommendations[0].cover
                             }
                             alt={song.name || "Song"}
-                            width={160}
-                            height={160}
+                            width={200}
+                            height={200}
                             className="w-full h-full object-cover cursor-pointer"
                             onError={(e) => {
                               const target = e.target as HTMLImageElement;
@@ -1037,37 +1037,37 @@ export default function ProfileMusicSection({
                           />
                         </Link>
                         {!readOnly && isOwnProfile && (
-                          <div className="absolute top-2 right-2 flex gap-1">
+                          <div className="absolute top-3 right-3 flex gap-2">
                             <Button
                               variant="ghost"
                               size="sm"
-                              className="h-7 w-7 p-0 bg-black/50 hover:bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity"
+                              className="h-8 w-8 p-0 bg-black/50 hover:bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity"
                               onClick={() =>
                                 handlePlusClick("recommendation", song)
                               }
                               title="Replace recommendation"
                             >
-                              <Edit className="h-3 w-3 text-white" />
+                              <Edit className="h-4 w-4 text-white" />
                             </Button>
                             <Button
                               variant="ghost"
                               size="sm"
-                              className="h-7 w-7 p-0 bg-red-600/80 hover:bg-red-700/90 opacity-0 group-hover:opacity-100 transition-opacity"
+                              className="h-8 w-8 p-0 bg-red-600/80 hover:bg-red-700/90 opacity-0 group-hover:opacity-100 transition-opacity"
                               onClick={() =>
                                 handleRemoveItem("recommendation", song.id)
                               }
                               title="Delete recommendation"
                             >
-                              <Trash2 className="h-3 w-3 text-white" />
+                              <Trash2 className="h-4 w-4 text-white" />
                             </Button>
                           </div>
                         )}
                       </div>
-                      <div className="mt-1 text-center w-full">
-                        <p className="text-sm font-semibold text-white leading-tight px-2 min-h-[1.5rem] truncate">
+                      <div className="mt-2 text-center w-full px-1">
+                        <p className="text-base font-semibold text-white leading-tight min-h-[1.75rem] truncate">
                           {truncateTitle(getTextContent(song.name))}
                         </p>
-                        <p className="text-xs text-gray-400 leading-tight mt-0.5 px-2 truncate">
+                        <p className="text-sm text-gray-400 leading-tight mt-1 truncate">
                           {getTextContent(getArtistNames(song))}
                         </p>
                       </div>
@@ -1076,12 +1076,12 @@ export default function ProfileMusicSection({
 
                   {/* Add button */}
                   {isOwnProfile && !readOnly && (
-                    <div className="flex-shrink-0 w-32">
-                      <div className="aspect-square w-full bg-transparent rounded-lg border-2 border-gray-600 flex items-center justify-center">
+                    <div className="flex-shrink-0 w-40">
+                      <div className="aspect-square w-full bg-transparent rounded-xl border-2 border-gray-600 flex items-center justify-center">
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="h-12 w-12 p-0 bg-black/70 hover:bg-black/90 text-white rounded-full border-2 border-white/20 shadow-lg"
+                          className="h-14 w-14 p-0 bg-black/70 hover:bg-black/90 text-white rounded-full border-2 border-white/20 shadow-lg"
                           onClick={() => handlePlusClick("recommendation")}
                         >
                           <Plus className="h-6 w-6" />
@@ -1315,19 +1315,6 @@ export default function ProfileMusicSection({
               </div>
             )}
 
-            {!isSearching &&
-              searchQuery &&
-              searchResults.length === 0 &&
-              !searchError && (
-                <div className="text-center py-4">
-                  <p className="text-gray-400 text-sm">
-                    No results found for "{searchQuery}"
-                  </p>
-                  <p className="text-gray-500 text-xs mt-1">
-                    Try a different search term
-                  </p>
-                </div>
-              )}
           </div>
         </DialogContent>
       </Dialog>

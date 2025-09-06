@@ -638,7 +638,7 @@ export default function MoviesPage() {
         </div>
       </div>
 
-      <div className="container mx-auto px-0 sm:px-0 py-6 sm:py-8 max-w-full overflow-x-hidden">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 max-w-full overflow-x-hidden">
         {/* Search and Filters */}
         <div className="mb-8 sm:mb-10 w-full">
           <div className="flex flex-col gap-4 sm:gap-6 mb-6 sm:mb-8 w-full">
@@ -938,7 +938,7 @@ export default function MoviesPage() {
                     if (collectionMovies.length === 0) return null;
 
                     return (
-                      <div key={collection.id} className="mb-8">
+                      <div key={collection.id} className="mb-8 px-4 sm:px-6 lg:px-8">
                         <div className="flex items-center gap-3 mb-4">
                           <button
                             onClick={() => {

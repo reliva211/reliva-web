@@ -564,7 +564,7 @@ export default function BooksPage() {
         </div>
       </div>
 
-      <div className="container mx-auto px-0 sm:px-0 md:px-0 py-4 sm:py-6 md:py-8 max-w-full">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 md:py-8 max-w-full">
         {/* Search and Filters */}
         <div className="mb-6 sm:mb-8 w-full">
           <div className="flex flex-col gap-2 sm:gap-3 mb-4 sm:mb-6 w-full">
@@ -884,7 +884,7 @@ export default function BooksPage() {
                     if (collectionBooks.length === 0) return null;
 
                     return (
-                      <div key={collection.id} className="mb-8">
+                      <div key={collection.id} className="mb-8 px-4 sm:px-6 lg:px-8">
                         <div className="flex items-center gap-3 mb-4">
                           <button
                             onClick={() => {
