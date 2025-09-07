@@ -90,6 +90,7 @@ import { searchService } from "@/lib/search-service";
 import { db } from "@/lib/firebase";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 import { toast } from "@/components/ui/use-toast";
+import { useUserData } from "@/hooks/use-userdata";
 
 // Component that uses useSearchParams (needs to be wrapped in Suspense)
 function ReviewsPageContent() {
@@ -143,17 +144,25 @@ function ReviewsPageContent() {
     setIsLoadingMore(true)
     const params = new URLSearchParams({
       limit: "50",
-      userId: user?.authorId || "",
+      userId: user?.authorId || "",   // careful here 👇
       ...(cursor ? { cursor } : {}),
     })
+  
     const res = await fetch(`${API_BASE}/posts?${params}`)
     const data = await res.json()
-    console.log(data);
-    setPosts(prev => [...prev, ...data.posts])
-    setNextCursor(data.nextCursor)
-    setHasMorePosts(!!data.nextCursor)
+    console.log(data)
+  
+    if (data.success && Array.isArray(data.posts)) {
+      setPosts(prev => [...prev, ...data.posts])
+      setNextCursor(data.nextCursor)
+      setHasMorePosts(!!data.nextCursor)
+    } else {
+      console.error("Failed to fetch posts:", data.error || data)
+    }
+  
     setIsLoadingMore(false)
   }
+  
 
   // Function to fetch user profile for a given authorId from Firebase directly
   const fetchUserProfile = async (authorId: string) => {
