@@ -1,8 +1,11 @@
 "use client";
 
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useProfile } from "@/hooks/use-profile";
 import { useCurrentUser } from "@/hooks/use-current-user";
+import { getUsernameFromAuthorId } from "@/lib/username-utils";
 import Link from "next/link";
 
 interface UserAvatarProps {
@@ -79,7 +82,7 @@ export function UserAvatar({
   if (clickable && userId && userId !== currentUser?.uid) {
     return (
       <Link
-        href={`/users/${userId}`}
+        href={`/user/${username || userId}`}
         className="hover:opacity-80 transition-opacity"
       >
         {avatarElement}
@@ -112,6 +115,47 @@ export function OtherUserAvatar({
   showRing = true,
   clickable = true,
 }: OtherUserAvatarProps) {
+  const router = useRouter();
+  const [profileUrl, setProfileUrl] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchProfileUrl = async () => {
+      setLoading(true);
+      
+      try {
+        let foundUsername: string | null = null;
+
+        // If we already have a username, use it directly
+        if (username) {
+          foundUsername = username;
+        } else if (authorId) {
+          // Try to get username from authorId
+          foundUsername = await getUsernameFromAuthorId(authorId);
+        }
+
+        if (foundUsername) {
+          setProfileUrl(`/user/${foundUsername}`);
+        } else {
+          // No fallback - only use new username format
+          setProfileUrl(null);
+        }
+      } catch (error) {
+        console.error("Error fetching profile URL:", error);
+        // No fallback - only use new username format
+        setProfileUrl(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (clickable && (authorId || username)) {
+      fetchProfileUrl();
+    } else {
+      setLoading(false);
+    }
+  }, [authorId, username, clickable]);
+
   // Size classes
   const sizeClasses = {
     sm: "w-6 h-6",
@@ -129,6 +173,15 @@ export function OtherUserAvatar({
     return "U";
   };
 
+  const handleClick = () => {
+    if (profileUrl && !loading) {
+      router.push(profileUrl);
+    } else if (!loading && !profileUrl) {
+      // If no username found, show a message or do nothing
+      console.log("No username found for this user");
+    }
+  };
+
   const avatarElement = (
     <Avatar className={`${sizeClasses[size]} ${ringClasses} ${className}`}>
       <AvatarImage
@@ -141,15 +194,15 @@ export function OtherUserAvatar({
     </Avatar>
   );
 
-  // If clickable and we have an authorId, wrap in Link
-  if (clickable && authorId) {
+  // If clickable and we have a profile URL, make it clickable
+  if (clickable && profileUrl && !loading) {
     return (
-      <Link
-        href={`/users/${authorId}`}
-        className="hover:opacity-80 transition-opacity"
+      <div
+        onClick={handleClick}
+        className="cursor-pointer hover:opacity-80 transition-opacity"
       >
         {avatarElement}
-      </Link>
+      </div>
     );
   }
 
