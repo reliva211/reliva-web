@@ -17,6 +17,7 @@ import {
   User,
   CheckCircle,
   Trash2,
+  Loader2,
 } from "lucide-react";
 import { useRef } from "react";
 import { Card } from "@/components/ui/card";
@@ -131,7 +132,28 @@ function ReviewsPageContent() {
   const [expandedComments, setExpandedComments] = useState<Set<string>>(
     new Set()
   );
+
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
+  const [hasMorePosts, setHasMorePosts] = useState(true)
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const scrollAreaRef = useRef<HTMLDivElement>(null)
   const wsRef = useRef<WebSocket | null>(null);
+
+  const fetchPosts = async (cursor?: string) => {
+    setIsLoadingMore(true)
+    const params = new URLSearchParams({
+      limit: "50",
+      userId: "68a6ea1b9030bcf69c3c965b",
+      ...(cursor ? { cursor } : {}),
+    })
+    const res = await fetch(`${API_BASE}/posts?${params}`)
+    const data = await res.json()
+    console.log(data);
+    setPosts(prev => [...prev, ...data.posts])
+    setNextCursor(data.nextCursor)
+    setHasMorePosts(!!data.nextCursor)
+    setIsLoadingMore(false)
+  }
 
   // Function to fetch user profile for a given authorId from Firebase directly
   const fetchUserProfile = async (authorId: string) => {
@@ -189,6 +211,8 @@ function ReviewsPageContent() {
     const artist = searchParams.get("artist");
     const POSTS_PER_PAGE = 50;
 
+    fetchPosts();
+
     // URL Parameters processed
 
     if (type && id && title) {
@@ -221,28 +245,28 @@ function ReviewsPageContent() {
       setSearchQuery("");
     }
 
-    const fetchPosts = async () => {
-      try {
-        if (!user?.authorId) {
-          return;
-        }
-        const res = await fetch(`${API_BASE}/posts?userId=${user.authorId}`);
-        const data = await res.json();
-        if (data.success) {
-          // Posts data received
-          setPosts(data.posts);
-          // Store posts in sessionStorage for thread navigation
-          try {
-            sessionStorage.setItem("reliva_posts", JSON.stringify(data.posts));
-          } catch (e) {
-            // Could not store posts in sessionStorage
-          }
-        }
-      } catch (error) {
-        console.error("Failed to fetch posts:", error);
-      }
-    };
-    fetchPosts();
+    // const fetchPosts = async () => {
+    //   try {
+    //     if (!user?.authorId) {
+    //       return;
+    //     }
+    //     const res = await fetch(`${API_BASE}/posts?userId=${user.authorId}`);
+    //     const data = await res.json();
+    //     if (data.success) {
+    //       // Posts data received
+    //       setPosts(data.posts);
+    //       // Store posts in sessionStorage for thread navigation
+    //       try {
+    //         sessionStorage.setItem("reliva_posts", JSON.stringify(data.posts));
+    //       } catch (e) {
+    //         // Could not store posts in sessionStorage
+    //       }
+    //     }
+    //   } catch (error) {
+    //     console.error("Failed to fetch posts:", error);
+    //   }
+    // };
+    // fetchPosts();
 
     // WebSocket for real-time updates
     if (user?.authorId) {
@@ -267,6 +291,8 @@ function ReviewsPageContent() {
         if (msg.type === "init") {
           // Posts message received
           setPosts(msg.posts);
+          setHasMorePosts(!!msg.nextCursor)
+          setNextCursor(msg.nextCursor)
           // Store posts in sessionStorage for thread navigation
           try {
             sessionStorage.setItem("reliva_posts", JSON.stringify(msg.posts));
@@ -330,6 +356,68 @@ function ReviewsPageContent() {
       });
     }
   }, [posts, userProfiles]);
+
+  const handleShare = async (postId: string) => {
+    const shareUrl = `${window.location.origin}${window.location.pathname}#post-${postId}`
+  
+    try {
+      // Auto copy to clipboard
+      await navigator.clipboard.writeText(shareUrl)
+  
+      // Show toast (replace with your toast lib, e.g. shadcn/ui toast)
+      alert({
+        title: "Link copied!",
+        description: "Share this link with others.",
+      })
+    } catch (err) {
+      console.error("Share failed:", err)
+    }
+  }
+  
+
+  const loaderRef = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    if (!loaderRef.current || !nextCursor) return
+    const observer = new IntersectionObserver(entries => {
+      if (entries[0].isIntersecting && !isLoadingMore) {
+        fetchPosts(nextCursor)
+      }
+    })
+    observer.observe(loaderRef.current)
+    return () => observer.disconnect()
+  }, [nextCursor, isLoadingMore])
+
+  useEffect(() => {
+    if (typeof window === "undefined") return
+  
+    const handleHashChange = () => {
+      const hash = window.location.hash
+      if (hash) {
+        const postId = hash.split("-")[1]
+        if (postId) {
+          toggleReplyInput(postId)
+          document.querySelector(hash)?.scrollIntoView({
+            behavior: "smooth",
+            block: "start",
+          })
+        }
+
+        setTimeout(() => {
+          window.history.replaceState(
+            null,
+            "",
+            window.location.pathname + window.location.search
+          )
+        }, 500)
+      }
+    }
+  
+    handleHashChange()
+  
+    window.addEventListener("hashchange", handleHashChange)
+    return () => window.removeEventListener("hashchange", handleHashChange)
+  }, [posts])
+  
 
   // Auto-search when search query is set manually (not from URL parameters)
   useEffect(() => {
@@ -954,6 +1042,10 @@ function ReviewsPageContent() {
                   </span>
                 </button>
 
+                    {/* <button onClick={() => handleShare(post._id)} className="flex items-center gap-2 hover:text-blue-500 transition-colors">
+                      <Share className="w-4 h-4" />
+                    </button> */}
+
                  {/* Thread Navigation - Show "See Replies" for comments with responses */}
                  {comment.comments && comment.comments.length > 0 && (
                    <Link
@@ -1444,7 +1536,7 @@ function ReviewsPageContent() {
                 posts.length > 0 &&
                 posts.map((post) => (
                   <div
-                    key={post._id}
+                     key={post._id} id={`post-${post._id}`}
                     className="border-b border-[#1a1a1a] px-1 sm:px-4 py-4 bg-[#0f0f0f] overflow-hidden"
                   >
                     <div className="flex gap-3 w-full min-w-0">
@@ -1628,7 +1720,10 @@ function ReviewsPageContent() {
                               {post.likeCount}
                             </span>
                           </button>
-                        </div>
+                            <button onClick={() => handleShare(post._id)} className="flex items-center gap-1 hover:text-blue-500 transition-colors">
+                              <Share className="w-3 h-3" />
+                            </button>
+                          </div>
 
                         {/* Compact Reply Input Section */}
                         {showReplyInput[post._id] && (
@@ -1706,6 +1801,21 @@ function ReviewsPageContent() {
                     </div>
                   </div>
                 ))}
+
+                <div ref={loaderRef} className="h-10 flex justify-center items-center">
+                {isLoadingMore && (
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Loading more posts...</span>
+                  </div>
+                )}
+              </div>
+
+              {!hasMorePosts && posts.length > 0 && (
+                <div className="text-center py-8 text-muted-foreground">
+                  <p>You've reached the end of your feed!</p>
+                </div>
+              )}
             </ScrollArea>
           </div>
         </div>
