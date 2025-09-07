@@ -143,7 +143,7 @@ function ReviewsPageContent() {
     setIsLoadingMore(true)
     const params = new URLSearchParams({
       limit: "50",
-      userId: "68a6ea1b9030bcf69c3c965b",
+      userId: user?.authorId || "",
       ...(cursor ? { cursor } : {}),
     })
     const res = await fetch(`${API_BASE}/posts?${params}`)
