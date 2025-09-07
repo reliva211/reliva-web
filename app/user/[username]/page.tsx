@@ -2,12 +2,12 @@
 
 import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
-import { doc, getDoc } from "firebase/firestore";
+import { collection, query, where, getDocs } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { User, Lock, Eye, EyeOff, ArrowLeft } from "lucide-react";
+import { User, Lock, ArrowLeft } from "lucide-react";
 import ProfileMusicSection from "@/components/profile-music-section";
 import ProfileMovieSection from "@/components/profile-movie-section";
 import ProfileSeriesSection from "@/components/profile-series-section";
@@ -15,18 +15,16 @@ import ProfileBooksSection from "@/components/profile-books-section";
 import ErrorBoundary from "@/components/error-boundary";
 import Link from "next/link";
 
-interface PublicUserProfile {
+interface UserProfile {
   uid: string;
   displayName: string;
   username: string;
   bio: string;
-  location: string;
   website: string;
-  tagline: string;
   avatarUrl: string;
   coverImageUrl: string;
   joinDate: string;
-  isPublic: boolean;
+  isPublic?: boolean;
   socialLinks: {
     twitter?: string;
     instagram?: string;
@@ -41,36 +39,41 @@ interface PublicUserProfile {
   };
 }
 
-export default function PublicProfilePage() {
+export default function UserProfilePage() {
   const params = useParams();
-  const userId = params.id as string;
-  const [profile, setProfile] = useState<PublicUserProfile | null>(null);
+  const username = params.username as string;
+  const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState("music");
 
   useEffect(() => {
-    const fetchPublicProfile = async () => {
-      if (!userId) {
-        setError("No user ID provided");
+    const fetchProfileByUsername = async () => {
+      if (!username) {
+        setError("No username provided");
         setLoading(false);
         return;
       }
 
       try {
-        const docRef = doc(db, "userProfiles", userId);
-        const docSnap = await getDoc(docRef);
-
-        if (!docSnap.exists()) {
+        console.log("Searching for username:", username);
+        const profilesRef = collection(db, "userProfiles");
+        const q = query(profilesRef, where("username", "==", username));
+        const querySnapshot = await getDocs(q);
+        
+        console.log("Query result:", querySnapshot.empty ? "empty" : `found ${querySnapshot.docs.length} profiles`);
+        
+        if (querySnapshot.empty) {
+          console.log("No profile found with username:", username);
           setError("Profile not found");
           setLoading(false);
           return;
         }
+        
+        const profileData = querySnapshot.docs[0].data() as UserProfile;
 
-        const profileData = docSnap.data() as PublicUserProfile;
-
-        // Check if profile is public
-        if (!profileData.isPublic) {
+        // Check if profile is public (default to true if not specified)
+        if (profileData.isPublic === false) {
           setError("This profile is private");
           setLoading(false);
           return;
@@ -85,8 +88,8 @@ export default function PublicProfilePage() {
       }
     };
 
-    fetchPublicProfile();
-  }, [userId]);
+    fetchProfileByUsername();
+  }, [username]);
 
   // Auto-select first available tab when sections are hidden
   useEffect(() => {
@@ -151,7 +154,7 @@ export default function PublicProfilePage() {
     <ErrorBoundary>
       <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black">
         {/* Top Profile Section */}
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 pt-16 sm:pt-20 pb-6 sm:pb-8">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 pt-20 sm:pt-20 pb-6 sm:pb-8">
           <div className="flex flex-col items-center text-center gap-6 mb-8">
             {/* Profile Picture */}
             <Avatar className="w-20 h-20 sm:w-24 sm:h-24 ring-4 ring-emerald-500/20 hover:ring-emerald-500/40 transition-all duration-300 group-hover:scale-105">
@@ -170,22 +173,11 @@ export default function PublicProfilePage() {
                 {profile.displayName}
               </h1>
               <p className="text-sm text-gray-400 mb-2">@{profile.username}</p>
-              {profile.tagline && (
-                <p className="text-sm text-gray-300 mb-3">{profile.tagline}</p>
+              {profile.bio && (
+                <p className="text-sm text-gray-300 mb-4">
+                  {profile.bio}
+                </p>
               )}
-              <p className="text-sm text-gray-300 mb-4">
-                {profile.bio || "No bio available"}
-              </p>
-              <div className="flex justify-center">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="text-xs sm:text-sm h-9 text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10 rounded-xl"
-                >
-                  <Eye className="h-4 w-4 mr-1" />
-                  Public Profile
-                </Button>
-              </div>
             </div>
           </div>
 
@@ -235,28 +227,28 @@ export default function PublicProfilePage() {
             {/* Music Tab */}
             {profile.visibleSections?.music !== false && (
               <TabsContent value="music" className="mt-6">
-                <ProfileMusicSection userId={userId} readOnly={true} />
+                <ProfileMusicSection userId={profile.uid} readOnly={true} />
               </TabsContent>
             )}
 
             {/* Movies Tab */}
             {profile.visibleSections?.movies !== false && (
               <TabsContent value="movie-profile" className="mt-6">
-                <ProfileMovieSection userId={userId} readOnly={true} />
+                <ProfileMovieSection userId={profile.uid} readOnly={true} />
               </TabsContent>
             )}
 
             {/* Series Tab */}
             {profile.visibleSections?.series !== false && (
               <TabsContent value="series" className="mt-6">
-                <ProfileSeriesSection userId={userId} readOnly={true} />
+                <ProfileSeriesSection userId={profile.uid} readOnly={true} />
               </TabsContent>
             )}
 
             {/* Books Tab */}
             {profile.visibleSections?.books !== false && (
               <TabsContent value="books" className="mt-6">
-                <ProfileBooksSection userId={userId} readOnly={true} />
+                <ProfileBooksSection userId={profile.uid} readOnly={true} />
               </TabsContent>
             )}
           </Tabs>

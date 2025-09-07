@@ -18,6 +18,7 @@ import {
   Send,
 } from "lucide-react";
 import { useCurrentUser } from "@/hooks/use-current-user";
+import { ProfileLink } from "@/components/profile-link";
 import {
   doc,
   getDoc,
@@ -562,12 +563,13 @@ export default function ReviewDetailPage() {
                   {review.userDisplayName?.charAt(0) || "U"}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h3
-                    className="text-xl font-semibold text-gray-900 dark:text-white cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors break-words"
-                    onClick={() => router.push(`/users/${review.userId}`)}
+                  <ProfileLink
+                    firebaseUID={review.userId}
+                    displayName={review.userDisplayName || "Anonymous"}
+                    className="text-xl font-semibold text-gray-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition-colors break-words"
                   >
                     {review.userDisplayName || "Anonymous"}
-                  </h3>
+                  </ProfileLink>
                   <p className="text-gray-600 dark:text-gray-400 break-words">
                     {formatTimestamp(review.timestamp)}
                   </p>

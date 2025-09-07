@@ -17,7 +17,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import type { UserProfile } from "@/hooks/use-profile";
-import { Loader2 } from "lucide-react";
+import { useUsernameValidation } from "@/hooks/use-username-validation";
+import { Loader2, CheckCircle, XCircle } from "lucide-react";
 
 interface EditProfileDialogProps {
   open: boolean;
@@ -46,8 +47,21 @@ export function EditProfileDialog({
     },
   });
 
+  // Username validation (only validate if username changed)
+  const usernameValidation = useUsernameValidation(
+    formData.username !== profile.username ? formData.username : ""
+  );
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Validate username if it was changed
+    if (formData.username !== profile.username) {
+      if (!usernameValidation.available || usernameValidation.isValidating) {
+        alert("Please choose a valid username");
+        return;
+      }
+    }
 
     try {
       await onSave({
@@ -60,7 +74,13 @@ export function EditProfileDialog({
   };
 
   const updateFormData = (field: string, value: any) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
+    if (field === "username") {
+      // Clean username input
+      const cleanValue = value.toLowerCase().replace(/[^a-zA-Z0-9_]/g, '');
+      setFormData((prev) => ({ ...prev, [field]: cleanValue }));
+    } else {
+      setFormData((prev) => ({ ...prev, [field]: value }));
+    }
   };
 
   const updateVisibleSection = (section: string, value: boolean) => {
@@ -96,12 +116,42 @@ export function EditProfileDialog({
             </div>
             <div className="space-y-2">
               <Label htmlFor="username">Username</Label>
-              <Input
-                id="username"
-                value={formData.username}
-                onChange={(e) => updateFormData("username", e.target.value)}
-                placeholder="@username"
-              />
+              <div className="relative">
+                <Input
+                  id="username"
+                  value={formData.username}
+                  onChange={(e) => updateFormData("username", e.target.value)}
+                  placeholder="@username"
+                  className={`pr-10 ${
+                    formData.username !== profile.username && !usernameValidation.isValidating
+                      ? usernameValidation.available
+                        ? "border-green-500 focus:border-green-500"
+                        : "border-red-500 focus:border-red-500"
+                      : ""
+                  }`}
+                />
+                <div className="absolute inset-y-0 right-0 flex items-center pr-3">
+                  {usernameValidation.isValidating && (
+                    <Loader2 className="h-4 w-4 animate-spin text-gray-400" />
+                  )}
+                  {!usernameValidation.isValidating && formData.username !== profile.username && (
+                    <>
+                      {usernameValidation.available ? (
+                        <CheckCircle className="h-4 w-4 text-green-500" />
+                      ) : (
+                        <XCircle className="h-4 w-4 text-red-500" />
+                      )}
+                    </>
+                  )}
+                </div>
+              </div>
+              {formData.username !== profile.username && usernameValidation.message && (
+                <p className={`text-xs ${
+                  usernameValidation.available ? "text-green-600" : "text-red-600"
+                }`}>
+                  {usernameValidation.message}
+                </p>
+              )}
             </div>
           </div>
 

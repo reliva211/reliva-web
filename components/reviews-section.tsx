@@ -17,6 +17,7 @@ import {
   User,
 } from "lucide-react";
 import { useCurrentUser } from "@/hooks/use-current-user";
+import { ProfileLink } from "@/components/profile-link";
 
 interface ReviewsSectionProps {
   userId?: string;
@@ -164,25 +165,25 @@ export function ReviewsSection({
           <CardContent className="p-4">
             <div className="flex items-start gap-3">
               {/* User Avatar */}
-              <Avatar
-                className="h-10 w-10 flex-shrink-0 cursor-pointer hover:opacity-80 transition-opacity"
-                onClick={() => router.push(`/users/${review.userId}`)}
-              >
-                <AvatarImage src={review.userAvatar} alt={review.userName} />
-                <AvatarFallback>
-                  <User className="h-5 w-5" />
-                </AvatarFallback>
-              </Avatar>
+              <ProfileLink firebaseUID={review.userId}>
+                <Avatar className="h-10 w-10 flex-shrink-0 cursor-pointer hover:opacity-80 transition-opacity">
+                  <AvatarImage src={review.userAvatar} alt={review.userName} />
+                  <AvatarFallback>
+                    <User className="h-5 w-5" />
+                  </AvatarFallback>
+                </Avatar>
+              </ProfileLink>
 
               {/* Review Content */}
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-2">
-                  <h4
-                    className="font-medium text-sm cursor-pointer hover:underline"
-                    onClick={() => router.push(`/users/${review.userId}`)}
+                  <ProfileLink
+                    firebaseUID={review.userId}
+                    displayName={review.userName}
+                    className="font-medium text-sm hover:underline"
                   >
                     {review.userName}
-                  </h4>
+                  </ProfileLink>
                   <span className="text-xs text-muted-foreground">
                     {formatDate(review.createdAt)}
                   </span>

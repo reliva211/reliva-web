@@ -11,14 +11,19 @@ import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
 import { auth } from "@/lib/firebase"; // Adjust the path
 import { db } from "@/lib/firebase";
 import { setDoc, doc, serverTimestamp } from "firebase/firestore";
-import { Eye, EyeOff, Sparkles, Heart } from "lucide-react";
+import { Eye, EyeOff, Sparkles, Heart, CheckCircle, XCircle, Loader2 } from "lucide-react";
+import { useUsernameValidation } from "@/hooks/use-username-validation";
 
 export default function SignupPage() {
   const [fullName, setFullName] = useState("");
+  const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+
+  // Username validation hook
+  const usernameValidation = useUsernameValidation(username);
 
   // Handle redirect result for mobile authentication
   useEffect(() => {
@@ -94,6 +99,13 @@ export default function SignupPage() {
 
   const handleEmailSignup = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Validate username before proceeding
+    if (!usernameValidation.available || usernameValidation.isValidating) {
+      alert("Please choose a valid username");
+      return;
+    }
+
     setIsLoading(true);
 
     try {
@@ -110,10 +122,8 @@ export default function SignupPage() {
 
       // Making MongoDB API call
 
-      // Generate a unique username to avoid conflicts
-      const baseUsername = user.displayName || user.email?.split("@")[0];
-      const timestamp = Date.now();
-      const uniqueUsername = `${baseUsername}_${timestamp}`;
+      // Use the user-chosen username
+      const chosenUsername = username;
 
       const API_BASE =
         process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080/api";
@@ -121,7 +131,7 @@ export default function SignupPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          username: uniqueUsername,
+          username: chosenUsername,
           email: user.email,
         }),
       });
@@ -141,7 +151,7 @@ export default function SignupPage() {
         uid: user.uid,
         email: user.email,
         authorId: authorId,
-        username: uniqueUsername,
+        username: chosenUsername,
         fullName: fullName,
         followers: [],
         following: [],
@@ -155,6 +165,28 @@ export default function SignupPage() {
         merge: true,
       });
 
+      // Create user profile in userProfiles collection
+      const userProfile = {
+        uid: user.uid,
+        displayName: fullName,
+        username: chosenUsername,
+        bio: "Tell us about yourself...",
+        website: "",
+        avatarUrl: "",
+        coverImageUrl: "",
+        joinDate: new Date().toISOString(),
+        isPublic: true,
+        socialLinks: {},
+        visibleSections: {
+          music: true,
+          movies: true,
+          series: true,
+          books: true,
+        },
+      };
+
+      await setDoc(doc(db, "userProfiles", user.uid), userProfile);
+
       // Successfully saved user to Firestore
 
       window.location.href = "/reviews";
@@ -166,110 +198,6 @@ export default function SignupPage() {
     }
   };
 
-  async function handleGoogleSignup(
-    event: React.MouseEvent<HTMLButtonElement, MouseEvent>
-  ): Promise<void> {
-    event.preventDefault();
-    setIsLoading(true);
-
-    try {
-      const { GoogleAuthProvider, signInWithPopup, signInWithRedirect } =
-        await import("firebase/auth");
-      const provider = new GoogleAuthProvider();
-
-      // Try popup first, fallback to redirect for mobile
-      let googleResult;
-      try {
-        googleResult = await signInWithPopup(auth, provider);
-      } catch (popupError: any) {
-        // If popup fails (common on mobile), try redirect
-        if (
-          popupError.code === "auth/popup-closed-by-user" ||
-          popupError.code === "auth/popup-blocked" ||
-          popupError.code === "auth/unauthorized-domain"
-        ) {
-          await signInWithRedirect(auth, provider);
-          return; // Redirect will handle the rest
-        }
-        throw popupError;
-      }
-
-      const googleUser = googleResult.user;
-
-      // Making MongoDB API call for Google user
-
-      // Generate a unique username to avoid conflicts
-      const baseUsername =
-        googleUser.displayName || googleUser.email?.split("@")[0];
-      const timestamp = Date.now();
-      const uniqueUsername = `${baseUsername}_${timestamp}`;
-
-      const API_BASE =
-        process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080/api";
-      const mongoRes = await fetch(`${API_BASE}/users`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          username: uniqueUsername,
-          email: googleUser.email,
-        }),
-      });
-
-      // MongoDB response received
-      const mongoData = await mongoRes.json();
-
-      if (!mongoData.success) {
-        console.error("MongoDB API error:", mongoData.error);
-        throw new Error(mongoData.error || "MongoDB user creation failed");
-      }
-
-      const authorId = mongoData.user._id;
-
-      // Create Firestore user doc with complete user data
-      const firestoreUserData = {
-        uid: googleUser.uid,
-        email: googleUser.email,
-        username: uniqueUsername,
-        fullName: googleUser.displayName || "",
-        authorId: authorId,
-        followers: [],
-        following: [],
-        createdAt: serverTimestamp(),
-        spotify: { connected: false },
-      };
-
-      // Saving Google user to Firestore
-
-      await setDoc(doc(db, "users", googleUser.uid), firestoreUserData, {
-        merge: true,
-      });
-
-      // Successfully saved Google user to Firestore
-
-      window.location.href = "/reviews";
-    } catch (error: any) {
-      console.error("Google signup failed:", error.message);
-
-      // Provide more helpful error messages
-      let errorMessage = "Authentication failed. Please try again.";
-
-      if (error.code === "auth/unauthorized-domain") {
-        errorMessage =
-          "This domain is not authorized for authentication. Please contact support or try from a different device.";
-      } else if (error.code === "auth/popup-closed-by-user") {
-        errorMessage = "Sign-in was cancelled. Please try again.";
-      } else if (error.code === "auth/popup-blocked") {
-        errorMessage =
-          "Pop-up was blocked. Please allow pop-ups and try again.";
-      } else if (error.message) {
-        errorMessage = error.message;
-      }
-
-      alert(errorMessage);
-    } finally {
-      setIsLoading(false);
-    }
-  }
   return (
     <div className="min-h-screen relative overflow-hidden">
       {/* Full Background Image */}
@@ -298,44 +226,6 @@ export default function SignupPage() {
               </div>
 
               <div className="space-y-4 sm:space-y-5">
-                {/* Google Sign Up */}
-                <Button
-                  variant="outline"
-                  className="w-full h-10 bg-gray-700 border-gray-600 text-white hover:bg-gray-600 transition-all duration-300 group"
-                  onClick={handleGoogleSignup}
-                  disabled={isLoading}
-                >
-                  <svg viewBox="0 0 24 24" className="h-5 w-5 mr-3">
-                    <path
-                      d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                      fill="#4285F4"
-                    />
-                    <path
-                      d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                      fill="#34A853"
-                    />
-                    <path
-                      d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-                      fill="#FBBC05"
-                    />
-                    <path
-                      d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-                      fill="#EA4335"
-                    />
-                  </svg>
-                  Sign Up with Google
-                </Button>
-
-                <div className="relative">
-                  <div className="absolute inset-0 flex items-center">
-                    <span className="w-full border-t border-gray-600" />
-                  </div>
-                  <div className="relative flex justify-center text-sm">
-                    <span className="bg-black/80 px-4 text-gray-400">
-                      Or continue with email
-                    </span>
-                  </div>
-                </div>
 
                 <form onSubmit={handleEmailSignup} className="space-y-4">
                   <div className="space-y-1">
@@ -354,6 +244,53 @@ export default function SignupPage() {
                       required
                       className="h-9 bg-gray-700 border-gray-600 text-white placeholder:text-gray-400 focus:border-purple-500 focus:ring-purple-500/20 text-sm"
                     />
+                  </div>
+
+                  <div className="space-y-1">
+                    <Label
+                      htmlFor="username"
+                      className="text-white font-medium text-sm"
+                    >
+                      Username
+                    </Label>
+                    <div className="relative">
+                      <Input
+                        id="username"
+                        type="text"
+                        placeholder="Choose a unique username"
+                        value={username}
+                        onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/[^a-zA-Z0-9_]/g, ''))}
+                        required
+                        className={`h-9 bg-gray-700 border-gray-600 text-white placeholder:text-gray-400 focus:border-purple-500 focus:ring-purple-500/20 text-sm pr-10 ${
+                          username && !usernameValidation.isValidating
+                            ? usernameValidation.available
+                              ? "border-green-500 focus:border-green-500"
+                              : "border-red-500 focus:border-red-500"
+                            : ""
+                        }`}
+                      />
+                      <div className="absolute inset-y-0 right-0 flex items-center pr-3">
+                        {usernameValidation.isValidating && (
+                          <Loader2 className="h-4 w-4 animate-spin text-gray-400" />
+                        )}
+                        {!usernameValidation.isValidating && username && (
+                          <>
+                            {usernameValidation.available ? (
+                              <CheckCircle className="h-4 w-4 text-green-500" />
+                            ) : (
+                              <XCircle className="h-4 w-4 text-red-500" />
+                            )}
+                          </>
+                        )}
+                      </div>
+                    </div>
+                    {username && usernameValidation.message && (
+                      <p className={`text-xs ${
+                        usernameValidation.available ? "text-green-400" : "text-red-400"
+                      }`}>
+                        {usernameValidation.message}
+                      </p>
+                    )}
                   </div>
 
                   <div className="space-y-1">

@@ -3,6 +3,7 @@
 import React, { useState, useEffect, Suspense } from "react";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { useProfile } from "@/hooks/use-profile";
+import { ProfileLink } from "@/components/profile-link";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -142,9 +143,17 @@ function ReviewsPageContent() {
 
   const fetchPosts = async (cursor?: string) => {
     setIsLoadingMore(true)
+    
+    // Only fetch posts if user has authorId
+    if (!user?.authorId) {
+      console.log("No authorId available, skipping posts fetch")
+      setIsLoadingMore(false)
+      return
+    }
+    
     const params = new URLSearchParams({
       limit: "50",
-      userId: user?.authorId || "",   // careful here 👇
+      userId: user.authorId,
       ...(cursor ? { cursor } : {}),
     })
   
@@ -1564,15 +1573,15 @@ function ReviewsPageContent() {
 
                       <div className="flex-1 min-w-0 max-w-full overflow-hidden">
                         <div className="flex items-start gap-2 mb-2">
-                          <span
-                            className="font-medium text-sm text-[#f5f5f0] cursor-pointer hover:text-blue-300 transition-colors"
-                            onClick={() =>
-                              router.push(`/users/${post.authorId?._id}`)
-                            }
+                          <ProfileLink
+                            authorId={post.authorId?._id}
+                            displayName={userProfiles.get(post.authorId?._id)?.displayName || post.authorId?.username}
+                            username={post.authorId?.username}
+                            className="font-medium text-sm text-[#f5f5f0]"
                           >
                             {userProfiles.get(post.authorId?._id)
                               ?.displayName || post.authorId?.username}
-                          </span>
+                          </ProfileLink>
                           <span className="text-[#a0a0a0] text-xs">
                             {formatTime(post.timestamp)}
                           </span>

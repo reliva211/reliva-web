@@ -16,6 +16,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { useCurrentUser } from "@/hooks/use-current-user";
+import { ProfileLink } from "@/components/profile-link";
 import Link from "next/link";
 import { toast } from "@/hooks/use-toast";
 
@@ -628,13 +629,15 @@ export default function ThreadPage() {
               />
               <div className="flex-1 min-w-0">
                 <div className="flex items-start gap-2 mb-2">
-                  <span
-                    className="font-medium text-sm text-[#f5f5f5] cursor-pointer hover:text-blue-300 transition-colors"
-                    onClick={() => router.push(`/users/${reply.authorId?._id}`)}
+                  <ProfileLink
+                    authorId={reply.authorId?._id}
+                    displayName={userProfiles.get(reply.authorId?._id)?.displayName || reply.authorId?.username}
+                    username={reply.authorId?.username}
+                    className="font-medium text-sm text-[#f5f5f5]"
                   >
                     {userProfiles.get(reply.authorId?._id)?.displayName ||
                       reply.authorId?.username}
-                  </span>
+                  </ProfileLink>
                   <span className="text-[#a0a0a0] text-xs bg-[#3a3a3a] px-2 py-0.5 rounded-full">
                     {formatTime(reply.timestamp)}
                   </span>
