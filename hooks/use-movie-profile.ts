@@ -215,8 +215,8 @@ export function useMovieProfile(userId: string | undefined) {
       const profile: MovieProfile = {
         recentlyWatched:
           sortedWatchedMovies.length > 0
-            ? [convertToTMDBMovie(sortedWatchedMovies[0])]
-            : [], // Only the latest watched movie
+            ? sortedWatchedMovies.map(convertToTMDBMovie)
+            : [], // All watched movies
         favoriteMovie:
           favoritesMovies.length > 0
             ? convertToTMDBMovie(favoritesMovies[0])

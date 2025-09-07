@@ -157,8 +157,8 @@ export function useSeriesProfile(userId: string | undefined) {
       const profile: SeriesProfile = {
         recentlyWatched:
           sortedWatchingSeries.length > 0
-            ? [convertToTMDBSeries(sortedWatchingSeries[0])]
-            : [], // Only the latest watching series
+            ? sortedWatchingSeries.map(convertToTMDBSeries)
+            : [], // All watching series
         favoriteSeries:
           watchedSeries.length > 0
             ? convertToTMDBSeries(watchedSeries[0])

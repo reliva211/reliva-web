@@ -251,6 +251,10 @@ export default function ProfileSeriesSection({
   const [trailerOpen, setTrailerOpen] = useState(false);
   const [selectedTrailer, setSelectedTrailer] = useState<any>(null);
 
+  // Navigation state for recently watched
+  const [currentRecentlyWatchedIndex, setCurrentRecentlyWatchedIndex] =
+    useState(0);
+
   // Scroll functions
   const scrollLeft = (ref: React.RefObject<HTMLDivElement | null>) => {
     if (ref.current) {
@@ -719,8 +723,33 @@ export default function ProfileSeriesSection({
     ratings: [],
   };
 
-  // Get the latest currently watching series (only one item now)
-  const currentRecentlyWatched = safeSeriesProfile.recentlyWatched?.[0] || null;
+  // Get all currently watching series
+  const currentRecentlyWatched = safeSeriesProfile.recentlyWatched || [];
+
+  // Navigation functions for recently watched
+  const goToNextRecentlyWatched = () => {
+    if (currentRecentlyWatched.length > 0) {
+      setCurrentRecentlyWatchedIndex(
+        (prev) => (prev + 1) % currentRecentlyWatched.length
+      );
+    }
+  };
+
+  const goToPrevRecentlyWatched = () => {
+    if (currentRecentlyWatched.length > 0) {
+      setCurrentRecentlyWatchedIndex((prev) =>
+        prev === 0 ? currentRecentlyWatched.length - 1 : prev - 1
+      );
+    }
+  };
+
+  // Reset navigation index if out of bounds
+  if (
+    currentRecentlyWatched.length > 0 &&
+    currentRecentlyWatchedIndex >= currentRecentlyWatched.length
+  ) {
+    setCurrentRecentlyWatchedIndex(0);
+  }
 
   // Limit items to specified limits per section
   const limitedFavoriteSeriesList =
@@ -825,76 +854,126 @@ export default function ProfileSeriesSection({
         </div>
 
         <div className="relative">
-          {currentRecentlyWatched ? (
-            <div className="flex gap-6 items-start">
-              {/* Series poster */}
-              <div className="relative group flex-shrink-0">
-                <div className="w-32 h-48 bg-muted rounded-md overflow-hidden">
-                  <Link href={`/series/${currentRecentlyWatched.id}`}>
-                    <Image
-                      src={
-                        currentRecentlyWatched.poster_path
-                          ? `https://image.tmdb.org/t/p/w500${currentRecentlyWatched.poster_path}`
-                          : "/placeholder.svg"
-                      }
-                      alt={
-                        getTextContent(currentRecentlyWatched.name) || "Series"
-                      }
-                      width={128}
-                      height={192}
-                      className="w-full h-full object-cover cursor-pointer"
-                      onError={(e) => {
-                        const target = e.target as HTMLImageElement;
-                        target.src = "/placeholder.svg";
-                      }}
-                    />
-                  </Link>
-                  {!readOnly && (
-                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-md flex items-center justify-center">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-8 w-8 p-0 bg-red-500/20 hover:bg-red-500/30 text-white"
-                        onClick={() =>
-                          removeRecentlyWatched(
-                            currentRecentlyWatched.id.toString()
-                          )
+          {currentRecentlyWatched.length > 0 ? (
+            <>
+              <div className="flex gap-6 items-start">
+                {/* Series poster */}
+                <div className="relative group flex-shrink-0">
+                  <div className="w-32 h-48 bg-muted rounded-md overflow-hidden">
+                    <Link
+                      href={`/series/${currentRecentlyWatched[currentRecentlyWatchedIndex].id}`}
+                    >
+                      <Image
+                        src={
+                          currentRecentlyWatched[currentRecentlyWatchedIndex]
+                            .poster_path
+                            ? `https://image.tmdb.org/t/p/w500${currentRecentlyWatched[currentRecentlyWatchedIndex].poster_path}`
+                            : "/placeholder.svg"
                         }
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  )}
+                        alt={
+                          getTextContent(
+                            currentRecentlyWatched[currentRecentlyWatchedIndex]
+                              .name
+                          ) || "Series"
+                        }
+                        width={128}
+                        height={192}
+                        className="w-full h-full object-cover cursor-pointer"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.src = "/placeholder.svg";
+                        }}
+                      />
+                    </Link>
+                    {!readOnly && (
+                      <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-md flex items-center justify-center">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 w-8 p-0 bg-red-500/20 hover:bg-red-500/30 text-white"
+                          onClick={() =>
+                            removeRecentlyWatched(
+                              currentRecentlyWatched[
+                                currentRecentlyWatchedIndex
+                              ].id.toString()
+                            )
+                          }
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    )}
+                  </div>
                 </div>
+
+                {/* Content section */}
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-xl font-semibold text-white mb-2">
+                    {getTextContent(
+                      currentRecentlyWatched[currentRecentlyWatchedIndex].name
+                    ) || "Unknown Series"}
+                  </h3>
+                  <p className="text-sm text-white mb-4 line-clamp-3">
+                    {currentRecentlyWatched[currentRecentlyWatchedIndex]
+                      .overview
+                      ? stripHtmlTags(
+                          currentRecentlyWatched[currentRecentlyWatchedIndex]
+                            .overview
+                        )
+                      : "No description available"}
+                  </p>
+
+                  {/* Action buttons */}
+                  <div className="flex items-center gap-4">
+                    {/* Trailer button */}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-8 px-4"
+                      onClick={() =>
+                        handleTrailerClick(
+                          currentRecentlyWatched[currentRecentlyWatchedIndex]
+                        )
+                      }
+                    >
+                      <Play className="h-3 w-3 mr-1" />
+                      trailer
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Navigation arrow */}
+                {currentRecentlyWatched.length > 1 && (
+                  <div className="flex flex-col gap-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-4 w-4 p-0 flex-shrink-0 opacity-60 hover:opacity-100"
+                      onClick={goToNextRecentlyWatched}
+                    >
+                      <ChevronRight className="h-2 w-2 text-white" />
+                    </Button>
+                  </div>
+                )}
               </div>
 
-              {/* Content section */}
-              <div className="flex-1 min-w-0">
-                <h3 className="text-xl font-semibold text-white mb-2">
-                  {getTextContent(currentRecentlyWatched.name) ||
-                    "Unknown Series"}
-                </h3>
-                <p className="text-sm text-white mb-4 line-clamp-3">
-                  {currentRecentlyWatched.overview
-                    ? stripHtmlTags(currentRecentlyWatched.overview)
-                    : "No description available"}
-                </p>
-
-                {/* Action buttons */}
-                <div className="flex items-center gap-4">
-                  {/* Trailer button */}
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="h-8 px-4"
-                    onClick={() => handleTrailerClick(currentRecentlyWatched)}
-                  >
-                    <Play className="h-3 w-3 mr-1" />
-                    trailer
-                  </Button>
+              {/* Navigation dots */}
+              {currentRecentlyWatched.length > 1 && (
+                <div className="flex justify-center gap-0.5 mt-3">
+                  {currentRecentlyWatched.map((_, index) => (
+                    <button
+                      key={index}
+                      className={`w-0.5 h-0.5 rounded-full transition-all duration-200 ${
+                        index === currentRecentlyWatchedIndex
+                          ? "bg-white/80"
+                          : "bg-white/20 hover:bg-white/40"
+                      }`}
+                      onClick={() => setCurrentRecentlyWatchedIndex(index)}
+                    />
+                  ))}
                 </div>
-              </div>
-            </div>
+              )}
+            </>
           ) : (
             <div className="flex gap-6 items-start">
               {/* Empty state poster */}

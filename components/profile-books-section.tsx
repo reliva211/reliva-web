@@ -277,7 +277,8 @@ export default function ProfileBooksSection({
   } | null>(null);
   const [editingItem, setEditingItem] = useState<any>(null);
 
-  // No navigation needed since we only show the latest item
+  // Navigation state for recently read
+  const [currentRecentlyReadIndex, setCurrentRecentlyReadIndex] = useState(0);
 
   // Scroll container refs
   const scrollContainerRefs = {
@@ -297,8 +298,33 @@ export default function ProfileBooksSection({
     favoriteAuthors: [],
   };
 
-  // Get the latest currently reading book (only one item now)
-  const currentRecentlyRead = safeBooksProfile.recentlyRead?.[0] || null;
+  // Get all currently reading books
+  const currentRecentlyRead = safeBooksProfile.recentlyRead || [];
+
+  // Navigation functions for recently read
+  const goToNextRecentlyRead = () => {
+    if (currentRecentlyRead.length > 0) {
+      setCurrentRecentlyReadIndex(
+        (prev) => (prev + 1) % currentRecentlyRead.length
+      );
+    }
+  };
+
+  const goToPrevRecentlyRead = () => {
+    if (currentRecentlyRead.length > 0) {
+      setCurrentRecentlyReadIndex((prev) =>
+        prev === 0 ? currentRecentlyRead.length - 1 : prev - 1
+      );
+    }
+  };
+
+  // Reset navigation index if out of bounds
+  if (
+    currentRecentlyRead.length > 0 &&
+    currentRecentlyReadIndex >= currentRecentlyRead.length
+  ) {
+    setCurrentRecentlyReadIndex(0);
+  }
 
   // Limited lists for display
   const limitedRatings = safeBooksProfile.ratings || [];
@@ -733,70 +759,121 @@ export default function ProfileBooksSection({
         </div>
 
         <div className="relative">
-          {currentRecentlyRead ? (
-            <div className="flex gap-4 items-start">
-              {/* Book cover */}
-              <div className="relative group flex-shrink-0">
-                <div className="w-32 h-48 bg-muted rounded-md overflow-hidden">
-                  <Link href={`/books/${currentRecentlyRead.id}`}>
-                    <Image
-                      src={
-                        currentRecentlyRead.cover ||
-                        PLACEHOLDER.currentlyReading.cover
-                      }
-                      alt={getTextContent(currentRecentlyRead.title) || "Book"}
-                      width={128}
-                      height={192}
-                      className="w-full h-full object-cover cursor-pointer"
-                      onError={(e) => {
-                        const target = e.target as HTMLImageElement;
-                        target.src = PLACEHOLDER.currentlyReading.cover;
-                      }}
-                    />
-                  </Link>
-                  {!readOnly && (
-                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-md flex items-center justify-center">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-6 w-6 p-0 bg-red-500/20 hover:bg-red-500/30 text-white"
-                        onClick={() =>
-                          removeRecentlyRead(currentRecentlyRead.id)
+          {currentRecentlyRead.length > 0 ? (
+            <>
+              <div className="flex gap-4 items-start">
+                {/* Book cover */}
+                <div className="relative group flex-shrink-0">
+                  <div className="w-32 h-48 bg-muted rounded-md overflow-hidden">
+                    <Link
+                      href={`/books/${currentRecentlyRead[currentRecentlyReadIndex].id}`}
+                    >
+                      <Image
+                        src={
+                          currentRecentlyRead[currentRecentlyReadIndex].cover ||
+                          PLACEHOLDER.currentlyReading.cover
                         }
-                      >
-                        <Trash2 className="h-3 w-3" />
-                      </Button>
-                    </div>
+                        alt={
+                          getTextContent(
+                            currentRecentlyRead[currentRecentlyReadIndex].title
+                          ) || "Book"
+                        }
+                        width={128}
+                        height={192}
+                        className="w-full h-full object-cover cursor-pointer"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.src = PLACEHOLDER.currentlyReading.cover;
+                        }}
+                      />
+                    </Link>
+                    {!readOnly && (
+                      <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-md flex items-center justify-center">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 w-6 p-0 bg-red-500/20 hover:bg-red-500/30 text-white"
+                          onClick={() =>
+                            removeRecentlyRead(
+                              currentRecentlyRead[currentRecentlyReadIndex].id
+                            )
+                          }
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Content section */}
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-lg font-semibold text-white mb-1">
+                    {getTextContent(
+                      currentRecentlyRead[currentRecentlyReadIndex].title
+                    ) || "Unknown Book"}
+                  </h3>
+
+                  {/* Publication year if available */}
+                  {currentRecentlyRead[currentRecentlyReadIndex]
+                    .publishedDate && (
+                    <p className="text-xs text-white mb-3">
+                      {
+                        currentRecentlyRead[
+                          currentRecentlyReadIndex
+                        ].publishedDate.split("-")[0]
+                      }
+                    </p>
                   )}
-                </div>
-              </div>
 
-              {/* Content section */}
-              <div className="flex-1 min-w-0">
-                <h3 className="text-lg font-semibold text-white mb-1">
-                  {getTextContent(currentRecentlyRead.title) || "Unknown Book"}
-                </h3>
-
-                {/* Publication year if available */}
-                {currentRecentlyRead.publishedDate && (
-                  <p className="text-xs text-white mb-3">
-                    {currentRecentlyRead.publishedDate.split("-")[0]}
+                  {/* Description */}
+                  <p className="text-sm text-white mb-4 line-clamp-2">
+                    {currentRecentlyRead[currentRecentlyReadIndex].description
+                      ? stripHtmlTags(
+                          currentRecentlyRead[currentRecentlyReadIndex]
+                            .description
+                        )
+                      : "No description available"}
                   </p>
-                )}
 
-                {/* Description */}
-                <p className="text-sm text-white mb-4 line-clamp-2">
-                  {currentRecentlyRead.description
-                    ? stripHtmlTags(currentRecentlyRead.description)
-                    : "No description available"}
-                </p>
-
-                {/* Action buttons */}
-                <div className="flex items-center gap-4">
-                  {/* No navigation needed for single item */}
+                  {/* Action buttons */}
+                  <div className="flex items-center gap-4">
+                    {/* No navigation needed for single item */}
+                  </div>
                 </div>
+
+                {/* Navigation arrow */}
+                {currentRecentlyRead.length > 1 && (
+                  <div className="flex flex-col gap-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-4 w-4 p-0 flex-shrink-0 opacity-60 hover:opacity-100"
+                      onClick={goToNextRecentlyRead}
+                    >
+                      <ChevronRight className="h-2 w-2 text-white" />
+                    </Button>
+                  </div>
+                )}
               </div>
-            </div>
+
+              {/* Navigation dots */}
+              {currentRecentlyRead.length > 1 && (
+                <div className="flex justify-center gap-0.5 mt-3">
+                  {currentRecentlyRead.map((_, index) => (
+                    <button
+                      key={index}
+                      className={`w-0.5 h-0.5 rounded-full transition-all duration-200 ${
+                        index === currentRecentlyReadIndex
+                          ? "bg-white/80"
+                          : "bg-white/20 hover:bg-white/40"
+                      }`}
+                      onClick={() => setCurrentRecentlyReadIndex(index)}
+                    />
+                  ))}
+                </div>
+              )}
+            </>
           ) : (
             <div className="flex gap-4 items-start">
               {/* Empty state cover */}

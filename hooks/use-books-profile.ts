@@ -142,8 +142,8 @@ export const useBooksProfile = (userId: string) => {
       const profile: BooksProfile = {
         recentlyRead:
           sortedReadingBooks.length > 0
-            ? [convertToGoogleBookItem(sortedReadingBooks[0])]
-            : [], // Only the latest reading book
+            ? sortedReadingBooks.map(convertToGoogleBookItem)
+            : [], // All reading books
         favoriteBooks: favoriteBooks.map(convertToGoogleBookItem), // Load from Favorites collection
         readingList: toReadBooks.map(convertToGoogleBookItem),
         recommendations: recommendationsBooks.map(convertToGoogleBookItem),
