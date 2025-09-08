@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import { useYouTubePlayer } from "@/hooks/use-youtube-player";
 import {
   Play,
-  Heart,
   Star,
   Music,
   Shuffle,
@@ -47,8 +46,7 @@ interface RecommendationsProps {
   ratings: Record<string, number>;
   myList: Set<string>;
   onPlaySongAction: (song: Song) => void;
-  onToggleMyListAction: (song: Song) => void;
-  onRateSongAction: (songId: string, rating: number) => void;
+  onRateSongAction: (song: Song) => void;
 }
 
 export function Recommendations({
@@ -56,7 +54,6 @@ export function Recommendations({
   ratings,
   myList,
   onPlaySongAction,
-  onToggleMyListAction,
   onRateSongAction,
 }: RecommendationsProps) {
   const { showPlayer } = useYouTubePlayer();
@@ -327,22 +324,12 @@ export function Recommendations({
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
-                      onToggleMyListAction(song);
+                      onRateSongAction(song);
                     }}
-                    className="w-10 h-10 bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-full flex items-center justify-center transition-all duration-200 hover:scale-110"
-                    title={
-                      myList.has(song.id)
-                        ? "Remove from liked songs"
-                        : "Add to liked songs"
-                    }
+                    className="w-10 h-10 bg-yellow-500/80 hover:bg-yellow-600/80 backdrop-blur-sm rounded-full flex items-center justify-center transition-all duration-200 hover:scale-110"
+                    title="Rate this song"
                   >
-                    <Heart
-                      className={`w-4 h-4 ${
-                        myList.has(song.id)
-                          ? "fill-red-400 text-red-400"
-                          : "fill-white text-white"
-                      }`}
-                    />
+                    <Star className="w-4 h-4 text-white fill-white" />
                   </button>
                 </div>
               </div>

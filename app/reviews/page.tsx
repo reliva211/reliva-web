@@ -1623,28 +1623,47 @@ function ReviewsPageContent() {
                           <Card className="mb-4 overflow-hidden border border-[#2a2a2a] bg-[#0f0f0f]">
                             <div className="flex min-w-0">
                               <div className="w-32 sm:w-40 h-40 sm:h-48 flex-shrink-0 relative p-2 sm:p-3">
-                                <Link
-                                  href={`/${
-                                    post.mediaType === "series"
-                                      ? "series"
-                                      : post.mediaType === "artist"
-                                      ? "music/artist"
-                                      : post.mediaType === "music"
-                                      ? "music/album"
-                                      : post.mediaType + "s"
-                                  }/${
-                                    post.mediaType === "music"
-                                      ? post.mediaId.replace("album_", "")
-                                      : post.mediaId
-                                  }`}
-                                  className="block relative w-full h-full rounded-xl overflow-hidden shadow-lg cursor-pointer"
-                                >
-                                  <img
-                                    src={post.mediaCover || "/placeholder.svg"}
-                                    alt={decodeHtmlEntities(post.mediaTitle)}
-                                    className="w-full h-full object-cover hover:scale-105 transition-transform duration-200"
-                                  />
-                                </Link>
+                                {post.mediaType === "music" && post.mediaSubType === "song" ? (
+                                  <button
+                                    onClick={() => {
+                                      toast({
+                                        title: "Songs overview is currently unavailable",
+                                        description: "We're working on bringing you detailed song information soon!",
+                                        variant: "default",
+                                      });
+                                    }}
+                                    className="block relative w-full h-full rounded-xl overflow-hidden shadow-lg cursor-pointer"
+                                  >
+                                    <img
+                                      src={post.mediaCover || "/placeholder.svg"}
+                                      alt={decodeHtmlEntities(post.mediaTitle)}
+                                      className="w-full h-full object-cover hover:scale-105 transition-transform duration-200"
+                                    />
+                                  </button>
+                                ) : (
+                                  <Link
+                                    href={`/${
+                                      post.mediaType === "series"
+                                        ? "series"
+                                        : post.mediaType === "artist"
+                                        ? "music/artist"
+                                        : post.mediaType === "music"
+                                        ? "music/album"
+                                        : post.mediaType + "s"
+                                    }/${
+                                      post.mediaType === "music"
+                                        ? post.mediaId.replace("album_", "")
+                                        : post.mediaId
+                                    }`}
+                                    className="block relative w-full h-full rounded-xl overflow-hidden shadow-lg cursor-pointer"
+                                  >
+                                    <img
+                                      src={post.mediaCover || "/placeholder.svg"}
+                                      alt={decodeHtmlEntities(post.mediaTitle)}
+                                      className="w-full h-full object-cover hover:scale-105 transition-transform duration-200"
+                                    />
+                                  </Link>
+                                )}
                               </div>
                               <div className="flex-1 p-2 sm:p-4 min-w-0 overflow-hidden">
                                 <div className="flex items-start gap-2 mb-2">

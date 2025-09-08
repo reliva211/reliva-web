@@ -15,10 +15,17 @@ import {
   Star,
   Plus,
   Check,
+  ChevronLeft,
 } from "lucide-react";
 import { useMusicCollections } from "@/hooks/use-music-collections";
 import { useYouTubePlayer } from "@/hooks/use-youtube-player";
 import { useToast } from "@/hooks/use-toast";
+
+const decodeHtmlEntities = (text: string) => {
+  const textarea = document.createElement("textarea");
+  textarea.innerHTML = text;
+  return textarea.value;
+};
 
 interface Song {
   id: string;
@@ -218,13 +225,13 @@ export default function AlbumDetailPage({
         await unlikeSong(song.id);
         toast({
           title: "Removed from liked songs",
-          description: `${song.name} has been removed from your liked songs.`,
+          description: `${decodeHtmlEntities(song.name)} has been removed from your liked songs.`,
         });
       } else {
         await likeSong(song);
         toast({
           title: "Added to liked songs",
-          description: `${song.name} has been added to your liked songs.`,
+          description: `${decodeHtmlEntities(song.name)} has been added to your liked songs.`,
         });
       }
     } catch (error) {
@@ -243,13 +250,13 @@ export default function AlbumDetailPage({
         await unlikeAlbum(album.id);
         toast({
           title: "Album removed from liked albums",
-          description: `${album.name} has been removed from your liked albums.`,
+          description: `${decodeHtmlEntities(album.name)} has been removed from your liked albums.`,
         });
       } else {
         // Convert Album to MusicAlbum format
         const musicAlbum = {
           id: album.id,
-          name: album.name || "Unknown Album",
+          name: decodeHtmlEntities(album.name || "Unknown Album"),
           artists: album.artists || { primary: [] },
           image: album.image || [],
           year: album.year?.toString() || "Unknown",
@@ -259,7 +266,7 @@ export default function AlbumDetailPage({
           songs:
             album.songs?.map((song: any) => ({
               id: song.id,
-              name: song.name,
+              name: decodeHtmlEntities(song.name),
               artists: song.artists,
               image: song.image,
               duration: song.duration,
@@ -274,7 +281,7 @@ export default function AlbumDetailPage({
         await likeAlbum(musicAlbum);
         toast({
           title: "Album added to liked albums",
-          description: `${album.name} has been added to your liked albums.`,
+          description: `${decodeHtmlEntities(album.name)} has been added to your liked albums.`,
         });
       }
     } catch (error) {
@@ -294,13 +301,13 @@ export default function AlbumDetailPage({
         await removeAlbumFromRecommendations(album.id);
         toast({
           title: "Removed from recommendations",
-          description: `${album.name} has been removed from your recommendations.`,
+          description: `${decodeHtmlEntities(album.name)} has been removed from your recommendations.`,
         });
       } else {
         // Convert Album to MusicAlbum format
         const musicAlbum = {
           id: album.id,
-          name: album.name || "Unknown Album",
+          name: decodeHtmlEntities(album.name || "Unknown Album"),
           artists: album.artists || { primary: [] },
           image: album.image || [],
           year: album.year?.toString() || "Unknown",
@@ -310,11 +317,11 @@ export default function AlbumDetailPage({
           songs:
             album.songs?.map((song) => ({
               id: song.id,
-              name: song.name,
+              name: decodeHtmlEntities(song.name),
               artists: {
                 primary: song.artists.primary.map((artist) => ({
                   id: artist.id,
-                  name: artist.name,
+                  name: decodeHtmlEntities(artist.name),
                 })),
               },
               image: song.image,
@@ -333,7 +340,7 @@ export default function AlbumDetailPage({
         await addAlbumToRecommendations(musicAlbum);
         toast({
           title: "Added to recommendations",
-          description: `${album.name} has been added to your recommendations.`,
+          description: `${decodeHtmlEntities(album.name)} has been added to your recommendations.`,
         });
       }
     } catch (error) {
@@ -386,25 +393,179 @@ export default function AlbumDetailPage({
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
-      <div className="container mx-auto px-4 py-4 sm:py-6">
+      {/* Hero Section with Dynamic Background */}
+      <div className="relative mb-12 overflow-hidden">
+        {album && (
+          <>
+            <div className="absolute inset-0">
+              <img
+                src={getImageUrl(album.image)}
+                alt={decodeHtmlEntities(album.name)}
+                className="w-full h-full object-cover blur-sm scale-110"
+              />
+            </div>
+            {/* Overlay to reduce background image opacity */}
+            <div className="absolute inset-0 bg-black/60"></div>
+          </>
+        )}
+
+        <div className="relative z-10 p-8 lg:p-12">
         {/* Back Button */}
         <Button
           variant="ghost"
           onClick={() => router.back()}
-          className="mb-4 sm:mb-6 rounded-xl hover:bg-muted/50 transition-all duration-200 group"
+            className="mb-4 sm:mb-6 rounded-xl hover:bg-white/10 transition-all duration-200 group text-white/80 hover:text-white"
         >
-          ← Back
+            <ChevronLeft className="w-4 h-4 mr-1" />
+            Back
         </Button>
 
-        {/* Album Header */}
-        <div className="flex flex-col lg:flex-row gap-4 sm:gap-6 mb-6 sm:mb-8">
+        {/* Mobile Album Header */}
+        <div className="sm:hidden space-y-4 mb-6">
+          {/* Album Cover and Info */}
+          <div className="flex flex-row gap-4">
+            {/* Album Image */}
+            <div className="flex-shrink-0">
+              <div className="relative group w-36 h-36">
+                <div className="aspect-square rounded-xl overflow-hidden bg-gradient-to-br from-muted to-muted/50 shadow-xl">
+                  <img
+                    src={getImageUrl(album.image)}
+                    alt={decodeHtmlEntities(album.name)}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Album Info */}
+            <div className="flex-1 space-y-3 text-left">
+              <h1 className="text-xl font-bold text-white leading-tight line-clamp-2">
+                {decodeHtmlEntities(album.name)}
+              </h1>
+              
+              {/* Tags in a horizontal row */}
+              <div className="flex flex-wrap gap-1.5">
+                <div className="flex items-center gap-1 px-2 py-1 rounded-full bg-white/15 backdrop-blur-sm border border-white/25">
+                  <Music className="h-2.5 w-2.5 text-white" />
+                  <span className="text-xs font-medium text-white truncate max-w-20">
+                    {album.artists?.primary?.length > 0
+                      ? album.artists.primary.map((artist) => decodeHtmlEntities(artist.name)).join(", ")
+                      : "Unknown Artist"}
+                  </span>
+                </div>
+                {album.year && (
+                  <div className="flex items-center gap-1 px-2 py-1 rounded-full bg-white/15 backdrop-blur-sm border border-white/25">
+                    <Clock className="h-2.5 w-2.5 text-white" />
+                    <span className="text-xs font-medium text-white">
+                      {album.year}
+                    </span>
+                  </div>
+                )}
+                {album.language && (
+                  <div className="flex items-center gap-1 px-2 py-1 rounded-full bg-white/15 backdrop-blur-sm border border-white/25">
+                    <span className="text-xs font-medium text-white capitalize">
+                      {album.language}
+                    </span>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+          
+          {/* Mobile Action Buttons - Centered Below */}
+          <div className="flex gap-2 justify-center">
+            <Button
+              size="sm"
+              variant="outline"
+              className="rounded-lg hover:bg-white/20 transition-all duration-200 group bg-white/10 border-white/20 shadow-md h-7 text-xs text-white"
+              onClick={async () => {
+                if (album && album.songs && album.songs.length > 0) {
+                  // Create queue from all album songs
+                  const queue = album.songs.map((song) => ({
+                    id: song.id,
+                    title: decodeHtmlEntities(song.name),
+                    artist:
+                      song.artists?.primary?.length > 0
+                        ? song.artists.primary.map((artist) => decodeHtmlEntities(artist.name)).join(", ")
+                        : "Unknown Artist",
+                  }));
+
+                  // Start with the first song
+                  await showPlayer(queue[0], queue, 0);
+                }
+              }}
+            >
+              <Play className="w-3 h-3 mr-1" />
+              Play
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              className="rounded-lg hover:bg-white/20 transition-all duration-200 group bg-white/10 border-white/20 shadow-md h-7 text-xs text-white"
+              onClick={() => {
+                if (album) {
+                  handleLikeAlbum(album);
+                }
+              }}
+            >
+              <Heart
+                className={`w-3 h-3 mr-1 ${
+                  album && isAlbumLiked(album.id) ? "fill-red-400" : ""
+                }`}
+              />
+              {album && isAlbumLiked(album.id) ? "Liked" : "Like"}
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              className="rounded-lg hover:bg-white/20 transition-all duration-200 group bg-white/10 border-white/20 shadow-md h-7 text-xs text-white"
+              onClick={handleAddToRecommendations}
+            >
+              {isAlbumInRecommendations(album.id) ? (
+                <>
+                  <Check className="w-3 h-3 mr-1" />
+                  Added
+                </>
+              ) : (
+                <>
+                  <Plus className="w-3 h-3 mr-1" />
+                  Add
+                </>
+              )}
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              className="rounded-lg hover:bg-white/20 transition-all duration-200 group bg-white/10 border-white/20 shadow-md h-7 text-xs text-white"
+              onClick={() => {
+                const params = new URLSearchParams({
+                  type: "music",
+                  id: album.id,
+                  title: decodeHtmlEntities(album.name),
+                  cover: getImageUrl(album.image),
+                  artist:
+                    album.artists?.primary?.length > 0
+                      ? album.artists.primary.map((artist) => decodeHtmlEntities(artist.name)).join(", ")
+                      : "Unknown Artist",
+                });
+                router.push(`/reviews?${params.toString()}`);
+              }}
+            >
+              <Star className="w-3 h-3 mr-1" />
+              Rate
+            </Button>
+          </div>
+        </div>
+
+        {/* Desktop Album Header */}
+        <div className="hidden sm:flex flex-col lg:flex-row gap-4 sm:gap-6 mb-6 sm:mb-8">
           {/* Album Image */}
           <div className="w-full lg:w-1/3 flex justify-center lg:justify-start">
             <div className="relative group w-48 sm:w-56 lg:w-auto lg:max-w-xs">
               <div className="aspect-square rounded-xl overflow-hidden bg-gradient-to-br from-muted to-muted/50 shadow-xl group-hover:shadow-2xl transition-all duration-300">
                 <img
                   src={getImageUrl(album.image)}
-                  alt={album.name}
+                  alt={decodeHtmlEntities(album.name)}
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                 />
               </div>
@@ -416,23 +577,23 @@ export default function AlbumDetailPage({
           {/* Album Info */}
           <div className="flex-1 space-y-3 sm:space-y-4 text-center lg:text-left">
             <div className="space-y-3 sm:space-y-4">
-              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent leading-tight">
-                {album.name}
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white leading-tight">
+                {decodeHtmlEntities(album.name)}
               </h1>
 
               <div className="flex flex-col sm:flex-row items-center sm:items-center gap-2 justify-center lg:justify-start">
-                <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-muted/50 backdrop-blur-sm border border-border/30">
-                  <Music className="h-3 w-3 text-primary" />
-                  <span className="text-xs font-medium text-foreground">
-                    {album.artists?.primary
-                      ?.map((artist) => artist.name)
-                      .join(", ") || "Unknown Artist"}
+                <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/10 backdrop-blur-sm border border-white/20">
+                  <Music className="h-3 w-3 text-white" />
+                  <span className="text-xs font-medium text-white">
+                    {album.artists?.primary?.length > 0
+                      ? album.artists.primary.map((artist) => decodeHtmlEntities(artist.name)).join(", ")
+                      : "Unknown Artist"}
                   </span>
                 </div>
                 {album.year && (
-                  <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-muted/50 backdrop-blur-sm border border-border/30">
-                    <Clock className="h-3 w-3 text-primary" />
-                    <span className="text-xs font-medium text-foreground">
+                  <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/10 backdrop-blur-sm border border-white/20">
+                    <Clock className="h-3 w-3 text-white" />
+                    <span className="text-xs font-medium text-white">
                       {album.year}
                     </span>
                   </div>
@@ -446,8 +607,8 @@ export default function AlbumDetailPage({
                   </Badge>
                 )}
                 {album.language && (
-                  <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-muted/50 backdrop-blur-sm border border-border/30">
-                    <span className="text-xs font-medium text-foreground capitalize">
+                  <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/10 backdrop-blur-sm border border-white/20">
+                    <span className="text-xs font-medium text-white capitalize">
                       {album.language}
                     </span>
                   </div>
@@ -456,20 +617,21 @@ export default function AlbumDetailPage({
             </div>
 
             {/* Action Buttons */}
-            <div className="grid grid-cols-2 gap-2 pt-2 justify-center lg:justify-start">
+            <div className="flex flex-wrap gap-2 pt-2 justify-center lg:justify-start">
               <Button
-                size="default"
-                className="rounded-lg hover:scale-105 transition-all duration-200 bg-green-600 hover:bg-green-700 shadow-md h-10"
+                size="sm"
+                variant="outline"
+                className="rounded-lg hover:bg-white/20 transition-all duration-200 group bg-white/10 border-white/20 shadow-md h-8 text-xs text-white"
                 onClick={async () => {
                   if (album && album.songs && album.songs.length > 0) {
                     // Create queue from all album songs
                     const queue = album.songs.map((song) => ({
                       id: song.id,
-                      title: song.name,
+                      title: decodeHtmlEntities(song.name),
                       artist:
-                        song.artists.primary
-                          .map((artist) => artist.name)
-                          .join(", ") || "Unknown Artist",
+                        song.artists?.primary?.length > 0
+                          ? song.artists.primary.map((artist) => decodeHtmlEntities(artist.name)).join(", ")
+                          : "Unknown Artist",
                     }));
 
                     // Album Play Button - Queue created
@@ -479,78 +641,81 @@ export default function AlbumDetailPage({
                   }
                 }}
               >
-                <Play className="w-4 h-4 mr-2" />
+                <Play className="w-3 h-3 mr-1" />
                 Play Album
               </Button>
               <Button
-                size="default"
+                size="sm"
                 variant="outline"
                 onClick={() => {
                   if (album) {
                     handleLikeAlbum(album);
                   }
                 }}
-                className={`rounded-lg hover:bg-muted/50 transition-all duration-200 group bg-background/60 border-border/50 shadow-md h-10 ${
+                className={`rounded-lg hover:bg-white/20 transition-all duration-200 group bg-white/10 border-white/20 shadow-md h-8 text-xs ${
                   album && isAlbumLiked(album.id)
-                    ? "bg-red-500/20 text-red-400 border-red-500/30"
-                    : ""
+                    ? "bg-red-500/30 text-red-300 border-red-400/50"
+                    : "text-white"
                 }`}
               >
                 <Heart
-                  className={`w-4 h-4 mr-2 group-hover:scale-110 transition-transform ${
+                  className={`w-3 h-3 mr-1 group-hover:scale-110 transition-transform ${
                     album && isAlbumLiked(album.id) ? "fill-red-400" : ""
                   }`}
                 />
                 {album && isAlbumLiked(album.id) ? "Liked" : "Like"}
               </Button>
               <Button
-                size="default"
+                size="sm"
                 variant="outline"
                 onClick={handleAddToRecommendations}
-                className={`rounded-lg hover:scale-105 transition-all duration-200 group bg-background/60 border-border/50 shadow-md h-10 ${
+                className={`rounded-lg hover:scale-105 transition-all duration-200 group bg-white/10 border-white/20 shadow-md h-8 text-xs ${
                   isAlbumInRecommendations(album.id)
-                    ? "bg-primary/20 text-primary border-primary/30"
-                    : ""
+                    ? "bg-blue-500/30 text-blue-300 border-blue-400/50"
+                    : "text-white"
                 }`}
               >
                 {isAlbumInRecommendations(album.id) ? (
                   <>
-                    <Check className="w-4 h-4 mr-2" />
+                    <Check className="w-3 h-3 mr-1" />
                     Recommended
                   </>
                 ) : (
                   <>
-                    <Plus className="w-4 h-4 mr-2" />
+                    <Plus className="w-3 h-3 mr-1" />
                     Recommend
                   </>
                 )}
               </Button>
               <Button
-                size="default"
+                size="sm"
                 variant="outline"
                 onClick={() => {
                   const params = new URLSearchParams({
                     type: "music",
                     id: album.id,
-                    title: album.name,
+                    title: decodeHtmlEntities(album.name),
                     cover: getImageUrl(album.image),
                     artist:
-                      album.artists?.primary
-                        ?.map((artist) => artist.name)
-                        .join(", ") || "Unknown Artist",
+                      album.artists?.primary?.length > 0
+                        ? album.artists.primary.map((artist) => decodeHtmlEntities(artist.name)).join(", ")
+                        : "Unknown Artist",
                   });
                   router.push(`/reviews?${params.toString()}`);
                 }}
-                className="rounded-lg hover:scale-105 transition-all duration-200 group bg-background/60 border-border/50 shadow-md h-10"
+                className="rounded-lg hover:scale-105 transition-all duration-200 group bg-white/10 border-white/20 shadow-md h-8 text-xs text-white"
               >
-                <Star className="w-4 h-4 mr-2 group-hover:scale-110 transition-transform" />
+                <Star className="w-3 h-3 mr-1 group-hover:scale-110 transition-transform" />
                 Rate
               </Button>
+            </div>
+          </div>
             </div>
           </div>
         </div>
 
         {/* Tabs */}
+      <div className="container mx-auto px-4 py-4 sm:py-6">
         <div className="space-y-6">
           <Tabs defaultValue="songs" className="space-y-4">
             <TabsList className="inline-flex h-10 items-center justify-center rounded-lg bg-muted/30 backdrop-blur-sm border border-border/20 p-1 gap-1 mx-auto lg:mx-0">
@@ -569,31 +734,30 @@ export default function AlbumDetailPage({
                   {album.songs.map((song, index) => (
                     <div
                       key={song.id}
-                      className="flex items-center gap-3 p-3 bg-muted/30 backdrop-blur-sm rounded-lg hover:bg-muted/50 transition-all duration-200 cursor-pointer group border border-border/20"
-                      onClick={() => router.push(`/music/song/${song.id}`)}
+                      className="flex items-center gap-3 sm:gap-4 p-3 sm:p-4 bg-muted/30 backdrop-blur-sm rounded-lg hover:bg-muted/50 transition-all duration-200 group border border-border/20"
                     >
                       {/* Album cover instead of number */}
-                      <div className="w-10 h-10 rounded-md overflow-hidden flex-shrink-0">
+                      <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-md sm:rounded-lg overflow-hidden flex-shrink-0">
                         <img
                           src={getImageUrl(song.image || album.image)}
-                          alt={song.name}
+                          alt={decodeHtmlEntities(song.name)}
                           className="w-full h-full object-cover"
                         />
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between">
-                          <div className="flex-1 min-w-0 pr-2">
-                            <h4 className="text-sm font-medium text-foreground truncate">
-                              {song.name}
+                          <div className="flex-1 min-w-0 pr-2 sm:pr-3">
+                            <h4 className="text-sm sm:text-base font-medium text-foreground truncate">
+                              {decodeHtmlEntities(song.name)}
                             </h4>
-                            <p className="text-xs text-muted-foreground truncate">
+                            <p className="text-sm text-muted-foreground truncate">
                               {song.artists.primary
-                                .map((artist) => artist.name)
+                                .map((artist) => decodeHtmlEntities(artist.name))
                                 .join(", ")}
                             </p>
                           </div>
-                          <div className="flex items-center gap-2 flex-shrink-0">
-                            <span className="text-xs text-muted-foreground whitespace-nowrap">
+                          <div className="flex items-center gap-1 sm:gap-3 flex-shrink-0">
+                            <span className="text-xs sm:text-sm text-muted-foreground whitespace-nowrap">
                               {formatDuration(song.duration)}
                             </span>
                             <Button
@@ -604,51 +768,34 @@ export default function AlbumDetailPage({
                                 const params = new URLSearchParams({
                                   type: "music",
                                   id: song.id,
-                                  title: song.name,
+                                  title: decodeHtmlEntities(song.name),
                                   cover: getImageUrl(song.image || album.image),
                                   artist: song.artists.primary
-                                    .map((artist) => artist.name)
+                                    .map((artist) => decodeHtmlEntities(artist.name))
                                     .join(", "),
                                 });
                                 router.push(`/reviews?${params.toString()}`);
                               }}
-                              className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 text-muted-foreground hover:text-yellow-500 w-8 h-8 p-0"
+                              className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 text-muted-foreground hover:text-yellow-500 w-4 h-4 sm:w-8 sm:h-8 p-0 rounded-full bg-yellow-500/10 hover:bg-yellow-500/20"
                               title="Rate Song"
                             >
-                              <Star className="w-3 h-3" />
+                              <Star className="w-3 h-3 sm:w-3 sm:h-3" />
                             </Button>
                             <Button
                               size="sm"
                               variant="ghost"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleLikeSong(song);
-                              }}
-                              className={`opacity-0 group-hover:opacity-100 transition-opacity duration-200 text-muted-foreground hover:text-foreground w-8 h-8 p-0 ${
-                                isSongLiked(song.id) ? "text-red-400" : ""
-                              }`}
-                            >
-                              <Heart
-                                className={`w-3 h-3 ${
-                                  isSongLiked(song.id) ? "fill-red-400" : ""
-                                }`}
-                              />
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 text-muted-foreground hover:text-foreground w-8 h-8 p-0"
+                              className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 text-muted-foreground hover:text-green-500 w-4 h-4 sm:w-8 sm:h-8 p-0 rounded-full bg-green-500/10 hover:bg-green-500/20"
                               onClick={async (e) => {
                                 e.stopPropagation();
                                 if (album && album.songs) {
                                   // Create queue from all album songs
                                   const queue = album.songs.map((s) => ({
                                     id: s.id,
-                                    title: s.name,
+                                    title: decodeHtmlEntities(s.name),
                                     artist:
-                                      s.artists.primary
-                                        .map((artist) => artist.name)
-                                        .join(", ") || "Unknown Artist",
+                                      s.artists?.primary?.length > 0
+                                        ? s.artists.primary.map((artist) => decodeHtmlEntities(artist.name)).join(", ")
+                                        : "Unknown Artist",
                                   }));
 
                                   // Find the current song index
@@ -666,8 +813,66 @@ export default function AlbumDetailPage({
                                   );
                                 }
                               }}
+                              title="Play Song"
                             >
-                              <Play className="w-3 h-3" />
+                              <Play className="w-3 h-3 sm:w-3 sm:h-3" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 text-muted-foreground hover:text-blue-500 w-4 h-4 sm:w-8 sm:h-8 p-0 rounded-full bg-blue-500/10 hover:bg-blue-500/20"
+                              onClick={async (e) => {
+                                e.stopPropagation();
+                                // Convert song to MusicAlbum format for recommendations
+                                const musicAlbum = {
+                                  id: song.id,
+                                  name: decodeHtmlEntities(song.name),
+                                  artists: song.artists || { primary: [] },
+                                  image: song.image || album.image || [],
+                                  language: song.language || album.language || "Unknown",
+                                  year: song.year || album.year?.toString() || "Unknown",
+                                  playCount: song.playCount || 0,
+                                  songCount: 1,
+                                  songs: [{
+                                    id: song.id,
+                                    name: decodeHtmlEntities(song.name),
+                                    artists: song.artists,
+                                    image: song.image || album.image || [],
+                                    duration: song.duration || 0,
+                                    year: song.year || "Unknown",
+                                    language: song.language,
+                                    playCount: song.playCount || 0,
+                                    downloadUrl: song.downloadUrl,
+                                    album: {
+                                      id: song.album?.id || album.id,
+                                      name: song.album?.name || album.name,
+                                      url: song.album?.url || album.url,
+                                    },
+                                    addedAt: new Date().toISOString(),
+                                  }],
+                                };
+
+                                if (isAlbumInRecommendations(song.id)) {
+                                  await removeAlbumFromRecommendations(song.id);
+                                  toast({
+                                    title: "Removed from recommendations",
+                                    description: `${decodeHtmlEntities(song.name)} has been removed from your recommendations.`,
+                                  });
+                                } else {
+                                  await addAlbumToRecommendations(musicAlbum);
+                                  toast({
+                                    title: "Added to recommendations",
+                                    description: `${decodeHtmlEntities(song.name)} has been added to your recommendations.`,
+                                  });
+                                }
+                              }}
+                              title={isAlbumInRecommendations(song.id) ? "Remove from recommendations" : "Add to recommendations"}
+                            >
+                              {isAlbumInRecommendations(song.id) ? (
+                                <Check className="w-3 h-3 sm:w-3 sm:h-3" />
+                              ) : (
+                                <Plus className="w-3 h-3 sm:w-3 sm:h-3" />
+                              )}
                             </Button>
                           </div>
                         </div>
@@ -690,7 +895,6 @@ export default function AlbumDetailPage({
           </Tabs>
         </div>
       </div>
-
     </div>
   );
 }

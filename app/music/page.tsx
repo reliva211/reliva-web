@@ -124,6 +124,7 @@ export default function MusicApp() {
   // Scroll refs for search results
   const artistsScrollRef = useRef<HTMLDivElement>(null);
   const albumsScrollRef = useRef<HTMLDivElement>(null);
+  const songsScrollRef = useRef<HTMLDivElement>(null);
 
   const scrollArtistsLeft = () => {
     if (artistsScrollRef.current) {
@@ -146,6 +147,18 @@ export default function MusicApp() {
   const scrollAlbumsRight = () => {
     if (albumsScrollRef.current) {
       albumsScrollRef.current.scrollBy({ left: 300, behavior: "smooth" });
+    }
+  };
+
+  const scrollSongsLeft = () => {
+    if (songsScrollRef.current) {
+      songsScrollRef.current.scrollBy({ left: -300, behavior: "smooth" });
+    }
+  };
+
+  const scrollSongsRight = () => {
+    if (songsScrollRef.current) {
+      songsScrollRef.current.scrollBy({ left: 300, behavior: "smooth" });
     }
   };
 
@@ -474,6 +487,42 @@ export default function MusicApp() {
     [ratings]
   );
 
+  const handleRateSongRedirect = useCallback(
+    (song: Song) => {
+      const artistName = song.artists?.primary?.length > 0
+        ? song.artists.primary.map((artist) => artist.name).join(", ")
+        : "Unknown Artist";
+      
+      const params = new URLSearchParams({
+        type: "song",
+        id: song.id,
+        title: song.name,
+        cover: getImageUrl(song.image),
+        artist: artistName,
+      });
+      router.push(`/reviews?${params.toString()}`);
+    },
+    [router]
+  );
+
+  const handleRateAlbumRedirect = useCallback(
+    (album: Album) => {
+      const artistName = album.artists?.primary?.length > 0
+        ? album.artists.primary.map((artist) => artist.name).join(", ")
+        : "Unknown Artist";
+      
+      const params = new URLSearchParams({
+        type: "music",
+        id: album.id,
+        title: album.name,
+        cover: getImageUrl(album.image),
+        artist: artistName,
+      });
+      router.push(`/reviews?${params.toString()}`);
+    },
+    [router]
+  );
+
   const handleLikeSong = useCallback(
     async (song: Song) => {
       try {
@@ -565,7 +614,11 @@ export default function MusicApp() {
         const musicAlbum = {
           id: album.id,
           name: album.name || "Unknown Album",
-          artists: album.artists || { primary: [] },
+          artists: {
+            primary: album.artists?.primary?.length > 0 
+              ? album.artists.primary 
+              : [{ id: "unknown", name: "Unknown Artist" }]
+          },
           image: album.image || [],
           year: album.year || "Unknown",
           language: album.language || "Unknown",
@@ -701,10 +754,9 @@ export default function MusicApp() {
       ratings,
       myList,
       onPlaySongAction: () => {},
-      onToggleMyListAction: onToggleMyList,
-      onRateSongAction: rateSong,
+      onRateSongAction: handleRateSongRedirect,
     }),
-    [currentSong, ratings, onToggleMyList, rateSong]
+    [currentSong, ratings, handleRateSongRedirect]
   );
 
   const handleSearch = (e?: React.FormEvent) => {
@@ -1445,26 +1497,6 @@ export default function MusicApp() {
                                     <button
                                       onClick={(e) => {
                                         e.stopPropagation();
-                                        handleLikeSong(song);
-                                      }}
-                                      className="w-8 h-8 sm:w-10 sm:h-10 bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-full flex items-center justify-center transition-all duration-200 hover:scale-110"
-                                      title={
-                                        isSongLiked(song.id)
-                                          ? "Remove from liked songs"
-                                          : "Add to liked songs"
-                                      }
-                                    >
-                                      <Heart
-                                        className={`w-3 h-3 sm:w-4 sm:h-4 ${
-                                          isSongLiked(song.id)
-                                            ? "fill-red-400 text-red-400"
-                                            : "fill-white text-white"
-                                        }`}
-                                      />
-                                    </button>
-                                    <button
-                                      onClick={(e) => {
-                                        e.stopPropagation();
                                         handleAddSongToRecommendations(song);
                                       }}
                                       className="w-8 h-8 sm:w-10 sm:h-10 bg-blue-500/80 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-blue-600/80 transition-all duration-200 hover:scale-110"
@@ -1717,24 +1749,12 @@ export default function MusicApp() {
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
-                              handleAddAlbumToRecommendations(album, e);
+                              handleRateAlbumRedirect(album);
                             }}
-                            className={`w-12 h-12 backdrop-blur-sm rounded-full flex items-center justify-center transition-all duration-200 hover:scale-110 ${
-                              isAlbumInRecommendations(album.id)
-                                ? "bg-green-500/80 hover:bg-green-600/80"
-                                : "bg-white/20 hover:bg-white/30"
-                            }`}
-                            title={
-                              isAlbumInRecommendations(album.id)
-                                ? "Remove from list"
-                                : "Add to list"
-                            }
+                            className="w-12 h-12 bg-yellow-500/80 hover:bg-yellow-600/80 backdrop-blur-sm rounded-full flex items-center justify-center transition-all duration-200 hover:scale-110"
+                            title="Rate this album"
                           >
-                            {isAlbumInRecommendations(album.id) ? (
-                              <Check className="w-5 h-5 text-white fill-white" />
-                            ) : (
-                              <Plus className="w-5 h-5 text-white fill-white" />
-                            )}
+                            <Star className="w-5 h-5 text-white fill-white" />
                           </button>
                         </div>
                       </div>
@@ -1752,14 +1772,16 @@ export default function MusicApp() {
                           className="text-xs text-gray-400 truncate mt-1 cursor-pointer hover:text-blue-300 transition-colors"
                           onClick={() => {
                             const primaryArtist = album.artists?.primary?.[0];
-                            if (primaryArtist?.id) {
+                            if (primaryArtist?.id && primaryArtist.id !== "unknown") {
                               router.push(`/music/artist/${primaryArtist.id}`);
                             }
                           }}
                         >
-                          {album.artists?.primary
-                            ?.map((artist) => artist.name)
-                            .join(", ") || "Unknown Artist"}
+                          {album.artists?.primary?.length > 0
+                            ? album.artists.primary
+                                .map((artist) => artist.name)
+                                .join(", ")
+                            : "Unknown Artist"}
                         </p>
                         <p className="text-xs text-gray-500 mt-1">
                           {album.year}

@@ -228,8 +228,17 @@ export default function ArtistDetailPage({
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState("overview");
 
-  const { isArtistFollowed, followArtist, unfollowArtist } =
-    useMusicCollections();
+  const { 
+    isArtistFollowed, 
+    followArtist, 
+    unfollowArtist,
+    likeSong,
+    unlikeSong,
+    isSongLiked,
+    addAlbumToRecommendations,
+    removeAlbumFromRecommendations,
+    isAlbumInRecommendations
+  } = useMusicCollections();
   const { toast } = useToast();
   const { showPlayer } = useYouTubePlayer();
 
@@ -247,6 +256,77 @@ export default function ArtistDetailPage({
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins}:${secs.toString().padStart(2, "0")}`;
+  };
+
+  // Handle rate song redirect
+  const handleRateSongRedirect = (song: Song) => {
+    const params = new URLSearchParams({
+      type: "song",
+      id: song.id,
+      title: song.name,
+      cover: getImageUrl(song.image),
+      artist: song.artists?.primary?.length > 0
+        ? song.artists.primary.map((artist) => artist.name).join(", ")
+        : "Unknown Artist",
+    });
+    router.push(`/reviews?${params.toString()}`);
+  };
+
+  // Handle add song to recommendations
+  const handleAddSongToRecommendations = async (song: Song) => {
+    try {
+      // Convert Song to MusicAlbum format for recommendations
+      const musicAlbum = {
+        id: song.id,
+        name: song.name || "Unknown Song",
+        artists: {
+          primary: song.artists?.primary?.length > 0 
+            ? song.artists.primary.map((artist) => ({
+                id: artist.id,
+                name: artist.name
+              }))
+            : [{ id: "unknown", name: "Unknown Artist" }]
+        },
+        image: song.image || [],
+        year: song.year || "Unknown",
+        language: song.language || "Unknown",
+        songCount: 1,
+        playCount: song.playCount || 0,
+        songs: [{
+          id: song.id,
+          name: song.name,
+          artists: song.artists,
+          image: song.image,
+          duration: song.duration || 0,
+          album: song.album,
+          year: song.year || "Unknown",
+          language: song.language || "Unknown",
+          playCount: song.playCount || 0,
+          downloadUrl: song.downloadUrl,
+          addedAt: new Date().toISOString(),
+        }],
+      };
+
+      if (isAlbumInRecommendations(song.id)) {
+        await removeAlbumFromRecommendations(song.id);
+        toast({
+          title: "Removed from recommendations",
+          description: `${song.name} has been removed from your recommendations.`,
+        });
+      } else {
+        await addAlbumToRecommendations(musicAlbum);
+        toast({
+          title: "Added to recommendations",
+          description: `${song.name} has been added to your recommendations.`,
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update recommendations. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   useEffect(() => {
@@ -618,8 +698,84 @@ export default function ArtistDetailPage({
                           {song.album?.name}
                         </p>
                       </div>
-                      <div className="text-xs sm:text-sm text-muted-foreground">
-                        {formatDuration(song.duration)}
+                      <div className="flex items-center gap-2">
+                        <div className="text-xs sm:text-sm text-muted-foreground">
+                          {formatDuration(song.duration)}
+                        </div>
+                        <button
+                          onClick={async (e) => {
+                            e.stopPropagation();
+                            // Create song object for YouTube player
+                            const songForPlayer = {
+                              id: song.id,
+                              title: song.name,
+                              artist:
+                                song.artists?.primary
+                                  ?.map((artist) => artist.name)
+                                  .join(", ") || "Unknown Artist",
+                            };
+
+                            // Create queue from all artist songs
+                            const queue = songs.map((s) => ({
+                              id: s.id,
+                              title: s.name,
+                              artist:
+                                s.artists?.primary
+                                  ?.map((artist) => artist.name)
+                                  .join(", ") || "Unknown Artist",
+                            }));
+
+                            // Find the current song index
+                            const songIndex = songs.findIndex(
+                              (s) => s.id === song.id
+                            );
+
+                            // Top Songs Play Button - Queue created
+
+                            // Start with the clicked song
+                            await showPlayer(
+                              queue[songIndex],
+                              queue,
+                              songIndex
+                            );
+                          }}
+                          className="w-8 h-8 bg-green-500/80 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-green-600/80 transition-all duration-200 hover:scale-110 opacity-0 group-hover:opacity-100"
+                          title="Play Song"
+                        >
+                          <Play className="w-3 h-3 text-white fill-white" />
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleRateSongRedirect(song);
+                          }}
+                          className="w-8 h-8 bg-yellow-500/80 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-yellow-600/80 transition-all duration-200 hover:scale-110 opacity-0 group-hover:opacity-100"
+                          title="Rate Song"
+                        >
+                          <Star className="w-3 h-3 text-white fill-white" />
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleAddSongToRecommendations(song);
+                          }}
+                          className={`w-8 h-8 backdrop-blur-sm rounded-full flex items-center justify-center transition-all duration-200 hover:scale-110 opacity-0 group-hover:opacity-100 ${
+                            isAlbumInRecommendations(song.id)
+                              ? "bg-blue-500/80 hover:bg-blue-600/80"
+                              : "bg-white/20 hover:bg-white/30"
+                          }`}
+                          title={
+                            isAlbumInRecommendations(song.id)
+                              ? "Remove from recommendations"
+                              : "Add to recommendations"
+                          }
+                        >
+                          {isAlbumInRecommendations(song.id) ? (
+                            <Plus className="w-3 h-3 text-white fill-white rotate-45" />
+                          ) : (
+                            <Plus className="w-3 h-3 text-white fill-white" />
+                          )}
+                        </button>
                       </div>
                     </div>
                   ))}
@@ -839,6 +995,38 @@ export default function ArtistDetailPage({
                           title="Play Song"
                         >
                           <Play className="w-3 h-3 text-white fill-white" />
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleRateSongRedirect(song);
+                          }}
+                          className="w-8 h-8 bg-yellow-500/80 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-yellow-600/80 transition-all duration-200 hover:scale-110 opacity-0 group-hover:opacity-100"
+                          title="Rate Song"
+                        >
+                          <Star className="w-3 h-3 text-white fill-white" />
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleAddSongToRecommendations(song);
+                          }}
+                          className={`w-8 h-8 backdrop-blur-sm rounded-full flex items-center justify-center transition-all duration-200 hover:scale-110 opacity-0 group-hover:opacity-100 ${
+                            isAlbumInRecommendations(song.id)
+                              ? "bg-blue-500/80 hover:bg-blue-600/80"
+                              : "bg-white/20 hover:bg-white/30"
+                          }`}
+                          title={
+                            isAlbumInRecommendations(song.id)
+                              ? "Remove from recommendations"
+                              : "Add to recommendations"
+                          }
+                        >
+                          {isAlbumInRecommendations(song.id) ? (
+                            <Plus className="w-3 h-3 text-white fill-white rotate-45" />
+                          ) : (
+                            <Plus className="w-3 h-3 text-white fill-white" />
+                          )}
                         </button>
                       </div>
                     </div>
