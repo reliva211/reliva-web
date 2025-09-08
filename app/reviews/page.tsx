@@ -1008,13 +1008,15 @@ function ReviewsPageContent() {
 
             <div className="flex-1 min-w-0 max-w-full overflow-hidden">
               <div className="flex items-start gap-2 mb-2">
-                <span
-                  className="font-medium text-sm text-[#f5f5f5] cursor-pointer hover:text-blue-300 transition-colors"
-                  onClick={() => router.push(`/users/${comment.authorId?._id}`)}
+                <ProfileLink
+                  authorId={comment.authorId?._id}
+                  displayName={userProfiles.get(comment.authorId?._id)?.displayName || comment.authorId?.username}
+                  username={comment.authorId?.username}
+                  className="font-medium text-sm text-[#f5f5f5]"
                 >
                   {userProfiles.get(comment.authorId?._id)?.displayName ||
                     comment.authorId?.username}
-                </span>
+                </ProfileLink>
                 <span className="text-[#a0a0a0] text-xs">
                   {formatTime(comment.timestamp)}
                 </span>
