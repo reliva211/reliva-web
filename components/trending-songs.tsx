@@ -7,6 +7,13 @@ import { Badge } from "@/components/ui/badge";
 import { Play, Heart, TrendingUp, Music } from "lucide-react";
 import { useRouter } from "next/navigation";
 
+// Utility function to decode HTML entities
+const decodeHtmlEntities = (text: string): string => {
+  const textarea = document.createElement("textarea");
+  textarea.innerHTML = text;
+  return textarea.value;
+};
+
 interface Song {
   id: string;
   name: string;
@@ -199,7 +206,7 @@ export default function TrendingSongs({
             <div className="relative aspect-square w-full rounded-xl overflow-hidden bg-gradient-to-br from-gray-800 to-gray-900 shadow-2xl transition-all duration-300 group-hover:shadow-3xl">
               <img
                 src={getImageUrl(song.image) || "/placeholder.svg"}
-                alt={song.name}
+                alt={decodeHtmlEntities(song.name)}
                 className="w-full h-full object-cover cursor-pointer transition-transform duration-300 group-hover:scale-105"
               />
 
@@ -252,9 +259,9 @@ export default function TrendingSongs({
               {/* Title */}
               <h4
                 className="font-semibold text-white text-center text-sm sm:text-xs md:text-sm truncate leading-tight line-clamp-2 min-h-[2rem] sm:min-h-[1.5rem] group-hover:text-blue-300 transition-colors duration-200"
-                title={song.name}
+                title={decodeHtmlEntities(song.name)}
               >
-                {song.name}
+                {decodeHtmlEntities(song.name)}
               </h4>
 
               {/* Artist */}

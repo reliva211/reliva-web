@@ -20,6 +20,13 @@ import {
   Star,
 } from "lucide-react";
 
+// Utility function to decode HTML entities
+const decodeHtmlEntities = (text: string): string => {
+  const textarea = document.createElement("textarea");
+  textarea.innerHTML = text;
+  return textarea.value;
+};
+
 interface Song {
   id: string;
   name: string;
@@ -318,7 +325,7 @@ export default function SongDetailPage({
             <div className="flex items-start justify-between mb-4">
               <div>
                 <h1 className="text-4xl md:text-5xl font-bold text-white mb-2">
-                  {song.name}
+                  {decodeHtmlEntities(song.name)}
                 </h1>
                 <div className="flex items-center gap-4 text-gray-400 mb-4">
                   <span>
@@ -446,7 +453,6 @@ export default function SongDetailPage({
           </div>
         </div>
       </div>
-
     </div>
   );
 }

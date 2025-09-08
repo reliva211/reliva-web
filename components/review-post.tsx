@@ -17,6 +17,13 @@ import {
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 
+// Utility function to decode HTML entities
+const decodeHtmlEntities = (text: string): string => {
+  const textarea = document.createElement("textarea");
+  textarea.innerHTML = text;
+  return textarea.value;
+};
+
 interface ReviewPostProps {
   review: {
     id: string;
@@ -62,7 +69,9 @@ export default function ReviewPost({
     try {
       const notificationData = {
         type: "like",
-        message: `liked your review of "${review.mediaTitle}"`,
+        message: `liked your review of "${decodeHtmlEntities(
+          review.mediaTitle
+        )}"`,
         fromUserId: user.uid,
         toUserId: review.userId,
         fromUserName:
@@ -205,7 +214,7 @@ export default function ReviewPost({
           <div className="relative w-32 h-48 sm:w-40 sm:h-56 rounded-xl overflow-hidden flex-shrink-0 shadow-md">
             <Image
               src={review.mediaCover || "/placeholder.svg"}
-              alt={review.mediaTitle}
+              alt={decodeHtmlEntities(review.mediaTitle)}
               fill
               className="object-cover"
             />
@@ -216,7 +225,7 @@ export default function ReviewPost({
                 href={`/reviews/${review.id}`}
                 className="hover:text-emerald-400 transition-colors duration-200 cursor-pointer"
               >
-                {review.mediaTitle}
+                {decodeHtmlEntities(review.mediaTitle)}
               </Link>
             </h4>
             <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-3">
@@ -282,7 +291,8 @@ export default function ReviewPost({
             </h3>
             <p className="text-gray-300 mb-6">
               Are you sure you want to delete your review for "
-              {review.mediaTitle}"? This action cannot be undone.
+              {decodeHtmlEntities(review.mediaTitle)}"? This action cannot be
+              undone.
             </p>
             <div className="flex gap-3">
               <button

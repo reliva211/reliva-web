@@ -124,7 +124,6 @@ export default function MusicApp() {
   // Scroll refs for search results
   const artistsScrollRef = useRef<HTMLDivElement>(null);
   const albumsScrollRef = useRef<HTMLDivElement>(null);
-  const songsScrollRef = useRef<HTMLDivElement>(null);
 
   const scrollArtistsLeft = () => {
     if (artistsScrollRef.current) {
@@ -147,18 +146,6 @@ export default function MusicApp() {
   const scrollAlbumsRight = () => {
     if (albumsScrollRef.current) {
       albumsScrollRef.current.scrollBy({ left: 300, behavior: "smooth" });
-    }
-  };
-
-  const scrollSongsLeft = () => {
-    if (songsScrollRef.current) {
-      songsScrollRef.current.scrollBy({ left: -300, behavior: "smooth" });
-    }
-  };
-
-  const scrollSongsRight = () => {
-    if (songsScrollRef.current) {
-      songsScrollRef.current.scrollBy({ left: 300, behavior: "smooth" });
     }
   };
 
@@ -248,7 +235,10 @@ export default function MusicApp() {
     }
 
     // Handle tab parameter
-    if (tabParam && ["explore", "artists", "albums", "songs", "recommended"].includes(tabParam)) {
+    if (
+      tabParam &&
+      ["explore", "artists", "albums", "recommended"].includes(tabParam)
+    ) {
       setActiveTab(tabParam);
     }
   }, []);
@@ -491,13 +481,15 @@ export default function MusicApp() {
           await unlikeSong(song.id);
           toast({
             title: "Song removed from liked songs",
-            description: `${song.name} has been removed from your liked songs.`,
+            description: `${decodeHtmlEntities(
+              song.name
+            )} has been removed from your liked songs.`,
           });
         } else {
           // Ensure all fields have proper values
           const musicSong = {
             id: song.id,
-            name: song.name || "Unknown Song",
+            name: decodeHtmlEntities(song.name) || "Unknown Song",
             artists: song.artists || { primary: [] },
             image: song.image || [],
             album: song.album || { name: "Unknown Album" },
@@ -510,7 +502,9 @@ export default function MusicApp() {
           await likeSong(musicSong);
           toast({
             title: "Song added to liked songs",
-            description: `${song.name} has been added to your liked songs.`,
+            description: `${decodeHtmlEntities(
+              song.name
+            )} has been added to your liked songs.`,
           });
         }
       } catch (error) {
@@ -603,7 +597,7 @@ export default function MusicApp() {
       // Convert Song to MusicRecommendation format
       const recommendation = {
         id: song.id,
-        name: song.name || "Unknown Song",
+        name: decodeHtmlEntities(song.name) || "Unknown Song",
         artists: song.artists || { primary: [] },
         image: song.image || [],
         album: song.album || { name: "Unknown Album" },
@@ -611,14 +605,16 @@ export default function MusicApp() {
         year: song.year || "Unknown",
         language: song.language || "Unknown",
         playCount: song.playCount || 0,
-        type: 'song' as const,
+        type: "song" as const,
         addedAt: new Date(),
       };
 
       await addAlbumToRecommendations(recommendation);
       toast({
         title: "Song added to recommendations",
-        description: `${song.name} has been added to your recommendations.`,
+        description: `${decodeHtmlEntities(
+          song.name
+        )} has been added to your recommendations.`,
       });
     } catch (error) {
       console.error("Error adding song to recommendations:", error);
@@ -1056,30 +1052,6 @@ export default function MusicApp() {
               )}
             </button>
             <button
-              onClick={() => handleTabChange("songs")}
-              className={cn(
-                "flex items-center gap-1 sm:gap-2 px-3 sm:px-4 py-2 sm:py-3 rounded-xl transition-all duration-300 whitespace-nowrap font-medium text-sm sm:text-base flex-shrink-0",
-                activeTab === "songs"
-                  ? "bg-gradient-to-r from-gray-800 to-gray-700 text-white shadow-lg border border-gray-600"
-                  : "hover:bg-gray-800/50 text-gray-300 hover:text-white"
-              )}
-            >
-              <Music className="w-4 h-4" />
-              <span>Songs</span>
-              {likedSongs.length > 0 && (
-                <Badge
-                  variant="secondary"
-                  className={`ml-1 ${
-                    activeTab === "songs"
-                      ? "bg-white/20 text-white"
-                      : "bg-gray-700 text-gray-300"
-                  }`}
-                >
-                  {likedSongs.length}
-                </Badge>
-              )}
-            </button>
-            <button
               onClick={() => handleTabChange("recommended")}
               className={cn(
                 "flex items-center gap-1 sm:gap-2 px-3 sm:px-4 py-2 sm:py-3 rounded-xl transition-all duration-300 whitespace-nowrap font-medium text-sm sm:text-base flex-shrink-0",
@@ -1331,13 +1303,16 @@ export default function MusicApp() {
                                   >
                                     {decodeHtmlEntities(album.name)}
                                   </h4>
-                                  <p 
+                                  <p
                                     className="text-sm text-gray-400 truncate cursor-pointer hover:text-blue-300 transition-colors"
                                     onClick={(e) => {
                                       e.stopPropagation();
-                                      const primaryArtist = album.artists?.primary?.[0];
+                                      const primaryArtist =
+                                        album.artists?.primary?.[0];
                                       if (primaryArtist?.id) {
-                                        router.push(`/music/artist/${primaryArtist.id}`);
+                                        router.push(
+                                          `/music/artist/${primaryArtist.id}`
+                                        );
                                       }
                                     }}
                                   >
@@ -1398,7 +1373,7 @@ export default function MusicApp() {
                                 <div className="relative mb-2">
                                   <img
                                     src={getImageUrl(song.image)}
-                                    alt={song.name}
+                                    alt={decodeHtmlEntities(song.name)}
                                     className="w-full aspect-square rounded-lg object-cover"
                                   />
                                   {/* Hover overlay with action buttons */}
@@ -1503,17 +1478,20 @@ export default function MusicApp() {
                                 <div className="space-y-1">
                                   <h4
                                     className="font-semibold text-white truncate"
-                                    title={song.name}
+                                    title={decodeHtmlEntities(song.name)}
                                   >
-                                    {song.name}
+                                    {decodeHtmlEntities(song.name)}
                                   </h4>
-                                  <p 
+                                  <p
                                     className="text-sm text-gray-400 truncate cursor-pointer hover:text-blue-300 transition-colors"
                                     onClick={(e) => {
                                       e.stopPropagation();
-                                      const primaryArtist = song.artists?.primary?.[0];
+                                      const primaryArtist =
+                                        song.artists?.primary?.[0];
                                       if (primaryArtist?.id) {
-                                        router.push(`/music/artist/${primaryArtist.id}`);
+                                        router.push(
+                                          `/music/artist/${primaryArtist.id}`
+                                        );
                                       }
                                     }}
                                   >
@@ -1770,7 +1748,7 @@ export default function MusicApp() {
                         >
                           {decodeHtmlEntities(album.name)}
                         </h3>
-                        <p 
+                        <p
                           className="text-xs text-gray-400 truncate mt-1 cursor-pointer hover:text-blue-300 transition-colors"
                           onClick={() => {
                             const primaryArtist = album.artists?.primary?.[0];
@@ -1788,218 +1766,6 @@ export default function MusicApp() {
                         </p>
                       </div>
                     </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Songs Tab - Show Liked Songs */}
-          {activeTab === "songs" && !showSearchResults && (
-            <div className="space-y-6 w-full">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="text-2xl font-bold text-white">Liked Songs</h2>
-                  <p className="text-gray-400 mt-1 text-sm sm:text-base">
-                    Your personal collection of favorite tracks
-                  </p>
-                </div>
-                {likedSongs.length > 0 && (
-                  <Badge
-                    variant="outline"
-                    className="text-gray-300 border-gray-600"
-                  >
-                    {likedSongs.length} songs liked
-                  </Badge>
-                )}
-              </div>
-
-              {likedSongs.length === 0 ? (
-                <div className="text-center py-12">
-                  <Music className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-xl font-semibold text-white mb-2">
-                    No liked songs yet
-                  </h3>
-                  <p className="text-gray-400 mb-4">
-                    Start exploring and like your favorite songs!
-                  </p>
-                  <Button
-                    onClick={() => handleTabChange("explore")}
-                    className="bg-blue-600 hover:bg-blue-700 text-white"
-                  >
-                    Explore Songs
-                  </Button>
-                </div>
-              ) : (
-                <div className="grid gap-4">
-                  {likedSongs.map((song) => (
-                    <Card
-                      key={song.id}
-                      className="bg-gray-800/50 border border-gray-700 hover:shadow-md transition-all group"
-                    >
-                      <CardContent className="p-4">
-                        <div className="flex items-center gap-4">
-                          <div className="relative">
-                            <img
-                              src={getImageUrl(song.image)}
-                              alt={song.name}
-                              className="w-16 h-16 rounded-lg object-cover"
-                            />
-                            {/* Hover overlay with action buttons */}
-                            <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-lg flex items-center justify-center gap-2">
-                              <button
-                                onClick={async (e) => {
-                                  e.stopPropagation();
-                                  // Create song object for YouTube player
-                                  const songForPlayer = {
-                                    id: song.id,
-                                    title: decodeHtmlEntities(song.name),
-                                    artist:
-                                      song.artists?.primary
-                                        ?.map((artist) => artist.name)
-                                        .join(", ") || "Unknown Artist",
-                                  };
-
-                                  // Create queue from all liked songs
-                                  const queue = likedSongs.map((s) => ({
-                                    id: s.id,
-                                    title: decodeHtmlEntities(s.name),
-                                    artist:
-                                      s.artists?.primary
-                                        ?.map((artist) => artist.name)
-                                        .join(", ") || "Unknown Artist",
-                                  }));
-
-                                  // Find the current song index
-                                  const songIndex = likedSongs.findIndex(
-                                    (s) => s.id === song.id
-                                  );
-
-                                  // Liked Songs Play Button - Queue created
-
-                                  // Start with the clicked song
-                                  await showPlayer(
-                                    queue[songIndex],
-                                    queue,
-                                    songIndex
-                                  );
-                                }}
-                                className="w-8 h-8 bg-green-500/80 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-green-600/80 transition-all duration-200 hover:scale-110"
-                                title="Play Song"
-                              >
-                                <Play className="w-3 h-3 text-white fill-white" />
-                              </button>
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleLikeSong(song);
-                                }}
-                                className={`w-8 h-8 backdrop-blur-sm rounded-full flex items-center justify-center transition-all duration-200 hover:scale-110 ${
-                                  isSongLiked(song.id)
-                                    ? "bg-red-500/80 hover:bg-red-600/80"
-                                    : "bg-white/20 hover:bg-white/30"
-                                }`}
-                                title={
-                                  isSongLiked(song.id)
-                                    ? "Remove from liked songs"
-                                    : "Add to liked songs"
-                                }
-                              >
-                                <Heart
-                                  className={`w-3 h-3 text-white ${
-                                    isSongLiked(song.id)
-                                      ? "fill-red-400"
-                                      : "fill-white"
-                                  }`}
-                                />
-                              </button>
-                            </div>
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <h4 className="font-semibold text-white truncate">
-                              {decodeHtmlEntities(song.name)}
-                            </h4>
-                            <p 
-                              className="text-sm text-gray-400 truncate cursor-pointer hover:text-blue-300 transition-colors"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                const primaryArtist = song.artists?.primary?.[0];
-                                if (primaryArtist?.id) {
-                                  router.push(`/music/artist/${primaryArtist.id}`);
-                                }
-                              }}
-                            >
-                              {song.artists?.primary
-                                ?.map((artist) => artist.name)
-                                .join(", ") || "Unknown Artist"}
-                            </p>
-                            <p className="text-xs text-gray-500 truncate">
-                              {song.album?.name
-                                ? decodeHtmlEntities(song.album.name)
-                                : ""}
-                            </p>
-                          </div>
-                          <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
-                            <div className="text-sm text-gray-400 whitespace-nowrap">
-                              {formatDuration(song.duration)}
-                            </div>
-                            {/* Rating button */}
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              className="text-yellow-400 hover:text-yellow-300 flex-shrink-0"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                const params = new URLSearchParams({
-                                  type: "music",
-                                  id: song.id,
-                                  title: decodeHtmlEntities(song.name),
-                                  cover: getImageUrl(song.image),
-                                  artist:
-                                    song.artists?.primary
-                                      ?.map((artist) => artist.name)
-                                      .join(", ") || "Unknown Artist",
-                                });
-                                router.push(`/reviews?${params.toString()}`);
-                              }}
-                            >
-                              <Star className="w-4 h-4" />
-                            </Button>
-                            {/* Like button */}
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              className="text-red-400 hover:text-red-300 flex-shrink-0"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleLikeSong(song);
-                              }}
-                            >
-                              <Heart
-                                className={`w-5 h-5 ${
-                                  isSongLiked(song.id)
-                                    ? "fill-red-400 text-red-400"
-                                    : ""
-                                }`}
-                              />
-                            </Button>
-                            {/* Add to recommendations button */}
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              className="text-green-400 hover:text-green-300 flex-shrink-0"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleAddSongToRecommendations(song);
-                              }}
-                              title="Add to recommendations"
-                            >
-                              <Plus className="w-4 h-4" />
-                            </Button>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
                   ))}
                 </div>
               )}
@@ -2085,7 +1851,7 @@ export default function MusicApp() {
                             </div>
                           </div>
                           <div className="mt-2 space-y-1">
-                            <h4 
+                            <h4
                               className="font-medium text-xs truncate text-white leading-tight cursor-pointer hover:text-blue-300 transition-colors"
                               onClick={() =>
                                 router.push(`/music/album/${album.id}`)
@@ -2093,12 +1859,15 @@ export default function MusicApp() {
                             >
                               {album.name || "Unknown Title"}
                             </h4>
-                            <p 
+                            <p
                               className="text-xs text-gray-400 leading-tight cursor-pointer hover:text-blue-300 transition-colors"
                               onClick={() => {
-                                const primaryArtist = album.artists?.primary?.[0];
+                                const primaryArtist =
+                                  album.artists?.primary?.[0];
                                 if (primaryArtist?.id) {
-                                  router.push(`/music/artist/${primaryArtist.id}`);
+                                  router.push(
+                                    `/music/artist/${primaryArtist.id}`
+                                  );
                                 }
                               }}
                             >
@@ -2287,7 +2056,6 @@ export default function MusicApp() {
           />
         </div>
       )} */}
-
     </div>
   );
 }

@@ -26,6 +26,13 @@ import { Badge } from "@/components/ui/badge";
 import { Gamepad2, Book, Play } from "lucide-react";
 import Link from "next/link";
 
+// Utility function to decode HTML entities
+const decodeHtmlEntities = (text: string): string => {
+  const textarea = document.createElement("textarea");
+  textarea.innerHTML = text;
+  return textarea.value;
+};
+
 interface Reply {
   _id: string;
   postId: string;
@@ -136,42 +143,41 @@ function ReviewsPageContent() {
   );
 
   const [nextCursor, setNextCursor] = useState<string | null>(null);
-  const [hasMorePosts, setHasMorePosts] = useState(true)
+  const [hasMorePosts, setHasMorePosts] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
-  const scrollAreaRef = useRef<HTMLDivElement>(null)
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
   const wsRef = useRef<WebSocket | null>(null);
 
   const fetchPosts = async (cursor?: string) => {
-    setIsLoadingMore(true)
-    
+    setIsLoadingMore(true);
+
     // Only fetch posts if user has authorId
     if (!user?.authorId) {
-      console.log("No authorId available, skipping posts fetch")
-      setIsLoadingMore(false)
-      return
+      console.log("No authorId available, skipping posts fetch");
+      setIsLoadingMore(false);
+      return;
     }
-    
+
     const params = new URLSearchParams({
       limit: "50",
       userId: user.authorId,
       ...(cursor ? { cursor } : {}),
-    })
-  
-    const res = await fetch(`${API_BASE}/posts?${params}`)
-    const data = await res.json()
-    console.log(data)
-  
+    });
+
+    const res = await fetch(`${API_BASE}/posts?${params}`);
+    const data = await res.json();
+    console.log(data);
+
     if (data.success && Array.isArray(data.posts)) {
-      setPosts(prev => [...prev, ...data.posts])
-      setNextCursor(data.nextCursor)
-      setHasMorePosts(!!data.nextCursor)
+      setPosts((prev) => [...prev, ...data.posts]);
+      setNextCursor(data.nextCursor);
+      setHasMorePosts(!!data.nextCursor);
     } else {
-      console.error("Failed to fetch posts:", data.error || data)
+      console.error("Failed to fetch posts:", data.error || data);
     }
-  
-    setIsLoadingMore(false)
-  }
-  
+
+    setIsLoadingMore(false);
+  };
 
   // Function to fetch user profile for a given authorId from Firebase directly
   const fetchUserProfile = async (authorId: string) => {
@@ -309,8 +315,8 @@ function ReviewsPageContent() {
         if (msg.type === "init") {
           // Posts message received
           setPosts(msg.posts);
-          setHasMorePosts(!!msg.nextCursor)
-          setNextCursor(msg.nextCursor)
+          setHasMorePosts(!!msg.nextCursor);
+          setNextCursor(msg.nextCursor);
           // Store posts in sessionStorage for thread navigation
           try {
             sessionStorage.setItem("reliva_posts", JSON.stringify(msg.posts));
@@ -376,53 +382,52 @@ function ReviewsPageContent() {
   }, [posts, userProfiles]);
 
   const handleShare = async (postId: string) => {
-    const shareUrl = `${window.location.origin}${window.location.pathname}#post-${postId}`
-  
+    const shareUrl = `${window.location.origin}${window.location.pathname}#post-${postId}`;
+
     try {
       // Auto copy to clipboard
-      await navigator.clipboard.writeText(shareUrl)
-  
+      await navigator.clipboard.writeText(shareUrl);
+
       // Show toast notification
       toast({
         title: "Link copied!",
         description: "Share this link with others.",
-      })
+      });
     } catch (err) {
-      console.error("Share failed:", err)
+      console.error("Share failed:", err);
       toast({
         title: "Share failed",
         description: "Could not copy link to clipboard.",
         variant: "destructive",
-      })
+      });
     }
-  }
-  
+  };
 
-  const loaderRef = useRef<HTMLDivElement>(null)
+  const loaderRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    if (!loaderRef.current || !nextCursor) return
-    const observer = new IntersectionObserver(entries => {
+    if (!loaderRef.current || !nextCursor) return;
+    const observer = new IntersectionObserver((entries) => {
       if (entries[0].isIntersecting && !isLoadingMore) {
-        fetchPosts(nextCursor)
+        fetchPosts(nextCursor);
       }
-    })
-    observer.observe(loaderRef.current)
-    return () => observer.disconnect()
-  }, [nextCursor, isLoadingMore])
+    });
+    observer.observe(loaderRef.current);
+    return () => observer.disconnect();
+  }, [nextCursor, isLoadingMore]);
 
   useEffect(() => {
-    if (typeof window === "undefined") return
-  
+    if (typeof window === "undefined") return;
+
     const handleHashChange = () => {
-      const hash = window.location.hash
+      const hash = window.location.hash;
       if (hash) {
-        const postId = hash.split("-")[1]
+        const postId = hash.split("-")[1];
         if (postId) {
-          toggleReplyInput(postId)
+          toggleReplyInput(postId);
           document.querySelector(hash)?.scrollIntoView({
             behavior: "smooth",
             block: "start",
-          })
+          });
         }
 
         setTimeout(() => {
@@ -430,17 +435,16 @@ function ReviewsPageContent() {
             null,
             "",
             window.location.pathname + window.location.search
-          )
-        }, 500)
+          );
+        }, 500);
       }
-    }
-  
-    handleHashChange()
-  
-    window.addEventListener("hashchange", handleHashChange)
-    return () => window.removeEventListener("hashchange", handleHashChange)
-  }, [posts])
-  
+    };
+
+    handleHashChange();
+
+    window.addEventListener("hashchange", handleHashChange);
+    return () => window.removeEventListener("hashchange", handleHashChange);
+  }, [posts]);
 
   // Auto-search when search query is set manually (not from URL parameters)
   useEffect(() => {
@@ -615,7 +619,7 @@ function ReviewsPageContent() {
         JSON.stringify({
           type: "newPost",
           mediaId: selectedMedia.id,
-          mediaTitle: selectedMedia.title,
+          mediaTitle: decodeHtmlEntities(selectedMedia.title),
           mediaCover: selectedMedia.cover,
           mediaType: selectedMedia.type,
           mediaYear: selectedMedia.year,
@@ -635,7 +639,7 @@ function ReviewsPageContent() {
           user.displayName || user.email?.split("@")[0] || "Anonymous",
         userEmail: user.email,
         mediaId: selectedMedia.id,
-        mediaTitle: selectedMedia.title,
+        mediaTitle: decodeHtmlEntities(selectedMedia.title),
         mediaCover: selectedMedia.cover,
         mediaType: selectedMedia.type,
         mediaYear: selectedMedia.year,
@@ -1037,17 +1041,15 @@ function ReviewsPageContent() {
               </p>
 
               <div className="flex items-center gap-2 sm:gap-4 text-[#a0a0a0] overflow-hidden">
-                 <button
-                   onClick={() => toggleReplyInput(`${postId}-${comment._id}`)}
-                   className="flex items-center gap-1.5 hover:text-blue-400 transition-all duration-200 group"
-                 >
-                   <div className="p-1.5 rounded-full group-hover:bg-blue-600/20 transition-colors">
-                     <MessageCircle className="w-4 h-4" />
-                   </div>
-                   <span className="text-xs font-medium">
-                     Reply
-                   </span>
-                 </button>
+                <button
+                  onClick={() => toggleReplyInput(`${postId}-${comment._id}`)}
+                  className="flex items-center gap-1.5 hover:text-blue-400 transition-all duration-200 group"
+                >
+                  <div className="p-1.5 rounded-full group-hover:bg-blue-600/20 transition-colors">
+                    <MessageCircle className="w-4 h-4" />
+                  </div>
+                  <span className="text-xs font-medium">Reply</span>
+                </button>
 
                 <button
                   onClick={() => toggleReplyLike(postId, comment._id)}
@@ -1065,24 +1067,22 @@ function ReviewsPageContent() {
                   </span>
                 </button>
 
-                    {/* <button onClick={() => handleShare(post._id)} className="flex items-center gap-2 hover:text-blue-500 transition-colors">
+                {/* <button onClick={() => handleShare(post._id)} className="flex items-center gap-2 hover:text-blue-500 transition-colors">
                       <Share className="w-4 h-4" />
                     </button> */}
 
-                 {/* Thread Navigation - Show "See Replies" for comments with responses */}
-                 {comment.comments && comment.comments.length > 0 && (
-                   <Link
-                     href={`/reviews/${postId}/thread/${comment._id}`}
-                     className="flex items-center gap-1.5 hover:text-green-400 transition-all duration-200 group"
-                   >
-                     <span className="text-xs font-medium">
-                       See Replies
-                     </span>
-                     <span className="text-xs text-[#808080]">
-                       {comment.comments.length}
-                     </span>
-                   </Link>
-                 )}
+                {/* Thread Navigation - Show "See Replies" for comments with responses */}
+                {comment.comments && comment.comments.length > 0 && (
+                  <Link
+                    href={`/reviews/${postId}/thread/${comment._id}`}
+                    className="flex items-center gap-1.5 hover:text-green-400 transition-all duration-200 group"
+                  >
+                    <span className="text-xs font-medium">See Replies</span>
+                    <span className="text-xs text-[#808080]">
+                      {comment.comments.length}
+                    </span>
+                  </Link>
+                )}
               </div>
 
               {/* Reply Input for top-level comments */}
@@ -1157,7 +1157,8 @@ function ReviewsPageContent() {
               className="view-more-comments-btn flex items-center gap-1.5 px-2 py-1 text-xs text-[#a0a0a0] hover:text-[#d0d0d0] hover:bg-[#1a1a1a] rounded-md transition-all duration-200 group"
             >
               <span className="font-medium">
-                {expandedComments.has(postId) ? "View Less" : "View More"} Replies
+                {expandedComments.has(postId) ? "View Less" : "View More"}{" "}
+                Replies
               </span>
               <div
                 className={`w-3 h-3 transition-transform duration-200 ${
@@ -1559,7 +1560,8 @@ function ReviewsPageContent() {
                 posts.length > 0 &&
                 posts.map((post) => (
                   <div
-                     key={post._id} id={`post-${post._id}`}
+                    key={post._id}
+                    id={`post-${post._id}`}
                     className="border-b border-[#1a1a1a] px-1 sm:px-4 py-4 bg-[#0f0f0f] overflow-hidden"
                   >
                     <div className="flex gap-3 w-full min-w-0">
@@ -1580,7 +1582,10 @@ function ReviewsPageContent() {
                         <div className="flex items-start gap-2 mb-2">
                           <ProfileLink
                             authorId={post.authorId?._id}
-                            displayName={userProfiles.get(post.authorId?._id)?.displayName || post.authorId?.username}
+                            displayName={
+                              userProfiles.get(post.authorId?._id)
+                                ?.displayName || post.authorId?.username
+                            }
                             username={post.authorId?.username}
                             className="font-medium text-sm text-[#f5f5f0]"
                           >
@@ -1636,7 +1641,7 @@ function ReviewsPageContent() {
                                 >
                                   <img
                                     src={post.mediaCover || "/placeholder.svg"}
-                                    alt={post.mediaTitle}
+                                    alt={decodeHtmlEntities(post.mediaTitle)}
                                     className="w-full h-full object-cover hover:scale-105 transition-transform duration-200"
                                   />
                                 </Link>
@@ -1645,7 +1650,7 @@ function ReviewsPageContent() {
                                 <div className="flex items-start gap-2 mb-2">
                                   <div className="flex-1">
                                     <h3 className="font-semibold text-sm sm:text-base text-[#f0f0f0] line-clamp-2 mb-2 leading-tight break-words">
-                                      {post.mediaTitle}
+                                      {decodeHtmlEntities(post.mediaTitle)}
                                     </h3>
                                     <div className="flex items-center gap-2 mb-3">
                                       <Badge
@@ -1743,10 +1748,13 @@ function ReviewsPageContent() {
                               {post.likeCount}
                             </span>
                           </button>
-                            <button onClick={() => handleShare(post._id)} className="flex items-center gap-1.5 hover:text-blue-500 transition-colors">
-                              <Share className="w-4 h-4" />
-                            </button>
-                          </div>
+                          <button
+                            onClick={() => handleShare(post._id)}
+                            className="flex items-center gap-1.5 hover:text-blue-500 transition-colors"
+                          >
+                            <Share className="w-4 h-4" />
+                          </button>
+                        </div>
 
                         {/* Compact Reply Input Section */}
                         {showReplyInput[post._id] && (
@@ -1825,7 +1833,10 @@ function ReviewsPageContent() {
                   </div>
                 ))}
 
-                <div ref={loaderRef} className="h-10 flex justify-center items-center">
+              <div
+                ref={loaderRef}
+                className="h-10 flex justify-center items-center"
+              >
                 {isLoadingMore && (
                   <div className="flex items-center gap-2 text-muted-foreground">
                     <Loader2 className="w-4 h-4 animate-spin" />

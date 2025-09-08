@@ -13,6 +13,13 @@ import {
   ChevronRight,
 } from "lucide-react";
 
+// Utility function to decode HTML entities
+const decodeHtmlEntities = (text: string): string => {
+  const textarea = document.createElement("textarea");
+  textarea.innerHTML = text;
+  return textarea.value;
+};
+
 interface Song {
   id: string;
   name: string;
@@ -344,7 +351,7 @@ export function Recommendations({
               <div className="mt-3 space-y-1 px-2">
                 {/* Title */}
                 <h4 className="font-semibold text-white text-center text-sm sm:text-xs md:text-sm truncate leading-tight line-clamp-2 min-h-[2rem] sm:min-h-[1.5rem] group-hover:text-blue-300 transition-colors duration-200">
-                  {song.name}
+                  {decodeHtmlEntities(song.name)}
                 </h4>
 
                 {/* Artist */}
@@ -357,7 +364,7 @@ export function Recommendations({
                 {/* Album */}
                 {song.album?.name && (
                   <p className="text-xs text-gray-500 text-center truncate line-clamp-1 group-hover:text-gray-400 transition-colors duration-200">
-                    {song.album.name}
+                    {decodeHtmlEntities(song.album.name)}
                   </p>
                 )}
 

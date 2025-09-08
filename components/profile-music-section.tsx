@@ -78,6 +78,13 @@ const PLACEHOLDER = {
 const cleanTextContent = (text: string): string => {
   if (!text) return text;
   return text
+    .replace(/<[^>]*>/g, "") // Remove HTML tags
+    .replace(/&amp;/g, "&") // Decode HTML entities
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"') // Fix the main issue - decode &quot; to "
+    .replace(/&#39;/g, "'")
+    .replace(/&nbsp;/g, " ") // Replace non-breaking spaces
     .replace(/\([^)]*\)/g, "") // Remove parentheses and their content
     .replace(/\[[^\]]*\]/g, "") // Remove square brackets and their content
     .replace(/from\s+["'][^"']*["']/gi, "") // Remove "from 'album name'" patterns
@@ -1026,7 +1033,7 @@ export default function ProfileMusicSection({
                               getImageUrl(song.image) ||
                               PLACEHOLDER.recommendations[0].cover
                             }
-                            alt={song.name || "Song"}
+                            alt={cleanTextContent(song.name) || "Song"}
                             width={200}
                             height={200}
                             className="w-full h-full object-cover cursor-pointer"
@@ -1164,7 +1171,7 @@ export default function ProfileMusicSection({
                               getImageUrl(rating.song.image) ||
                               PLACEHOLDER.ratings[0].cover
                             }
-                            alt={rating.song.name || "Song"}
+                            alt={cleanTextContent(rating.song.name) || "Song"}
                             width={128}
                             height={192}
                             className="w-full h-full object-cover cursor-pointer"
@@ -1183,7 +1190,7 @@ export default function ProfileMusicSection({
                       <div className="mt-2 text-center w-full px-1">
                         <p className="text-sm font-semibold text-white leading-tight min-h-[1.5rem] flex items-center justify-center">
                           {truncateForRatings(
-                            rating.song.name || "Unknown Song"
+                            cleanTextContent(rating.song.name) || "Unknown Song"
                           )}
                         </p>
                         <p className="text-xs text-gray-400 leading-tight mt-0.5 flex items-center justify-center">
@@ -1314,7 +1321,6 @@ export default function ProfileMusicSection({
                 ))}
               </div>
             )}
-
           </div>
         </DialogContent>
       </Dialog>

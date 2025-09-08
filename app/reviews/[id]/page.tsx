@@ -36,6 +36,13 @@ import {
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 
+// Utility function to decode HTML entities
+const decodeHtmlEntities = (text: string): string => {
+  const textarea = document.createElement("textarea");
+  textarea.innerHTML = text;
+  return textarea.value;
+};
+
 interface Review {
   id: string;
   userId: string;
@@ -148,9 +155,9 @@ export default function ReviewDetailPage() {
     try {
       const notificationData = {
         type: "comment",
-        message: `commented on your review of "${
+        message: `commented on your review of "${decodeHtmlEntities(
           review.mediaTitle
-        }": "${comment.substring(0, 50)}${comment.length > 50 ? "..." : ""}"`,
+        )}": "${comment.substring(0, 50)}${comment.length > 50 ? "..." : ""}"`,
         fromUserId: user.uid,
         toUserId: review.userId,
         fromUserName:
@@ -210,7 +217,9 @@ export default function ReviewDetailPage() {
     try {
       const notificationData = {
         type: "like",
-        message: `liked your review of "${review.mediaTitle}"`,
+        message: `liked your review of "${decodeHtmlEntities(
+          review.mediaTitle
+        )}"`,
         fromUserId: user.uid,
         toUserId: review.userId,
         fromUserName:
@@ -407,7 +416,7 @@ export default function ReviewDetailPage() {
               <div className="relative w-full aspect-[2/3] rounded-2xl overflow-hidden shadow-2xl mb-6">
                 <Image
                   src={review.mediaCover || "/placeholder.svg"}
-                  alt={review.mediaTitle}
+                  alt={decodeHtmlEntities(review.mediaTitle)}
                   fill
                   className="object-cover"
                 />
@@ -426,7 +435,7 @@ export default function ReviewDetailPage() {
               {/* Media Details */}
               <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
                 <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white mb-4 line-clamp-3 break-words">
-                  {review.mediaTitle}
+                  {decodeHtmlEntities(review.mediaTitle)}
                 </h2>
 
                 {/* Rating */}
@@ -607,7 +616,8 @@ export default function ReviewDetailPage() {
                     </span>
                   </div>
                   <p className="text-yellow-700 dark:text-yellow-300 text-sm mt-2">
-                    This review contains spoilers for {review.mediaTitle}.
+                    This review contains spoilers for{" "}
+                    {decodeHtmlEntities(review.mediaTitle)}.
                   </p>
                 </div>
               )}
@@ -703,7 +713,8 @@ export default function ReviewDetailPage() {
             </h3>
             <p className="text-gray-600 dark:text-gray-300 mb-6">
               Are you sure you want to delete your review for "
-              {review.mediaTitle}"? This action cannot be undone.
+              {decodeHtmlEntities(review.mediaTitle)}"? This action cannot be
+              undone.
             </p>
             <div className="flex gap-3">
               <Button
