@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -11,14 +10,12 @@ import {
   Twitter,
   ExternalLink,
   Star,
-  MessageSquare,
   Heart,
 } from "lucide-react";
 
 export default function ContactPage() {
   const [rating, setRating] = useState(0);
   const [hoveredRating, setHoveredRating] = useState(0);
-  const [review, setReview] = useState("");
 
   const handleRatingClick = (value: number) => {
     setRating(value);
@@ -31,8 +28,6 @@ export default function ContactPage() {
   const handleRatingLeave = () => {
     setHoveredRating(0);
   };
-
-
 
   const socialLinks = [
     {
@@ -81,10 +76,12 @@ export default function ContactPage() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <p className="text-gray-600 dark:text-gray-300 leading-relaxed">
-                    We're a team of passionate music enthusiasts, cinephiles and bookworms dedicated to
-                    bringing you the best in music, books, movies, and TV shows.
-                    Our platform is designed to help you share your favorites, discover your friend's
-                    favorites, recommend new finds and connect with others who share your interests.  
+                    We're a team of passionate music enthusiasts, cinephiles and
+                    bookworms dedicated to bringing you the best in music,
+                    books, movies, and TV shows. Our platform is designed to
+                    help you share your favorites, discover your friend's
+                    favorites, recommend new finds and connect with others who
+                    share your interests.
                   </p>
                   <p className="text-gray-600 dark:text-gray-300 leading-relaxed">
                     Our mission is to create a space where you can discover,
@@ -182,23 +179,26 @@ export default function ContactPage() {
 
                       <Separator />
 
-                      {/* Review Suggestions */}
+                      {/* Share your feedback */}
                       <div>
                         <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-                          Review Suggestions
+                          Share your feedback
                         </h3>
-                        <Textarea
-                          placeholder="Share your thoughts, suggestions, or feedback..."
-                          value={review}
-                          onChange={(e) => setReview(e.target.value)}
-                          className="min-h-[100px] resize-none"
-                        />
+                        <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                          We absolutely care for your feedback! Please fill this
+                          form so that we can serve you better.
+                        </p>
                         <Button
-                          className="mt-3 w-full bg-gradient-to-r from-emerald-600 to-blue-600 hover:from-emerald-700 hover:to-blue-700 dark:from-emerald-500 dark:to-blue-500 dark:hover:from-emerald-600 dark:hover:to-blue-600"
-                          disabled={!review.trim()}
+                          onClick={() =>
+                            window.open(
+                              "https://docs.google.com/forms/d/1-aPFkjvwGMFmJs0m_q8JeNBaauXBggZ8O9vk9AvHf-g/edit",
+                              "_blank"
+                            )
+                          }
+                          className="w-full bg-gradient-to-r from-emerald-600 to-blue-600 hover:from-emerald-700 hover:to-blue-700 dark:from-emerald-500 dark:to-blue-500 dark:hover:from-emerald-600 dark:hover:to-blue-600"
                         >
-                          <MessageSquare className="mr-2 h-4 w-4" />
-                          Submit Review
+                          <ExternalLink className="mr-2 h-4 w-4" />
+                          Please fill this form to review Reliva
                         </Button>
                       </div>
                     </CardContent>
@@ -207,8 +207,6 @@ export default function ContactPage() {
               </div>
             </div>
           </div>
-
-
         </div>
       </div>
     </div>
