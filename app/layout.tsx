@@ -6,6 +6,7 @@ import "@/styles/horizontal-list.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { AuthProvider } from "@/components/auth-provider";
 import LayoutWrapper from "@/components/layout-wrapper";
+import { Toaster } from "@/components/ui/toaster";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -40,6 +41,7 @@ export default function RootLayout({
             disableTransitionOnChange
           >
             <LayoutWrapper>{children}</LayoutWrapper>
+            <Toaster />
           </ThemeProvider>
         </AuthProvider>
       </body>

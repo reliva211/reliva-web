@@ -1141,7 +1141,7 @@ export default function ProfileMusicSection({
         </div>
 
         {/* Ratings Section */}
-        <div className="mt-12 max-w-3xl mx-auto">
+        <div className="mt-12">
           <div className="flex items-center justify-start mb-4">
             <p className="text-base sm:text-lg font-bold text-white">Ratings</p>
           </div>

@@ -861,14 +861,13 @@ export default function ProfileBooksSection({
               {currentRecentlyRead.length > 1 && (
                 <div className="flex justify-center gap-0.5 mt-3">
                   {currentRecentlyRead.map((_, index) => (
-                    <button
+                    <div
                       key={index}
-                      className={`w-0.5 h-0.5 rounded-full transition-all duration-200 ${
+                      className={`w-1.5 h-1.5 rounded-full transition-all duration-200 ${
                         index === currentRecentlyReadIndex
                           ? "bg-white/80"
-                          : "bg-white/20 hover:bg-white/40"
+                          : "bg-white/20"
                       }`}
-                      onClick={() => setCurrentRecentlyReadIndex(index)}
                     />
                   ))}
                 </div>
@@ -896,27 +895,8 @@ export default function ProfileBooksSection({
                   Book Title
                 </h3>
                 <p className="text-sm text-white mb-2">by Author Name</p>
-                <p className="text-xs text-white mb-3">2024</p>
                 <p className="text-sm text-white mb-4">Book description</p>
-
-                <div className="flex items-center gap-4">
-                  <div className="flex gap-1">
-                    <div className="w-2 h-2 bg-muted-foreground/30 rounded-full"></div>
-                    <div className="w-2 h-2 bg-muted-foreground/30 rounded-full"></div>
-                    <div className="w-2 h-2 bg-muted-foreground/30 rounded-full"></div>
-                  </div>
-                </div>
               </div>
-
-              {/* Navigation arrow */}
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-10 w-10 p-0 bg-black/80 hover:bg-black backdrop-blur-md border border-white/10 rounded-full flex-shrink-0 shadow-2xl hover:scale-110 transition-all duration-300 z-30"
-                disabled
-              >
-                <ChevronRight className="h-5 w-5 text-white/50" />
-              </Button>
             </div>
           )}
         </div>

@@ -90,7 +90,7 @@ import Image from "next/image";
 import { searchService } from "@/lib/search-service";
 import { db } from "@/lib/firebase";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
-import { toast } from "@/components/ui/use-toast";
+import { toast } from "@/hooks/use-toast";
 import { useUserData } from "@/hooks/use-userdata";
 
 // Component that uses useSearchParams (needs to be wrapped in Suspense)
@@ -382,13 +382,18 @@ function ReviewsPageContent() {
       // Auto copy to clipboard
       await navigator.clipboard.writeText(shareUrl)
   
-      // Show toast (replace with your toast lib, e.g. shadcn/ui toast)
-      alert({
+      // Show toast notification
+      toast({
         title: "Link copied!",
         description: "Share this link with others.",
       })
     } catch (err) {
       console.error("Share failed:", err)
+      toast({
+        title: "Share failed",
+        description: "Could not copy link to clipboard.",
+        variant: "destructive",
+      })
     }
   }
   
@@ -1738,8 +1743,8 @@ function ReviewsPageContent() {
                               {post.likeCount}
                             </span>
                           </button>
-                            <button onClick={() => handleShare(post._id)} className="flex items-center gap-1 hover:text-blue-500 transition-colors">
-                              <Share className="w-3 h-3" />
+                            <button onClick={() => handleShare(post._id)} className="flex items-center gap-1.5 hover:text-blue-500 transition-colors">
+                              <Share className="w-4 h-4" />
                             </button>
                           </div>
 
