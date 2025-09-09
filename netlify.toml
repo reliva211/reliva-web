@@ -13,8 +13,3 @@
   to = "/api/:splat"
   status = 200
 
-# Handle client-side routing
-[[redirects]]
-  from = "/*"
-  to = "/index.html"
-  status = 200
