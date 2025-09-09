@@ -1238,7 +1238,7 @@ export default function ProfileMusicSection({
 
       {/* Search Dialog */}
       <Dialog open={isSearchDialogOpen} onOpenChange={setIsSearchDialogOpen}>
-        <DialogContent className="w-[95vw] max-w-[95vw] sm:max-w-md mx-auto search-modal-content">
+        <DialogContent className="w-[95vw] max-w-[95vw] sm:max-w-[600px] lg:max-w-[700px] mx-auto search-modal-content">
           <DialogHeader>
             <DialogTitle className="text-base sm:text-lg">
               {editingItem ? "Replace Item" : "Add New Item"}
@@ -1309,10 +1309,10 @@ export default function ProfileMusicSection({
                       />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-white truncate">
+                      <p className="text-sm sm:text-base font-medium text-white truncate">
                         {item.name || item.title}
                       </p>
-                      <p className="text-xs text-gray-400 truncate">
+                      <p className="text-xs sm:text-sm text-gray-400 truncate">
                         {item.primaryArtists || item.artist}
                         {item.album && ` • ${item.album}`}
                       </p>

@@ -1470,12 +1470,12 @@ export default function ProfileBooksSection({
                       />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold truncate leading-tight">
+                      <p className="text-sm sm:text-base font-semibold truncate leading-tight">
                         {cleanTextContent(
                           getTextContent(item.title || item.name)
                         ) || "Unknown"}
                       </p>
-                      <p className="text-xs text-white truncate leading-tight mt-0.5">
+                      <p className="text-xs sm:text-sm text-white truncate leading-tight mt-0.5">
                         {truncateAuthorsAggressive(item.authors) ||
                           "Unknown Author"}
                       </p>

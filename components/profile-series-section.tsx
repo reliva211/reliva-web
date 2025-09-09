@@ -1490,7 +1490,7 @@ export default function ProfileSeriesSection({
 
       {/* Search Dialog */}
       <Dialog open={showSearchDialog} onOpenChange={setShowSearchDialog}>
-        <DialogContent className="w-[95vw] max-w-[95vw] sm:max-w-[500px] mx-auto search-modal-content">
+        <DialogContent className="w-[95vw] max-w-[95vw] sm:max-w-[600px] lg:max-w-[700px] mx-auto search-modal-content">
           <DialogHeader>
             <DialogTitle className="text-base sm:text-lg">
               {editingItem ? "Replace" : "Search"}{" "}
@@ -1592,12 +1592,12 @@ export default function ProfileSeriesSection({
                       />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-base font-semibold truncate">
+                      <p className="text-sm sm:text-base font-semibold truncate">
                         {cleanTextContent(
                           getTextContent(item.name || item.title)
                         ) || "Unknown"}
                       </p>
-                      <p className="text-sm text-white truncate">
+                      <p className="text-xs sm:text-sm text-white truncate">
                         {item.year || "Unknown Year"}
                       </p>
                     </div>
