@@ -21,14 +21,15 @@ export function useNotifications() {
       const notificationsRef = collection(db, "notifications");
       const q = query(
         notificationsRef,
-        where("toUserId", "==", user.uid),
-        where("isRead", "==", false)
+        where("toUserId", "==", user.uid)
       );
 
       const unsubscribe = onSnapshot(q, (snapshot) => {
         try {
-          console.log("Notifications updated:", snapshot.docs.length, "unread notifications");
-          setUnreadCount(snapshot.docs.length);
+          // Filter unread notifications on client side
+          const unreadNotifications = snapshot.docs.filter(doc => doc.data().isRead === false);
+          console.log("Notifications updated:", unreadNotifications.length, "unread notifications");
+          setUnreadCount(unreadNotifications.length);
           setError(null);
         } catch (err) {
           console.error("Error processing notification count:", err);

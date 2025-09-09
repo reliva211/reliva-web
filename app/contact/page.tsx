@@ -1,6 +1,4 @@
 "use client";
-
-import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
@@ -9,25 +7,10 @@ import {
   Instagram,
   Twitter,
   ExternalLink,
-  Star,
   Heart,
 } from "lucide-react";
 
 export default function ContactPage() {
-  const [rating, setRating] = useState(0);
-  const [hoveredRating, setHoveredRating] = useState(0);
-
-  const handleRatingClick = (value: number) => {
-    setRating(value);
-  };
-
-  const handleRatingHover = (value: number) => {
-    setHoveredRating(value);
-  };
-
-  const handleRatingLeave = () => {
-    setHoveredRating(0);
-  };
 
   const socialLinks = [
     {
@@ -142,42 +125,6 @@ export default function ContactPage() {
                         </div>
                       </div>
 
-                      <Separator />
-
-                      {/* Rate Us Section */}
-                      <div>
-                        <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-                          Rate Us
-                        </h3>
-                        <div className="flex items-center gap-1 mb-3">
-                          {[1, 2, 3, 4, 5].map((star) => (
-                            <button
-                              key={star}
-                              onClick={() => handleRatingClick(star)}
-                              onMouseEnter={() => handleRatingHover(star)}
-                              onMouseLeave={handleRatingLeave}
-                              className="transition-colors"
-                            >
-                              <Star
-                                className={`h-5 w-5 ${
-                                  star <= (hoveredRating || rating)
-                                    ? "fill-yellow-400 text-yellow-400"
-                                    : "text-gray-300 dark:text-gray-600"
-                                }`}
-                              />
-                            </button>
-                          ))}
-                        </div>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">
-                          {rating > 0
-                            ? `You rated us ${rating} star${
-                                rating > 1 ? "s" : ""
-                              }`
-                            : "Click to rate us"}
-                        </p>
-                      </div>
-
-                      <Separator />
 
                       {/* Share your feedback */}
                       <div>
@@ -195,10 +142,10 @@ export default function ContactPage() {
                               "_blank"
                             )
                           }
-                          className="w-full bg-gradient-to-r from-emerald-600 to-blue-600 hover:from-emerald-700 hover:to-blue-700 dark:from-emerald-500 dark:to-blue-500 dark:hover:from-emerald-600 dark:hover:to-blue-600"
+                          className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 dark:from-purple-500 dark:to-pink-500 dark:hover:from-purple-600 dark:hover:to-pink-600"
                         >
                           <ExternalLink className="mr-2 h-4 w-4" />
-                          Please fill this form to review Reliva
+                          Rate us and suggest features.
                         </Button>
                       </div>
                     </CardContent>

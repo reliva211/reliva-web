@@ -7,13 +7,17 @@ import { db } from "@/lib/firebase";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { User, Lock, ArrowLeft } from "lucide-react";
+import { User, Lock, ArrowLeft, UserPlus, UserMinus } from "lucide-react";
 import ProfileMusicSection from "@/components/profile-music-section";
 import ProfileMovieSection from "@/components/profile-movie-section";
 import ProfileSeriesSection from "@/components/profile-series-section";
 import ProfileBooksSection from "@/components/profile-books-section";
 import ErrorBoundary from "@/components/error-boundary";
 import Link from "next/link";
+import { useCurrentUser } from "@/hooks/use-current-user";
+import { useUserConnections } from "@/hooks/use-user-connections";
+import { useFollowUser } from "@/hooks/use-follow-user";
+import { useToast } from "@/hooks/use-toast";
 
 interface UserProfile {
   uid: string;
@@ -25,6 +29,8 @@ interface UserProfile {
   coverImageUrl: string;
   joinDate: string;
   isPublic?: boolean;
+  followers?: string[];
+  following?: string[];
   socialLinks: {
     twitter?: string;
     instagram?: string;
@@ -46,6 +52,13 @@ export default function UserProfilePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState("music");
+  const [followersCount, setFollowersCount] = useState(0);
+  const [followingCount, setFollowingCount] = useState(0);
+  
+  const { user: currentUser } = useCurrentUser();
+  const { following } = useUserConnections();
+  const { followUser, unfollowUser, isFollowing, loading: followLoading } = useFollowUser();
+  const { toast } = useToast();
 
   useEffect(() => {
     const fetchProfileByUsername = async () => {
@@ -80,6 +93,28 @@ export default function UserProfilePage() {
         }
 
         setProfile(profileData);
+        
+        // Fetch followers and following counts from users collection
+        try {
+          const usersRef = collection(db, "users");
+          const userQuery = query(usersRef, where("uid", "==", profileData.uid));
+          const userSnapshot = await getDocs(userQuery);
+          
+          if (!userSnapshot.empty) {
+            const userData = userSnapshot.docs[0].data();
+            setFollowersCount(userData.followers?.length || 0);
+            setFollowingCount(userData.following?.length || 0);
+          } else {
+            // Fallback to profile data if user not found in users collection
+            setFollowersCount(profileData.followers?.length || 0);
+            setFollowingCount(profileData.following?.length || 0);
+          }
+        } catch (error) {
+          console.error("Error fetching user connections:", error);
+          // Fallback to profile data
+          setFollowersCount(profileData.followers?.length || 0);
+          setFollowingCount(profileData.following?.length || 0);
+        }
       } catch (error) {
         console.error("Error fetching profile:", error);
         setError("Failed to load profile");
@@ -108,6 +143,63 @@ export default function UserProfilePage() {
       }
     }
   }, [profile?.visibleSections, activeTab]);
+
+  const handleFollowToggle = async () => {
+    if (!currentUser || !profile) {
+      toast({
+        title: "Authentication Required",
+        description: "Please log in to follow users.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (profile.uid === currentUser.uid) {
+      toast({
+        title: "Cannot Follow Yourself",
+        description: "You cannot follow yourself.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const currentlyFollowing = isFollowing(profile.uid, following.map(f => f.uid));
+    
+    try {
+      let result;
+      if (currentlyFollowing) {
+        result = await unfollowUser(profile.uid);
+        if (result.success) {
+          toast({
+            title: "Unfollowed",
+            description: `You have unfollowed ${profile.displayName}.`,
+          });
+        }
+      } else {
+        result = await followUser(profile.uid);
+        if (result.success) {
+          toast({
+            title: "Following",
+            description: `You are now following ${profile.displayName}.`,
+          });
+        }
+      }
+
+      if (!result.success) {
+        toast({
+          title: "Error",
+          description: result.error || "Failed to update follow status.",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred.",
+        variant: "destructive",
+      });
+    }
+  };
 
   if (loading) {
     return (
@@ -178,6 +270,43 @@ export default function UserProfilePage() {
                   {profile.bio}
                 </p>
               )}
+              
+              {/* Followers/Following Stats - Display only */}
+              <div className="flex justify-center gap-6 mb-4">
+                <div className="flex flex-col items-center gap-1">
+                  <div className="text-xl font-bold text-white">{followingCount}</div>
+                  <div className="text-xs text-gray-400">Following</div>
+                </div>
+                <div className="flex flex-col items-center gap-1">
+                  <div className="text-xl font-bold text-white">{followersCount}</div>
+                  <div className="text-xs text-gray-400">Followers</div>
+                </div>
+              </div>
+              
+              {/* Follow Button - Only show if not viewing own profile */}
+              {currentUser && profile.uid !== currentUser.uid && (
+                <div className="mt-4">
+                  <Button
+                    onClick={handleFollowToggle}
+                    disabled={followLoading}
+                    className="bg-gray-600/20 hover:bg-gray-600/30 border border-gray-500/50 text-gray-300 hover:text-gray-200 transition-all duration-200 rounded-lg font-medium px-6 py-2"
+                  >
+                    {followLoading ? (
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-300"></div>
+                    ) : isFollowing(profile.uid, following.map(f => f.uid)) ? (
+                      <>
+                        <UserMinus className="h-4 w-4 mr-2" />
+                        Unfollow
+                      </>
+                    ) : (
+                      <>
+                        <UserPlus className="h-4 w-4 mr-2" />
+                        Follow
+                      </>
+                    )}
+                  </Button>
+                </div>
+              )}
             </div>
           </div>
 
@@ -193,33 +322,33 @@ export default function UserProfilePage() {
               {profile.visibleSections?.music !== false && (
                 <TabsTrigger
                   value="music"
-                  className="text-xs py-1 h-6 data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:text-primary rounded-none w-fit"
+                  className="text-sm py-2 h-8 data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-emerald-500 data-[state=active]:text-emerald-400 rounded-none w-fit font-medium"
                 >
-                  music
+                  Music
                 </TabsTrigger>
               )}
               {profile.visibleSections?.movies !== false && (
                 <TabsTrigger
                   value="movie-profile"
-                  className="text-xs py-1 h-6 data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:text-primary rounded-none w-fit"
+                  className="text-sm py-2 h-8 data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-emerald-500 data-[state=active]:text-emerald-400 rounded-none w-fit font-medium"
                 >
-                  movies
+                  Movies
                 </TabsTrigger>
               )}
               {profile.visibleSections?.series !== false && (
                 <TabsTrigger
                   value="series"
-                  className="text-xs py-1 h-6 data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:text-primary rounded-none w-fit"
+                  className="text-sm py-2 h-8 data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-emerald-500 data-[state=active]:text-emerald-400 rounded-none w-fit font-medium"
                 >
-                  shows
+                  TV Shows
                 </TabsTrigger>
               )}
               {profile.visibleSections?.books !== false && (
                 <TabsTrigger
                   value="books"
-                  className="text-xs py-1 h-6 data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:text-primary rounded-none w-fit"
+                  className="text-sm py-2 h-8 data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-emerald-500 data-[state=active]:text-emerald-400 rounded-none w-fit font-medium"
                 >
-                  books
+                  Books
                 </TabsTrigger>
               )}
             </TabsList>

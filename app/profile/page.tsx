@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 
 // Force dynamic rendering to prevent prerender issues
 export const dynamic = "force-dynamic";
@@ -10,6 +11,7 @@ import { useProfile } from "@/hooks/use-profile";
 import { useCollections } from "@/hooks/use-collections";
 import { useSearch } from "@/hooks/use-search";
 import { useToast } from "@/hooks/use-toast";
+import { useUserConnections } from "@/hooks/use-user-connections";
 import {
   searchService,
   TMDBMovie,
@@ -45,6 +47,8 @@ import {
   EyeOff,
   MessageSquare,
   MoreHorizontal,
+  Users,
+  UserCheck,
 } from "lucide-react";
 import { EditProfileDialog } from "@/components/edit-profile";
 import { ImageUpload } from "@/components/image-upload";
@@ -85,6 +89,8 @@ interface PublicCollectionItems {
 export default function ProfilePage() {
   const { user } = useCurrentUser();
   const { toast } = useToast();
+  const { followers, following } = useUserConnections();
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState("music");
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [publicCollections, setPublicCollections] = useState<
@@ -810,6 +816,27 @@ export default function ProfilePage() {
                   {profile.bio}
                 </p>
               )}
+              
+              {/* Following/Followers Stats */}
+              <div className="flex justify-center gap-6 mb-4">
+                <Button
+                  onClick={() => router.push('/users?tab=following')}
+                  variant="ghost"
+                  className="flex flex-col items-center gap-1 text-white hover:text-gray-200 hover:bg-gray-800/50 rounded-lg px-4 py-2 transition-all duration-200"
+                >
+                  <div className="text-xl font-bold">{following.length}</div>
+                  <div className="text-xs text-gray-400">Following</div>
+                </Button>
+                <Button
+                  onClick={() => router.push('/users?tab=followers')}
+                  variant="ghost"
+                  className="flex flex-col items-center gap-1 text-white hover:text-gray-200 hover:bg-gray-800/50 rounded-lg px-4 py-2 transition-all duration-200"
+                >
+                  <div className="text-xl font-bold">{followers.length}</div>
+                  <div className="text-xs text-gray-400">Followers</div>
+                </Button>
+              </div>
+              
               <div className="flex justify-center gap-2">
                 <Button
                   variant="ghost"
@@ -851,33 +878,33 @@ export default function ProfilePage() {
               {profile?.visibleSections?.music !== false && (
                 <TabsTrigger
                   value="music"
-                  className="text-xs py-1 h-6 data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-emerald-500 data-[state=active]:text-emerald-400 text-gray-400 hover:text-gray-300 transition-colors duration-200 rounded-none w-fit"
+                  className="text-sm py-2 h-8 data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-emerald-500 data-[state=active]:text-emerald-400 text-gray-400 hover:text-gray-300 transition-colors duration-200 rounded-none w-fit font-medium"
                 >
-                  music
+                  Music
                 </TabsTrigger>
               )}
               {profile?.visibleSections?.movies !== false && (
                 <TabsTrigger
                   value="movie-profile"
-                  className="text-xs py-1 h-6 data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-emerald-500 data-[state=active]:text-emerald-400 text-gray-400 hover:text-gray-300 transition-colors duration-200 rounded-none w-fit"
+                  className="text-sm py-2 h-8 data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-emerald-500 data-[state=active]:text-emerald-400 text-gray-400 hover:text-gray-300 transition-colors duration-200 rounded-none w-fit font-medium"
                 >
-                  movies
+                  Movies
                 </TabsTrigger>
               )}
               {profile?.visibleSections?.series !== false && (
                 <TabsTrigger
                   value="series"
-                  className="text-xs py-1 h-6 data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-emerald-500 data-[state=active]:text-emerald-400 text-gray-400 hover:text-gray-300 transition-colors duration-200 rounded-none w-fit"
+                  className="text-sm py-2 h-8 data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-emerald-500 data-[state=active]:text-emerald-400 text-gray-400 hover:text-gray-300 transition-colors duration-200 rounded-none w-fit font-medium"
                 >
-                  shows
+                  TV Shows
                 </TabsTrigger>
               )}
               {profile?.visibleSections?.books !== false && (
                 <TabsTrigger
                   value="books"
-                  className="text-xs py-1 h-6 data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-emerald-500 data-[state=active]:text-emerald-400 text-gray-400 hover:text-gray-300 transition-colors duration-200 rounded-none w-fit"
+                  className="text-sm py-2 h-8 data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-emerald-500 data-[state=active]:text-emerald-400 text-gray-400 hover:text-gray-300 transition-colors duration-200 rounded-none w-fit font-medium"
                 >
-                  books
+                  Books
                 </TabsTrigger>
               )}
             </TabsList>

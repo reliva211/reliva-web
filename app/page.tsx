@@ -281,7 +281,7 @@ export default function LandingPage() {
                   multiple apps to rate and review.
                 </p>
                 <p>All the recommendations from your friends in one place.</p>
-                <p>Shareable profile for adding to you social media bio.</p>
+                <p>Shareable profile for adding to your social media bio.</p>
               </div>
             </div>
 

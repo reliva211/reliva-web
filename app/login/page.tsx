@@ -128,12 +128,6 @@ export default function LoginPage() {
                         Remember me
                       </Label>
                     </div>
-                    <Link
-                      href="/forgot-password"
-                      className="text-xs text-purple-400 hover:text-purple-300 transition-colors"
-                    >
-                      Forgot Password?
-                    </Link>
                   </div>
 
                   <Button
