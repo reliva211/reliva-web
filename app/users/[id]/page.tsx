@@ -1,6 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
+
+// Force dynamic rendering to prevent prerendering issues
+export const dynamic = 'force-dynamic';
 import { useParams, useRouter } from "next/navigation";
 import { doc, getDoc, collection, query, where, getDocs } from "firebase/firestore";
 import { db } from "@/lib/firebase";
