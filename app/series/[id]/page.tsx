@@ -548,7 +548,7 @@ export default function SeriesDetailPage({
 
                 {/* Overview */}
                 <div className="p-6 rounded-2xl bg-background/60 backdrop-blur-sm border border-border/50 shadow-lg">
-                  <p className="text-foreground leading-relaxed text-base">
+                  <p className="text-white leading-relaxed text-base">
                     {series.overview}
                   </p>
                 </div>
@@ -575,7 +575,7 @@ export default function SeriesDetailPage({
                     variant="outline"
                     onClick={handleTrailerClick}
                     disabled={!getBestTrailer()}
-                    className="rounded-xl hover:bg-muted/50 transition-all duration-200 group bg-background/60 border-border/50"
+                    className="rounded-xl hover:bg-muted/50 transition-all duration-200 group bg-background/60 border-border/50 text-white"
                   >
                     <Play className="w-5 h-5 mr-2 group-hover:scale-110 transition-transform" />
                     {getBestTrailer() ? "Watch Trailer" : "No Trailer"}
@@ -595,7 +595,7 @@ export default function SeriesDetailPage({
                         )}`
                       )
                     }
-                    className="rounded-xl hover:bg-muted/50 transition-all duration-200 group bg-background/60 border-border/50"
+                    className="rounded-xl hover:bg-muted/50 transition-all duration-200 group bg-background/60 border-border/50 text-white"
                   >
                     <Star className="w-5 h-5 mr-2 group-hover:scale-110 transition-transform" />
                     Rate
@@ -604,7 +604,7 @@ export default function SeriesDetailPage({
                     <DialogTrigger asChild>
                       <Button
                         size="lg"
-                        className="rounded-xl hover:bg-muted/50 transition-all duration-200 group bg-background/60 border-border/50"
+                        className="rounded-xl hover:bg-muted/50 transition-all duration-200 group bg-background/60 border-border/50 text-white"
                       >
                         <Plus className="w-5 h-5 mr-2 group-hover:scale-110 transition-transform" />
                         Add to List

@@ -71,11 +71,21 @@ export default function Sidebar({ isLandingPage = false }: SidebarProps) {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [showDiscoverOptions, setShowDiscoverOptions] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
 
   const { user } = useCurrentUser();
   const { unreadCount, error: notificationError } = useNotifications();
+
+  // Set discover options to be expanded by default when sidebar is open
+  useEffect(() => {
+    if (!isCollapsed) {
+      setShowDiscoverOptions(true);
+    } else {
+      setShowDiscoverOptions(false);
+    }
+  }, [isCollapsed]);
 
   const handleSignOut = async () => {
     try {
@@ -89,6 +99,45 @@ export default function Sidebar({ isLandingPage = false }: SidebarProps) {
 
   const handleLogoutClick = () => {
     setShowLogoutConfirm(true);
+  };
+
+  const handleDiscoverClick = () => {
+    setShowDiscoverOptions(!showDiscoverOptions);
+  };
+
+  // Helper function to determine if a navigation item should be active
+  const isNavigationActive = (href: string) => {
+    if (href === "/reviews") {
+      return pathname === "/reviews" || pathname === "/";
+    }
+    if (href === "/music") {
+      return pathname.startsWith("/music");
+    }
+    if (href === "/books") {
+      return pathname.startsWith("/books");
+    }
+    if (href === "/movies") {
+      return pathname.startsWith("/movies");
+    }
+    if (href === "/series") {
+      return pathname.startsWith("/series");
+    }
+    if (href === "/profile") {
+      return pathname.startsWith("/profile") || pathname.startsWith("/user/");
+    }
+    if (href === "/notifications") {
+      return pathname.startsWith("/notifications");
+    }
+    if (href === "/recommendations") {
+      return pathname.startsWith("/recommendations");
+    }
+    if (href === "/users") {
+      return pathname.startsWith("/users") || pathname.startsWith("/friends");
+    }
+    if (href === "/contact") {
+      return pathname.startsWith("/contact") || pathname.startsWith("/about");
+    }
+    return pathname === href;
   };
 
   const discoverItems = [
@@ -188,41 +237,20 @@ export default function Sidebar({ isLandingPage = false }: SidebarProps) {
                   )}
                 </span>
               </Link>
-              <div
-                className={cn(
-                  "flex items-center gap-2 transition-all duration-300 flex-shrink-0",
-                  isCollapsed ? "hidden" : "flex"
-                )}
+              {/* Desktop collapse button - always visible on desktop */}
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setIsCollapsed(!isCollapsed)}
+                className="hidden lg:flex"
               >
-
-
-                {/* Desktop collapse button */}
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setIsCollapsed(!isCollapsed)}
-                  className="hidden lg:flex"
-                >
-                  <ChevronDown
-                    className={cn(
-                      "h-4 w-4 transition-transform duration-300",
-                      isCollapsed && "rotate-180"
-                    )}
-                  />
-                </Button>
-              </div>
-
-              {/* Collapse toggle for collapsed state */}
-              {isCollapsed && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setIsCollapsed(false)}
-                  className="lg:flex mx-auto"
-                >
-                  <ChevronDown className="h-4 w-4 rotate-180" />
-                </Button>
-              )}
+                <ChevronDown
+                  className={cn(
+                    "h-4 w-4 transition-transform duration-300",
+                    isCollapsed && "rotate-180"
+                  )}
+                />
+              </Button>
             </div>
 
             {/* Navigation */}
@@ -244,7 +272,7 @@ export default function Sidebar({ isLandingPage = false }: SidebarProps) {
                   {(() => {
                     const item = navigationItems[0];
                     const Icon = item.icon;
-                    const isActive = pathname === item.href;
+                    const isActive = isNavigationActive(item.href);
 
                     const linkContent = (
                       <Link
@@ -252,11 +280,13 @@ export default function Sidebar({ isLandingPage = false }: SidebarProps) {
                         href={item.href}
                         onClick={() => setIsMobileOpen(false)}
                         className={cn(
-                          "flex items-center gap-3 rounded-lg text-sm font-medium transition-all duration-200 hover:bg-gray-700 hover:text-white",
+                          "flex items-center gap-3 rounded-lg text-sm font-medium transition-all duration-200 hover:bg-accent hover:text-accent-foreground",
                           isCollapsed
                             ? "justify-center px-2 py-3"
                             : "px-4 py-3",
-                          isActive ? "text-white" : "text-white"
+                          isActive
+                            ? "bg-accent text-accent-foreground"
+                            : "text-white"
                         )}
                       >
                         <Icon
@@ -285,65 +315,85 @@ export default function Sidebar({ isLandingPage = false }: SidebarProps) {
                     );
                   })()}
 
-                  {/* Discover Section - Dropdown for expanded state */}
+                  {/* Discover Section - Toggle button for expanded state */}
                   {!isCollapsed && (
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <button
-                          className={cn(
-                            "flex w-full items-center gap-3 rounded-lg text-sm font-medium transition-all duration-200 hover:bg-accent hover:text-accent-foreground px-4 py-3 text-white",
-                            (pathname === "/music" ||
-                              pathname === "/books" ||
-                              pathname === "/movies" ||
-                              pathname === "/series") &&
-                              "bg-accent text-accent-foreground"
-                          )}
-                        >
-                          <Compass className="h-5 w-5 flex-shrink-0" />
-                          <span className="whitespace-nowrap">Discover</span>
-                          <ChevronDown className="ml-auto h-4 w-4" />
-                        </button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent
-                        side="right"
-                        align="start"
-                        className="w-48"
-                      >
-                        {discoverItems.map((item) => {
+                    <button
+                      onClick={handleDiscoverClick}
+                      className={cn(
+                        "flex w-full items-center gap-3 rounded-lg text-sm font-medium transition-all duration-300 ease-in-out hover:bg-accent hover:text-accent-foreground px-4 py-3 text-white active:scale-95",
+                        (isNavigationActive("/music") ||
+                          isNavigationActive("/books") ||
+                          isNavigationActive("/movies") ||
+                          isNavigationActive("/series")) &&
+                          "bg-accent text-accent-foreground"
+                      )}
+                    >
+                      <Compass className="h-5 w-5 flex-shrink-0" />
+                      <span className="whitespace-nowrap">Discover</span>
+                      <ChevronDown 
+                        className={cn(
+                          "ml-auto h-4 w-4 transition-transform duration-300 ease-in-out",
+                          showDiscoverOptions && "rotate-180"
+                        )} 
+                      />
+                    </button>
+                  )}
+
+                  {/* Discover Options - Animated expand/collapse */}
+                  {!isCollapsed && (
+                    <div 
+                      className={cn(
+                        "overflow-hidden transition-all duration-300 ease-in-out",
+                        showDiscoverOptions 
+                          ? "max-h-96 opacity-100" 
+                          : "max-h-0 opacity-0"
+                      )}
+                    >
+                      <div className="ml-4 space-y-1 pt-1">
+                        {discoverItems.map((item, index) => {
                           const Icon = item.icon;
-                          const isActive = pathname === item.href;
+                          const isActive = isNavigationActive(item.href);
 
                           return (
-                            <DropdownMenuItem key={item.href} asChild>
-                              <Link
-                                href={item.href}
-                                onClick={() => setIsMobileOpen(false)}
-                                className={cn(
-                                  "flex items-center gap-3 w-full",
-                                  isActive && "bg-accent text-accent-foreground"
-                                )}
-                              >
-                                <Icon className="h-4 w-4" />
-                                <span>{item.label}</span>
-                              </Link>
-                            </DropdownMenuItem>
+                            <Link
+                              key={item.href}
+                              href={item.href}
+                              onClick={() => {
+                                setIsMobileOpen(false);
+                              }}
+                              className={cn(
+                                "flex items-center gap-3 rounded-lg text-sm font-medium transition-all duration-200 hover:bg-accent hover:text-accent-foreground px-4 py-2 text-white transform",
+                                isActive && "bg-accent text-accent-foreground",
+                                showDiscoverOptions 
+                                  ? "translate-x-0 opacity-100" 
+                                  : "translate-x-4 opacity-0"
+                              )}
+                              style={{
+                                transitionDelay: showDiscoverOptions ? `${index * 50}ms` : '0ms'
+                              }}
+                            >
+                              <Icon className="h-4 w-4 flex-shrink-0" />
+                              <span className="whitespace-nowrap">{item.label}</span>
+                            </Link>
                           );
                         })}
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                      </div>
+                    </div>
                   )}
 
                   {/* Discover items for collapsed state */}
                   {isCollapsed &&
                     discoverItems.map((item) => {
                       const Icon = item.icon;
-                      const isActive = pathname === item.href;
+                      const isActive = isNavigationActive(item.href);
 
                       const linkContent = (
                         <Link
                           key={item.href}
                           href={item.href}
-                          onClick={() => setIsMobileOpen(false)}
+                          onClick={() => {
+                            setIsMobileOpen(false);
+                          }}
                           className={cn(
                             "flex items-center gap-3 rounded-lg text-sm font-medium transition-all duration-200 hover:bg-accent hover:text-accent-foreground",
                             isCollapsed
@@ -381,7 +431,7 @@ export default function Sidebar({ isLandingPage = false }: SidebarProps) {
                   {/* Other navigation items */}
                   {navigationItems.slice(1, 4).map((item) => {
                     const Icon = item.icon;
-                    const isActive = pathname === item.href;
+                    const isActive = isNavigationActive(item.href);
 
                     const linkContent = (
                       <Link
@@ -446,7 +496,7 @@ export default function Sidebar({ isLandingPage = false }: SidebarProps) {
                 >
                   {navigationItems.slice(4).map((item) => {
                     const Icon = item.icon;
-                    const isActive = pathname === item.href;
+                    const isActive = isNavigationActive(item.href);
 
                     // Handle logout button (has onClick) and regular navigation items
                     if (item.onClick) {

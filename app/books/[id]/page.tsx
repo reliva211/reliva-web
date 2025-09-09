@@ -466,7 +466,7 @@ export default function BookDetailPage({
 
                 {/* Overview */}
                 <div className="p-6 rounded-2xl bg-background/60 backdrop-blur-sm border border-border/50 shadow-lg">
-                  <div className="text-foreground leading-relaxed text-base">
+                  <div className="text-white leading-relaxed text-base">
                     <div
                       dangerouslySetInnerHTML={{
                         __html: showFullDescription
@@ -513,7 +513,7 @@ export default function BookDetailPage({
                     size="lg"
                     variant="outline"
                     asChild
-                    className="rounded-xl hover:bg-muted/50 transition-all duration-200 group bg-background/60 border-border/50"
+                    className="rounded-xl hover:bg-muted/50 transition-all duration-200 group bg-background/60 border-border/50 text-white"
                   >
                     <a
                       href={book.previewLink}
@@ -544,7 +544,7 @@ export default function BookDetailPage({
                         )}`
                       )
                     }
-                    className="rounded-xl hover:scale-105 transition-all duration-200"
+                    className="rounded-xl hover:scale-105 transition-all duration-200 text-white"
                   >
                     <Star className="w-5 h-5 mr-2" />
                     Rate
@@ -553,7 +553,7 @@ export default function BookDetailPage({
                     <DialogTrigger asChild>
                       <Button
                         size="lg"
-                        className="rounded-xl hover:scale-105 transition-all duration-200"
+                        className="rounded-xl hover:scale-105 transition-all duration-200 text-white"
                       >
                         <Plus className="w-5 h-5 mr-2" />
                         Add to List
