@@ -41,6 +41,7 @@ import {
   getDoc,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+import { StructuredData } from "@/components/structured-data";
 
 interface BookDetail {
   id: string;
@@ -366,6 +367,23 @@ export default function BookDetailPage({
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
+      {/* Structured Data for SEO */}
+      <StructuredData 
+        type="book" 
+        data={{
+          id: book.id,
+          volumeInfo: {
+            title: book.title,
+            description: book.description,
+            imageLinks: book.imageLinks,
+            publishedDate: book.publishedDate,
+            averageRating: book.averageRating,
+            ratingsCount: book.ratingsCount,
+            authors: book.authors
+          }
+        }} 
+      />
+      
       <div className="container mx-auto px-4 py-8">
         {/* Back Button */}
         <Button

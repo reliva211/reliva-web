@@ -41,6 +41,7 @@ import {
   getDoc,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+import { StructuredData } from "@/components/structured-data";
 
 interface Video {
   id: string;
@@ -459,6 +460,22 @@ export default function SeriesDetailPage({
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
+      {/* Structured Data for SEO */}
+      <StructuredData 
+        type="series" 
+        data={{
+          id: series.id,
+          name: series.name,
+          overview: series.overview,
+          poster_path: series.poster_path,
+          first_air_date: series.first_air_date,
+          vote_average: series.vote_average,
+          vote_count: series.vote_count,
+          number_of_seasons: series.number_of_seasons,
+          number_of_episodes: series.number_of_episodes
+        }} 
+      />
+      
       <div className="container mx-auto px-4 py-8">
         {/* Back Button */}
         <Button

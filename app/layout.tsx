@@ -43,6 +43,42 @@ export default function RootLayout({
             `,
           }}
         />
+        
+        {/* Global JSON-LD Structured Data */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "WebSite",
+              "url": "https://www.reliva.me",
+              "name": "Reliva",
+              "alternateName": "What's your Reliva?",
+              "description": "Reliva is a social platform where you can share your favorite music, movies, TV shows, and books all in one place. give and get recommendations from your friends, rate and review media.",
+              "inLanguage": "en",
+              "publisher": {
+                "@type": "Organization",
+                "name": "Reliva",
+                "url": "https://www.reliva.me",
+                "logo": {
+                  "@type": "ImageObject",
+                  "url": "https://www.reliva.me/placeholder-logo.svg"
+                },
+                "sameAs": [
+                  "https://www.instagram.com/relivaofficial",
+                  "https://x.com/relivaofficial",
+                  "https://www.reddit.com/r/relivaofficial"
+                ],
+                "email": "reliva211@gmail.com"
+              },
+              "potentialAction": {
+                "@type": "SearchAction",
+                "target": "https://www.reliva.me",
+                "query-input": "required name=search_term_string"
+              }
+            })
+          }}
+        />
       </head>
       <body className={inter.className}>
         <AuthProvider>

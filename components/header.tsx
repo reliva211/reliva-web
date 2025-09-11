@@ -264,8 +264,8 @@ export default function Sidebar({ isLandingPage = false }: SidebarProps) {
                 {/* Main Navigation */}
                 <div
                   className={cn(
-                    "space-y-2 transition-all duration-300 sidebar-nav-main",
-                    isCollapsed ? "space-y-2" : "space-y-2 lg:space-y-2"
+                    "space-y-1 transition-all duration-300 sidebar-nav-main",
+                    isCollapsed ? "space-y-1" : "space-y-1 lg:space-y-1"
                   )}
                 >
                   {/* Home */}
@@ -349,7 +349,7 @@ export default function Sidebar({ isLandingPage = false }: SidebarProps) {
                           : "max-h-0 opacity-0"
                       )}
                     >
-                      <div className="ml-4 space-y-1 pt-1">
+                      <div className="ml-4 space-y-1">
                         {discoverItems.map((item, index) => {
                           const Icon = item.icon;
                           const isActive = isNavigationActive(item.href);
@@ -362,7 +362,7 @@ export default function Sidebar({ isLandingPage = false }: SidebarProps) {
                                 setIsMobileOpen(false);
                               }}
                               className={cn(
-                                "flex items-center gap-3 rounded-lg text-sm font-medium transition-all duration-200 hover:bg-accent hover:text-accent-foreground px-4 py-2 text-white transform",
+                                "flex items-center gap-3 rounded-lg text-sm font-medium transition-all duration-200 hover:bg-accent hover:text-accent-foreground px-4 py-3 text-white transform",
                                 isActive && "bg-accent text-accent-foreground",
                                 showDiscoverOptions 
                                   ? "translate-x-0 opacity-100" 
@@ -490,8 +490,8 @@ export default function Sidebar({ isLandingPage = false }: SidebarProps) {
                 {/* User & Settings */}
                 <div
                   className={cn(
-                    "space-y-2 transition-all duration-300",
-                    isCollapsed ? "space-y-2" : "space-y-2 lg:space-y-2"
+                    "space-y-1 transition-all duration-300",
+                    isCollapsed ? "space-y-1" : "space-y-1 lg:space-y-1"
                   )}
                 >
                   {navigationItems.slice(4).map((item) => {

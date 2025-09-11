@@ -148,7 +148,7 @@ const truncateTitle = (title: string, maxLength: number = 10): string => {
 };
 
 // Helper function to truncate title to first few words
-const truncateTitleToWords = (title: string, maxWords: number = 1): string => {
+const truncateTitleToWords = (title: string, maxWords: number = 2): string => {
   if (!title) return "Unknown Series";
   const cleanTitle = cleanTextContent(title);
   const words = cleanTitle.split(" ");

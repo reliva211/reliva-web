@@ -21,6 +21,7 @@ import { useCurrentUser } from "@/hooks/use-current-user";
 import { useUserConnections } from "@/hooks/use-user-connections";
 import { useFollowUser } from "@/hooks/use-follow-user";
 import { useToast } from "@/hooks/use-toast";
+import { UserProfileStructuredData } from "@/components/structured-data";
 
 interface PublicUserProfile {
   uid: string;
@@ -262,6 +263,14 @@ export default function PublicProfilePage() {
 
   return (
     <ErrorBoundary>
+      {/* Structured Data for SEO */}
+      <UserProfileStructuredData 
+        username={profile.username || profile.displayName}
+        displayName={profile.displayName}
+        bio={profile.bio}
+        userId={profile.uid}
+      />
+      
       <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black">
         {/* Top Profile Section */}
         <div className="max-w-4xl mx-auto px-4 sm:px-6 pt-20 sm:pt-20 pb-6 sm:pb-8">

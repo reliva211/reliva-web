@@ -20,6 +20,7 @@ import {
 import { useMusicCollections } from "@/hooks/use-music-collections";
 import { useYouTubePlayer } from "@/hooks/use-youtube-player";
 import { useToast } from "@/hooks/use-toast";
+import { StructuredData } from "@/components/structured-data";
 
 const decodeHtmlEntities = (text: string) => {
   const textarea = document.createElement("textarea");
@@ -393,6 +394,21 @@ export default function AlbumDetailPage({
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
+      {/* Structured Data for SEO */}
+      {album && (
+        <StructuredData 
+          type="music" 
+          data={{
+            id: album.id,
+            name: album.name,
+            artists: album.artists,
+            image: album.image,
+            year: album.year,
+            songCount: album.songs?.length
+          }} 
+        />
+      )}
+      
       {/* Hero Section with Dynamic Background */}
       <div className="relative mb-12 overflow-hidden">
         {album && (

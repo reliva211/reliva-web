@@ -1385,7 +1385,7 @@
     aside nav a,
     aside nav button {
       border-radius: 8px !important;
-      margin: 2px 8px !important;
+      margin: 0 !important;
       transition: all 0.2s ease !important;
     }
 
@@ -1403,6 +1403,28 @@
       background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%) !important;
       box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3) !important;
       color: white !important;
+    }
+
+    /* Ensure consistent spacing for mobile sidebar */
+    aside nav .space-y-1 > * + * {
+      margin-top: 0.25rem !important;
+    }
+
+    /* Fix discover submenu spacing */
+    aside nav .ml-4.space-y-1 > * + * {
+      margin-top: 0.25rem !important;
+    }
+
+    /* Ensure proper padding for all navigation items */
+    aside nav a,
+    aside nav button {
+      padding: 0.75rem 1rem !important;
+    }
+
+    /* Fix collapsed state padding */
+    aside nav a.justify-center,
+    aside nav button.justify-center {
+      padding: 0.75rem 0.5rem !important;
     }
   }
 
@@ -1424,7 +1446,7 @@
     aside nav a,
     aside nav button {
       border-radius: 8px !important;
-      margin: 2px 8px !important;
+      margin: 0 !important;
       transition: all 0.2s ease !important;
     }
 

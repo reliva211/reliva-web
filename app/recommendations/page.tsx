@@ -26,6 +26,7 @@ import {
 } from "lucide-react";
 import { useRecommendations } from "@/hooks/use-recommendations";
 import { useMusicCollections } from "@/hooks/use-music-collections";
+import { useUserConnections } from "@/hooks/use-user-connections";
 import { useToast } from "@/hooks/use-toast";
 import { Toaster } from "@/components/ui/toaster";
 
@@ -157,6 +158,7 @@ export default function RecommendationsPage() {
   const [userProfiles, setUserProfiles] = useState<Map<string, UserProfile>>(new Map());
 
   const { recommendations, loading, error } = useRecommendations();
+  const { following, loading: connectionsLoading } = useUserConnections();
   const musicCollections = useMusicCollections();
 
   // Function to fetch user profile for a given Firebase UID directly
@@ -335,7 +337,7 @@ export default function RecommendationsPage() {
      const avatarUrl = userProfile?.avatarUrl || user.photoURL;
      
      return (
-       <div className="flex items-center gap-4 mb-4">
+       <div className="flex items-center gap-3 mb-4">
         <div className="relative">
           <OtherUserAvatar
             authorId={user.uid}
@@ -343,25 +345,31 @@ export default function RecommendationsPage() {
             displayName={displayName}
             avatarUrl={avatarUrl}
             size="md"
-            className="cursor-pointer hover:scale-105 transition-transform duration-200 ring-4 ring-blue-500/20 hover:ring-blue-500/40"
+            className="cursor-pointer hover:scale-105 transition-transform duration-200"
             clickable={true}
           />
-          <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-gradient-to-r from-green-400 to-emerald-500 rounded-full border-2 border-slate-900"></div>
         </div>
         <div className="flex-1">
           <h3
-            className="text-xl font-bold text-white cursor-pointer hover:text-blue-300 transition-colors mb-0"
+            className="text-base font-semibold text-white cursor-pointer hover:text-gray-300 transition-colors mb-0"
             onClick={() => router.push(`/users/${user.uid}`)}
           >
             {displayName}
           </h3>
-          <div className="flex items-center gap-2">
-            <TrendingUp className="w-4 h-4 text-blue-400" />
-            <p className="text-sm text-slate-300">
-              {itemCount} {category === "music" ? "music" : category.slice(0, -1)}
-              {itemCount !== 1 ? "s" : ""} recommended
-            </p>
-          </div>
+          <p className="text-xs text-gray-400">
+            {itemCount} {(() => {
+              if (category === "music") {
+                return itemCount === 1 ? "album" : "albums";
+              } else if (category === "movies") {
+                return itemCount === 1 ? "movie" : "movies";
+              } else if (category === "books") {
+                return itemCount === 1 ? "book" : "books";
+              } else if (category === "series") {
+                return itemCount === 1 ? "series" : "series";
+              }
+              return category.slice(0, -1) + (itemCount !== 1 ? "s" : "");
+            })()}
+          </p>
         </div>
       </div>
     );
@@ -375,8 +383,8 @@ export default function RecommendationsPage() {
     item: Movie | Book | Series | MusicAlbum;
     category: string;
   }) => (
-    <div className="group relative">
-      <div className="relative w-[100px] sm:w-[120px] md:w-[140px] lg:w-[160px] xl:w-[180px] h-[150px] sm:h-[180px] md:h-[200px] lg:h-[220px] xl:h-[240px] rounded-xl overflow-hidden bg-gradient-to-br from-gray-800 to-gray-900 border border-gray-700/50 hover:border-emerald-500/50 transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-emerald-500/20">
+    <div className="group relative w-full">
+      <div className="relative w-full aspect-[3/4] rounded-lg overflow-hidden bg-gray-800 hover:bg-gray-700 transition-all duration-300 hover:scale-105">
         <Link href={category === "music" ? `/music/album/${item.id}` : `/${category}/${item.id}`}>
           <Image
             src={
@@ -384,7 +392,7 @@ export default function RecommendationsPage() {
               (item as MusicAlbum).image?.[2]?.url ||
               (item as MusicAlbum).image?.[1]?.url ||
               (item as MusicAlbum).image?.[0]?.url ||
-              "/placeholder.svg"
+              "/placeholder.jpg"
             }
             alt={
               (item as Movie | Book | Series).title ||
@@ -394,28 +402,20 @@ export default function RecommendationsPage() {
             fill
             className="object-cover cursor-pointer transition-transform duration-300 group-hover:scale-110"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
         </Link>
-
-        
       </div>
 
       <div className="mt-3 space-y-1">
-        <h4 className="font-semibold text-sm text-white leading-tight group-hover:text-emerald-300 transition-colors">
+        <h4 className="font-medium text-sm text-white leading-tight group-hover:text-gray-300 transition-colors">
           {(() => {
             const title =
               (item as Movie | Book | Series).title ||
               (item as MusicAlbum).name ||
               "Unknown Title";
 
-            // For books, truncate long titles with ellipses
-            if (category === "books" && title.length > 25) {
-              return title.substring(0, 25) + "...";
-            }
-
-            // For other media types, truncate at 30 characters
-            if (title.length > 30) {
-              return title.substring(0, 30) + "...";
+            // Truncate long titles
+            if (title.length > 20) {
+              return title.substring(0, 20) + "...";
             }
 
             return title;
@@ -430,9 +430,6 @@ export default function RecommendationsPage() {
                 .join(", ") || "Unknown Artist"
             : (item as Movie | Series).year || "N/A"}
         </p>
-        {category === "music" && (
-          <p className="text-xs text-gray-400">{(item as MusicAlbum).year}</p>
-        )}
       </div>
     </div>
   );
@@ -441,56 +438,44 @@ export default function RecommendationsPage() {
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black w-full overflow-x-hidden">
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 pt-16 sm:pt-20 pb-6 sm:pb-8">
         {/* Header */}
-        <div className="mb-8 sm:mb-12 text-center">
-          <div className="inline-flex items-center gap-3 mb-4">
-            <div className="w-12 h-12 bg-gradient-to-r from-emerald-500 to-blue-500 rounded-2xl flex items-center justify-center">
-              <Sparkles className="w-6 h-6 text-white" />
-            </div>
-            <h1 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-emerald-400 to-blue-500 bg-clip-text text-transparent">
-              Recommendations
+        <div className="mb-8 sm:mb-12">
+          <div className="mb-4">
+            <h1 className="text-3xl sm:text-4xl font-bold text-white mb-2">
+              For You
             </h1>
+            <p className="text-sm sm:text-base text-gray-300">
+              Content recommended by people you follow
+            </p>
           </div>
-          <p className="text-base sm:text-lg text-gray-300 max-w-2xl mx-auto">
-            Discover amazing content curated by people you follow
-          </p>
         </div>
 
-        {/* Category Tabs */}
-        <div className="flex justify-center mb-8 sm:mb-12">
-          <div className="bg-gray-800/50 backdrop-blur-sm rounded-2xl p-1 sm:p-2 border border-gray-600 shadow-lg w-full max-w-lg sm:max-w-none">
-            <div className="flex flex-wrap justify-center gap-1 sm:gap-0">
-              {CATEGORIES.map(({ key, label, icon: Icon, color }) => (
-                <button
-                  key={key}
-                  onClick={() => setActiveCategory(key)}
-                  className={`relative flex items-center gap-0.5 sm:gap-2 px-2 sm:px-6 py-2 sm:py-3 rounded-xl text-[10px] sm:text-sm font-medium transition-all duration-300 flex-1 sm:flex-none ${
-                    activeCategory === key
-                      ? "bg-gradient-to-r from-emerald-600 to-blue-600 text-white shadow-lg"
-                      : "text-gray-300 hover:text-white hover:bg-gray-700/50"
-                  }`}
-                >
-                  <Icon className="w-3 h-3 sm:w-4 sm:h-4" />
-                  <span className="text-[10px] sm:text-sm leading-tight">
-                    {label}
-                  </span>
-                  {activeCategory === key && (
-                    <div className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent rounded-xl"></div>
-                  )}
-                </button>
-              ))}
-            </div>
-          </div>
+        {/* Category Filters */}
+        <div className="flex flex-wrap gap-2 sm:gap-3 mb-8 sm:mb-12">
+          {CATEGORIES.map(({ key, label, icon: Icon }) => (
+            <button
+              key={key}
+              onClick={() => setActiveCategory(key)}
+              className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
+                activeCategory === key
+                  ? "bg-white text-gray-900 shadow-md"
+                  : "bg-gray-700/50 text-gray-300 hover:bg-gray-600/50 hover:text-white"
+              }`}
+            >
+              <Icon className="w-4 h-4" />
+              <span>{label}</span>
+            </button>
+          ))}
         </div>
 
         {/* Content */}
         <div className="space-y-8 sm:space-y-12">
           {loading ? (
-            <div className="space-y-6 sm:space-y-8">
+            <div className="space-y-4 sm:space-y-6">
               {/* Loading Skeleton */}
               {[1, 2, 3].map((i) => (
                 <div
                   key={i}
-                  className="bg-slate-800/30 backdrop-blur-sm rounded-3xl p-4 sm:p-6 md:p-8 border border-slate-700/30 relative overflow-hidden"
+                  className="bg-slate-800/30 backdrop-blur-sm rounded-2xl p-4 sm:p-6 border border-slate-700/30 relative overflow-hidden"
                 >
                   {/* Subtle gradient overlay for loading effect */}
                   <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent animate-pulse"></div>
@@ -507,10 +492,10 @@ export default function RecommendationsPage() {
                   </div>
 
                   {/* Items Grid Skeleton */}
-                  <div className="flex gap-4 overflow-x-auto pb-4">
+                  <div className="flex gap-3 sm:gap-4 overflow-x-auto pb-4">
                     {[1, 2, 3, 4, 5, 6].map((item) => (
-                      <div key={item} className="flex-shrink-0">
-                        <div className="w-[100px] sm:w-[140px] md:w-[160px] h-[150px] sm:h-[200px] md:h-[240px] bg-gray-700 rounded-xl animate-pulse relative overflow-hidden">
+                      <div key={item} className="flex-shrink-0 w-[calc(100%/3.5)] sm:w-[140px] md:w-[160px] lg:w-[180px]">
+                        <div className="w-full aspect-[3/4] bg-gray-700 rounded-lg animate-pulse relative overflow-hidden">
                           <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent animate-pulse"></div>
                         </div>
                         <div className="mt-3 space-y-2">
@@ -544,33 +529,108 @@ export default function RecommendationsPage() {
               <div className="w-20 h-20 bg-blue-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
                 <Users className="h-10 w-10 text-blue-400" />
               </div>
-              <h3 className="text-xl font-semibold text-white mb-2">
-                No recommendations yet
-              </h3>
-              <p className="text-slate-300 mb-6 max-w-md mx-auto">
-                Start following other users to discover amazing content
-                recommendations
-              </p>
-              <Button
-                onClick={() => router.push("/users")}
-                className="bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white font-medium px-8 py-3 rounded-xl"
-              >
-                <Users className="w-4 h-4 mr-2" />
-                Find Friends
-              </Button>
+              {following.length === 0 ? (
+                <>
+                  <h3 className="text-xl font-semibold text-white mb-2">
+                    No recommendations yet
+                  </h3>
+                  <p className="text-slate-300 mb-6 max-w-md mx-auto">
+                    Start following other users to discover amazing content
+                    recommendations
+                  </p>
+                  <Button
+                    onClick={() => router.push("/users")}
+                    className="bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white font-medium px-8 py-3 rounded-xl"
+                  >
+                    <Users className="w-4 h-4 mr-2" />
+                    Find Friends
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <h3 className="text-xl font-semibold text-white mb-2">
+                    No recommendations from your friends yet
+                  </h3>
+                  <p className="text-slate-300 mb-6 max-w-md mx-auto">
+                    Your friends haven't shared any recommendations yet. 
+                    Check back later or find more friends to discover new content.
+                  </p>
+                  <div className="flex flex-row gap-3 sm:gap-4 justify-center">
+                    <Button
+                      onClick={() => router.push("/users")}
+                      className="bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white font-medium px-4 py-3 sm:px-6 sm:py-3 rounded-xl text-sm"
+                    >
+                      <Users className="w-4 h-4 mr-2" />
+                      <span className="hidden sm:inline">Search Friends</span>
+                      <span className="sm:hidden">Find Friends</span>
+                    </Button>
+                    <Button
+                      onClick={() => router.push("/reviews")}
+                      variant="outline"
+                      className="border-gray-600 text-gray-300 hover:bg-gray-800 hover:text-white font-medium px-4 py-3 sm:px-6 sm:py-3 rounded-xl text-sm"
+                    >
+                      <TrendingUp className="w-4 h-4 mr-2" />
+                      <span className="hidden sm:inline">Browse Feed</span>
+                      <span className="sm:hidden">Browse Feed</span>
+                    </Button>
+                  </div>
+                </>
+              )}
             </div>
-          ) : (
-                         <div className="space-y-6 sm:space-y-8">
-               {recommendations
-                 .filter((userRec) => getItemCount(userRec) > 0)
-                 .map((userRec) => {
-                   const items = getItemsByCategory(userRec);
+          ) : (() => {
+            // Filter recommendations that have items for the current category
+            const recommendationsWithItems = recommendations.filter((userRec) => getItemCount(userRec) > 0);
+            
+            // If no recommendations for current category, show category-specific empty state
+            if (recommendationsWithItems.length === 0) {
+              const categoryInfo = CATEGORIES.find(cat => cat.key === activeCategory);
+              const Icon = categoryInfo?.icon || Film;
+              
+              return (
+                <div className="text-center py-16">
+                  <div className="w-20 h-20 bg-gray-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <Icon className="h-10 w-10 text-gray-400" />
+                  </div>
+                  <h3 className="text-xl font-semibold text-white mb-2">
+                    No {categoryInfo?.label} recommendations yet
+                  </h3>
+                  <p className="text-slate-300 mb-6 max-w-md mx-auto">
+                    No recommendations from your friends yet
+                  </p>
+                  <div className="flex flex-row gap-3 sm:gap-4 justify-center">
+                    <Button
+                      onClick={() => router.push("/users")}
+                      className="bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white font-medium px-4 py-3 sm:px-6 sm:py-3 rounded-xl text-sm"
+                    >
+                      <Users className="w-4 h-4 mr-2" />
+                      <span className="hidden sm:inline">Find More Friends</span>
+                      <span className="sm:hidden">Find Friends</span>
+                    </Button>
+                    <Button
+                      onClick={() => router.push("/reviews")}
+                      variant="outline"
+                      className="border-gray-600 text-gray-300 hover:bg-gray-800 hover:text-white font-medium px-4 py-3 sm:px-6 sm:py-3 rounded-xl text-sm"
+                    >
+                      <TrendingUp className="w-4 h-4 mr-2" />
+                      <span className="hidden sm:inline">Browse Feed</span>
+                      <span className="sm:hidden">Browse Feed</span>
+                    </Button>
+                  </div>
+                </div>
+              );
+            }
 
-                   return (
-                     <div
-                       key={userRec.user.uid}
-                       className="space-y-4"
-                     >
+            // Show recommendations for current category
+            return (
+              <div className="space-y-4 sm:space-y-6">
+                {recommendationsWithItems.map((userRec) => {
+                  const items = getItemsByCategory(userRec);
+
+                  return (
+                    <div
+                      key={userRec.user.uid}
+                      className="space-y-3"
+                    >
                       {/* User Header */}
                       <UserHeader
                         user={userRec.user}
@@ -580,25 +640,19 @@ export default function RecommendationsPage() {
 
                       {/* Items Grid */}
                       <div className="relative">
-                        <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide px-1">
+                        <div className="flex gap-3 sm:gap-4 overflow-x-auto pb-4 scrollbar-hide">
                           {items.slice(0, 12).map((item) => (
-                            <ItemCard
-                              key={item.id}
-                              item={item}
-                              category={activeCategory}
-                            />
+                            <div key={item.id} className="flex-shrink-0 w-[calc(100%/3.5)] sm:w-[140px] md:w-[160px] lg:w-[180px]">
+                              <ItemCard
+                                item={item}
+                                category={activeCategory}
+                              />
+                            </div>
                           ))}
                         </div>
-
+                        
                         {/* Gradient fade to tease more content */}
-                        <div className="absolute right-0 top-0 bottom-4 w-8 bg-gradient-to-l from-slate-800/80 to-transparent pointer-events-none"></div>
-
-                        {/* Scroll indicator */}
-                        {items.length > 3 && (
-                          <div className="absolute right-2 top-1/2 transform -translate-y-1/2 w-6 h-6 bg-blue-500/20 backdrop-blur-sm rounded-full flex items-center justify-center pointer-events-none">
-                            <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse"></div>
-                          </div>
-                        )}
+                        <div className="absolute right-0 top-0 bottom-4 w-8 bg-gradient-to-l from-gray-900/80 to-transparent pointer-events-none"></div>
                       </div>
 
                       {/* View All Button */}
@@ -616,8 +670,9 @@ export default function RecommendationsPage() {
                     </div>
                   );
                 })}
-            </div>
-          )}
+              </div>
+            );
+          })()}
         </div>
       </div>
       <Toaster />
