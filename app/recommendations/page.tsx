@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { OtherUserAvatar } from "@/components/user-avatar";
@@ -23,6 +23,14 @@ import {
   Disc,
   Sparkles,
   TrendingUp,
+  Play,
+  Bookmark,
+  Calendar,
+  Clock,
+  Award,
+  Zap,
+  Eye,
+  ChevronRight,
 } from "lucide-react";
 import { useRecommendations } from "@/hooks/use-recommendations";
 import { useMusicCollections } from "@/hooks/use-music-collections";
@@ -100,6 +108,14 @@ interface MusicAlbum {
       id: string;
       name: string;
     }>;
+    featured?: Array<{
+      id: string;
+      name: string;
+    }>;
+    all?: Array<{
+      id: string;
+      name: string;
+    }>;
   };
   image: Array<{ quality: string; url: string }>;
   year: string;
@@ -126,24 +142,36 @@ const CATEGORIES = [
     label: "Movies",
     icon: Film,
     color: "from-red-500 to-pink-500",
+    bgColor: "bg-red-500/10",
+    borderColor: "border-red-500/20",
+    hoverColor: "hover:bg-red-500/20",
   },
   {
     key: "books",
     label: "Books",
     icon: BookOpen,
     color: "from-blue-500 to-cyan-500",
+    bgColor: "bg-blue-500/10",
+    borderColor: "border-blue-500/20",
+    hoverColor: "hover:bg-blue-500/20",
   },
   {
     key: "series",
     label: "Series",
     icon: Tv,
     color: "from-purple-500 to-indigo-500",
+    bgColor: "bg-purple-500/10",
+    borderColor: "border-purple-500/20",
+    hoverColor: "hover:bg-purple-500/20",
   },
   {
     key: "music",
     label: "Music",
     icon: Music,
     color: "from-green-500 to-emerald-500",
+    bgColor: "bg-green-500/10",
+    borderColor: "border-green-500/20",
+    hoverColor: "hover:bg-green-500/20",
   },
 ] as const;
 
@@ -155,7 +183,9 @@ export default function RecommendationsPage() {
   const { toast } = useToast();
   const [activeCategory, setActiveCategory] = useState<CategoryType>("movies");
   const [addingItems, setAddingItems] = useState<Set<string>>(new Set());
-  const [userProfiles, setUserProfiles] = useState<Map<string, UserProfile>>(new Map());
+  const [userProfiles, setUserProfiles] = useState<Map<string, UserProfile>>(
+    new Map()
+  );
 
   const { recommendations, loading, error } = useRecommendations();
   const { following, loading: connectionsLoading } = useUserConnections();
@@ -178,8 +208,7 @@ export default function RecommendationsPage() {
         const userData = userProfileSnap.data();
         const userProfile = {
           _id: firebaseUID,
-          username:
-            userData.username || userData.displayName || "Unknown User",
+          username: userData.username || userData.displayName || "Unknown User",
           displayName:
             userData.displayName || userData.username || "Unknown User",
           avatarUrl: userData.avatarUrl || null,
@@ -307,13 +336,17 @@ export default function RecommendationsPage() {
   // Loading state
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center">
         <div className="text-center">
-          <div className="relative mb-6">
-            <div className="w-16 h-16 bg-gradient-to-r from-emerald-500 to-blue-500 rounded-2xl animate-pulse"></div>
+          <div className="relative mb-8">
+            <div className="w-20 h-20 bg-gradient-to-r from-emerald-500 to-blue-500 rounded-3xl animate-pulse shadow-2xl"></div>
+            <div className="absolute inset-0 bg-gradient-to-r from-emerald-500 to-blue-500 rounded-3xl animate-ping opacity-20"></div>
           </div>
-          <p className="text-gray-300 font-medium text-lg">
-            Loading your recommendations...
+          <h2 className="text-2xl font-bold text-white mb-2">
+            Loading Recommendations
+          </h2>
+          <p className="text-slate-400 font-medium">
+            Discovering amazing content for you...
           </p>
         </div>
       </div>
@@ -323,55 +356,70 @@ export default function RecommendationsPage() {
   if (currentUser === null) return null;
 
   // Component for user header
-     const UserHeader = ({
-     user,
-     itemCount,
-     category,
-   }: {
-     user: User;
-     itemCount: number;
-     category: string;
-   }) => {
-     const userProfile = userProfiles.get(user.uid);
-     const displayName = userProfile?.displayName || user.displayName;
-     const avatarUrl = userProfile?.avatarUrl || user.photoURL;
-     
-     return (
-       <div className="flex items-center gap-3 mb-4">
-        <div className="relative">
-          <OtherUserAvatar
-            authorId={user.uid}
-            username={userProfile?.username || user.displayName}
-            displayName={displayName}
-            avatarUrl={avatarUrl}
-            size="md"
-            className="cursor-pointer hover:scale-105 transition-transform duration-200"
-            clickable={true}
-          />
-        </div>
-        <div className="flex-1">
-          <h3
-            className="text-base font-semibold text-white cursor-pointer hover:text-gray-300 transition-colors mb-0"
-            onClick={() => router.push(`/users/${user.uid}`)}
-          >
-            {displayName}
-          </h3>
-          <p className="text-xs text-gray-400">
-            {itemCount} {(() => {
-              if (category === "music") {
-                return itemCount === 1 ? "album" : "albums";
-              } else if (category === "movies") {
-                return itemCount === 1 ? "movie" : "movies";
-              } else if (category === "books") {
-                return itemCount === 1 ? "book" : "books";
-              } else if (category === "series") {
-                return itemCount === 1 ? "series" : "series";
-              }
-              return category.slice(0, -1) + (itemCount !== 1 ? "s" : "");
-            })()}
-          </p>
-        </div>
-      </div>
+  const UserHeader = ({
+    user,
+    itemCount,
+    category,
+  }: {
+    user: User;
+    itemCount: number;
+    category: string;
+  }) => {
+    const userProfile = userProfiles.get(user.uid);
+    const displayName = userProfile?.displayName || user.displayName;
+    const avatarUrl = userProfile?.avatarUrl || user.photoURL;
+    const categoryInfo = CATEGORIES.find((cat) => cat.key === category);
+
+    return (
+      <Card className="bg-slate-800/50 backdrop-blur-sm border-slate-700/50 hover:bg-slate-800/70 transition-all duration-300 group">
+        <CardContent className="p-1 sm:p-3">
+          <div className="flex items-center gap-1 sm:gap-4">
+            <div className="relative group/avatar">
+              <OtherUserAvatar
+                authorId={user.uid}
+                username={userProfile?.username || user.displayName}
+                displayName={displayName}
+                avatarUrl={avatarUrl}
+                size="lg"
+                className="w-6 h-6 sm:w-16 sm:h-16 cursor-pointer hover:scale-105 transition-all duration-300 ring-2 ring-slate-600 group-hover/avatar:ring-slate-500"
+                clickable={true}
+              />
+              <div className="absolute -bottom-0.5 -right-0.5 sm:-bottom-1 sm:-right-1 w-3 h-3 sm:w-6 sm:h-6 bg-gradient-to-r from-emerald-500 to-blue-500 rounded-full flex items-center justify-center">
+                {categoryInfo && (
+                  <categoryInfo.icon className="w-1 h-1 sm:w-3 sm:h-3 text-white" />
+                )}
+              </div>
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 text-sm sm:text-lg">
+                <span
+                  className="font-bold text-white cursor-pointer hover:text-slate-300 transition-colors"
+                  onClick={() => router.push(`/users/${user.uid}`)}
+                >
+                  {displayName}
+                </span>
+                <span className="text-xs sm:text-sm font-medium text-slate-300">
+                  {itemCount}
+                </span>
+                <span className="text-xs sm:text-sm text-slate-400">
+                  {(() => {
+                    if (category === "music") {
+                      return itemCount === 1 ? "album" : "albums";
+                    } else if (category === "movies") {
+                      return itemCount === 1 ? "movie" : "movies";
+                    } else if (category === "books") {
+                      return itemCount === 1 ? "book" : "books";
+                    } else if (category === "series") {
+                      return itemCount === 1 ? "series" : "series";
+                    }
+                    return category.slice(0, -1) + (itemCount !== 1 ? "s" : "");
+                  })()}
+                </span>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
     );
   };
 
@@ -382,297 +430,366 @@ export default function RecommendationsPage() {
   }: {
     item: Movie | Book | Series | MusicAlbum;
     category: string;
-  }) => (
-    <div className="group relative w-full">
-      <div className="relative w-full aspect-[3/4] rounded-lg overflow-hidden bg-gray-800 hover:bg-gray-700 transition-all duration-300 hover:scale-105">
-        <Link href={category === "music" ? `/music/album/${item.id}` : `/${category}/${item.id}`}>
-          <Image
-            src={
-              (item as Movie | Book | Series).cover ||
-              (item as MusicAlbum).image?.[2]?.url ||
-              (item as MusicAlbum).image?.[1]?.url ||
-              (item as MusicAlbum).image?.[0]?.url ||
-              "/placeholder.jpg"
-            }
-            alt={
-              (item as Movie | Book | Series).title ||
-              (item as MusicAlbum).name ||
-              "Unknown"
-            }
-            fill
-            className="object-cover cursor-pointer transition-transform duration-300 group-hover:scale-110"
-          />
-        </Link>
-      </div>
+  }) => {
+    const categoryInfo = CATEGORIES.find((cat) => cat.key === category);
+    const title =
+      (item as Movie | Book | Series).title ||
+      (item as MusicAlbum).name ||
+      "Unknown Title";
+    const subtitle =
+      category === "books"
+        ? (item as Book).author
+        : category === "music"
+        ? (() => {
+            const musicItem = item as MusicAlbum;
+            // Try primary artists first, then featured, then all
+            const artists =
+              musicItem.artists?.primary ||
+              musicItem.artists?.featured ||
+              musicItem.artists?.all ||
+              [];
+            return (
+              artists.map((artist) => artist.name).join(", ") ||
+              "Unknown Artist"
+            );
+          })()
+        : (item as Movie | Series).year || "N/A";
 
-      <div className="mt-3 space-y-1">
-        <h4 className="font-medium text-sm text-white leading-tight group-hover:text-gray-300 transition-colors">
-          {(() => {
-            const title =
-              (item as Movie | Book | Series).title ||
-              (item as MusicAlbum).name ||
-              "Unknown Title";
+    const imageUrl =
+      (item as Movie | Book | Series).cover ||
+      (item as MusicAlbum).image?.[2]?.url ||
+      (item as MusicAlbum).image?.[1]?.url ||
+      (item as MusicAlbum).image?.[0]?.url ||
+      "/placeholder.jpg";
 
-            // Truncate long titles
-            if (title.length > 20) {
-              return title.substring(0, 20) + "...";
-            }
+    return (
+      <Card className="recommendation-card group relative w-full bg-slate-800/30 backdrop-blur-sm border-slate-700/30 hover:bg-slate-800/50 hover:border-slate-600/50 overflow-hidden">
+        <CardContent className="p-0">
+          <div className="relative aspect-[3/4] overflow-hidden">
+            <Link
+              href={
+                category === "music"
+                  ? `/music/album/${item.id}`
+                  : `/${category}/${item.id}`
+              }
+              className="block w-full h-full"
+            >
+              <Image
+                src={imageUrl}
+                alt={title}
+                fill
+                className="object-cover cursor-pointer transition-transform duration-500 group-hover:scale-110"
+              />
+            </Link>
 
-            return title;
-          })()}
-        </h4>
-        <p className="text-xs text-gray-400 leading-tight">
-          {category === "books"
-            ? (item as Book).author
-            : category === "music"
-            ? (item as MusicAlbum).artists?.primary
-                ?.map((artist) => artist.name)
-                .join(", ") || "Unknown Artist"
-            : (item as Movie | Series).year || "N/A"}
-        </p>
-      </div>
-    </div>
-  );
+            {/* Rating badge for movies/series */}
+            {(item as Movie | Series).rating && (
+              <div className="absolute top-3 right-3">
+                <Badge className="bg-yellow-500/20 border-yellow-500/30 text-yellow-300 backdrop-blur-sm">
+                  <Star className="w-3 h-3 mr-1 fill-current" />
+                  {(item as Movie | Series).rating}
+                </Badge>
+              </div>
+            )}
+          </div>
+
+          <div className="p-3 sm:p-4 space-y-1.5 sm:space-y-2">
+            <h4 className="font-bold text-white leading-tight group-hover:text-slate-300 transition-colors line-clamp-2 text-sm sm:text-base">
+              {title}
+            </h4>
+            <p className="text-xs sm:text-sm text-slate-400 leading-tight line-clamp-1">
+              {subtitle}
+            </p>
+
+            {/* Additional info based on category */}
+            <div className="flex items-center gap-2 text-xs text-slate-500">
+              {category === "music" && (item as MusicAlbum).songCount && (
+                <span className="flex items-center gap-1">
+                  <Music className="w-3 h-3" />
+                  {(item as MusicAlbum).songCount} songs
+                </span>
+              )}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black w-full overflow-x-hidden">
-      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 pt-16 sm:pt-20 pb-6 sm:pb-8">
-        {/* Header */}
-        <div className="mb-8 sm:mb-12">
-          <div className="mb-4">
-            <h1 className="text-3xl sm:text-4xl font-bold text-white mb-2">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 w-full overflow-x-hidden">
+      <div className="relative max-w-6xl mx-auto px-3 sm:px-6 pt-20 sm:pt-16 pb-4 sm:pb-6">
+        {/* Header - More compact on mobile */}
+        <div className="mb-6 sm:mb-8">
+          <div className="text-center mb-4 sm:mb-6">
+            <h1 className="text-2xl sm:text-4xl lg:text-5xl font-bold text-white mb-2 sm:mb-3 bg-gradient-to-r from-white via-slate-100 to-slate-300 bg-clip-text text-transparent">
               For You
             </h1>
-            <p className="text-sm sm:text-base text-gray-300">
-              Content recommended by people you follow
+            <p className="text-sm sm:text-lg text-slate-300 max-w-xl mx-auto leading-relaxed">
+              Discover amazing content curated by people you follow
             </p>
           </div>
         </div>
 
-        {/* Category Filters */}
-        <div className="flex flex-wrap gap-2 sm:gap-3 mb-8 sm:mb-12">
+        {/* Category Filters - More compact on mobile */}
+        <div className="flex flex-wrap justify-center gap-1.5 sm:gap-3 mb-6 sm:mb-8">
           {CATEGORIES.map(({ key, label, icon: Icon }) => (
             <button
               key={key}
               onClick={() => setActiveCategory(key)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
+              className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl text-xs sm:text-sm font-medium transition-colors duration-200 ${
                 activeCategory === key
-                  ? "bg-white text-gray-900 shadow-md"
-                  : "bg-gray-700/50 text-gray-300 hover:bg-gray-600/50 hover:text-white"
+                  ? "bg-white text-slate-900 border border-white"
+                  : "bg-slate-800/50 text-white hover:bg-slate-700/50 border border-slate-600/50 hover:border-slate-500/50"
               }`}
             >
-              <Icon className="w-4 h-4" />
+              <Icon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               <span>{label}</span>
             </button>
           ))}
         </div>
 
         {/* Content */}
-        <div className="space-y-8 sm:space-y-12">
+        <div className="space-y-3 sm:space-y-8">
           {loading ? (
-            <div className="space-y-4 sm:space-y-6">
+            <div className="space-y-3 sm:space-y-8">
               {/* Loading Skeleton */}
               {[1, 2, 3].map((i) => (
-                <div
+                <Card
                   key={i}
-                  className="bg-slate-800/30 backdrop-blur-sm rounded-2xl p-4 sm:p-6 border border-slate-700/30 relative overflow-hidden"
+                  className="bg-slate-800/30 backdrop-blur-sm border-slate-700/30 relative overflow-hidden"
                 >
-                  {/* Subtle gradient overlay for loading effect */}
-                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent animate-pulse"></div>
-                  {/* User Header Skeleton */}
-                  <div className="flex items-center gap-4 mb-4">
-                    <div className="relative">
-                      <div className="w-12 h-12 bg-gray-700 rounded-full animate-pulse"></div>
-                      <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-gray-600 rounded-full animate-pulse"></div>
-                    </div>
-                    <div className="flex-1">
-                      <div className="h-6 bg-gray-700 rounded w-32 mb-2 animate-pulse"></div>
-                      <div className="h-4 bg-gray-700 rounded w-24 animate-pulse"></div>
-                    </div>
-                  </div>
+                  <CardContent className="p-4 sm:p-6">
+                    {/* Subtle gradient overlay for loading effect */}
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent animate-pulse"></div>
 
-                  {/* Items Grid Skeleton */}
-                  <div className="flex gap-3 sm:gap-4 overflow-x-auto pb-4">
-                    {[1, 2, 3, 4, 5, 6].map((item) => (
-                      <div key={item} className="flex-shrink-0 w-[calc(100%/3.5)] sm:w-[140px] md:w-[160px] lg:w-[180px]">
-                        <div className="w-full aspect-[3/4] bg-gray-700 rounded-lg animate-pulse relative overflow-hidden">
-                          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent animate-pulse"></div>
-                        </div>
-                        <div className="mt-3 space-y-2">
-                          <div className="h-4 bg-gray-700 rounded w-full animate-pulse"></div>
-                          <div className="h-3 bg-gray-700 rounded w-3/4 animate-pulse"></div>
-                        </div>
+                    {/* User Header Skeleton */}
+                    <div className="flex items-center gap-2.5 sm:gap-4 mb-4 sm:mb-6">
+                      <div className="relative">
+                        <div className="w-10 h-10 sm:w-16 sm:h-16 bg-slate-700 rounded-full animate-pulse"></div>
+                        <div className="absolute -bottom-0.5 -right-0.5 sm:-bottom-1 sm:-right-1 w-5 h-5 sm:w-6 sm:h-6 bg-slate-600 rounded-full animate-pulse"></div>
                       </div>
-                    ))}
-                  </div>
-                </div>
+                      <div className="flex-1">
+                        <div className="h-4 sm:h-6 bg-slate-700 rounded w-32 sm:w-40 mb-1 sm:mb-2 animate-pulse"></div>
+                        <div className="h-3 sm:h-4 bg-slate-700 rounded w-20 sm:w-28 animate-pulse"></div>
+                      </div>
+                    </div>
+
+                    {/* Items Grid Skeleton */}
+                    <div className="flex gap-3 sm:gap-6 overflow-x-auto pb-4">
+                      {[1, 2, 3, 4, 5, 6].map((item) => (
+                        <div
+                          key={item}
+                          className="flex-shrink-0 w-[calc(100%/3.5)] sm:w-[160px] md:w-[180px] lg:w-[200px]"
+                        >
+                          <Card className="bg-slate-800/50 border-slate-700/50 overflow-hidden">
+                            <div className="w-full aspect-[3/4] bg-slate-700 animate-pulse relative overflow-hidden">
+                              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent animate-pulse"></div>
+                            </div>
+                            <div className="p-3 sm:p-4 space-y-2 sm:space-y-3">
+                              <div className="h-3 sm:h-4 bg-slate-700 rounded w-full animate-pulse"></div>
+                              <div className="h-2.5 sm:h-3 bg-slate-700 rounded w-3/4 animate-pulse"></div>
+                              <div className="h-2.5 sm:h-3 bg-slate-700 rounded w-1/2 animate-pulse"></div>
+                            </div>
+                          </Card>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
               ))}
             </div>
           ) : error ? (
-            <div className="text-center py-16">
-              <div className="w-20 h-20 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
-                <Users className="h-10 w-10 text-red-400" />
-              </div>
-              <h3 className="text-xl font-semibold text-white mb-2">
-                Error loading recommendations
-              </h3>
-              <p className="text-slate-300 mb-4">{error}</p>
-              <Button
-                onClick={() => window.location.reload()}
-                className="bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-600 hover:to-pink-600 text-white font-medium px-6 py-2 rounded-xl"
-              >
-                Try Again
-              </Button>
-            </div>
+            <Card className="bg-slate-800/50 backdrop-blur-sm border-slate-700/50">
+              <CardContent className="text-center py-16">
+                <div className="w-24 h-24 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-6 ring-4 ring-red-500/10">
+                  <Users className="h-12 w-12 text-red-400" />
+                </div>
+                <h3 className="text-2xl font-bold text-white mb-3">
+                  Oops! Something went wrong
+                </h3>
+                <p className="text-slate-300 mb-6 max-w-md mx-auto leading-relaxed">
+                  {error}
+                </p>
+                <Button
+                  onClick={() => window.location.reload()}
+                  className="bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-600 hover:to-pink-600 text-white font-semibold px-8 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+                >
+                  <Zap className="w-4 h-4 mr-2" />
+                  Try Again
+                </Button>
+              </CardContent>
+            </Card>
           ) : recommendations.length === 0 ? (
-            <div className="text-center py-16">
-              <div className="w-20 h-20 bg-blue-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
-                <Users className="h-10 w-10 text-blue-400" />
-              </div>
-              {following.length === 0 ? (
-                <>
-                  <h3 className="text-xl font-semibold text-white mb-2">
-                    No recommendations yet
-                  </h3>
-                  <p className="text-slate-300 mb-6 max-w-md mx-auto">
-                    Start following other users to discover amazing content
-                    recommendations
-                  </p>
-                  <Button
-                    onClick={() => router.push("/users")}
-                    className="bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white font-medium px-8 py-3 rounded-xl"
-                  >
-                    <Users className="w-4 h-4 mr-2" />
-                    Find Friends
-                  </Button>
-                </>
-              ) : (
-                <>
-                  <h3 className="text-xl font-semibold text-white mb-2">
-                    No recommendations from your friends yet
-                  </h3>
-                  <p className="text-slate-300 mb-6 max-w-md mx-auto">
-                    Your friends haven't shared any recommendations yet. 
-                    Check back later or find more friends to discover new content.
-                  </p>
-                  <div className="flex flex-row gap-3 sm:gap-4 justify-center">
+            <Card className="bg-slate-800/50 backdrop-blur-sm border-slate-700/50">
+              <CardContent className="text-center py-16">
+                <div className="w-24 h-24 bg-blue-500/20 rounded-full flex items-center justify-center mx-auto mb-6 ring-4 ring-blue-500/10">
+                  <Users className="h-12 w-12 text-blue-400" />
+                </div>
+                {following.length === 0 ? (
+                  <>
+                    <h3 className="text-2xl font-bold text-white mb-3">
+                      No recommendations yet
+                    </h3>
+                    <p className="text-slate-300 mb-8 max-w-md mx-auto leading-relaxed">
+                      Start following other users to discover amazing content
+                      recommendations
+                    </p>
                     <Button
                       onClick={() => router.push("/users")}
-                      className="bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white font-medium px-4 py-3 sm:px-6 sm:py-3 rounded-xl text-sm"
+                      className="bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white font-semibold px-8 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
                     >
-                      <Users className="w-4 h-4 mr-2" />
-                      <span className="hidden sm:inline">Search Friends</span>
-                      <span className="sm:hidden">Find Friends</span>
+                      <Users className="w-5 h-5 mr-2" />
+                      Find Friends
                     </Button>
-                    <Button
-                      onClick={() => router.push("/reviews")}
-                      variant="outline"
-                      className="border-gray-600 text-gray-300 hover:bg-gray-800 hover:text-white font-medium px-4 py-3 sm:px-6 sm:py-3 rounded-xl text-sm"
-                    >
-                      <TrendingUp className="w-4 h-4 mr-2" />
-                      <span className="hidden sm:inline">Browse Feed</span>
-                      <span className="sm:hidden">Browse Feed</span>
-                    </Button>
-                  </div>
-                </>
-              )}
-            </div>
-          ) : (() => {
-            // Filter recommendations that have items for the current category
-            const recommendationsWithItems = recommendations.filter((userRec) => getItemCount(userRec) > 0);
-            
-            // If no recommendations for current category, show category-specific empty state
-            if (recommendationsWithItems.length === 0) {
-              const categoryInfo = CATEGORIES.find(cat => cat.key === activeCategory);
-              const Icon = categoryInfo?.icon || Film;
-              
+                  </>
+                ) : (
+                  <>
+                    <h3 className="text-2xl font-bold text-white mb-3">
+                      No recommendations from your friends yet
+                    </h3>
+                    <p className="text-slate-300 mb-8 max-w-md mx-auto leading-relaxed">
+                      Your friends haven't shared any recommendations yet. Check
+                      back later or find more friends to discover new content.
+                    </p>
+                    <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                      <Button
+                        onClick={() => router.push("/users")}
+                        className="bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white font-semibold px-6 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+                      >
+                        <Users className="w-4 h-4 mr-2" />
+                        <span className="hidden sm:inline">Search Friends</span>
+                        <span className="sm:hidden">Find Friends</span>
+                      </Button>
+                      <Button
+                        onClick={() => router.push("/reviews")}
+                        variant="outline"
+                        className="border-slate-600 text-slate-300 hover:bg-slate-700 hover:text-white font-semibold px-6 py-3 rounded-xl transition-all duration-300 transform hover:scale-105"
+                      >
+                        <TrendingUp className="w-4 h-4 mr-2" />
+                        <span className="hidden sm:inline">Browse Feed</span>
+                        <span className="sm:hidden">Browse Feed</span>
+                      </Button>
+                    </div>
+                  </>
+                )}
+              </CardContent>
+            </Card>
+          ) : (
+            (() => {
+              // Filter recommendations that have items for the current category
+              const recommendationsWithItems = recommendations.filter(
+                (userRec) => getItemCount(userRec) > 0
+              );
+
+              // If no recommendations for current category, show category-specific empty state
+              if (recommendationsWithItems.length === 0) {
+                const categoryInfo = CATEGORIES.find(
+                  (cat) => cat.key === activeCategory
+                );
+                const Icon = categoryInfo?.icon || Film;
+
+                return (
+                  <Card className="bg-slate-800/50 backdrop-blur-sm border-slate-700/50">
+                    <CardContent className="text-center py-16">
+                      <div
+                        className={`w-24 h-24 ${categoryInfo?.bgColor} rounded-full flex items-center justify-center mx-auto mb-6 ring-4 ${categoryInfo?.borderColor} ring-opacity-20`}
+                      >
+                        <Icon className="h-12 w-12 text-slate-400" />
+                      </div>
+                      <h3 className="text-2xl font-bold text-white mb-3">
+                        No {categoryInfo?.label} recommendations yet
+                      </h3>
+                      <p className="text-slate-300 mb-8 max-w-md mx-auto leading-relaxed">
+                        No {categoryInfo?.label.toLowerCase()} recommendations
+                        from your friends yet. Check back later or find more
+                        friends to discover new content.
+                      </p>
+                      <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                        <Button
+                          onClick={() => router.push("/users")}
+                          className="bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white font-semibold px-6 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+                        >
+                          <Users className="w-4 h-4 mr-2" />
+                          <span className="hidden sm:inline">
+                            Find More Friends
+                          </span>
+                          <span className="sm:hidden">Find Friends</span>
+                        </Button>
+                        <Button
+                          onClick={() => router.push("/reviews")}
+                          variant="outline"
+                          className="border-slate-600 text-slate-300 hover:bg-slate-700 hover:text-white font-semibold px-6 py-3 rounded-xl transition-all duration-300 transform hover:scale-105"
+                        >
+                          <TrendingUp className="w-4 h-4 mr-2" />
+                          <span className="hidden sm:inline">Browse Feed</span>
+                          <span className="sm:hidden">Browse Feed</span>
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              }
+
+              // Show recommendations for current category
               return (
-                <div className="text-center py-16">
-                  <div className="w-20 h-20 bg-gray-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
-                    <Icon className="h-10 w-10 text-gray-400" />
-                  </div>
-                  <h3 className="text-xl font-semibold text-white mb-2">
-                    No {categoryInfo?.label} recommendations yet
-                  </h3>
-                  <p className="text-slate-300 mb-6 max-w-md mx-auto">
-                    No recommendations from your friends yet
-                  </p>
-                  <div className="flex flex-row gap-3 sm:gap-4 justify-center">
-                    <Button
-                      onClick={() => router.push("/users")}
-                      className="bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white font-medium px-4 py-3 sm:px-6 sm:py-3 rounded-xl text-sm"
-                    >
-                      <Users className="w-4 h-4 mr-2" />
-                      <span className="hidden sm:inline">Find More Friends</span>
-                      <span className="sm:hidden">Find Friends</span>
-                    </Button>
-                    <Button
-                      onClick={() => router.push("/reviews")}
-                      variant="outline"
-                      className="border-gray-600 text-gray-300 hover:bg-gray-800 hover:text-white font-medium px-4 py-3 sm:px-6 sm:py-3 rounded-xl text-sm"
-                    >
-                      <TrendingUp className="w-4 h-4 mr-2" />
-                      <span className="hidden sm:inline">Browse Feed</span>
-                      <span className="sm:hidden">Browse Feed</span>
-                    </Button>
-                  </div>
+                <div className="space-y-3 sm:space-y-8">
+                  {recommendationsWithItems.map((userRec) => {
+                    const items = getItemsByCategory(userRec);
+
+                    return (
+                      <div
+                        key={userRec.user.uid}
+                        className="space-y-2 sm:space-y-4"
+                      >
+                        {/* User Header */}
+                        <UserHeader
+                          user={userRec.user}
+                          itemCount={items.length}
+                          category={activeCategory}
+                        />
+
+                        {/* Items Grid */}
+                        <div className="relative">
+                          <div className="recommendations-container flex gap-2.5 sm:gap-4 overflow-x-auto pb-4 scrollbar-hide">
+                            {items.slice(0, 12).map((item) => (
+                              <div
+                                key={item.id}
+                                className="flex-shrink-0 w-[calc(100%/3.5)] sm:w-[160px] md:w-[180px] lg:w-[200px]"
+                              >
+                                <ItemCard
+                                  item={item}
+                                  category={activeCategory}
+                                />
+                              </div>
+                            ))}
+                          </div>
+
+                          {/* Gradient fade to tease more content */}
+                          <div className="absolute right-0 top-0 bottom-4 w-8 sm:w-12 bg-gradient-to-l from-slate-900/90 to-transparent pointer-events-none"></div>
+                        </div>
+
+                        {/* View All Button */}
+                        {items.length > 12 && (
+                          <div className="text-center pt-4 sm:pt-6">
+                            <Button
+                              variant="outline"
+                              size="lg"
+                              className="text-slate-300 hover:text-white hover:bg-slate-700/50 border-slate-600 hover:border-slate-500 font-semibold px-6 sm:px-8 py-2 sm:py-3 rounded-xl transition-all duration-300 transform hover:scale-105 text-sm sm:text-base"
+                            >
+                              <Eye className="w-4 h-4 mr-2" />
+                              View all {items.length} items
+                              <ChevronRight className="w-4 h-4 ml-2" />
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               );
-            }
-
-            // Show recommendations for current category
-            return (
-              <div className="space-y-4 sm:space-y-6">
-                {recommendationsWithItems.map((userRec) => {
-                  const items = getItemsByCategory(userRec);
-
-                  return (
-                    <div
-                      key={userRec.user.uid}
-                      className="space-y-3"
-                    >
-                      {/* User Header */}
-                      <UserHeader
-                        user={userRec.user}
-                        itemCount={items.length}
-                        category={activeCategory}
-                      />
-
-                      {/* Items Grid */}
-                      <div className="relative">
-                        <div className="flex gap-3 sm:gap-4 overflow-x-auto pb-4 scrollbar-hide">
-                          {items.slice(0, 12).map((item) => (
-                            <div key={item.id} className="flex-shrink-0 w-[calc(100%/3.5)] sm:w-[140px] md:w-[160px] lg:w-[180px]">
-                              <ItemCard
-                                item={item}
-                                category={activeCategory}
-                              />
-                            </div>
-                          ))}
-                        </div>
-                        
-                        {/* Gradient fade to tease more content */}
-                        <div className="absolute right-0 top-0 bottom-4 w-8 bg-gradient-to-l from-gray-900/80 to-transparent pointer-events-none"></div>
-                      </div>
-
-                      {/* View All Button */}
-                      {items.length > 12 && (
-                        <div className="text-center pt-6">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="text-blue-300 hover:text-white hover:bg-blue-500/20 font-medium px-6 py-2 rounded-xl"
-                          >
-                            View all {items.length} items
-                          </Button>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            );
-          })()}
+            })()
+          )}
         </div>
       </div>
       <Toaster />

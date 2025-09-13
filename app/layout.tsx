@@ -5,6 +5,7 @@ import "@/styles/mobile-responsive.css";
 import "@/styles/horizontal-list.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { AuthProvider } from "@/components/auth-provider";
+import { AvatarProvider } from "@/components/avatar-context";
 import LayoutWrapper from "@/components/layout-wrapper";
 import { Toaster } from "@/components/ui/toaster";
 
@@ -30,9 +31,15 @@ export default function RootLayout({
           name="viewport"
           content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"
         />
-        <meta name="google-site-verification" content="LWPPCUOVUq2lwKifp4K7Ith4Jqmvzy8eH42omVsmJQo" />
+        <meta
+          name="google-site-verification"
+          content="LWPPCUOVUq2lwKifp4K7Ith4Jqmvzy8eH42omVsmJQo"
+        />
         {/* Google tag (gtag.js) */}
-        <script async src="https://www.googletagmanager.com/gtag/js?id=G-140K6ZQMCD"></script>
+        <script
+          async
+          src="https://www.googletagmanager.com/gtag/js?id=G-140K6ZQMCD"
+        ></script>
         <script
           dangerouslySetInnerHTML={{
             __html: `
@@ -43,7 +50,7 @@ export default function RootLayout({
             `,
           }}
         />
-        
+
         {/* Global JSON-LD Structured Data */}
         <script
           type="application/ld+json"
@@ -51,46 +58,49 @@ export default function RootLayout({
             __html: JSON.stringify({
               "@context": "https://schema.org",
               "@type": "WebSite",
-              "url": "https://www.reliva.me",
-              "name": "Reliva",
-              "alternateName": "What's your Reliva?",
-              "description": "Reliva is a social platform where you can share your favorite music, movies, TV shows, and books all in one place. give and get recommendations from your friends, rate and review media.",
-              "inLanguage": "en",
-              "publisher": {
+              url: "https://www.reliva.me",
+              name: "Reliva",
+              alternateName: "What's your Reliva?",
+              description:
+                "Reliva is a social platform where you can share your favorite music, movies, TV shows, and books all in one place. give and get recommendations from your friends, rate and review media.",
+              inLanguage: "en",
+              publisher: {
                 "@type": "Organization",
-                "name": "Reliva",
-                "url": "https://www.reliva.me",
-                "logo": {
+                name: "Reliva",
+                url: "https://www.reliva.me",
+                logo: {
                   "@type": "ImageObject",
-                  "url": "https://www.reliva.me/placeholder-logo.svg"
+                  url: "https://www.reliva.me/placeholder-logo.svg",
                 },
-                "sameAs": [
+                sameAs: [
                   "https://www.instagram.com/relivaofficial",
                   "https://x.com/relivaofficial",
-                  "https://www.reddit.com/r/relivaofficial"
+                  "https://www.reddit.com/r/relivaofficial",
                 ],
-                "email": "reliva211@gmail.com"
+                email: "reliva211@gmail.com",
               },
-              "potentialAction": {
+              potentialAction: {
                 "@type": "SearchAction",
-                "target": "https://www.reliva.me",
-                "query-input": "required name=search_term_string"
-              }
-            })
+                target: "https://www.reliva.me",
+                "query-input": "required name=search_term_string",
+              },
+            }),
           }}
         />
       </head>
       <body className={inter.className}>
         <AuthProvider>
-          <ThemeProvider
-            attribute="class"
-            defaultTheme="dark"
-            enableSystem
-            disableTransitionOnChange
-          >
-            <LayoutWrapper>{children}</LayoutWrapper>
-            <Toaster />
-          </ThemeProvider>
+          <AvatarProvider>
+            <ThemeProvider
+              attribute="class"
+              defaultTheme="dark"
+              enableSystem
+              disableTransitionOnChange
+            >
+              <LayoutWrapper>{children}</LayoutWrapper>
+              <Toaster />
+            </ThemeProvider>
+          </AvatarProvider>
         </AuthProvider>
       </body>
     </html>

@@ -32,6 +32,7 @@ export function useProfile(userId: string | undefined) {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
   const { uploadImage: uploadToCloudinary } = useCloudinaryUpload();
 
   useEffect(() => {
@@ -89,7 +90,15 @@ export function useProfile(userId: string | undefined) {
     try {
       const docRef = doc(db, "userProfiles", userId);
       await updateDoc(docRef, updates);
-      setProfile({ ...profile, ...updates });
+
+      // Update local state immediately
+      const updatedProfile = { ...profile, ...updates };
+      setProfile(updatedProfile);
+
+      // Force a re-render by incrementing refresh key
+      setRefreshKey((prev) => prev + 1);
+
+      console.log("Profile updated successfully:", updates);
     } catch (error) {
       console.error("Error updating profile:", error);
       throw error;
@@ -122,8 +131,40 @@ export function useProfile(userId: string | undefined) {
 
       // Update profile with new image URL
       const updateField = type === "avatar" ? "avatarUrl" : "coverImageUrl";
+
+      // Update local state immediately before Firestore update
+      console.log("Updating local state immediately with:", imageUrl);
+      if (profile) {
+        const updatedProfile = { ...profile, [updateField]: imageUrl };
+        setProfile(updatedProfile);
+        setRefreshKey((prev) => {
+          const newKey = prev + 1;
+          console.log("Refresh key updated to:", newKey);
+          return newKey;
+        });
+      }
+
+      // Dispatch custom event for immediate updates
+      const event = new CustomEvent("avatarUpdated", {
+        detail: {
+          userId,
+          imageUrl,
+          type,
+          timestamp: Date.now(),
+        },
+      });
+      window.dispatchEvent(event);
+
+      // Then update Firestore
       await updateProfile({ [updateField]: imageUrl });
       console.log("Profile updated with new image URL");
+
+      // Force another update after Firestore
+      setRefreshKey((prev) => {
+        const newKey = prev + 1;
+        console.log("Final refresh key update to:", newKey);
+        return newKey;
+      });
 
       return imageUrl;
     } catch (error) {
@@ -154,5 +195,6 @@ export function useProfile(userId: string | undefined) {
     saving,
     updateProfile,
     uploadImage,
+    refreshKey,
   };
 }

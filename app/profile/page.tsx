@@ -22,6 +22,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { UserAvatar } from "@/components/user-avatar";
+import { useAvatarContext } from "@/components/avatar-context";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   User,
@@ -132,7 +133,7 @@ export default function ProfilePage() {
   const { profile, loading, saving, updateProfile, uploadImage } = useProfile(
     user?.uid
   );
-
+  const { updateAvatar } = useAvatarContext();
 
   // Auto-select first available tab when sections are hidden
   useEffect(() => {
@@ -696,14 +697,39 @@ export default function ProfilePage() {
 
   const handleAvatarUpload = async (file: File) => {
     try {
+      console.log("Starting avatar upload...");
       // Starting avatar upload
       const url = await uploadImage(file, "avatar");
+      console.log("Avatar upload completed, URL:", url);
+
+      // Update avatar context immediately
+      if (user?.uid) {
+        updateAvatar(user.uid, url);
+      }
+
+      // Force immediate update by dispatching a custom event
+      const event = new CustomEvent("avatarUpdated", {
+        detail: {
+          userId: user?.uid,
+          imageUrl: url,
+          type: "avatar",
+          timestamp: Date.now(),
+        },
+      });
+      window.dispatchEvent(event);
+
       // Avatar upload successful
-      // Note: uploadImage already updates the profile, so we don't need to call updateProfile again
+      toast({
+        title: "Profile picture updated!",
+        description: "Your profile picture has been updated successfully.",
+      });
     } catch (error) {
       console.error("Avatar upload failed:", error);
-      // You could add a toast notification here
-      alert("Failed to upload profile picture. Please try again.");
+      toast({
+        title: "Upload failed",
+        description: "Failed to upload profile picture. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -792,7 +818,7 @@ export default function ProfilePage() {
     <ErrorBoundary>
       <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black">
         {/* Top Profile Section */}
-                 <div className="max-w-4xl mx-auto px-2 sm:px-3 pt-8 pb-4 sm:pt-6 sm:pb-6">
+        <div className="max-w-4xl mx-auto px-2 sm:px-3 pt-8 pb-4 sm:pt-6 sm:pb-6">
           <div className="flex flex-col items-center text-center gap-4 mb-6">
             {/* Profile Picture */}
             <ImageUpload onUploadAction={handleAvatarUpload}>
@@ -800,8 +826,12 @@ export default function ProfilePage() {
                 userId={user?.uid}
                 size="lg"
                 className="w-16 h-16 sm:w-20 sm:h-20 border-2 border-border cursor-pointer"
-                displayName={profile?.displayName || user?.displayName || undefined}
-                username={profile?.username || user?.email?.split("@")[0] || undefined}
+                displayName={
+                  profile?.displayName || user?.displayName || undefined
+                }
+                username={
+                  profile?.username || user?.email?.split("@")[0] || undefined
+                }
                 clickable={false}
               />
             </ImageUpload>
@@ -812,15 +842,13 @@ export default function ProfilePage() {
                 {profile?.displayName || user?.displayName || "Your Name"}
               </h1>
               {profile?.bio && (
-                <p className="text-sm text-white mb-3">
-                  {profile.bio}
-                </p>
+                <p className="text-sm text-white mb-3">{profile.bio}</p>
               )}
-              
+
               {/* Following/Followers Stats */}
               <div className="flex justify-center gap-6 mb-4">
                 <Button
-                  onClick={() => router.push('/users?tab=following')}
+                  onClick={() => router.push("/users?tab=following")}
                   variant="ghost"
                   className="flex flex-col items-center gap-1 text-white hover:text-gray-200 hover:bg-gray-800/50 rounded-lg px-4 py-2 transition-all duration-200"
                 >
@@ -828,7 +856,7 @@ export default function ProfilePage() {
                   <div className="text-xs text-gray-400">Following</div>
                 </Button>
                 <Button
-                  onClick={() => router.push('/users?tab=followers')}
+                  onClick={() => router.push("/users?tab=followers")}
                   variant="ghost"
                   className="flex flex-col items-center gap-1 text-white hover:text-gray-200 hover:bg-gray-800/50 rounded-lg px-4 py-2 transition-all duration-200"
                 >
@@ -836,7 +864,7 @@ export default function ProfilePage() {
                   <div className="text-xs text-gray-400">Followers</div>
                 </Button>
               </div>
-              
+
               <div className="flex justify-center gap-2">
                 <Button
                   variant="ghost"

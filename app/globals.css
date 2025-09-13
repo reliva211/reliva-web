@@ -523,3 +523,80 @@ button,
 .transform-3d {
   transform-style: preserve-3d;
 }
+
+/* Recommendations page specific styles */
+.recommendations-container {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.recommendations-container::-webkit-scrollbar {
+  display: none;
+}
+
+/* Enhanced card hover effects */
+.recommendation-card {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: transform, box-shadow;
+}
+
+.recommendation-card:hover {
+  transform: translateY(-4px) scale(1.02);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+}
+
+/* Smooth gradient animations */
+@keyframes gradient-shift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.animate-gradient {
+  background-size: 200% 200%;
+  animation: gradient-shift 3s ease infinite;
+}
+
+/* Enhanced loading shimmer */
+@keyframes shimmer {
+  0% {
+    background-position: -200px 0;
+  }
+  100% {
+    background-position: calc(200px + 100%) 0;
+  }
+}
+
+.shimmer {
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.1),
+    transparent
+  );
+  background-size: 200px 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+/* Improved focus states for accessibility */
+.recommendation-card:focus-within {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+/* Better mobile touch targets */
+@media (max-width: 640px) {
+  .recommendation-card {
+    min-height: 200px;
+  }
+
+  .recommendation-card:hover {
+    transform: translateY(-2px) scale(1.01);
+  }
+}
