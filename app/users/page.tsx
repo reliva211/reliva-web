@@ -39,7 +39,7 @@ function UsersPageContent() {
   
   const { user: currentUser } = useCurrentUser();
   const { followers, following } = useUserConnections();
-  const { followUser, unfollowUser, isFollowing, loading: followLoading } = useFollowUser();
+  const { followUser, unfollowUser, isFollowing, isLoading } = useFollowUser();
   const { toast } = useToast();
   const searchParams = useSearchParams();
 
@@ -333,11 +333,11 @@ function UsersPageContent() {
                       <div className="flex gap-2">
                         <Button
                           onClick={() => handleFollowToggle({ uid: user.uid, displayName: user.fullName || 'User' })}
-                          disabled={followLoading}
+                          disabled={isLoading(user.uid)}
                           size="sm"
                           className="flex-1 bg-gray-600/20 hover:bg-gray-600/30 border border-gray-500/50 text-gray-300 hover:text-gray-200 transition-all duration-200 rounded-lg font-medium h-8"
                         >
-                          {followLoading ? (
+                          {isLoading(user.uid) ? (
                             <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-gray-300"></div>
                           ) : (
                             <>
@@ -410,11 +410,11 @@ function UsersPageContent() {
                         <div className="flex gap-2">
                           <Button
                             onClick={() => handleFollowToggle({ uid: user.uid, displayName: user.fullName || 'User' })}
-                            disabled={followLoading}
+                            disabled={isLoading(user.uid)}
                             size="sm"
                             className="flex-1 bg-gray-600/20 hover:bg-gray-600/30 border border-gray-500/50 text-gray-300 hover:text-gray-200 transition-all duration-200 rounded-lg font-medium h-8"
                           >
-                            {followLoading ? (
+                            {isLoading(user.uid) ? (
                               <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-gray-300"></div>
                             ) : isCurrentlyFollowing ? (
                               <>
@@ -509,10 +509,10 @@ function UsersPageContent() {
                                 e.stopPropagation();
                                 handleFollowToggle(user);
                               }}
-                              disabled={followLoading}
+                              disabled={isLoading(user.uid)}
                               className="w-full bg-gray-600/20 hover:bg-gray-600/30 border border-gray-500/50 text-gray-300 hover:text-gray-200 transition-all duration-200 rounded-lg font-medium"
                             >
-                              {followLoading ? (
+                              {isLoading(user.uid) ? (
                                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-300"></div>
                               ) : isCurrentlyFollowing ? (
                                 <>

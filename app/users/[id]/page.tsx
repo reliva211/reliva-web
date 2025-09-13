@@ -63,7 +63,7 @@ export default function PublicProfilePage() {
   
   const { user: currentUser } = useCurrentUser();
   const { following } = useUserConnections();
-  const { followUser, unfollowUser, isFollowing, loading: followLoading } = useFollowUser();
+  const { followUser, unfollowUser, isFollowing, isLoading } = useFollowUser();
   const { toast } = useToast();
 
   useEffect(() => {
@@ -325,10 +325,10 @@ export default function PublicProfilePage() {
                 <div className="mt-4">
                   <Button
                     onClick={handleFollowToggle}
-                    disabled={followLoading}
+                    disabled={isLoading(firebaseUID)}
                     className="bg-gray-600/20 hover:bg-gray-600/30 border border-gray-500/50 text-gray-300 hover:text-gray-200 transition-all duration-200 rounded-lg font-medium px-6 py-2"
                   >
-                    {followLoading ? (
+                    {isLoading(firebaseUID) ? (
                       <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-300"></div>
                     ) : isFollowing(firebaseUID, following.map(f => f.uid)) ? (
                       <>

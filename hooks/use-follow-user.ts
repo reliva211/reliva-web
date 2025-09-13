@@ -13,7 +13,7 @@ interface FollowUserResult {
 
 export function useFollowUser() {
   const { user } = useCurrentUser();
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState<Record<string, boolean>>({});
   const [error, setError] = useState<string | null>(null);
 
   const followUser = async (targetUserId: string): Promise<FollowUserResult> => {
@@ -21,7 +21,7 @@ export function useFollowUser() {
       return { success: false, error: "User not authenticated" };
     }
 
-    setLoading(true);
+    setLoading(prev => ({ ...prev, [targetUserId]: true }));  
     setError(null);
 
     try {
@@ -49,7 +49,7 @@ export function useFollowUser() {
       setError(errorMessage);
       return { success: false, error: errorMessage };
     } finally {
-      setLoading(false);
+      setLoading(prev => ({ ...prev, [targetUserId]: false }));
     }
   };
 
@@ -58,7 +58,7 @@ export function useFollowUser() {
       return { success: false, error: "User not authenticated" };
     }
 
-    setLoading(true);
+    setLoading(prev => ({ ...prev, [targetUserId]: true }));
     setError(null);
 
     try {
@@ -86,7 +86,7 @@ export function useFollowUser() {
       setError(errorMessage);
       return { success: false, error: errorMessage };
     } finally {
-      setLoading(false);
+      setLoading(prev => ({ ...prev, [targetUserId]: false }));
     }
   };
 
@@ -94,10 +94,15 @@ export function useFollowUser() {
     return followingList.includes(targetUserId);
   };
 
+  const isLoading = (targetUserId: string): boolean => {
+    return loading[targetUserId] || false;
+  };
+
   return {
     followUser,
     unfollowUser,
     isFollowing,
+    isLoading,
     loading,
     error,
   };

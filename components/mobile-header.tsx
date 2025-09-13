@@ -7,6 +7,7 @@ import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { useState, useEffect, useRef } from "react";
+import NotificationPanel from "@/components/notification-panel";
 
 interface MobileHeaderProps {
   onMenuClick: () => void;
@@ -18,6 +19,7 @@ export default function MobileHeader({ onMenuClick }: MobileHeaderProps) {
   const pathname = usePathname();
   const router = useRouter();
   const [showDiscoverDropdown, setShowDiscoverDropdown] = useState(false);
+  const [showNotificationPanel, setShowNotificationPanel] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Close dropdown when clicking outside
@@ -95,14 +97,16 @@ export default function MobileHeader({ onMenuClick }: MobileHeaderProps) {
         <div className="flex items-center gap-2">
           {/* Notifications */}
           <button
-            onClick={() => router.push("/notifications")}
+            onClick={() => setShowNotificationPanel(true)}
             className="relative p-2 rounded-lg bg-gray-900 dark:bg-black hover:bg-gray-800 dark:hover:bg-gray-900 transition-colors duration-200"
           >
-            <Bell className="h-5 w-5 text-white dark:text-white" />
-            {unreadCount > 0 && (
-              <span className="absolute -top-1 -right-1 h-4 w-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
-                {unreadCount > 9 ? "9+" : unreadCount}
-              </span>
+            {/* Show badge instead of icon when there are notifications */}
+            {unreadCount > 0 ? (
+              <div className="h-5 w-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center font-semibold">
+                {unreadCount > 99 ? "99+" : unreadCount}
+              </div>
+            ) : (
+              <Bell className="h-5 w-5 text-white dark:text-white" />
             )}
           </button>
 
@@ -170,6 +174,12 @@ export default function MobileHeader({ onMenuClick }: MobileHeaderProps) {
           </div>
         ))}
       </div>
+
+      {/* Notification Panel */}
+      <NotificationPanel 
+        isOpen={showNotificationPanel} 
+        onClose={() => setShowNotificationPanel(false)} 
+      />
     </div>
   );
 }

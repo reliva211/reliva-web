@@ -371,55 +371,53 @@ export default function RecommendationsPage() {
     const categoryInfo = CATEGORIES.find((cat) => cat.key === category);
 
     return (
-      <Card className="bg-slate-800/50 backdrop-blur-sm border-slate-700/50 hover:bg-slate-800/70 transition-all duration-300 group">
-        <CardContent className="p-1 sm:p-3">
-          <div className="flex items-center gap-1 sm:gap-4">
-            <div className="relative group/avatar">
-              <OtherUserAvatar
-                authorId={user.uid}
-                username={userProfile?.username || user.displayName}
-                displayName={displayName}
-                avatarUrl={avatarUrl}
-                size="lg"
-                className="w-6 h-6 sm:w-16 sm:h-16 cursor-pointer hover:scale-105 transition-all duration-300 ring-2 ring-slate-600 group-hover/avatar:ring-slate-500"
-                clickable={true}
-              />
-              <div className="absolute -bottom-0.5 -right-0.5 sm:-bottom-1 sm:-right-1 w-3 h-3 sm:w-6 sm:h-6 bg-gradient-to-r from-emerald-500 to-blue-500 rounded-full flex items-center justify-center">
-                {categoryInfo && (
-                  <categoryInfo.icon className="w-1 h-1 sm:w-3 sm:h-3 text-white" />
-                )}
-              </div>
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 text-sm sm:text-lg">
-                <span
-                  className="font-bold text-white cursor-pointer hover:text-slate-300 transition-colors"
-                  onClick={() => router.push(`/users/${user.uid}`)}
-                >
-                  {displayName}
-                </span>
-                <span className="text-xs sm:text-sm font-medium text-slate-300">
-                  {itemCount}
-                </span>
-                <span className="text-xs sm:text-sm text-slate-400">
-                  {(() => {
-                    if (category === "music") {
-                      return itemCount === 1 ? "album" : "albums";
-                    } else if (category === "movies") {
-                      return itemCount === 1 ? "movie" : "movies";
-                    } else if (category === "books") {
-                      return itemCount === 1 ? "book" : "books";
-                    } else if (category === "series") {
-                      return itemCount === 1 ? "series" : "series";
-                    }
-                    return category.slice(0, -1) + (itemCount !== 1 ? "s" : "");
-                  })()}
-                </span>
-              </div>
+      <div className="bg-slate-800/30 backdrop-blur-sm hover:bg-slate-800/50 transition-all duration-300 group rounded-lg p-2 sm:p-3">
+        <div className="flex items-center gap-2 sm:gap-3">
+          <div className="relative group/avatar">
+            <OtherUserAvatar
+              authorId={user.uid}
+              username={userProfile?.username || user.displayName}
+              displayName={displayName}
+              avatarUrl={avatarUrl}
+              size="md"
+              className="w-8 h-8 sm:w-12 sm:h-12 cursor-pointer hover:scale-105 transition-all duration-300"
+              clickable={true}
+            />
+            <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 sm:w-5 sm:h-5 bg-gradient-to-r from-emerald-500 to-blue-500 rounded-full flex items-center justify-center">
+              {categoryInfo && (
+                <categoryInfo.icon className="w-2 h-2 sm:w-3 sm:h-3 text-white" />
+              )}
             </div>
           </div>
-        </CardContent>
-      </Card>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 text-sm sm:text-base">
+              <span
+                className="font-semibold text-white cursor-pointer hover:text-slate-300 transition-colors"
+                onClick={() => router.push(`/users/${user.uid}`)}
+              >
+                {displayName}
+              </span>
+              <span className="text-xs sm:text-sm font-medium text-slate-300">
+                {itemCount}
+              </span>
+              <span className="text-xs sm:text-sm text-slate-400">
+                {(() => {
+                  if (category === "music") {
+                    return itemCount === 1 ? "album" : "albums";
+                  } else if (category === "movies") {
+                    return itemCount === 1 ? "movie" : "movies";
+                  } else if (category === "books") {
+                    return itemCount === 1 ? "book" : "books";
+                  } else if (category === "series") {
+                    return itemCount === 1 ? "series" : "series";
+                  }
+                  return category.slice(0, -1) + (itemCount !== 1 ? "s" : "");
+                })()}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
     );
   };
 
@@ -463,73 +461,73 @@ export default function RecommendationsPage() {
       "/placeholder.jpg";
 
     return (
-      <Card className="recommendation-card group relative w-full bg-slate-800/30 backdrop-blur-sm border-slate-700/30 hover:bg-slate-800/50 hover:border-slate-600/50 overflow-hidden">
-        <CardContent className="p-0">
-          <div className="relative aspect-[3/4] overflow-hidden">
-            <Link
-              href={
-                category === "music"
-                  ? `/music/album/${item.id}`
-                  : `/${category}/${item.id}`
-              }
-              className="block w-full h-full"
-            >
+      <div className="recommendation-card relative w-full bg-slate-800/20 backdrop-blur-sm hover:bg-slate-800/40 rounded-lg overflow-hidden">
+        <div className="relative aspect-[3/4] rounded-lg overflow-hidden">
+          <Link
+            href={
+              category === "music"
+                ? `/music/album/${item.id}`
+                : `/${category}/${item.id}`
+            }
+            className="block w-full h-full"
+          >
+            <div className="w-full h-full rounded-lg overflow-hidden">
               <Image
                 src={imageUrl}
                 alt={title}
                 fill
-                className="object-cover cursor-pointer transition-transform duration-500 group-hover:scale-110"
+                className="object-cover cursor-pointer transition-transform duration-500 hover:scale-110"
               />
-            </Link>
+            </div>
+          </Link>
 
-            {/* Rating badge for movies/series */}
-            {(item as Movie | Series).rating && (
-              <div className="absolute top-3 right-3">
-                <Badge className="bg-yellow-500/20 border-yellow-500/30 text-yellow-300 backdrop-blur-sm">
-                  <Star className="w-3 h-3 mr-1 fill-current" />
-                  {(item as Movie | Series).rating}
-                </Badge>
-              </div>
+          {/* Rating badge for movies/series */}
+          {(item as Movie | Series).rating && (
+            <div className="absolute top-2 right-2">
+              <Badge className="bg-yellow-500/20 text-yellow-300 backdrop-blur-sm text-xs px-1.5 py-0.5">
+                <Star className="w-2 h-2 mr-1 fill-current" />
+                {(item as Movie | Series).rating}
+              </Badge>
+            </div>
+          )}
+        </div>
+
+        <div className="p-2 sm:p-3 space-y-1">
+          <h4 className="font-semibold text-white leading-tight line-clamp-2 text-xs sm:text-sm">
+            {title}
+          </h4>
+          <p className="text-xs text-slate-400 leading-tight line-clamp-1">
+            {subtitle}
+          </p>
+
+          {/* Additional info based on category */}
+          <div className="flex items-center gap-1 text-xs text-slate-500">
+            {category === "music" && (item as MusicAlbum).songCount && (
+              <span className="flex items-center gap-1">
+                <Music className="w-2 h-2" />
+                {(item as MusicAlbum).songCount} songs
+              </span>
             )}
           </div>
-
-          <div className="p-3 sm:p-4 space-y-1.5 sm:space-y-2">
-            <h4 className="font-bold text-white leading-tight group-hover:text-slate-300 transition-colors line-clamp-2 text-sm sm:text-base">
-              {title}
-            </h4>
-            <p className="text-xs sm:text-sm text-slate-400 leading-tight line-clamp-1">
-              {subtitle}
-            </p>
-
-            {/* Additional info based on category */}
-            <div className="flex items-center gap-2 text-xs text-slate-500">
-              {category === "music" && (item as MusicAlbum).songCount && (
-                <span className="flex items-center gap-1">
-                  <Music className="w-3 h-3" />
-                  {(item as MusicAlbum).songCount} songs
-                </span>
-              )}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     );
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 w-full overflow-x-hidden">
       <div className="relative max-w-6xl mx-auto px-3 sm:px-6 pt-20 sm:pt-16 pb-4 sm:pb-6">
-        {/* Header - More compact on mobile */}
-        <div className="mb-6 sm:mb-8">
-          <div className="text-center mb-4 sm:mb-6">
-            <h1 className="text-2xl sm:text-4xl lg:text-5xl font-bold text-white mb-2 sm:mb-3 bg-gradient-to-r from-white via-slate-100 to-slate-300 bg-clip-text text-transparent">
-              For You
-            </h1>
-            <p className="text-sm sm:text-lg text-slate-300 max-w-xl mx-auto leading-relaxed">
-              Discover amazing content curated by people you follow
-            </p>
-          </div>
-        </div>
+         {/* Header - More compact on mobile */}
+         <div className="mb-6 sm:mb-8">
+           <div className="text-center mb-4 sm:mb-6">
+             <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white mb-2 sm:mb-3 bg-gradient-to-r from-white via-slate-100 to-slate-300 bg-clip-text text-transparent">
+               For You
+             </h1>
+             <p className="text-sm sm:text-lg text-slate-300 max-w-xl mx-auto leading-relaxed">
+               Discover amazing content curated by people you follow
+             </p>
+           </div>
+         </div>
 
         {/* Category Filters - More compact on mobile */}
         <div className="flex flex-wrap justify-center gap-1.5 sm:gap-3 mb-6 sm:mb-8">
@@ -576,22 +574,22 @@ export default function RecommendationsPage() {
                     </div>
 
                     {/* Items Grid Skeleton */}
-                    <div className="flex gap-3 sm:gap-6 overflow-x-auto pb-4">
+                    <div className="flex gap-2 sm:gap-3 overflow-x-auto pb-3">
                       {[1, 2, 3, 4, 5, 6].map((item) => (
                         <div
                           key={item}
                           className="flex-shrink-0 w-[calc(100%/3.5)] sm:w-[160px] md:w-[180px] lg:w-[200px]"
                         >
-                          <Card className="bg-slate-800/50 border-slate-700/50 overflow-hidden">
+                          <div className="bg-slate-800/30 rounded-lg overflow-hidden">
                             <div className="w-full aspect-[3/4] bg-slate-700 animate-pulse relative overflow-hidden">
                               <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent animate-pulse"></div>
                             </div>
-                            <div className="p-3 sm:p-4 space-y-2 sm:space-y-3">
-                              <div className="h-3 sm:h-4 bg-slate-700 rounded w-full animate-pulse"></div>
-                              <div className="h-2.5 sm:h-3 bg-slate-700 rounded w-3/4 animate-pulse"></div>
-                              <div className="h-2.5 sm:h-3 bg-slate-700 rounded w-1/2 animate-pulse"></div>
+                            <div className="p-2 sm:p-3 space-y-1">
+                              <div className="h-2.5 sm:h-3 bg-slate-700 rounded w-full animate-pulse"></div>
+                              <div className="h-2 bg-slate-700 rounded w-3/4 animate-pulse"></div>
+                              <div className="h-2 bg-slate-700 rounded w-1/2 animate-pulse"></div>
                             </div>
-                          </Card>
+                          </div>
                         </div>
                       ))}
                     </div>
@@ -749,24 +747,22 @@ export default function RecommendationsPage() {
                           category={activeCategory}
                         />
 
-                        {/* Items Grid */}
-                        <div className="relative">
-                          <div className="recommendations-container flex gap-2.5 sm:gap-4 overflow-x-auto pb-4 scrollbar-hide">
-                            {items.slice(0, 12).map((item) => (
-                              <div
-                                key={item.id}
-                                className="flex-shrink-0 w-[calc(100%/3.5)] sm:w-[160px] md:w-[180px] lg:w-[200px]"
-                              >
-                                <ItemCard
-                                  item={item}
-                                  category={activeCategory}
-                                />
-                              </div>
-                            ))}
-                          </div>
+                         {/* Items Grid */}
+                         <div className="relative">
+                           <div className="recommendations-container flex gap-2 sm:gap-3 overflow-x-auto pb-3 scrollbar-hide">
+                             {items.slice(0, 12).map((item) => (
+                               <div
+                                 key={item.id}
+                                 className="flex-shrink-0 w-[calc(100%/3.5)] sm:w-[160px] md:w-[180px] lg:w-[200px]"
+                               >
+                                 <ItemCard
+                                   item={item}
+                                   category={activeCategory}
+                                 />
+                               </div>
+                             ))}
+                           </div>
 
-                          {/* Gradient fade to tease more content */}
-                          <div className="absolute right-0 top-0 bottom-4 w-8 sm:w-12 bg-gradient-to-l from-slate-900/90 to-transparent pointer-events-none"></div>
                         </div>
 
                         {/* View All Button */}

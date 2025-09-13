@@ -45,6 +45,7 @@ import { Input } from "@/components/ui/input";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { useNotifications } from "@/hooks/use-notifications";
 import MobileHeader from "@/components/mobile-header";
+import NotificationPanel from "@/components/notification-panel";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   AlertDialog,
@@ -72,6 +73,7 @@ export default function Sidebar({ isLandingPage = false }: SidebarProps) {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [showDiscoverOptions, setShowDiscoverOptions] = useState(false);
+  const [showNotificationPanel, setShowNotificationPanel] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
 
@@ -152,9 +154,10 @@ export default function Sidebar({ isLandingPage = false }: SidebarProps) {
     { href: "/recommendations", label: "Recommendations", icon: TrendingUp },
     { href: "/users", label: "Friends", icon: Users },
     {
-      href: "/notifications",
+      href: "#",
       label: "Notifications",
       icon: Bell,
+      onClick: () => setShowNotificationPanel(true),
     },
     { href: "/profile", label: "Profile", icon: User },
     { href: "/contact", label: "About Us", icon: HelpCircle },
@@ -433,7 +436,46 @@ export default function Sidebar({ isLandingPage = false }: SidebarProps) {
                     const Icon = item.icon;
                     const isActive = isNavigationActive(item.href);
 
-                    const linkContent = (
+                    const linkContent = item.onClick ? (
+                      <div className="relative">
+                        <button
+                          key={item.href}
+                          onClick={() => {
+                            item.onClick?.();
+                            setIsMobileOpen(false);
+                          }}
+                          className={cn(
+                            "flex items-center gap-3 rounded-lg text-sm font-medium transition-all duration-200 hover:bg-accent hover:text-accent-foreground",
+                            isCollapsed
+                              ? "justify-center px-2 py-3"
+                              : "px-4 py-3",
+                            isActive
+                              ? "bg-accent text-accent-foreground"
+                              : "text-white"
+                          )}
+                        >
+                          {/* Show badge instead of icon when there are notifications */}
+                          {item.href === "#" && item.label === "Notifications" && unreadCount > 0 ? (
+                            <div className={cn(
+                              "flex-shrink-0 bg-red-500 text-white text-xs rounded-full flex items-center justify-center font-semibold",
+                              isCollapsed ? "h-5 w-5 text-xs" : "h-5 w-5 text-xs"
+                            )}>
+                              {unreadCount > 99 ? "99+" : unreadCount}
+                            </div>
+                          ) : (
+                            <Icon
+                              className={cn(
+                                "flex-shrink-0 transition-all duration-200",
+                                isCollapsed ? "h-5 w-5" : "h-5 w-5"
+                              )}
+                            />
+                          )}
+                          {!isCollapsed && (
+                            <span className="truncate">{item.label}</span>
+                          )}
+                        </button>
+                      </div>
+                    ) : (
                       <Link
                         key={item.href}
                         href={item.href}
@@ -456,17 +498,6 @@ export default function Sidebar({ isLandingPage = false }: SidebarProps) {
                         />
                         {!isCollapsed && (
                           <span className="truncate">{item.label}</span>
-                        )}
-                        {/* Notification badge */}
-                        {item.href === "/notifications" && unreadCount > 0 && (
-                          <span className={cn(
-                            "absolute bg-red-500 text-white text-xs rounded-full flex items-center justify-center font-semibold",
-                            isCollapsed 
-                              ? "-top-1 -right-1 h-4 w-4 min-w-[16px]" 
-                              : "ml-auto h-5 w-5 min-w-[20px]"
-                          )}>
-                            {unreadCount > 99 ? "99+" : unreadCount}
-                          </span>
                         )}
                       </Link>
                     );
@@ -621,6 +652,12 @@ export default function Sidebar({ isLandingPage = false }: SidebarProps) {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+
+        {/* Notification Panel */}
+        <NotificationPanel 
+          isOpen={showNotificationPanel} 
+          onClose={() => setShowNotificationPanel(false)} 
+        />
       </>
     </TooltipProvider>
   );
