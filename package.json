@@ -49,6 +49,7 @@
     "firebase-admin": "^13.4.0",
     "input-otp": "1.4.1",
     "lucide-react": "^0.454.0",
+    "mongodb": "^6.19.0",
     "motion": "^12.23.12",
     "next": "15.2.4",
     "next-auth": "^4.24.11",
@@ -70,6 +71,7 @@
     "zustand": "^5.0.8"
   },
   "devDependencies": {
+    "@types/mongodb": "^4.0.7",
     "@types/node": "^22",
     "@types/react": "^18.2.0",
     "@types/react-dom": "^18.2.0",
