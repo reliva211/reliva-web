@@ -5,6 +5,7 @@ import Sidebar from "@/components/header";
 import Footer from "@/components/footer";
 
 import { useCurrentUser } from "@/hooks/use-current-user";
+import { useSyncFriends } from "@/hooks/use-sync-friends";
 import { Toaster } from "@/components/ui/toaster";
 import YouTubePlayer from "@/components/youtube-player";
 import VideoPlayer from "@/components/video-player";
@@ -18,10 +19,24 @@ export default function LayoutWrapper({ children }: LayoutWrapperProps) {
   const isLandingPage = pathname === "/";
   const isLoginPage = pathname === "/login";
   const isSignupPage = pathname === "/signup";
+  const isOnboardingPage = pathname === "/onboarding";
   const { user } = useCurrentUser();
+
+  // Automatically sync friends when user's following list changes
+  useSyncFriends();
 
   // Don't show footer for authenticated users, login, or signup pages
   const shouldShowFooter = !user && !isLoginPage && !isSignupPage;
+
+  // For onboarding page, render full-screen without sidebar
+  if (isOnboardingPage) {
+    return (
+      <div className="min-h-screen w-full">
+        <main className="w-full h-full">{children}</main>
+        <Toaster />
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-screen w-full overflow-x-hidden">
