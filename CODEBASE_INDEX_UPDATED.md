@@ -5,6 +5,7 @@
 **Reliva** is a unified media discovery and sharing platform that allows users to track, review, and share their favorite music, books, movies, and TV series all in one place. The platform emphasizes social features with a "no gatekeeping" philosophy, encouraging users to share what they love.
 
 ### Key Features
+
 - **Multi-Media Support**: Music, Books, Movies, TV Series
 - **Social Features**: Reviews, Ratings, Following System, Community Feed
 - **External API Integration**: Spotify, TMDB, Google Books, JioSaavn, NYTimes, YouTube
@@ -17,6 +18,7 @@
 ## 🏗️ Architecture Overview
 
 ### Tech Stack
+
 - **Framework**: Next.js 15.2.4 (App Router)
 - **Language**: TypeScript
 - **Styling**: Tailwind CSS + Radix UI components
@@ -27,6 +29,7 @@
 - **Deployment**: Netlify
 
 ### Project Structure
+
 ```
 reliva-web/
 ├── app/                    # Next.js App Router pages & API routes
@@ -47,6 +50,7 @@ reliva-web/
 ### `/app` - Application Pages & API Routes
 
 #### Pages
+
 - **`page.tsx`** - Landing page with animated hero section and feature showcase
 - **`layout.tsx`** - Root layout with theme provider and auth wrapper
 - **`login/page.tsx`** - Firebase email/password authentication
@@ -63,6 +67,7 @@ reliva-web/
 - **`recommendations/page.tsx`** - Personalized recommendations
 
 #### API Routes
+
 - **`auth/[...nextauth]/route.ts`** - NextAuth configuration with Spotify provider
 - **`spotify/route.ts`** - Spotify API integration (playlists, tracks, artists)
 - **`spotify/callback/route.ts`** - Spotify OAuth callback handling
@@ -87,6 +92,7 @@ reliva-web/
 ### `/components` - React Components
 
 #### Layout & Navigation
+
 - **`header.tsx`** - Main sidebar navigation with collapsible design
 - **`layout-wrapper.tsx`** - Layout wrapper with conditional rendering
 - **`mobile-header.tsx`** - Mobile-specific header
@@ -94,6 +100,7 @@ reliva-web/
 - **`footer.tsx`** - Site footer information
 
 #### Core UI Components
+
 - **`community-feed.tsx`** - Main community feed with post interactions
 - **`enhanced-create-post.tsx`** - Post creation with media support
 - **`user-profile.tsx`** - User profile display and management
@@ -101,6 +108,7 @@ reliva-web/
 - **`search-modal.tsx`** - Global search functionality
 
 #### Media-Specific Components
+
 - **`profile-music-section.tsx`** - User's music collection display
 - **`profile-movie-section.tsx`** - User's movie collection display
 - **`profile-series-section.tsx`** - User's series collection display
@@ -114,6 +122,7 @@ reliva-web/
 - **`youtube-player.tsx`** - YouTube video integration
 
 #### Review & Social Components
+
 - **`review-post.tsx`** - Review creation form
 - **`reviews-section.tsx`** - Review display and management
 - **`rating-stars.tsx`** - Star rating component
@@ -121,6 +130,7 @@ reliva-web/
 - **`floating-action-buttons.tsx`** - Quick action buttons
 
 #### UI Components (`/components/ui`)
+
 - **50+ reusable components** built on Radix UI
 - Includes: Button, Card, Dialog, Dropdown, Form, Input, etc.
 - Custom styled with Tailwind CSS
@@ -129,12 +139,14 @@ reliva-web/
 ### `/hooks` - Custom React Hooks
 
 #### Authentication & User Management
+
 - **`use-current-user.ts`** - Current user state management
 - **`use-profile.ts`** - User profile data management
 - **`use-userdata.ts`** - User data operations
 - **`use-user-connections.ts`** - Following/followers system
 
 #### Media Management
+
 - **`use-music-api.ts`** - Music API operations
 - **`use-music-profile.ts`** - User's music profile
 - **`use-music-collections.ts`** - Music collection management
@@ -146,6 +158,7 @@ reliva-web/
 - **`use-trending-books.ts`** - Trending books functionality
 
 #### Content & Reviews
+
 - **`use-reviews.ts`** - Review management system
 - **`use-all-reviews.ts`** - All reviews fetching
 - **`use-followed-reviews.ts`** - Followed users' reviews
@@ -155,6 +168,7 @@ reliva-web/
 - **`use-collections.ts`** - Collection management
 
 #### Utility Hooks
+
 - **`use-search.ts`** - Search functionality with debouncing
 - **`use-notifications.ts`** - Notification system
 - **`use-mobile.tsx`** - Mobile detection
@@ -183,12 +197,14 @@ reliva-web/
 ## 🔧 Key Features & Functionality
 
 ### Authentication System
+
 - **Dual Authentication**: Firebase Auth + NextAuth.js
 - **Providers**: Email/Password, Google, Spotify OAuth
 - **User Management**: Profile creation, editing, public/private settings
 - **Session Management**: Automatic token refresh and secure cookie handling
 
 ### Media Integration
+
 - **Music**: Spotify API, JioSaavn API for Indian content
 - **Movies/TV**: TMDB API for comprehensive movie/TV data
 - **Books**: Google Books API, NYTimes Bestsellers
@@ -196,6 +212,7 @@ reliva-web/
 - **Search**: Unified search across all media types
 
 ### Social Features
+
 - **Reviews & Ratings**: Star-based rating system with text reviews
 - **Following System**: Follow users, see their activity
 - **Community Feed**: Real-time activity feed with personalized content
@@ -203,6 +220,7 @@ reliva-web/
 - **User Discovery**: Find and connect with other users
 
 ### User Experience
+
 - **Responsive Design**: Mobile-first with desktop optimization
 - **Dark/Light Theme**: Theme switching with system preference
 - **Real-time Updates**: Live feed updates and notifications
@@ -214,12 +232,14 @@ reliva-web/
 ## 🚀 Development Setup
 
 ### Prerequisites
+
 - Node.js 18+
 - pnpm package manager (preferred)
 - Firebase project setup
 - API keys for external services
 
 ### Environment Variables
+
 ```env
 # Firebase
 NEXT_PUBLIC_FIREBASE_API_KEY=
@@ -249,9 +269,13 @@ NYTIMES_API_KEY=
 
 # YouTube
 YOUTUBE_API_KEY=
+
+# Last.fm (for international artist album data)
+LASTFM_API_KEY=
 ```
 
 ### Installation & Development
+
 ```bash
 # Install dependencies
 pnpm install
@@ -274,6 +298,7 @@ pnpm lint
 ## 📊 Database Schema (Firebase Firestore)
 
 ### Collections
+
 - **`users`** - User account data
 - **`userProfiles`** - Extended user profile information
 - **`reviews`** - User reviews and ratings
@@ -283,6 +308,7 @@ pnpm lint
 - **`userRatings`** - User ratings for media items
 
 ### Data Models
+
 - **User**: Profile, preferences, connections
 - **Review**: Content, ratings, social interactions
 - **Media**: Movies, books, music, series metadata
@@ -294,6 +320,7 @@ pnpm lint
 ## 🔌 External API Integrations
 
 ### Spotify API
+
 - User authentication and profile
 - Playlist management
 - Track search and playback
@@ -301,6 +328,7 @@ pnpm lint
 - OAuth integration with NextAuth.js
 
 ### TMDB API
+
 - Movie and TV show data
 - Popular and trending content
 - Detailed information and images
@@ -308,23 +336,27 @@ pnpm lint
 - API status monitoring
 
 ### Google Books API
+
 - Book search and details
 - Author information
 - Book covers and descriptions
 - ISBN-based lookups
 
 ### JioSaavn API
+
 - Indian music content
 - Song, album, and artist search
 - Playlist management
 - Regional music discovery
 
 ### NYTimes API
+
 - Bestseller book lists
 - Book reviews and recommendations
 - Trending book data
 
 ### YouTube API
+
 - Video content search
 - Video metadata and thumbnails
 - Video player integration
@@ -334,18 +366,21 @@ pnpm lint
 ## 🎨 UI/UX Design System
 
 ### Design Principles
+
 - **Mobile-First**: Responsive design starting from mobile
 - **Dark Theme Default**: Dark mode as primary theme
 - **Accessibility**: WCAG compliant components
 - **Performance**: Optimized for fast loading
 
 ### Component Library
+
 - **Radix UI**: Headless component primitives
 - **Tailwind CSS**: Utility-first styling
 - **Custom Components**: Extended functionality
 - **Responsive Grid**: Flexible layout system
 
 ### Styling
+
 - **Tailwind CSS**: Utility-first CSS framework
 - **CSS Variables**: Dynamic theming support
 - **Custom Animations**: Smooth transitions and interactions
@@ -356,12 +391,14 @@ pnpm lint
 ## 🔄 State Management
 
 ### React State
+
 - **Custom hooks** for local state management
 - **Context providers** for global state
 - **Firebase real-time listeners** for live updates
 - **Optimistic updates** for better UX
 
 ### Data Fetching
+
 - **Custom hooks** for API calls
 - **Error handling** with fallback states
 - **Loading states** for better user experience
@@ -372,12 +409,14 @@ pnpm lint
 ## 📱 Mobile & Responsive Features
 
 ### Mobile Optimization
+
 - **Touch-friendly UI** components
 - **Responsive navigation** with collapsible sidebar
 - **Mobile-specific layouts** for different screen sizes
 - **Progressive Web App** capabilities
 
 ### Performance
+
 - **Image optimization** with Next.js Image component
 - **Lazy loading** for media content
 - **Code splitting** for optimal bundle sizes
@@ -388,18 +427,21 @@ pnpm lint
 ## 🧪 Development & Testing
 
 ### Development Tools
+
 - **ESLint** configuration for code quality
 - **TypeScript** strict mode for type safety
 - **Prettier** for code formatting
 - **Git hooks** for code quality
 
 ### Testing & Debugging
+
 - **Error boundaries** for graceful error handling
 - **Debug panels** for development assistance
 - **Console logging** for debugging
 - **Test data scripts** for development
 
 ### Utility Scripts
+
 - **`add-test-data.js`** - Add test data for development
 - **`add-test-collections.js`** - Add test collections
 - **`add-test-following-data.js`** - Add test following relationships
@@ -413,17 +455,20 @@ pnpm lint
 ## 🚀 Deployment & Environment
 
 ### Environment Configuration
+
 - **Environment variables** for API keys and configuration
 - **Firebase configuration** for different environments
 - **Next.js configuration** for production builds
 
 ### Build & Deployment
+
 - **PNPM** package manager for dependencies
 - **Next.js build system** for production optimization
 - **Netlify deployment** with automatic builds
 - **Environment-specific builds** for staging/production
 
 ### Netlify Configuration
+
 - **Build command**: `pnpm store prune && pnpm install && pnpm build`
 - **Publish directory**: `.next`
 - **Node version**: 20
@@ -434,21 +479,25 @@ pnpm lint
 ## 🌟 Key Features Implementation
 
 ### 1. Multi-Media Support
+
 - Unified interface for different content types
 - Consistent review system across media types
 - Cross-media recommendations and discovery
 
 ### 2. Social Platform
+
 - User following and follower system
 - Community-driven content discovery
 - Social interactions on reviews and content
 
 ### 3. Content Discovery
+
 - AI-powered recommendations
 - Trending content algorithms
 - Personalized content feeds
 
 ### 4. Rich Media Experience
+
 - Audio and video playback integration
 - Image galleries and media previews
 - Interactive content exploration
@@ -458,12 +507,14 @@ pnpm lint
 ## 📈 Performance Optimizations
 
 ### Frontend Performance
+
 - **Code splitting** and lazy loading
 - **Image optimization** and compression
 - **Bundle size optimization** with tree shaking
 - **Service worker** for offline functionality
 
 ### Backend Performance
+
 - **Database indexing** strategies
 - **API response caching** mechanisms
 - **Real-time updates** with Firebase
@@ -474,6 +525,7 @@ pnpm lint
 ## 🔮 Future Enhancements
 
 ### Planned Features
+
 - **Advanced recommendation algorithms**
 - **Social media integration**
 - **Mobile app development**
@@ -481,6 +533,7 @@ pnpm lint
 - **Advanced analytics and insights**
 
 ### Technical Improvements
+
 - **GraphQL API** implementation
 - **Microservices architecture**
 - **Advanced caching strategies**
@@ -501,6 +554,7 @@ pnpm lint
 ## 🔧 Recent Updates & Changes
 
 ### Current Status
+
 - **Package Manager**: Migrated to pnpm (removing yarn usage)
 - **Netlify Configuration**: Updated build commands for pnpm
 - **Profile Sections**: Enhanced profile components for all media types
@@ -508,9 +562,10 @@ pnpm lint
 - **API Integrations**: Enhanced external API connections
 
 ### Git Status
+
 - Modified files include profile sections, review system, and configuration files
 - Ready for commit with recent improvements
 
 ---
 
-*This comprehensive index provides a complete overview of the Reliva codebase, its architecture, features, and development setup. The platform represents a modern, full-stack web application with sophisticated media integration and social features, built with Next.js 15, TypeScript, and Firebase.*
+_This comprehensive index provides a complete overview of the Reliva codebase, its architecture, features, and development setup. The platform represents a modern, full-stack web application with sophisticated media integration and social features, built with Next.js 15, TypeScript, and Firebase._

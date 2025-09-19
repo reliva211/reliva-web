@@ -223,21 +223,76 @@ export default function ArtistDetailPage({
   const [albums, setAlbums] = useState<Album[]>([]);
   const [songs, setSongs] = useState<Song[]>([]);
   const [similarArtists, setSimilarArtists] = useState<any[]>([]);
+  const [totalAlbumCount, setTotalAlbumCount] = useState<number>(0);
+  const [totalSongCount, setTotalSongCount] = useState<number>(0);
+
+  // Function to fetch songs from albums when topSongs is not available
+  // This function only works with JioSaavn albums, not Last.fm albums
+  const fetchSongsFromAlbums = async (albumsToFetch: Album[]) => {
+    console.log(
+      `🎵 Fetching songs from ${albumsToFetch.length} albums using JioSaavn`
+    );
+    const allSongs: Song[] = [];
+
+    // Filter to only JioSaavn albums (exclude Last.fm albums)
+    const saavnAlbums = albumsToFetch.filter(
+      (album) => !album.id.startsWith("lastfm-")
+    );
+
+    if (saavnAlbums.length === 0) {
+      console.log(`🎵 No JioSaavn albums available for song fetching`);
+      return;
+    }
+
+    for (const album of saavnAlbums) {
+      try {
+        const albumResponse = await fetch(`/api/saavn/album?id=${album.id}`);
+        if (albumResponse.ok) {
+          const albumData = await albumResponse.json();
+          if (albumData.data?.songs && albumData.data.songs.length > 0) {
+            allSongs.push(...albumData.data.songs);
+            console.log(
+              `🎵 Added ${albumData.data.songs.length} songs from JioSaavn album "${album.name}"`
+            );
+          }
+        }
+      } catch (error) {
+        console.error(
+          `Failed to fetch songs from JioSaavn album ${album.name}:`,
+          error
+        );
+      }
+
+      // Limit to prevent too many API calls
+      if (allSongs.length >= 20) break;
+    }
+
+    if (allSongs.length > 0) {
+      setSongs(allSongs);
+      console.log(
+        `🎵 Total songs fetched from JioSaavn albums: ${allSongs.length}`
+      );
+    } else {
+      console.log(
+        `🎵 No songs found from JioSaavn albums, keeping existing topSongs`
+      );
+    }
+  };
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState("overview");
 
-  const { 
-    isArtistFollowed, 
-    followArtist, 
+  const {
+    isArtistFollowed,
+    followArtist,
     unfollowArtist,
     likeSong,
     unlikeSong,
     isSongLiked,
     addAlbumToRecommendations,
     removeAlbumFromRecommendations,
-    isAlbumInRecommendations
+    isAlbumInRecommendations,
   } = useMusicCollections();
   const { toast } = useToast();
   const { showPlayer } = useYouTubePlayer();
@@ -265,9 +320,10 @@ export default function ArtistDetailPage({
       id: song.id,
       title: song.name,
       cover: getImageUrl(song.image),
-      artist: song.artists?.primary?.length > 0
-        ? song.artists.primary.map((artist) => artist.name).join(", ")
-        : "Unknown Artist",
+      artist:
+        song.artists?.primary?.length > 0
+          ? song.artists.primary.map((artist) => artist.name).join(", ")
+          : "Unknown Artist",
     });
     router.push(`/reviews?${params.toString()}`);
   };
@@ -280,31 +336,36 @@ export default function ArtistDetailPage({
         id: song.id,
         name: song.name || "Unknown Song",
         artists: {
-          primary: song.artists?.primary?.length > 0 
-            ? song.artists.primary.map((artist) => ({
-                id: artist.id,
-                name: artist.name
-              }))
-            : [{ id: "unknown", name: "Unknown Artist" }]
+          primary:
+            song.artists?.primary?.length > 0
+              ? song.artists.primary.map((artist) => ({
+                  id: artist.id,
+                  name: artist.name,
+                }))
+              : [{ id: "unknown", name: "Unknown Artist" }],
         },
         image: song.image || [],
         year: song.year || "Unknown",
         language: song.language || "Unknown",
         songCount: 1,
         playCount: song.playCount || 0,
-        songs: [{
-          id: song.id,
-          name: song.name,
-          artists: song.artists,
-          image: song.image,
-          duration: song.duration || 0,
-          album: song.album,
-          year: song.year || "Unknown",
-          language: song.language || "Unknown",
-          playCount: song.playCount || 0,
-          downloadUrl: song.downloadUrl,
-          addedAt: new Date().toISOString(),
-        }],
+        songs: [
+          {
+            id: song.id,
+            name: song.name,
+            artists: song.artists,
+            image: song.image,
+            duration: song.duration || 0,
+            album: {
+              name: song.album?.name || "Unknown Album",
+            },
+            year: song.year || "Unknown",
+            language: song.language || "Unknown",
+            playCount: song.playCount || 0,
+            downloadUrl: song.downloadUrl,
+            addedAt: new Date().toISOString(),
+          },
+        ],
       };
 
       if (isAlbumInRecommendations(song.id)) {
@@ -347,10 +408,13 @@ export default function ArtistDetailPage({
         if (artistData.data) {
           setArtist(artistData.data);
 
-          // Set songs from artist data
+          // Set songs from JioSaavn artist data (topSongs)
           const topSongs = artistData.data.topSongs || [];
           setSongs(topSongs);
-          // Top songs fetched
+          console.log(
+            `🎵 Top songs from JioSaavn artist API: ${topSongs.length}`
+          );
+          // Top songs fetched from JioSaavn
 
           // Fetch similar artists
           try {
@@ -374,10 +438,15 @@ export default function ArtistDetailPage({
             setSimilarArtists([]);
           }
 
-          // Try to fetch albums from dedicated endpoint
+          // Try to fetch albums from Last.fm (better for international artists)
           try {
+            console.log(
+              `🎵 Fetching albums from Last.fm for ${artistData.data.name}`
+            );
             const albumsResponse = await fetch(
-              `/api/saavn/artist/albums?id=${resolvedParams.id}`
+              `/api/lastfm/artist/albums?artist=${encodeURIComponent(
+                artistData.data.name
+              )}`
             );
             const albumsData = await albumsResponse.json();
 
@@ -394,10 +463,55 @@ export default function ArtistDetailPage({
               );
               // Albums deduplication completed
               setAlbums(uniqueAlbums);
+
+              // Set total album count from the comprehensive fetch
+              const albumCount = albumsData.data.total || uniqueAlbums.length;
+              setTotalAlbumCount(albumCount);
+              console.log(
+                `Artist ${artistData.data.name}: Found ${albumCount} total albums`
+              );
+
+              // Calculate total song count - prioritize JioSaavn data over Last.fm
+              let totalSongs = 0;
+              let saavnSongs = 0;
+              let lastfmSongs = 0;
+
+              uniqueAlbums.forEach((album: any) => {
+                const songCount = album.songCount || 0;
+                if (album.id.startsWith("lastfm-")) {
+                  lastfmSongs += songCount;
+                } else {
+                  saavnSongs += songCount;
+                }
+                totalSongs += songCount;
+              });
+
+              // Prefer JioSaavn song count, fallback to Last.fm, then topSongs
+              const finalSongCount =
+                saavnSongs > 0
+                  ? saavnSongs
+                  : totalSongs > 0
+                  ? totalSongs
+                  : topSongs.length;
+              setTotalSongCount(finalSongCount);
+              console.log(
+                `Artist ${artistData.data.name}: JioSaavn songs: ${saavnSongs}, Last.fm songs: ${lastfmSongs}, using ${finalSongCount} as final count`
+              );
+
+              // If no top songs available, try to fetch songs from the first few albums
+              if (topSongs.length === 0 && uniqueAlbums.length > 0) {
+                console.log(
+                  `🎵 No top songs found, fetching songs from albums for ${artistData.data.name}`
+                );
+                fetchSongsFromAlbums(uniqueAlbums.slice(0, 3)); // Fetch from first 3 albums
+              }
             } else {
-              // Fallback to topAlbums from artist data
+              // Last.fm didn't return albums, fallback to topAlbums from Saavn artist data
               const topAlbums = artistData.data.topAlbums || [];
-              // Using fallback topAlbums
+              console.log(
+                `🎵 Last.fm fallback: Using ${topAlbums.length} albums from Saavn topAlbums`
+              );
+
               // Remove duplicate albums based on ID
               const uniqueTopAlbums = topAlbums.filter(
                 (album: any, index: number, self: any[]) =>
@@ -405,12 +519,39 @@ export default function ArtistDetailPage({
               );
               // Top albums deduplication completed
               setAlbums(uniqueTopAlbums);
+              setTotalAlbumCount(uniqueTopAlbums.length);
+              console.log(
+                `Artist ${artistData.data.name}: Using Saavn fallback - ${uniqueTopAlbums.length} albums from topAlbums`
+              );
+
+              // Calculate total song count from fallback albums
+              let totalSongs = 0;
+              uniqueTopAlbums.forEach((album: any) => {
+                totalSongs += album.songCount || 0;
+              });
+              const finalSongCount =
+                totalSongs > 0 ? totalSongs : topSongs.length;
+              setTotalSongCount(finalSongCount);
+              console.log(
+                `Artist ${artistData.data.name}: Saavn fallback calculated ${totalSongs} songs from albums, using ${finalSongCount} as final count`
+              );
+
+              // If no top songs available, try to fetch songs from the first few albums
+              if (topSongs.length === 0 && uniqueTopAlbums.length > 0) {
+                console.log(
+                  `🎵 No top songs found, fetching songs from Saavn fallback albums for ${artistData.data.name}`
+                );
+                fetchSongsFromAlbums(uniqueTopAlbums.slice(0, 3)); // Fetch from first 3 albums
+              }
             }
           } catch (albumError) {
-            console.error("Error fetching albums:", albumError);
-            // Fallback to topAlbums from artist data
+            console.error("Error fetching albums from Last.fm:", albumError);
+            // Fallback to topAlbums from Saavn artist data
             const topAlbums = artistData.data.topAlbums || [];
-            // Using fallback topAlbums after error
+            console.log(
+              `🎵 Last.fm error fallback: Using ${topAlbums.length} albums from Saavn topAlbums`
+            );
+
             // Remove duplicate albums based on ID
             const uniqueTopAlbums = topAlbums.filter(
               (album: any, index: number, self: any[]) =>
@@ -418,6 +559,30 @@ export default function ArtistDetailPage({
             );
             // Top albums deduplication completed after error
             setAlbums(uniqueTopAlbums);
+            setTotalAlbumCount(uniqueTopAlbums.length);
+            console.log(
+              `Artist ${artistData.data.name}: Last.fm error fallback - ${uniqueTopAlbums.length} albums from Saavn topAlbums`
+            );
+
+            // Calculate total song count from fallback albums
+            let totalSongs = 0;
+            uniqueTopAlbums.forEach((album: any) => {
+              totalSongs += album.songCount || 0;
+            });
+            const finalSongCount =
+              totalSongs > 0 ? totalSongs : topSongs.length;
+            setTotalSongCount(finalSongCount);
+            console.log(
+              `Artist ${artistData.data.name}: Last.fm error fallback calculated ${totalSongs} songs from albums, using ${finalSongCount} as final count`
+            );
+
+            // If no top songs available, try to fetch songs from the first few albums
+            if (topSongs.length === 0 && uniqueTopAlbums.length > 0) {
+              console.log(
+                `🎵 No top songs found, fetching songs from Last.fm error fallback albums for ${artistData.data.name}`
+              );
+              fetchSongsFromAlbums(uniqueTopAlbums.slice(0, 3)); // Fetch from first 3 albums
+            }
           }
         } else {
           setError("Artist not found");
@@ -613,7 +778,7 @@ export default function ArtistDetailPage({
                     </>
                   )}
                 </Button>
-                
+
                 <Button
                   size="sm"
                   variant="outline"
@@ -792,7 +957,20 @@ export default function ArtistDetailPage({
                     <div
                       key={album.id}
                       className="flex-shrink-0 w-[calc(100%/3.25)] sm:w-44 overflow-hidden cursor-pointer hover:shadow-lg transition-all duration-300 rounded-md group bg-muted/30 backdrop-blur-sm hover:bg-muted/50 hover:scale-105 border border-border/20"
-                      onClick={() => router.push(`/music/album/${album.id}`)}
+                      onClick={() => {
+                        // For Last.fm albums, we need to pass artist and album names
+                        if (album.id.startsWith("lastfm-")) {
+                          router.push(
+                            `/music/album/${
+                              album.id
+                            }?artist=${encodeURIComponent(
+                              artist?.name || ""
+                            )}&album=${encodeURIComponent(album.name)}`
+                          );
+                        } else {
+                          router.push(`/music/album/${album.id}`);
+                        }
+                      }}
                     >
                       <div className="aspect-square relative overflow-hidden">
                         <img
@@ -824,7 +1002,7 @@ export default function ArtistDetailPage({
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4 px-2 sm:px-4">
                   <div className="p-3 sm:p-4 bg-muted/30 backdrop-blur-sm rounded-lg sm:rounded-xl border border-border/20">
                     <div className="text-xl sm:text-2xl font-bold text-foreground">
-                      {albums.length}
+                      {totalAlbumCount > 0 ? totalAlbumCount : albums.length}
                     </div>
                     <div className="text-xs sm:text-sm text-muted-foreground">
                       Total Albums
@@ -832,7 +1010,7 @@ export default function ArtistDetailPage({
                   </div>
                   <div className="p-4 bg-muted/30 backdrop-blur-sm rounded-xl border border-border/20">
                     <div className="text-2xl font-bold text-foreground">
-                      {songs.length}
+                      {totalSongCount > 0 ? totalSongCount : songs.length}
                     </div>
                     <div className="text-sm text-muted-foreground">
                       Total Songs
@@ -893,7 +1071,20 @@ export default function ArtistDetailPage({
                     <div
                       key={album.id}
                       className="overflow-hidden cursor-pointer hover:shadow-lg transition-all duration-300 rounded-xl group bg-muted/30 backdrop-blur-sm hover:bg-muted/50 hover:scale-105 border border-border/20"
-                      onClick={() => router.push(`/music/album/${album.id}`)}
+                      onClick={() => {
+                        // For Last.fm albums, we need to pass artist and album names
+                        if (album.id.startsWith("lastfm-")) {
+                          router.push(
+                            `/music/album/${
+                              album.id
+                            }?artist=${encodeURIComponent(
+                              artist?.name || ""
+                            )}&album=${encodeURIComponent(album.name)}`
+                          );
+                        } else {
+                          router.push(`/music/album/${album.id}`);
+                        }
+                      }}
                     >
                       <div className="aspect-square relative overflow-hidden">
                         <img

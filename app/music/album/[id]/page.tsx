@@ -195,7 +195,44 @@ export default function AlbumDetailPage({
 
       setLoading(true);
       try {
-        // Fetch album details
+        // Check if this is a Last.fm album ID
+        if (resolvedParams.id.startsWith("lastfm-")) {
+          console.log(`🎵 Detected Last.fm album ID: ${resolvedParams.id}`);
+
+          // Get artist and album names from URL parameters
+          const urlParams = new URLSearchParams(window.location.search);
+          const artistName = urlParams.get("artist");
+          const albumName = urlParams.get("album");
+
+          if (!artistName || !albumName) {
+            setError("Missing artist or album information for Last.fm album");
+            return;
+          }
+
+          // Fetch album details from Last.fm
+          const lastfmAlbumResponse = await fetch(
+            `/api/lastfm/album?id=${
+              resolvedParams.id
+            }&artist=${encodeURIComponent(
+              artistName
+            )}&album=${encodeURIComponent(albumName)}`
+          );
+          const lastfmAlbumData = await lastfmAlbumResponse.json();
+
+          if (lastfmAlbumData.data) {
+            setAlbum(lastfmAlbumData.data);
+          } else {
+            setError(
+              "Last.fm album not found or no detailed information available"
+            );
+          }
+          return;
+        }
+
+        // Fetch album details from Saavn for regular albums
+        console.log(
+          `🎵 Fetching Saavn album details for ID: ${resolvedParams.id}`
+        );
         const albumResponse = await fetch(
           `/api/saavn/album?id=${resolvedParams.id}`
         );
@@ -226,13 +263,17 @@ export default function AlbumDetailPage({
         await unlikeSong(song.id);
         toast({
           title: "Removed from liked songs",
-          description: `${decodeHtmlEntities(song.name)} has been removed from your liked songs.`,
+          description: `${decodeHtmlEntities(
+            song.name
+          )} has been removed from your liked songs.`,
         });
       } else {
         await likeSong(song);
         toast({
           title: "Added to liked songs",
-          description: `${decodeHtmlEntities(song.name)} has been added to your liked songs.`,
+          description: `${decodeHtmlEntities(
+            song.name
+          )} has been added to your liked songs.`,
         });
       }
     } catch (error) {
@@ -251,7 +292,9 @@ export default function AlbumDetailPage({
         await unlikeAlbum(album.id);
         toast({
           title: "Album removed from liked albums",
-          description: `${decodeHtmlEntities(album.name)} has been removed from your liked albums.`,
+          description: `${decodeHtmlEntities(
+            album.name
+          )} has been removed from your liked albums.`,
         });
       } else {
         // Convert Album to MusicAlbum format
@@ -282,7 +325,9 @@ export default function AlbumDetailPage({
         await likeAlbum(musicAlbum);
         toast({
           title: "Album added to liked albums",
-          description: `${decodeHtmlEntities(album.name)} has been added to your liked albums.`,
+          description: `${decodeHtmlEntities(
+            album.name
+          )} has been added to your liked albums.`,
         });
       }
     } catch (error) {
@@ -302,7 +347,9 @@ export default function AlbumDetailPage({
         await removeAlbumFromRecommendations(album.id);
         toast({
           title: "Removed from recommendations",
-          description: `${decodeHtmlEntities(album.name)} has been removed from your recommendations.`,
+          description: `${decodeHtmlEntities(
+            album.name
+          )} has been removed from your recommendations.`,
         });
       } else {
         // Convert Album to MusicAlbum format
@@ -341,7 +388,9 @@ export default function AlbumDetailPage({
         await addAlbumToRecommendations(musicAlbum);
         toast({
           title: "Added to recommendations",
-          description: `${decodeHtmlEntities(album.name)} has been added to your recommendations.`,
+          description: `${decodeHtmlEntities(
+            album.name
+          )} has been added to your recommendations.`,
         });
       }
     } catch (error) {
@@ -396,19 +445,19 @@ export default function AlbumDetailPage({
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
       {/* Structured Data for SEO */}
       {album && (
-        <StructuredData 
-          type="music" 
+        <StructuredData
+          type="music"
           data={{
             id: album.id,
             name: album.name,
             artists: album.artists,
             image: album.image,
             year: album.year,
-            songCount: album.songs?.length
-          }} 
+            songCount: album.songs?.length,
+          }}
         />
       )}
-      
+
       {/* Hero Section with Dynamic Background */}
       <div className="relative mb-12 overflow-hidden">
         {album && (
@@ -426,218 +475,76 @@ export default function AlbumDetailPage({
         )}
 
         <div className="relative z-10 p-8 lg:p-12">
-        {/* Back Button */}
-        <Button
-          variant="ghost"
-          onClick={() => router.back()}
+          {/* Back Button */}
+          <Button
+            variant="ghost"
+            onClick={() => router.back()}
             className="mb-4 sm:mb-6 rounded-xl hover:bg-white/10 transition-all duration-200 group text-white/80 hover:text-white"
-        >
+          >
             <ChevronLeft className="w-4 h-4 mr-1" />
             Back
-        </Button>
+          </Button>
 
-        {/* Mobile Album Header */}
-        <div className="sm:hidden space-y-4 mb-6">
-          {/* Album Cover and Info */}
-          <div className="flex flex-row gap-4">
-            {/* Album Image */}
-            <div className="flex-shrink-0">
-              <div className="relative group w-36 h-36">
-                <div className="aspect-square rounded-xl overflow-hidden bg-gradient-to-br from-muted to-muted/50 shadow-xl">
-                  <img
-                    src={getImageUrl(album.image)}
-                    alt={decodeHtmlEntities(album.name)}
-                    className="w-full h-full object-cover"
-                  />
+          {/* Mobile Album Header */}
+          <div className="sm:hidden space-y-4 mb-6">
+            {/* Album Cover and Info */}
+            <div className="flex flex-row gap-4">
+              {/* Album Image */}
+              <div className="flex-shrink-0">
+                <div className="relative group w-36 h-36">
+                  <div className="aspect-square rounded-xl overflow-hidden bg-gradient-to-br from-muted to-muted/50 shadow-xl">
+                    <img
+                      src={getImageUrl(album.image)}
+                      alt={decodeHtmlEntities(album.name)}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
                 </div>
               </div>
-            </div>
 
-            {/* Album Info */}
-            <div className="flex-1 space-y-3 text-left">
-              <h1 className="text-xl font-bold text-white leading-tight line-clamp-2">
-                {decodeHtmlEntities(album.name)}
-              </h1>
-              
-              {/* Tags in a horizontal row */}
-              <div className="flex flex-wrap gap-1.5">
-                <div className="flex items-center gap-1 px-2 py-1 rounded-full bg-white/15 backdrop-blur-sm border border-white/25">
-                  <Music className="h-2.5 w-2.5 text-white" />
-                  <span className="text-xs font-medium text-white truncate max-w-20">
-                    {album.artists?.primary?.length > 0
-                      ? album.artists.primary.map((artist) => decodeHtmlEntities(artist.name)).join(", ")
-                      : "Unknown Artist"}
-                  </span>
-                </div>
-                {album.year && (
+              {/* Album Info */}
+              <div className="flex-1 space-y-3 text-left">
+                <h1 className="text-xl font-bold text-white leading-tight line-clamp-2">
+                  {decodeHtmlEntities(album.name)}
+                </h1>
+
+                {/* Tags in a horizontal row */}
+                <div className="flex flex-wrap gap-1.5">
                   <div className="flex items-center gap-1 px-2 py-1 rounded-full bg-white/15 backdrop-blur-sm border border-white/25">
-                    <Clock className="h-2.5 w-2.5 text-white" />
-                    <span className="text-xs font-medium text-white">
-                      {album.year}
+                    <Music className="h-2.5 w-2.5 text-white" />
+                    <span className="text-xs font-medium text-white truncate max-w-20">
+                      {album.artists?.primary?.length > 0
+                        ? album.artists.primary
+                            .map((artist) => decodeHtmlEntities(artist.name))
+                            .join(", ")
+                        : "Unknown Artist"}
                     </span>
                   </div>
-                )}
-                {album.language && (
-                  <div className="flex items-center gap-1 px-2 py-1 rounded-full bg-white/15 backdrop-blur-sm border border-white/25">
-                    <span className="text-xs font-medium text-white capitalize">
-                      {album.language}
-                    </span>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-          
-          {/* Mobile Action Buttons - Centered Below */}
-          <div className="flex gap-2 justify-center">
-            <Button
-              size="sm"
-              variant="outline"
-              className="rounded-lg hover:bg-white/20 transition-all duration-200 group bg-white/10 border-white/20 shadow-md h-7 text-xs text-white"
-              onClick={async () => {
-                if (album && album.songs && album.songs.length > 0) {
-                  // Create queue from all album songs
-                  const queue = album.songs.map((song) => ({
-                    id: song.id,
-                    title: decodeHtmlEntities(song.name),
-                    artist:
-                      song.artists?.primary?.length > 0
-                        ? song.artists.primary.map((artist) => decodeHtmlEntities(artist.name)).join(", ")
-                        : "Unknown Artist",
-                  }));
-
-                  // Start with the first song
-                  await showPlayer(queue[0], queue, 0);
-                }
-              }}
-            >
-              <Play className="w-3 h-3 mr-1" />
-              Play
-            </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              className="rounded-lg hover:bg-white/20 transition-all duration-200 group bg-white/10 border-white/20 shadow-md h-7 text-xs text-white"
-              onClick={() => {
-                if (album) {
-                  handleLikeAlbum(album);
-                }
-              }}
-            >
-              <Heart
-                className={`w-3 h-3 mr-1 ${
-                  album && isAlbumLiked(album.id) ? "fill-red-400" : ""
-                }`}
-              />
-              {album && isAlbumLiked(album.id) ? "Liked" : "Like"}
-            </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              className="rounded-lg hover:bg-white/20 transition-all duration-200 group bg-white/10 border-white/20 shadow-md h-7 text-xs text-white"
-              onClick={handleAddToRecommendations}
-            >
-              {isAlbumInRecommendations(album.id) ? (
-                <>
-                  <Check className="w-3 h-3 mr-1" />
-                  Added
-                </>
-              ) : (
-                <>
-                  <Plus className="w-3 h-3 mr-1" />
-                  Add
-                </>
-              )}
-            </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              className="rounded-lg hover:bg-white/20 transition-all duration-200 group bg-white/10 border-white/20 shadow-md h-7 text-xs text-white"
-              onClick={() => {
-                const params = new URLSearchParams({
-                  type: "music",
-                  id: album.id,
-                  title: decodeHtmlEntities(album.name),
-                  cover: getImageUrl(album.image),
-                  artist:
-                    album.artists?.primary?.length > 0
-                      ? album.artists.primary.map((artist) => decodeHtmlEntities(artist.name)).join(", ")
-                      : "Unknown Artist",
-                });
-                router.push(`/reviews?${params.toString()}`);
-              }}
-            >
-              <Star className="w-3 h-3 mr-1" />
-              Rate
-            </Button>
-          </div>
-        </div>
-
-        {/* Desktop Album Header */}
-        <div className="hidden sm:flex flex-col lg:flex-row gap-4 sm:gap-6 mb-6 sm:mb-8">
-          {/* Album Image */}
-          <div className="w-full lg:w-1/3 flex justify-center lg:justify-start">
-            <div className="relative group w-48 sm:w-56 lg:w-auto lg:max-w-xs">
-              <div className="aspect-square rounded-xl overflow-hidden bg-gradient-to-br from-muted to-muted/50 shadow-xl group-hover:shadow-2xl transition-all duration-300">
-                <img
-                  src={getImageUrl(album.image)}
-                  alt={decodeHtmlEntities(album.name)}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                />
-              </div>
-              {/* Subtle overlay gradient */}
-              <div className="absolute inset-0 rounded-xl bg-gradient-to-t from-black/10 via-transparent to-transparent pointer-events-none"></div>
-            </div>
-          </div>
-
-          {/* Album Info */}
-          <div className="flex-1 space-y-3 sm:space-y-4 text-center lg:text-left">
-            <div className="space-y-3 sm:space-y-4">
-              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white leading-tight">
-                {decodeHtmlEntities(album.name)}
-              </h1>
-
-              <div className="flex flex-col sm:flex-row items-center sm:items-center gap-2 justify-center lg:justify-start">
-                <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/10 backdrop-blur-sm border border-white/20">
-                  <Music className="h-3 w-3 text-white" />
-                  <span className="text-xs font-medium text-white">
-                    {album.artists?.primary?.length > 0
-                      ? album.artists.primary.map((artist) => decodeHtmlEntities(artist.name)).join(", ")
-                      : "Unknown Artist"}
-                  </span>
+                  {album.year && (
+                    <div className="flex items-center gap-1 px-2 py-1 rounded-full bg-white/15 backdrop-blur-sm border border-white/25">
+                      <Clock className="h-2.5 w-2.5 text-white" />
+                      <span className="text-xs font-medium text-white">
+                        {album.year}
+                      </span>
+                    </div>
+                  )}
+                  {album.language && (
+                    <div className="flex items-center gap-1 px-2 py-1 rounded-full bg-white/15 backdrop-blur-sm border border-white/25">
+                      <span className="text-xs font-medium text-white capitalize">
+                        {album.language}
+                      </span>
+                    </div>
+                  )}
                 </div>
-                {album.year && (
-                  <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/10 backdrop-blur-sm border border-white/20">
-                    <Clock className="h-3 w-3 text-white" />
-                    <span className="text-xs font-medium text-white">
-                      {album.year}
-                    </span>
-                  </div>
-                )}
-                {album.explicitContent && (
-                  <Badge
-                    variant="destructive"
-                    className="rounded-lg px-3 py-1.5 text-xs font-medium shadow-md"
-                  >
-                    Explicit
-                  </Badge>
-                )}
-                {album.language && (
-                  <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/10 backdrop-blur-sm border border-white/20">
-                    <span className="text-xs font-medium text-white capitalize">
-                      {album.language}
-                    </span>
-                  </div>
-                )}
               </div>
             </div>
 
-            {/* Action Buttons */}
-            <div className="flex flex-wrap gap-2 pt-2 justify-center lg:justify-start">
+            {/* Mobile Action Buttons - Centered Below */}
+            <div className="flex gap-2 justify-center">
               <Button
                 size="sm"
                 variant="outline"
-                className="rounded-lg hover:bg-white/20 transition-all duration-200 group bg-white/10 border-white/20 shadow-md h-8 text-xs text-white"
+                className="rounded-lg hover:bg-white/20 transition-all duration-200 group bg-white/10 border-white/20 shadow-md h-7 text-xs text-white"
                 onClick={async () => {
                   if (album && album.songs && album.songs.length > 0) {
                     // Create queue from all album songs
@@ -646,11 +553,11 @@ export default function AlbumDetailPage({
                       title: decodeHtmlEntities(song.name),
                       artist:
                         song.artists?.primary?.length > 0
-                          ? song.artists.primary.map((artist) => decodeHtmlEntities(artist.name)).join(", ")
+                          ? song.artists.primary
+                              .map((artist) => decodeHtmlEntities(artist.name))
+                              .join(", ")
                           : "Unknown Artist",
                     }));
-
-                    // Album Play Button - Queue created
 
                     // Start with the first song
                     await showPlayer(queue[0], queue, 0);
@@ -658,24 +565,20 @@ export default function AlbumDetailPage({
                 }}
               >
                 <Play className="w-3 h-3 mr-1" />
-                Play Album
+                Play
               </Button>
               <Button
                 size="sm"
                 variant="outline"
+                className="rounded-lg hover:bg-white/20 transition-all duration-200 group bg-white/10 border-white/20 shadow-md h-7 text-xs text-white"
                 onClick={() => {
                   if (album) {
                     handleLikeAlbum(album);
                   }
                 }}
-                className={`rounded-lg hover:bg-white/20 transition-all duration-200 group bg-white/10 border-white/20 shadow-md h-8 text-xs ${
-                  album && isAlbumLiked(album.id)
-                    ? "bg-red-500/30 text-red-300 border-red-400/50"
-                    : "text-white"
-                }`}
               >
                 <Heart
-                  className={`w-3 h-3 mr-1 group-hover:scale-110 transition-transform ${
+                  className={`w-3 h-3 mr-1 ${
                     album && isAlbumLiked(album.id) ? "fill-red-400" : ""
                   }`}
                 />
@@ -684,28 +587,25 @@ export default function AlbumDetailPage({
               <Button
                 size="sm"
                 variant="outline"
+                className="rounded-lg hover:bg-white/20 transition-all duration-200 group bg-white/10 border-white/20 shadow-md h-7 text-xs text-white"
                 onClick={handleAddToRecommendations}
-                className={`rounded-lg hover:scale-105 transition-all duration-200 group bg-white/10 border-white/20 shadow-md h-8 text-xs ${
-                  isAlbumInRecommendations(album.id)
-                    ? "bg-blue-500/30 text-blue-300 border-blue-400/50"
-                    : "text-white"
-                }`}
               >
                 {isAlbumInRecommendations(album.id) ? (
                   <>
                     <Check className="w-3 h-3 mr-1" />
-                    Recommended
+                    Added
                   </>
                 ) : (
                   <>
                     <Plus className="w-3 h-3 mr-1" />
-                    Recommend
+                    Add
                   </>
                 )}
               </Button>
               <Button
                 size="sm"
                 variant="outline"
+                className="rounded-lg hover:bg-white/20 transition-all duration-200 group bg-white/10 border-white/20 shadow-md h-7 text-xs text-white"
                 onClick={() => {
                   const params = new URLSearchParams({
                     type: "music",
@@ -714,23 +614,186 @@ export default function AlbumDetailPage({
                     cover: getImageUrl(album.image),
                     artist:
                       album.artists?.primary?.length > 0
-                        ? album.artists.primary.map((artist) => decodeHtmlEntities(artist.name)).join(", ")
+                        ? album.artists.primary
+                            .map((artist) => decodeHtmlEntities(artist.name))
+                            .join(", ")
                         : "Unknown Artist",
                   });
                   router.push(`/reviews?${params.toString()}`);
                 }}
-                className="rounded-lg hover:scale-105 transition-all duration-200 group bg-white/10 border-white/20 shadow-md h-8 text-xs text-white"
               >
-                <Star className="w-3 h-3 mr-1 group-hover:scale-110 transition-transform" />
+                <Star className="w-3 h-3 mr-1" />
                 Rate
               </Button>
             </div>
           </div>
+
+          {/* Desktop Album Header */}
+          <div className="hidden sm:flex flex-col lg:flex-row gap-4 sm:gap-6 mb-6 sm:mb-8">
+            {/* Album Image */}
+            <div className="w-full lg:w-1/3 flex justify-center lg:justify-start">
+              <div className="relative group w-48 sm:w-56 lg:w-auto lg:max-w-xs">
+                <div className="aspect-square rounded-xl overflow-hidden bg-gradient-to-br from-muted to-muted/50 shadow-xl group-hover:shadow-2xl transition-all duration-300">
+                  <img
+                    src={getImageUrl(album.image)}
+                    alt={decodeHtmlEntities(album.name)}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                  />
+                </div>
+                {/* Subtle overlay gradient */}
+                <div className="absolute inset-0 rounded-xl bg-gradient-to-t from-black/10 via-transparent to-transparent pointer-events-none"></div>
+              </div>
+            </div>
+
+            {/* Album Info */}
+            <div className="flex-1 space-y-3 sm:space-y-4 text-center lg:text-left">
+              <div className="space-y-3 sm:space-y-4">
+                <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white leading-tight">
+                  {decodeHtmlEntities(album.name)}
+                </h1>
+
+                <div className="flex flex-col sm:flex-row items-center sm:items-center gap-2 justify-center lg:justify-start">
+                  <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/10 backdrop-blur-sm border border-white/20">
+                    <Music className="h-3 w-3 text-white" />
+                    <span className="text-xs font-medium text-white">
+                      {album.artists?.primary?.length > 0
+                        ? album.artists.primary
+                            .map((artist) => decodeHtmlEntities(artist.name))
+                            .join(", ")
+                        : "Unknown Artist"}
+                    </span>
+                  </div>
+                  {album.year && (
+                    <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/10 backdrop-blur-sm border border-white/20">
+                      <Clock className="h-3 w-3 text-white" />
+                      <span className="text-xs font-medium text-white">
+                        {album.year}
+                      </span>
+                    </div>
+                  )}
+                  {album.explicitContent && (
+                    <Badge
+                      variant="destructive"
+                      className="rounded-lg px-3 py-1.5 text-xs font-medium shadow-md"
+                    >
+                      Explicit
+                    </Badge>
+                  )}
+                  {album.language && (
+                    <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/10 backdrop-blur-sm border border-white/20">
+                      <span className="text-xs font-medium text-white capitalize">
+                        {album.language}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex flex-wrap gap-2 pt-2 justify-center lg:justify-start">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="rounded-lg hover:bg-white/20 transition-all duration-200 group bg-white/10 border-white/20 shadow-md h-8 text-xs text-white"
+                  onClick={async () => {
+                    if (album && album.songs && album.songs.length > 0) {
+                      // Create queue from all album songs
+                      const queue = album.songs.map((song) => ({
+                        id: song.id,
+                        title: decodeHtmlEntities(song.name),
+                        artist:
+                          song.artists?.primary?.length > 0
+                            ? song.artists.primary
+                                .map((artist) =>
+                                  decodeHtmlEntities(artist.name)
+                                )
+                                .join(", ")
+                            : "Unknown Artist",
+                      }));
+
+                      // Album Play Button - Queue created
+
+                      // Start with the first song
+                      await showPlayer(queue[0], queue, 0);
+                    }
+                  }}
+                >
+                  <Play className="w-3 h-3 mr-1" />
+                  Play Album
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    if (album) {
+                      handleLikeAlbum(album);
+                    }
+                  }}
+                  className={`rounded-lg hover:bg-white/20 transition-all duration-200 group bg-white/10 border-white/20 shadow-md h-8 text-xs ${
+                    album && isAlbumLiked(album.id)
+                      ? "bg-red-500/30 text-red-300 border-red-400/50"
+                      : "text-white"
+                  }`}
+                >
+                  <Heart
+                    className={`w-3 h-3 mr-1 group-hover:scale-110 transition-transform ${
+                      album && isAlbumLiked(album.id) ? "fill-red-400" : ""
+                    }`}
+                  />
+                  {album && isAlbumLiked(album.id) ? "Liked" : "Like"}
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={handleAddToRecommendations}
+                  className={`rounded-lg hover:scale-105 transition-all duration-200 group bg-white/10 border-white/20 shadow-md h-8 text-xs ${
+                    isAlbumInRecommendations(album.id)
+                      ? "bg-blue-500/30 text-blue-300 border-blue-400/50"
+                      : "text-white"
+                  }`}
+                >
+                  {isAlbumInRecommendations(album.id) ? (
+                    <>
+                      <Check className="w-3 h-3 mr-1" />
+                      Recommended
+                    </>
+                  ) : (
+                    <>
+                      <Plus className="w-3 h-3 mr-1" />
+                      Recommend
+                    </>
+                  )}
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    const params = new URLSearchParams({
+                      type: "music",
+                      id: album.id,
+                      title: decodeHtmlEntities(album.name),
+                      cover: getImageUrl(album.image),
+                      artist:
+                        album.artists?.primary?.length > 0
+                          ? album.artists.primary
+                              .map((artist) => decodeHtmlEntities(artist.name))
+                              .join(", ")
+                          : "Unknown Artist",
+                    });
+                    router.push(`/reviews?${params.toString()}`);
+                  }}
+                  className="rounded-lg hover:scale-105 transition-all duration-200 group bg-white/10 border-white/20 shadow-md h-8 text-xs text-white"
+                >
+                  <Star className="w-3 h-3 mr-1 group-hover:scale-110 transition-transform" />
+                  Rate
+                </Button>
+              </div>
             </div>
           </div>
         </div>
+      </div>
 
-        {/* Tabs */}
+      {/* Tabs */}
       <div className="container mx-auto px-4 py-4 sm:py-6">
         <div className="space-y-6">
           <Tabs defaultValue="songs" className="space-y-4">
@@ -768,7 +831,9 @@ export default function AlbumDetailPage({
                             </h4>
                             <p className="text-sm text-muted-foreground truncate">
                               {song.artists.primary
-                                .map((artist) => decodeHtmlEntities(artist.name))
+                                .map((artist) =>
+                                  decodeHtmlEntities(artist.name)
+                                )
                                 .join(", ")}
                             </p>
                           </div>
@@ -787,7 +852,9 @@ export default function AlbumDetailPage({
                                   title: decodeHtmlEntities(song.name),
                                   cover: getImageUrl(song.image || album.image),
                                   artist: song.artists.primary
-                                    .map((artist) => decodeHtmlEntities(artist.name))
+                                    .map((artist) =>
+                                      decodeHtmlEntities(artist.name)
+                                    )
                                     .join(", "),
                                 });
                                 router.push(`/reviews?${params.toString()}`);
@@ -810,7 +877,11 @@ export default function AlbumDetailPage({
                                     title: decodeHtmlEntities(s.name),
                                     artist:
                                       s.artists?.primary?.length > 0
-                                        ? s.artists.primary.map((artist) => decodeHtmlEntities(artist.name)).join(", ")
+                                        ? s.artists.primary
+                                            .map((artist) =>
+                                              decodeHtmlEntities(artist.name)
+                                            )
+                                            .join(", ")
                                         : "Unknown Artist",
                                   }));
 
@@ -845,44 +916,60 @@ export default function AlbumDetailPage({
                                   name: decodeHtmlEntities(song.name),
                                   artists: song.artists || { primary: [] },
                                   image: song.image || album.image || [],
-                                  language: song.language || album.language || "Unknown",
-                                  year: song.year || album.year?.toString() || "Unknown",
+                                  language:
+                                    song.language ||
+                                    album.language ||
+                                    "Unknown",
+                                  year:
+                                    song.year ||
+                                    album.year?.toString() ||
+                                    "Unknown",
                                   playCount: song.playCount || 0,
                                   songCount: 1,
-                                  songs: [{
-                                    id: song.id,
-                                    name: decodeHtmlEntities(song.name),
-                                    artists: song.artists,
-                                    image: song.image || album.image || [],
-                                    duration: song.duration || 0,
-                                    year: song.year || "Unknown",
-                                    language: song.language,
-                                    playCount: song.playCount || 0,
-                                    downloadUrl: song.downloadUrl,
-                                    album: {
-                                      id: song.album?.id || album.id,
-                                      name: song.album?.name || album.name,
-                                      url: song.album?.url || album.url,
+                                  songs: [
+                                    {
+                                      id: song.id,
+                                      name: decodeHtmlEntities(song.name),
+                                      artists: song.artists,
+                                      image: song.image || album.image || [],
+                                      duration: song.duration || 0,
+                                      year: song.year || "Unknown",
+                                      language: song.language,
+                                      playCount: song.playCount || 0,
+                                      downloadUrl: song.downloadUrl,
+                                      album: {
+                                        id: song.album?.id || album.id,
+                                        name: song.album?.name || album.name,
+                                        url: song.album?.url || album.url,
+                                      },
+                                      addedAt: new Date().toISOString(),
                                     },
-                                    addedAt: new Date().toISOString(),
-                                  }],
+                                  ],
                                 };
 
                                 if (isAlbumInRecommendations(song.id)) {
                                   await removeAlbumFromRecommendations(song.id);
                                   toast({
                                     title: "Removed from recommendations",
-                                    description: `${decodeHtmlEntities(song.name)} has been removed from your recommendations.`,
+                                    description: `${decodeHtmlEntities(
+                                      song.name
+                                    )} has been removed from your recommendations.`,
                                   });
                                 } else {
                                   await addAlbumToRecommendations(musicAlbum);
                                   toast({
                                     title: "Added to recommendations",
-                                    description: `${decodeHtmlEntities(song.name)} has been added to your recommendations.`,
+                                    description: `${decodeHtmlEntities(
+                                      song.name
+                                    )} has been added to your recommendations.`,
                                   });
                                 }
                               }}
-                              title={isAlbumInRecommendations(song.id) ? "Remove from recommendations" : "Add to recommendations"}
+                              title={
+                                isAlbumInRecommendations(song.id)
+                                  ? "Remove from recommendations"
+                                  : "Add to recommendations"
+                              }
                             >
                               {isAlbumInRecommendations(song.id) ? (
                                 <Check className="w-3 h-3 sm:w-3 sm:h-3" />
@@ -914,4 +1001,3 @@ export default function AlbumDetailPage({
     </div>
   );
 }
-
