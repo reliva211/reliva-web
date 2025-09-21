@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowRight, Play, Zap } from "lucide-react";
 import { MarqueeDemo } from "@/components/marquee-demo-vertical";
 import { CometCard } from "@/components/ui/comet-card";
+import Image from "next/image";
 
 export default function LandingPage() {
   const { user, loading } = useCurrentUser();
@@ -78,11 +79,19 @@ export default function LandingPage() {
 
             {/* Right Side - Preview */}
             <div className="relative mt-4 sm:mt-8 lg:mt-0 flex justify-center lg:justify-end order-1 lg:order-2">
-              <img
-                src="/login-left.png"
-                alt="Reliva Preview"
-                className="w-full max-w-md sm:max-w-lg md:max-w-xl lg:max-w-lg xl:max-w-xl h-auto rounded-lg shadow-2xl"
-              />
+              <div className="relative w-full max-w-md sm:max-w-lg md:max-w-xl lg:max-w-lg xl:max-w-xl">
+                <Image
+                  src="/login-left.png"
+                  alt="Reliva Preview"
+                  width={600}
+                  height={400}
+                  className="w-full h-auto rounded-lg shadow-2xl"
+                  priority={true}
+                  placeholder="blur"
+                  blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k="
+                  sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 600px"
+                />
+              </div>
             </div>
           </div>
         </div>
@@ -216,7 +225,10 @@ export default function LandingPage() {
             {/* Right Side - Text Content */}
             <div className="max-w-md lg:max-w-lg text-center lg:text-left order-1 lg:order-2 w-full">
               <h2 className="text-2xl sm:text-3xl md:text-4xl font-light mb-4 sm:mb-6 text-gray-900 dark:text-white">
-                What is <span className="bg-gradient-to-r from-emerald-600 to-blue-600 dark:from-emerald-400 dark:to-blue-400 bg-clip-text text-transparent">Reliva?</span>
+                What is{" "}
+                <span className="bg-gradient-to-r from-emerald-600 to-blue-600 dark:from-emerald-400 dark:to-blue-400 bg-clip-text text-transparent">
+                  Reliva?
+                </span>
               </h2>
               <div className="space-y-3 sm:space-y-4 text-sm sm:text-base md:text-lg leading-relaxed text-gray-600 dark:text-gray-300 mb-4 sm:mb-6">
                 <p>

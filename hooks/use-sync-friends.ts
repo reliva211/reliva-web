@@ -35,3 +35,4 @@ export function useSyncFriends() {
 
   return null; // This hook doesn't return anything, it just syncs data
 }
+

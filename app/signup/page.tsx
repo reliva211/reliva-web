@@ -21,6 +21,7 @@ import {
   Loader2,
 } from "lucide-react";
 import { useUsernameValidation } from "@/hooks/use-username-validation";
+import Image from "next/image";
 
 export default function SignupPage() {
   const [fullName, setFullName] = useState("");
@@ -210,10 +211,15 @@ export default function SignupPage() {
     <div className="min-h-screen relative overflow-hidden">
       {/* Full Background Image */}
       <div className="absolute inset-0">
-        <img
+        <Image
           src="/login-gradient.jpeg"
           alt="Abstract gradient background"
-          className="w-full h-full object-cover brightness-125"
+          fill
+          className="object-cover brightness-125"
+          priority={true}
+          placeholder="blur"
+          blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k="
+          quality={85}
         />
       </div>
 
